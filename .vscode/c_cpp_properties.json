@@ -1,0 +1,17 @@
+{
+  "version": 4,
+  "configurations": [
+      {
+          "name": "SGDK",
+          "includePath": [
+              "${env:GDK_WIN}/inc/",
+              "${env:GDK_WIN}/res/",
+              "res/"
+            ],
+          "browse" : {
+              "limitSymbolsToIncludedHeaders" : true,
+              "databaseFilename" : ""
+          }
+      }
+  ]
+}
