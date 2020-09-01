@@ -88,14 +88,22 @@ int main() {
 	int frame = 0;
 	//XGM_setPCM(0, sfx_select, sizeof(sfx_select));
 
+	
 	while(1) {        
 
 		// ensure previous flip buffer request has been started
 		//BMP_showFPS(1);
-		spread_and_draw_fire_byte();
-		BMP_waitWhileFlipRequestPending();
-		BMP_flipPartial(1, 12);
-		copy_fire_buffer_portion();
+		if(run_fire && frame < 290) {
+			spread_and_draw_fire_byte();
+			BMP_waitWhileFlipRequestPending();
+			BMP_flipPartial(1, 12);
+			copy_fire_buffer_portion();
+		} else if (run_fire) {
+			run_fire = 0;
+			BMP_clear();
+			BMP_end();
+		}
+
 			
 		
 		frame++;
