@@ -521,8 +521,8 @@ def read_directory():
 
 
 def get_cachefile_name(wadfile):
-    f = wadfile.split("/")[-1]
-    return "./{}.cache".format(f.split(".wad")[0])
+    f = wadfile.split(".wad")[0]
+    return "{}.cache".format(f)
     
                 
 def read_wadfile(wadfile):
@@ -530,7 +530,7 @@ def read_wadfile(wadfile):
 
     cachefile_exists = os.path.exists(cachefile) 
     if cachefile_exists:
-        print("Loading previously dumped WAD")
+        print("Loading previously dumped WAD {}".format(wadfile))
         with open(cachefile, "rb") as f:
             return pickle.load(f)
             

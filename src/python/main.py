@@ -288,7 +288,7 @@ def main():
             
         flip(stats_func)
         
-        clock.tick(200)
+        clock.tick(60)
         
 
         

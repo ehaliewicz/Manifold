@@ -492,11 +492,12 @@ def transform_seg(level_data, seg, topdown_draw_surf, persp_draw_surf, avg_secto
         #return DRAWN
 
         other_sector_idx = wad.portal_seg_other_sector_idx(seg, level_data)
-        other_sector = level_data['SECTORS'][sector_idx]
+        
+        other_sector = level_data['SECTORS'][other_sector_idx]
     
         
 
-    if r1y < 0 and r2y < 0:
+    if r1y <= 0 and r2y <= 0:
         return FULLY_CLIPPED
     
     near_z = 0.01
@@ -575,7 +576,6 @@ def transform_seg(level_data, seg, topdown_draw_surf, persp_draw_surf, avg_secto
             
         
         
-        #pygame.draw.line(persp_draw_surf, col, v1_top, v1_bot)
 
         
         
@@ -658,6 +658,9 @@ def transform_seg(level_data, seg, topdown_draw_surf, persp_draw_surf, avg_secto
                 
                 #if not portal:
                 
+
+                if portal and draw_outline:
+                    col = (255,0,0)
                 
 
                 # DRAW outline
@@ -680,9 +683,9 @@ def transform_seg(level_data, seg, topdown_draw_surf, persp_draw_surf, avg_secto
                             pygame.draw.line(persp_draw_surf, col, (x, clipped_top_y), (x, clipped_bot_y))
 
                         if handle_other_ceil:
-                            pygame.draw.line(persp_draw_surf, col, (x, clipped_back_top_y), (x, clipped_back_top_y))                            
+                            pygame.draw.line(persp_draw_surf, col, (x, clipped_back_top_y), (x, clipped_top_y))                            
                         if handle_other_floor:
-                            pygame.draw.line(persp_draw_surf, col, (x, clipped_back_bot_y), (x, clipped_back_bot_y))
+                            pygame.draw.line(persp_draw_surf, col, (x, clipped_back_bot_y), (x, clipped_bot_y))
                         
                             
                 else:
