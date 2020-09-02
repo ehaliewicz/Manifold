@@ -29,8 +29,10 @@ class DrawStats():
         self.segs_transformed = 0
         self.segs_fully_clipped = 0
         self.segs_partially_clipped = 0
+        self.segs_transformed_with_no_onscreen_pixels = 0
         self.segs_drawn = 0
 
+        
         self.seg_v1 = None
         self.seg_v2 = None
         self.seg_dx = None
@@ -54,7 +56,7 @@ class DrawStats():
         self.v1_fov_pos = None
         self.v2_fov_pos = None
 
-
+        
 
 def calc_dist(x1,y1,x2,y2):  
     dist = math.sqrt((x2 - x1)**2 + (y2 - y1)**2)  
@@ -65,12 +67,16 @@ flip_func = None
 
 ssector_depth_table = {}
 
+
+linedef_sector_color_map = {}
+
 def ssect_draw_visible_segs(level_data, topdown_draw_surf, persp_draw_surf, ssect):
     start_seg = ssect.first_seg
     num_segs = ssect.num_segs
     segs = level_data['SEGS']
 
-    ssect_key = (ssect.num_segs, ssect.first_seg)
+    
+    ssect_key = ('ssect', ssect.first_seg)
     if ssect_key in ssector_depth_table:
         avg_dist = ssector_depth_table[ssect_key]
     else:
@@ -95,14 +101,33 @@ def ssect_draw_visible_segs(level_data, topdown_draw_surf, persp_draw_surf, ssec
             
     
     draw_stats.ssectors_processed += 1
+
     
     for i in range(start_seg, start_seg+num_segs):
         seg = segs[i]
         
-        #if draw_stats.segs_backface_culled >= 1 or draw_stats.segs_drawn >= 1 or draw_stats.segs_fully_clipped >= 1:
-        #    return
+        
+        if draw_outline:
+            wall_col = WHITE
+        else:
+            linedef_key = ('linedef', seg.linedef)
+            if not linedef_key in linedef_sector_color_map:
+                linedef_sector_color_map[linedef_key] = util.rand_color()
+                
+            wall_col = linedef_sector_color_map[linedef_key]
 
-        res = transform_seg(level_data, seg, topdown_draw_surf, persp_draw_surf, avg_dist)
+
+        if draw_outline:
+            flat_col = WHITE
+        else:
+            sect_idx = wad.get_subsector_sector_idx(ssect, level_data)
+            sect_key = ('sector', sect_idx)
+            if not sect_key in linedef_sector_color_map:
+                linedef_sector_color_map[sect_key] = util.rand_color()
+                
+            flat_col = linedef_sector_color_map[sect_key]
+        
+        res = transform_seg(level_data, seg, topdown_draw_surf, persp_draw_surf, avg_dist, wall_col, flat_col)
         if res == BACKFACE_CULLED:
             draw_stats.segs_backface_culled += 1
         else:
@@ -117,19 +142,43 @@ def ssect_draw_visible_segs(level_data, topdown_draw_surf, persp_draw_surf, ssec
             #pygame.draw.line(topdown_draw_surf, col, v1, v2) #(255,255,255)
             #flip_func()
             #pygame.time.wait(2)
+
+        if res == TRANSFORMED_WITH_NO_ONSCREEN_PIXELS:
+            draw_stats.segs_transformed_with_no_onscreen_pixels += 1
             
 
 
 DRAW_WIDTH = 400
 DRAW_HEIGHT = 300
 
+def rasterize_line(x1, x2, y1a, y2a):
+    # y1b and y2b are left and right y coordinates of bottom of wall
+
+    clipped_left_x = max(x1, 0)
+    clipped_right_x = min(x2, DRAW_WIDTH-1)
+
+    dx = x2-x1
+
+    columns = [None for x in range(DRAW_WIDTH)]
+    
+    for x in range(clipped_left_x, clipped_right_x):
+        progress = (x-x1)/dx
+        height = DRAW_HEIGHT - lerp(y1a, y2a, progress)
+
+        columns[x] = height
+            
+    return columns
+
+
 
 column_buffer = []
-y_buffer = []
+min_y_buffer = []
+max_y_buffer = []
 def clear_col_buffer():
-    global column_buffer, y_buffer
+    global column_buffer, min_y_buffer, max_y_buffer
     column_buffer = [0 for x in range(DRAW_WIDTH)]
-    y_buffer = [(-1,DRAW_HEIGHT) for x in range(DRAW_WIDTH)]
+    min_y_buffer = [0 for x in range(DRAW_WIDTH)]
+    max_y_buffer = [DRAW_HEIGHT-1 for x in range(DRAW_WIDTH)]
     
 
 
@@ -142,6 +191,7 @@ def clear_col_buffer():
 BACKFACE_CULLED = 'bface'
 FULLY_CLIPPED = 'fully_clipped'
 DRAWN = 'drawn'
+TRANSFORMED_WITH_NO_ONSCREEN_PIXELS = 'transformed_with_no_onscreen_pixels'
 
 WHITE = (255,255,255)
 GREEN = (  0,255,  0)
@@ -368,9 +418,9 @@ def check_ceiling_floor(front_sector, back_sector):
 
 #def calc_wall_height(seg, v1x, v2x, v1ang, v2ang):
     
-        
 
-def transform_seg(level_data, seg, topdown_draw_surf, persp_draw_surf, avg_sector_dist): #, color):
+
+def transform_seg(level_data, seg, topdown_draw_surf, persp_draw_surf, avg_sector_dist, wall_col, flat_col):
     
     segs = level_data['SEGS']
     vertexes = level_data['VERTEXES']
@@ -406,30 +456,30 @@ def transform_seg(level_data, seg, topdown_draw_surf, persp_draw_surf, avg_secto
     seg_dv1 = ((v1.x - cam_x), (v1.y - cam_y))
     seg_dv2 = ((v2.x - cam_x), (v2.y - cam_y))
     
-    draw_stats.seg_v1 = v1
-    draw_stats.seg_v2 = v2
-    draw_stats.seg_dx = seg_dx
-    draw_stats.seg_dy = seg_dy
-    draw_stats.seg_dv1 = seg_dv1
-    draw_stats.seg_dv2 = seg_dv2
-    draw_stats.seg_r1 = rot_v1
-    draw_stats.seg_r2 = rot_v2
-    draw_stats.seg_normal = seg_normal
-    draw_stats.seg_normal_angle = seg_normal_angle
+    #draw_stats.seg_v1 = v1
+    #draw_stats.seg_v2 = v2
+    #draw_stats.seg_dx = seg_dx
+    #draw_stats.seg_dy = seg_dy
+    #draw_stats.seg_dv1 = seg_dv1
+    #draw_stats.seg_dv2 = seg_dv2
+    #draw_stats.seg_r1 = rot_v1
+    #draw_stats.seg_r2 = rot_v2
+    #draw_stats.seg_normal = seg_normal
+    #draw_stats.seg_normal_angle = seg_normal_angle
 
-    draw_stats.player_vector = player_vector
-    draw_stats.seg_dot_product = dot_product(player_vector, seg_normal) 
+    #draw_stats.player_vector = player_vector
+    #draw_stats.seg_dot_product = dot_product(player_vector, seg_normal) 
 
     (dv1x,dv1y) = seg_dv1
     (dv2x,dv2y) = seg_dv2
-    draw_stats.seg_v1_angle = math.degrees(math.atan2(dv1y, dv1x))
-    draw_stats.seg_v2_angle = math.degrees(math.atan2(dv2y, dv2x))
+    #draw_stats.seg_v1_angle = math.degrees(math.atan2(dv1y, dv1x))
+    #draw_stats.seg_v2_angle = math.degrees(math.atan2(dv2y, dv2x))
 
     (r1x,r1y) = rot_v1
     (r2x,r2y) = rot_v2
     
-    draw_stats.seg_rot_v1_angle = math.degrees(math.atan2(r1y, r1x)) % 360
-    draw_stats.seg_rot_v2_angle = math.degrees(math.atan2(r2y, r2x)) % 360
+    #draw_stats.seg_rot_v1_angle = math.degrees(math.atan2(r1y, r1x)) % 360
+    #draw_stats.seg_rot_v2_angle = math.degrees(math.atan2(r2y, r2x)) % 360
 
     
 
@@ -462,9 +512,9 @@ def transform_seg(level_data, seg, topdown_draw_surf, persp_draw_surf, avg_secto
     disp_v1 = adjust_to_display(rot_v1)
     disp_v2 = adjust_to_display(rot_v2)
     
-    
-    col = WHITE
-    
+
+
+        
     (disp_v1_x,disp_v1_y) = disp_v1
     (disp_v2_x,disp_v2_y) = disp_v2
 
@@ -474,7 +524,7 @@ def transform_seg(level_data, seg, topdown_draw_surf, persp_draw_surf, avg_secto
     #        assert False, "This should never happen anymore!"
     #        return BACKFACE_CULLED
         
-    pygame.draw.line(topdown_draw_surf, col, disp_v1, disp_v2)
+    pygame.draw.line(topdown_draw_surf, (255,255,255), disp_v1, disp_v2)
 
 
     linedef_idx = seg.linedef
@@ -500,14 +550,14 @@ def transform_seg(level_data, seg, topdown_draw_surf, persp_draw_surf, avg_secto
     if r1y <= 0 and r2y <= 0:
         return FULLY_CLIPPED
     
-    near_z = 0.01
+    near_z = 1
     if r1y <= 0:
         
         # clip r1y and heights?
         # somehow clip
         dx = r2x - r1x
         dy = r2y - r1y
-        if dy == 0: # how the fuck??
+        if dy == 0: 
             return FULLY_CLIPPED
         dx_over_dy = dx / dy
         
@@ -529,8 +579,8 @@ def transform_seg(level_data, seg, topdown_draw_surf, persp_draw_surf, avg_secto
         r2x = r2x - how_much_dx
         
 
-    floor_brg = depth_color(avg_sector_dist)
-    floor_col = (floor_brg, floor_brg, floor_brg)
+    #floor_brg = depth_color(avg_sector_dist)
+    #floor_col = (floor_brg, floor_brg, floor_brg)
 
     handle_other_floor = False
     handle_other_ceil = False
@@ -559,8 +609,6 @@ def transform_seg(level_data, seg, topdown_draw_surf, persp_draw_surf, avg_secto
         if portal:
             
             
-            
-            
             if other_sect_floor > sect_floor:
                 handle_other_floor = True
                 trans_other_floor_height = (other_sector.floor_height - cam_z)
@@ -573,16 +621,13 @@ def transform_seg(level_data, seg, topdown_draw_surf, persp_draw_surf, avg_secto
                 v1_proj_back_top_y = project_vertex_y(trans_other_ceil_height, r1y)
                 v2_proj_back_top_y = project_vertex_y(trans_other_ceil_height, r2y)
                 
-            
-        
-        
 
         
         
         x_steps = int(v2_proj_x - v1_proj_x)
 
         if x_steps <= 0:
-            return DRAWN
+            return TRANSFORMED_WITH_NO_ONSCREEN_PIXELS
 
         #return
         one_over_r1y = 1/r1y
@@ -593,124 +638,143 @@ def transform_seg(level_data, seg, topdown_draw_surf, persp_draw_surf, avg_secto
 
 
         clipped_left_x = max(left_x, 0)
-        clipped_right_x = min(right_x, DRAW_WIDTH)
+        clipped_right_x = min(right_x, DRAW_WIDTH-1)
+
         
-        for step,x in enumerate(range(clipped_left_x, clipped_right_x)):
+        ceil_heights = rasterize_line(left_x, right_x, v1_proj_top_y, v2_proj_top_y)
 
-            if x >= DRAW_WIDTH:
-                break
-                        
+        floor_heights = rasterize_line(left_x, right_x, v1_proj_bot_y, v2_proj_bot_y)
+        
+        if handle_other_ceil:
+            upper_step_heights = rasterize_line(left_x, right_x, v1_proj_back_top_y, v2_proj_back_top_y)
 
-            progress = (x-left_x)/(right_x-left_x)
-            #progress = step/x_steps
-
+        if handle_other_floor:
+            lower_step_heights = rasterize_line(left_x, right_x, v1_proj_back_bot_y, v2_proj_back_bot_y)
             
-            one_over_depth = lerp(one_over_r1y, one_over_r2y, progress)
-            depth = 1/one_over_depth
-            brg = depth_color(depth)
+        if portal and draw_outline: # and draw_outline:
+            wall_col = (255,0,0)
+            flat_col = (255,0,0)
 
-            top_height = DRAW_HEIGHT - lerp(v1_proj_top_y, v2_proj_top_y, progress)
-            bot_height = DRAW_HEIGHT - lerp(v1_proj_bot_y, v2_proj_bot_y, progress)
-
-            if portal:
-                if handle_other_ceil:
-                    back_top_height = DRAW_HEIGHT - lerp(v1_proj_back_top_y, v2_proj_back_top_y, progress)
-
-                if handle_other_floor:
-                    back_bot_height = DRAW_HEIGHT - lerp(v1_proj_back_bot_y, v2_proj_back_bot_y, progress)                
+        res = TRANSFORMED_WITH_NO_ONSCREEN_PIXELS
             
-                
-            col = (brg,brg,brg)
-            if brg <= 0:
+        for x in range(clipped_left_x, clipped_right_x):
+            draw_edge = x == clipped_left_x or x == clipped_right_x-1
+
+            if column_buffer[x] == 1:
+                continue
+
+            min_y = min_y_buffer[x]
+            max_y = max_y_buffer[x]
+            
+            # draw ceil
+            ceil = ceil_heights[x]
+            
+            if ceil > max_y:
+                column_buffer[x] = 1
                 continue
             
+            if ceil < min_y:
+                ceil = min_y
+            else:
+                res = DRAWN
+                if draw_outline:
+                    pygame.draw.line(persp_draw_surf, flat_col, (x, ceil), (x, ceil))
+                else:
+                    pygame.draw.line(persp_draw_surf, flat_col, (x, min_y), (x, ceil))
+            min_y = ceil+1
+
             
             
-            if column_buffer[x] == 0:
 
-                if not portal:
-                    column_buffer[x] = 1
-                
-                min_y,max_y = y_buffer[x]
-                
-                
-                clipped_top_y = max(min_y+1, top_height)
-                clipped_bot_y = min(max_y-1, bot_height)
-
-                y_clip = [clipped_top_y, clipped_bot_y]
                 
 
+            # draw floor
+            floor = floor_heights[x]
+            if floor < min_y:
+                column_buffer[x] = 1
+                continue
 
-                if handle_other_ceil:
-                    clipped_back_top_y = max(min_y+1, back_top_height)
-                    y_clip[0] = clipped_back_top_y 
-                    
-                if handle_other_floor:
-                    clipped_back_bot_y = min(max_y-1, back_bot_height)
-                    y_clip[1] = clipped_back_bot_y
-
-                y_buffer[x] = tuple(y_clip)
+            if floor > max_y:
+                floor = max_y
+            else:
+                res = DRAWN
+                if draw_outline:
+                    pygame.draw.line(persp_draw_surf, flat_col, (x, floor), (x, floor))
+                else:
+                    pygame.draw.line(persp_draw_surf, flat_col, (x, floor), (x, max_y)) 
                 
+            max_y = floor-1
+            
 
-                if y_clip[0] >= y_clip[1]:
+
+                                 
+            if not portal:
+                res = DRAWN
+                if draw_outline and draw_edge:
+                    pygame.draw.line(persp_draw_surf, wall_col, (x, ceil), (x, floor))
+                elif not draw_outline:
+                    pygame.draw.line(persp_draw_surf, wall_col, (x, ceil), (x, floor))
+
+                
+            # draw upper step
+            if handle_other_ceil:
+                
+                upper_step = upper_step_heights[x]
+                if upper_step > max_y:
                     column_buffer[x] = 1
                     continue
-                
-                #if not portal:
-                
 
-                if portal and draw_outline:
-                    col = (255,0,0)
-                
-
-                # DRAW outline
-                if draw_outline:
-                    # draw top and bottom
-                    pygame.draw.line(persp_draw_surf, col, (x, clipped_top_y), (x, clipped_top_y))
-                    pygame.draw.line(persp_draw_surf, col, (x, clipped_bot_y), (x, clipped_bot_y))
-
-                    if handle_other_ceil:                   
-                        pygame.draw.line(persp_draw_surf, col, (x, clipped_back_top_y), (x, clipped_back_top_y))
-
-                        
-                    if handle_other_floor:
-                        pygame.draw.line(persp_draw_surf, col, (x, clipped_back_bot_y), (x, clipped_back_bot_y))
-
-                    #not portal
-                    if step == 0 or x == clipped_right_x-1:
-                        # draw left and right sides for walls
-                        if not portal:
-                            pygame.draw.line(persp_draw_surf, col, (x, clipped_top_y), (x, clipped_bot_y))
-
-                        if handle_other_ceil:
-                            pygame.draw.line(persp_draw_surf, col, (x, clipped_back_top_y), (x, clipped_top_y))                            
-                        if handle_other_floor:
-                            pygame.draw.line(persp_draw_surf, col, (x, clipped_back_bot_y), (x, clipped_bot_y))
-                        
-                            
+                if upper_step < min_y:
+                    upper_step = min_y
                 else:
-                    if portal:
-                        if handle_other_ceil:
-                            pygame.draw.line(persp_draw_surf, col, (x, clipped_top_y), (x, clipped_back_top_y)) 
-                        if handle_other_floor:
-                            pygame.draw.line(persp_draw_surf, col, (x, clipped_bot_y), (x, clipped_back_bot_y)) 
-                    else:
-                        # draw middle wall portion
-                            
-                        pygame.draw.line(persp_draw_surf, col, (x, clipped_top_y), (x, clipped_bot_y))
+                    res = DRAWN
+                    
+                    if draw_outline:
+                        pygame.draw.line(persp_draw_surf, wall_col, (x, upper_step), (x, upper_step))
+                    # draw side of upper step
+                    if draw_edge or not draw_outline:
+                        pygame.draw.line(persp_draw_surf, wall_col, (x, ceil), (x, upper_step))
+                min_y = upper_step + 1
+
+            # draw lower step
+            if handle_other_floor:
+                lower_step = lower_step_heights[x]
+                
+                if lower_step < min_y:
+                    column_buffer[x] = 1
+                    continue
 
                     
-                    if floor_brg > 0:
-                        # draw floor
-                        floor_col = (128,128,128)
-                        pygame.draw.line(persp_draw_surf, floor_col, (x, min_y+1), (x, clipped_top_y))
-                        pygame.draw.line(persp_draw_surf, floor_col, (x, clipped_bot_y), (x, max_y-1))
-                    
+                if lower_step > max_y:
+                    lower_step = max_y
+                else:
+                    res = DRAWN
+
+                    if draw_outline:
+                        pygame.draw.line(persp_draw_surf, wall_col, (x, lower_step), (x, lower_step))
+
+                    # draw side of lower step
+                    if draw_edge or not draw_outline:
+                        pygame.draw.line(persp_draw_surf, wall_col, (x, lower_step), (x, floor))
+                max_y = lower_step-1
+
+            
                 
-                
+            
+            min_y_buffer[x] = min_y
+            max_y_buffer[x] = max_y
+
+            if not portal:
+                column_buffer[x] = 1
+
+        
+        return res
+
+    if backface_culled:
+        return BACKFACE_CULLED
+    if fully_clipped:
+        return FULLY_CLIPPED
     
-    
-    return DRAWN
 
 
 def draw_level_segs(level_data, surf, color):
