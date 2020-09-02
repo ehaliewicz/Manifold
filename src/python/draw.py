@@ -416,8 +416,6 @@ def check_ceiling_floor(front_sector, back_sector):
         # floor is too high to see
         update_floor = False
 
-#def calc_wall_height(seg, v1x, v2x, v1ang, v2ang):
-    
 
 
 def transform_seg(level_data, seg, topdown_draw_surf, persp_draw_surf, avg_sector_dist, wall_col, flat_col):
@@ -678,18 +676,14 @@ def transform_seg(level_data, seg, topdown_draw_surf, persp_draw_surf, avg_secto
             else:
                 res = DRAWN
                 if draw_outline:
-                    pygame.draw.line(persp_draw_surf, flat_col, (x, ceil), (x, ceil))
+                    pygame.draw.line(persp_draw_surf, flat_col, (x, ceil-1), (x, ceil-1))
                 else:
-                    pygame.draw.line(persp_draw_surf, flat_col, (x, min_y), (x, ceil))
-            min_y = ceil+1
-
+                    pygame.draw.line(persp_draw_surf, flat_col, (x, min_y), (x, ceil-1))
+                        
             
-            
-
-                
-
-            # draw floor
             floor = floor_heights[x]
+
+    
             if floor < min_y:
                 column_buffer[x] = 1
                 continue
@@ -699,12 +693,11 @@ def transform_seg(level_data, seg, topdown_draw_surf, persp_draw_surf, avg_secto
             else:
                 res = DRAWN
                 if draw_outline:
-                    pygame.draw.line(persp_draw_surf, flat_col, (x, floor), (x, floor))
+                    pygame.draw.line(persp_draw_surf, flat_col, (x, floor+1), (x, floor+1))
                 else:
-                    pygame.draw.line(persp_draw_surf, flat_col, (x, floor), (x, max_y)) 
+                    pygame.draw.line(persp_draw_surf, flat_col, (x, floor+1), (x, max_y)) 
                 
-            max_y = floor-1
-            
+                        
 
 
                                  
@@ -717,46 +710,53 @@ def transform_seg(level_data, seg, topdown_draw_surf, persp_draw_surf, avg_secto
 
                 
             # draw upper step
-            if handle_other_ceil:
+            if portal:
+                if handle_other_ceil:
                 
-                upper_step = upper_step_heights[x]
-                if upper_step > max_y:
-                    column_buffer[x] = 1
-                    continue
+                    upper_step = upper_step_heights[x]
+                    if upper_step > max_y:
+                        column_buffer[x] = 1
+                        continue
 
-                if upper_step < min_y:
-                    upper_step = min_y
-                else:
-                    res = DRAWN
+                    if upper_step < min_y:
+                        upper_step = min_y
+                    else:
+                        res = DRAWN
                     
-                    if draw_outline:
-                        pygame.draw.line(persp_draw_surf, wall_col, (x, upper_step), (x, upper_step))
-                    # draw side of upper step
-                    if draw_edge or not draw_outline:
-                        pygame.draw.line(persp_draw_surf, wall_col, (x, ceil), (x, upper_step))
-                min_y = upper_step + 1
-
-            # draw lower step
-            if handle_other_floor:
-                lower_step = lower_step_heights[x]
+                        if draw_outline:
+                            pygame.draw.line(persp_draw_surf, wall_col, (x, upper_step-1), (x, upper_step-1))
+                            # draw side of upper step
+                        if draw_edge or not draw_outline:
+                            pygame.draw.line(persp_draw_surf, wall_col, (x, ceil), (x, upper_step-1))
+                else:
+                    upper_step = ceil
+                    
+                min_y = upper_step
                 
-                if lower_step < min_y:
-                    column_buffer[x] = 1
-                    continue
+
+                # draw lower step
+                if handle_other_floor:
+                    lower_step = lower_step_heights[x]
+                
+                    if lower_step < min_y:
+                        column_buffer[x] = 1
+                        continue
 
                     
-                if lower_step > max_y:
-                    lower_step = max_y
+                    if lower_step > max_y:
+                        lower_step = max_y
+                    else:
+                        res = DRAWN
+
+                        if draw_outline:
+                            pygame.draw.line(persp_draw_surf, wall_col, (x, lower_step+1), (x, lower_step+1))
+
+                        # draw side of lower step
+                        if draw_edge or not draw_outline:
+                            pygame.draw.line(persp_draw_surf, wall_col, (x, lower_step+1), (x, floor))
                 else:
-                    res = DRAWN
-
-                    if draw_outline:
-                        pygame.draw.line(persp_draw_surf, wall_col, (x, lower_step), (x, lower_step))
-
-                    # draw side of lower step
-                    if draw_edge or not draw_outline:
-                        pygame.draw.line(persp_draw_surf, wall_col, (x, lower_step), (x, floor))
-                max_y = lower_step-1
+                    lower_step = floor
+                max_y = lower_step
 
             
                 
