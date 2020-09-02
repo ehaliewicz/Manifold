@@ -1,6 +1,5 @@
 import copy, math, os, pickle, re, sys, struct
-from frozendict import frozendict
-from dataclasses import make_dataclass, dataclass
+from dataclasses import dataclass
 import BitVector
 
 wad_data = None
@@ -168,6 +167,7 @@ class Seg:
     direction: int
     offset: int
 
+    
 SSECTOR_SIZE = 4
 # num_segs can likely be a single byte here, saving a byte
 SSECTOR_FORMAT = """
@@ -415,10 +415,7 @@ def read_level_data(level_dir):
     reject_data = wad_data[idx:idx+reject_table_num_bytes]
 
     
-    print("expected reject bits: {}".format(reject_table_num_bits))
-    print("expected reject bytes: {}".format(reject_table_num_bytes))
-    
-    results['REJECT'] = reject_data #reject_bitvector
+    results['REJECT'] = reject_data
     
         
         
