@@ -158,10 +158,10 @@ def rasterize_line(x1, x2, y1a, y2a):
     clipped_right_x = min(x2, DRAW_WIDTH-1)
 
     dx = x2-x1
-
+    
     columns = [None for x in range(DRAW_WIDTH)]
     
-    for x in range(clipped_left_x, clipped_right_x):
+    for x in range(clipped_left_x, clipped_right_x+1):
         progress = (x-x1)/dx
         height = DRAW_HEIGHT - lerp(y1a, y2a, progress)
 
@@ -417,6 +417,8 @@ def check_ceiling_floor(front_sector, back_sector):
         update_floor = False
 
 
+def clamp(val, a, b):
+    return min(max(val, a), b)
 
 def transform_seg(level_data, seg, topdown_draw_surf, persp_draw_surf, avg_sector_dist, wall_col, flat_col):
     
@@ -622,22 +624,19 @@ def transform_seg(level_data, seg, topdown_draw_surf, persp_draw_surf, avg_secto
 
         
         
-        x_steps = int(v2_proj_x - v1_proj_x)
-
-        if x_steps <= 0:
-            return TRANSFORMED_WITH_NO_ONSCREEN_PIXELS
-
-        #return
-        one_over_r1y = 1/r1y
-        one_over_r2y = 1/r2y
 
         left_x = int(v1_proj_x)
         right_x = int(v2_proj_x)
+        x_steps = right_x - left_x
+        if x_steps <= 0:
+            return TRANSFORMED_WITH_NO_ONSCREEN_PIXELS
 
+        one_over_r1y = 1/r1y
+        one_over_r2y = 1/r2y
 
         clipped_left_x = max(left_x, 0)
         clipped_right_x = min(right_x, DRAW_WIDTH-1)
-
+        
         
         ceil_heights = rasterize_line(left_x, right_x, v1_proj_top_y, v2_proj_top_y)
 
@@ -655,7 +654,7 @@ def transform_seg(level_data, seg, topdown_draw_surf, persp_draw_surf, avg_secto
 
         res = TRANSFORMED_WITH_NO_ONSCREEN_PIXELS
             
-        for x in range(clipped_left_x, clipped_right_x):
+        for x in range(clipped_left_x, clipped_right_x+1):
             draw_edge = x == clipped_left_x or x == clipped_right_x-1
 
             if column_buffer[x] == 1:
@@ -707,10 +706,9 @@ def transform_seg(level_data, seg, topdown_draw_surf, persp_draw_surf, avg_secto
                     pygame.draw.line(persp_draw_surf, wall_col, (x, ceil), (x, floor))
                 elif not draw_outline:
                     pygame.draw.line(persp_draw_surf, wall_col, (x, ceil), (x, floor))
+                column_buffer[x] = 1
 
-                
-            # draw upper step
-            if portal:
+            else:
                 if handle_other_ceil:
                 
                     upper_step = upper_step_heights[x]
@@ -733,7 +731,7 @@ def transform_seg(level_data, seg, topdown_draw_surf, persp_draw_surf, avg_secto
                     
                 min_y = upper_step
                 
-
+                
                 # draw lower step
                 if handle_other_floor:
                     lower_step = lower_step_heights[x]
@@ -756,16 +754,15 @@ def transform_seg(level_data, seg, topdown_draw_surf, persp_draw_surf, avg_secto
                             pygame.draw.line(persp_draw_surf, wall_col, (x, lower_step+1), (x, floor))
                 else:
                     lower_step = floor
+                    
                 max_y = lower_step
 
             
                 
             
-            min_y_buffer[x] = min_y
-            max_y_buffer[x] = max_y
+                min_y_buffer[x] = min_y #clamp(max(ceil, upper_step), 0, max_y) #min_y
+                max_y_buffer[x] = max_y #clamp(min(floor, lower_step), 0, min_y) #max_y
 
-            if not portal:
-                column_buffer[x] = 1
 
         
         return res
