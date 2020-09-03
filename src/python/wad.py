@@ -115,6 +115,16 @@ class Linedef:
     sector_tag: int
     right_sidedef: int
     left_sidedef: int
+
+    def write_c(self):
+        return ("{" +
+                """
+                .v1 = {}, .v2 = {}, 
+                .flags = {}, .line_type = {}, .sector_tag = {}, 
+                .right_sidedef = {}, .left_sidedef = {}""".format(
+                    self.begin_vert, self.end_vert, self.flags, self.line_type,
+                    self.sector_tag, self.right_sidedef, self.left_sidedef
+        ) + "}")
     
 
 SIDEDEF_SIZE = 30
@@ -135,7 +145,18 @@ class Sidedef:
     lower_texture: str
     middle_texture: str
     sector_ref: int
-    
+
+    def write_c(self):
+        return ("{" +
+                """
+                .x_off = {}, .y_off = {}, 
+                .upper_texture = "{}", .lower_texture = "{}", .middle_texture = "{}",
+                .sector_ref = {}""".format(
+                    self.x_off, self.y_off,
+                    self.upper_texture, self.lower_texture, self.middle_texture,
+                    self.sector_ref
+                    ) + "}")
+        
 VERTEX_SIZE = 4
 VERTEX_FORMAT = """
   x short ;
@@ -146,6 +167,10 @@ VERTEX_FORMAT = """
 class Vertex:
     x: int
     y: int
+    def write_c(self):
+        return ("{" +
+                ".x = {}, .y = {}".format(self.x, self.y) + 
+                "}")
 
 SEG_SIZE = 12
 # could save one byte here
@@ -166,7 +191,19 @@ class Seg:
     linedef: int
     direction: int
     offset: int
-
+    def write_c(self):
+        return ("{" +
+                """
+                .begin_vert = {}, .end_vert = {},
+                .angle = {}, .linedef = {},
+                .direction = {}, .offset = {}
+                """.format(
+                    self.begin_vert, self.end_vert,
+                    self.angle, self.linedef,
+                    self.direction, self.offset                    
+                ) + 
+                "}")
+    
     
 SSECTOR_SIZE = 4
 # num_segs can likely be a single byte here, saving a byte
@@ -179,6 +216,12 @@ SSECTOR_FORMAT = """
 class SSector:
     num_segs: int
     first_seg: int
+    def write_c(self):
+        return (
+            "{" +
+            ".num_segs = {}, .first_seg = {}".format(self.num_segs, self.first_seg)
+            + "}"
+            )
 
 
 NODE_SIZE = 28
@@ -218,6 +261,28 @@ class Node:
     right_child: int
     left_child: int
 
+    def write_c(self):
+        return (
+            "{" +
+            """
+            .split_x = {}, .split_y = {},
+            .split_dx = {}, .split_dy = {},
+            .right_box_top = {}, right_box_bottom = {},
+            .right_box_left = {}, right_box_right = {},
+            .left_box_top = {}, left_box_bottom = {},
+            .left_box_left = {}, left_box_right = {},
+            .right_child = {}, .left_child = {}
+            """.format(
+                self.partition_x_coord, self.partition_y_coord,
+                self.dx, self.dy,
+                self.right_box_top, self.right_box_bottom,
+                self.right_box_left, self.right_box_right,
+                self.left_box_top, self.left_box_bottom,
+                self.left_box_left, self.left_box_right,
+                self.right_child, self.left_child
+            )
+            + "}"
+        )
 
 SECTOR_SIZE = 26
 # could save a byte in light_level and sector_special
@@ -240,6 +305,21 @@ class Sector:
     light_level: int
     sector_special: int
     sector_tag: int
+    def write_c(self):
+        return (
+            "{" +
+            """
+            .floor_height = {}, .ceil_height = {},
+            .floor_texture = "{}", .ceil_texture = "{}",
+            .light_level = {}, .sector_special = {},
+            .sector_tag = {}
+            """.format(self.floor_height, self.ceiling_height,
+                       self.floor_texture, self.ceil_texture,
+                       self.light_level, self.sector_special,
+                       self.sector_tag)
+            + "}"
+        )
+    
 
 THING_SIZE = 10
 # could save a byte on flags, and maybe save a byte on thing type
@@ -259,6 +339,13 @@ class Thing:
     angle: int
     thing_type: int
     flags: int
+
+    def write_c(self):
+        return ("{" +
+                ".x = {}, .y = {}, .angle = {}, .type = {}, .flags = {} ".format(
+                    self.x_pos, self.y_pos, self.angle, self.thing_type, self.flags
+                ) + "}")
+                
     
     
 def strip_zeros(s):
@@ -409,15 +496,13 @@ def read_level_data(level_dir):
     num_sectors = len(results['SECTORS'])
     reject_table_num_bits = num_sectors*num_sectors
     reject_table_num_bytes = math.ceil(reject_table_num_bits/8.0)
-
+    
     
     idx = level_dir['REJECT'].ptr
     reject_data = wad_data[idx:idx+reject_table_num_bytes]
 
     
     results['REJECT'] = reject_data
-    
-        
         
     
     return results
@@ -574,3 +659,25 @@ def read_wadfile(wadfile):
     
     return directory,is_doom_two
 
+def dump_level_data(output, level_data):
+    with open(output, 'w') as f:
+        size = 0
+        for thing in parse_things:
+            (name,typ,_,obj_size) = thing
+            objs = level_data[name]
+            num_objs = len(objs)
+            size += obj_size * num_objs
+            f.write("{} {}[{}] = ".format(name[0:-1].lower(), name.lower(), num_objs))
+            f.write("{\n")
+            for obj in objs:
+                f.write("    {},\n ".format(obj.write_c()))
+                
+            f.write("};\n\n")
+
+        size += len(level_data['REJECT'])
+        
+    print("dumped level with {} bytes to {}".format(size, output))
+            
+            
+    
+    

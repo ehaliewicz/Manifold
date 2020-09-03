@@ -65,9 +65,10 @@ def flip(stats_func=lambda : None):
     pygame.display.flip()
 
 level = None
+output = None
     
 def main():
-    global directory, level
+    global directory, level, output
     
     if len(sys.argv) == 1:
         wadfile = DEFAULT_WADFILE
@@ -77,17 +78,19 @@ def main():
     if len(sys.argv) > 2:
         level = sys.argv[2]
 
+    if len(sys.argv) > 3:
+        output = sys.argv[3]
+        
     directory, is_doom_two = wad.read_wadfile(wadfile)
 
-    raw_level = input("Enter map to load > ")
-    level = raw_level.strip()
     
-    #if not level:
-    #    if is_doom_two:
-    #        level = 'MAP24'
-    #    else:
-    #        level = 'E1M2'
+    if not level:
+        raw_level = input("Enter map to load > ")
+        level = raw_level.strip()
 
+    if not output:
+        raw_output = input("Enter file to dump map to > ")
+        output = raw_output.strip()
     
     level_data = directory[level+'_DATA']
     things = level_data['THINGS']
@@ -101,6 +104,10 @@ def main():
     
     clock = pygame.time.Clock()
     font = pygame.font.Font('freesansbold.ttf',14)
+
+    wad.dump_level_data(output, level_data)
+
+    
     
     while(True):
 
@@ -163,13 +170,9 @@ def main():
         persp_draw_surf.fill(BLACK)
         
         
-        #col = (255,255,255)
 
         
-
-
         draw.draw_stats.reset()
-
         
         
         nodes_traversed = 0
@@ -177,13 +180,14 @@ def main():
             nonlocal nodes_traversed
             nodes_traversed += 1
             #draw.draw_bsp_node(node, level, topdown_draw_surf, RED, draw_left=on_left, draw_right=(not on_left))
+
         ssect_callback = lambda ssect: None
         
-
+        
         cur_subsector = bsp.find_subsector_for_position(level_data,
                                                         draw.cam_x, draw.cam_y,
                                                         node_callback)
-
+        
         cur_sector_idx = wad.get_subsector_sector_idx(cur_subsector, level_data)
         cur_sector = level_data['SECTORS'][cur_sector_idx]
 
@@ -229,7 +233,7 @@ def main():
             def draw_font_line(st):
                 nonlocal line
                 text_surf = font.render(st, True, GREEN)
-                scale_surf.blit(text_surf, (0, line))
+                scale_surf.blit(text_surf, (1, line))
                 line += 15
 
             fps = clock.get_fps()
@@ -264,7 +268,7 @@ def main():
             
             print("seg normal angle: {}".format(draw_stats.seg_normal_angle))
 
-                                      
+            
             print("seg player dot product: {}".format(draw_stats.seg_dot_product))
             
             print("vec from player to seg v1: {}".format(draw_stats.seg_dv1))
