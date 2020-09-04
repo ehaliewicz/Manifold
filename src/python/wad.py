@@ -769,7 +769,11 @@ def dump_level_data(output, level_data):
                      .things = things,
                      .num_vertexes = {},
                      .vertexes = vertexes
-                     """ + "};\n")
+                     """.format(
+                         len(level_data['LINEDEFS']),
+                         len(level_data['SEGS']),
+                         len(level_data['VERTEXES'])
+                     ) + "};\n")
 
         f.write(level_def)
         size += len(level_data['REJECT'])

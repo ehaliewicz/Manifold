@@ -12184,15 +12184,15 @@ static const blockmap blkmap = {.x_origin = -776, .y_origin = -4872,
 };
 const level e1m1 = {
 
-                     .num_linedefs = {}
+                     .num_linedefs = 486
                      .linedefs = linedefs,
                      .nodes = nodes,
                      .sectors = sectors,
-                     .num_segs = {},
+                     .num_segs = 747,
                      .segs = segs,
                      .sidedefs = sidedefs,
                      .ssectors = ssectors,
                      .things = things,
-                     .num_vertexes = {},
+                     .num_vertexes = 470,
                      .vertexes = vertexes
                      };
