@@ -1,22 +1,39 @@
 #include <genesis.h>
 #include "fire.h"
+#include "game_mode.h"
+#include "graphics.h"
+#include "music.h"
 
-//u8 *fire_buf;
 
-//u8 byte_fire_lut[1024];
-u8 table_0[256];
-u8 table_1[256];
-u8 table_2[256];
-u16 table_0_shift[256];
-u16 table_1_shift[256];
-u16 table_2_shift[256];
+static u8* lookup_table_base;
+static u8* table_0;
+static u8* table_1;
+static u8* table_2;
+static u16* table_0_shift;
+static u16* table_1_shift;
+static u16* table_2_shift;
 
-//u16 shift_left[256];
-//u8 fire_tbl[256];
+
+void reset_scroll() {
+	for(int i = 0; i < 240; i++) {
+		s16 scroll = 0;
+		VDP_setHorizontalScrollLine(BG_B, i, &scroll, 1, CPU);
+		VDP_setHorizontalScrollLine(BG_A, i, &scroll, 1, CPU);
+	}
+}
 
 
 
 void init_fire_lut() {
+    // allocate 2.3 KB
+    lookup_table_base = MEM_alloc(256*9);
+    table_0 = lookup_table_base+(256*0);
+    table_1 = lookup_table_base+(256*1);
+    table_2 = lookup_table_base+(256*2);
+    table_0_shift = (u16*)(lookup_table_base+(256*3));
+    table_1_shift = (u16*)(lookup_table_base+(256*5));
+    table_1_shift = (u16*)(lookup_table_base+(256*7));
+
 	for(int i = 0; i <= 0xFF; i++) {
 		u8 h = (i >> 4) & 0xF;
 		u8 l = i & 0xF;
@@ -27,15 +44,8 @@ void init_fire_lut() {
 		u8 next_fire_2 = (h << 4 | next_l);
         u8 retain_fire =      (h << 4 | l);
 		
-        //fire_tbl[i] = next_fire_0;
         int rand_bits = random() & 0b11;
 
-        //byte_fire_lut[0b00 | i << 2] = retain_fire;
-
-        //byte_fire_lut[0b01 | i << 2] = next_fire_0;
-		//byte_fire_lut[0b10 | i << 2] = next_fire_1;
-		//byte_fire_lut[0b11 | i << 2] = next_fire_2;
-        
         table_0[i] = next_fire_0;
         table_1[i] = next_fire_1;
         table_2[i] = next_fire_2;
@@ -47,8 +57,6 @@ void init_fire_lut() {
 	}
 }
 
-#define BASE_FRAMEBUFFER_OFFSET (160-FIRE_HEIGHT)
-//(160-(FIRE_HEIGHT*2))
 
 
 void start_fire_source() {	
@@ -81,15 +89,6 @@ const u16 fire_cols[16] = {
 	RGB24_TO_VDPCOLOR(0xFFFFFF)
 };
 
-void init_fire() {
-	init_fire_lut();
-
-    //fire_buf = MEM_alloc(FIRE_WIDTH * FIRE_HEIGHT);
-	//memset(fire_buf, 0, FIRE_WIDTH*FIRE_HEIGHT);
-    //memset(fire_skip_cache, FIRE_HEIGHT-2, FIRE_WIDTH);
-
-	VDP_setPalette(PAL1, fire_cols);
-}
 
 #define NUM_RANDS ((FIRE_WIDTH*FIRE_HEIGHT)>>4)+1
 
@@ -326,89 +325,6 @@ void spread_and_draw_fire_byte() {
 }
 
         
-        /*
-		*/
-        
-        /*
-        switch(rand_bits & 0b111) { 
-            case 0b000: 
-                fire_0 = *src_ptr++;
-                fire_1 = *src_ptr++;
-                *(dst_ptr-1) = fire_0;
-                *dst_ptr++ = fire_1;
-                dst_ptr++;
-                break;
-            case 0b001:
-                src_ptr++;
-                fire_1 = *src_ptr++;
-                *dst_ptr++ = fire_1;
-                dst_ptr++;
-                break;
-            case 0b010:
-                src_ptr++;
-                fire_1 = *src_ptr++;
-                dst_ptr++;
-                *dst_ptr++ = table_0[fire_1];
-                break;
-            case 0b011:
-                fire_0 = *src_ptr++;
-                fire_1 = *src_ptr++;
-                dst_ptr++;
-                *dst_ptr++ = table_0[fire_1];
-                *dst_ptr = table_2[fire_0];
-                break;
-            case 0b100:
-                fire_0 = *src_ptr++;
-                fire_1 = *src_ptr++;
-                *(dst_ptr-1) = fire_0;
-                dst_ptr += 2;
-                *dst_ptr = table_1[fire_1];
-                break;
-            case 0b101:
-                fire_0 = *src_ptr++;
-                fire_1 = *src_ptr++;
-                *dst_ptr++ = table_0[fire_0];
-                dst_ptr++;
-                *dst_ptr = table_2[fire_1];
-                break;
-            case 0b110:
-                fire_0 = *src_ptr++;
-                fire_1 = *src_ptr++;
-                dst_ptr++;
-                *dst_ptr++ = table_1[fire_0];
-                *(dst_ptr+1) = table_2[fire_1];
-                break;
-            case 0b111:
-                fire_0 = *src_ptr++;
-                fire_1 = *src_ptr++;
-                dst_ptr += 2;
-                *((u16*)dst_ptr) = table_2_shift[fire_0] | table_2[fire_1];
-                break;
-        }*/
-        /*
-		for(int x = 0; x < FIRE_WIDTH;) {
-
-            u8 fire = *src_ptr++;
-            u8 next_fire = 0;
-            u8 rand_bits = (r & rand_mask);
-            
-            // index lookup table with random bits added
-            next_fire = byte_fire_lut[(fire<<2) | rand_bits];
-
-            *(dst_ptr+rand_bits) = next_fire;
-            dst_ptr++;
-
-								
-            r >>= 1;
-            bits--;          
-            if(bits == 0) {
-                r = *rptr++;
-                bits = 16;
-            }
-            x++;
-		}
-        */
-        
         
     
 
@@ -426,54 +342,112 @@ const s16 scrolls[128] = {
 
 
 
+static int cur_scroll_fixed;
+static const int dscroll = 0b100;
 
-void scroll_fire_a() {
-	static int scroll_idx = 0;
-	int lines = FIRE_HEIGHT*2;
+static int fire_running = 0;
+static int fire_frame = 0;
+static int fire_hidden = 0;
 
-	int pos = scroll_idx;
-	int y_pos = 64+32;
-	while(lines) {
-		int scrolls_remaining = num_scrolls - pos;
-		if(lines <= scrolls_remaining) {
-			VDP_setHorizontalScrollLine(BG_A, y_pos, &scrolls[pos % num_scrolls], lines, DMA);
-			break;
-		} else {
-			VDP_setHorizontalScrollLine(BG_A, y_pos, &scrolls[pos % num_scrolls], scrolls_remaining, DMA);
-			y_pos += scrolls_remaining;
-			pos = 0;
-			lines -= scrolls_remaining;
-		}
-	}
 
-	scroll_idx++;
-	if(scroll_idx >= num_scrolls) {
-		scroll_idx = 0;
-	}
+static Sprite* fire_spr;
+static Sprite* spr2;
+static Sprite* spr3;
+
+void init_fire() {
+    XGM_startPlay(xgm_e2m2);
+
+	SYS_disableInts();
+	VDP_setBackgroundColor(3);
+
+	cur_scroll_fixed = -220<<2;
+
+	VDP_setScrollingMode(HSCROLL_LINE, VSCROLL_PLANE);
+	VDP_setVerticalScroll(BG_B, cur_scroll_fixed>>2);
+	VDP_setVerticalScroll(BG_A, 0);
+
+    
+
+	BMP_init(0, BG_A, PAL1, 0);
+	SPR_init();
+
+	fire_spr = SPR_addSpriteExSafe(&fire_fixup,       256-32, 183, TILE_ATTR(1, 1, 0, 0), 0, (SPR_FLAG_FAST_AUTO_VISIBILITY | SPR_FLAG_AUTO_SPRITE_ALLOC));
+	spr2 = SPR_addSpriteExSafe(&bottom_line_cover,    70, 184, TILE_ATTR(0, 1, 0, 0), 0, (SPR_FLAG_FAST_AUTO_VISIBILITY | SPR_FLAG_AUTO_SPRITE_ALLOC));
+	spr3 = SPR_addSpriteExSafe(&bottom_line_cover, 70+96, 184, TILE_ATTR(0, 1, 0, 0), 0, (SPR_FLAG_FAST_AUTO_VISIBILITY | SPR_FLAG_AUTO_SPRITE_ALLOC));
+	SPR_setVisibility(fire_spr, VISIBLE);
+	SPR_setVisibility(spr2, VISIBLE);
+	SPR_setVisibility(spr3, VISIBLE);
+
+	VDP_drawImageEx(BG_B, &doom_logo, 0x0360, 8, 0, 1, 1);
+
+	const int fire_fix_vram_addr = 0x300;
+	const int bkgd_cover_vram_addr = 0x304;
+	VDP_loadTileSet(fire_fixup.animations[0]->frames[0]->tileset, fire_fix_vram_addr, CPU);
+	VDP_loadTileSet(bottom_line_cover.animations[0]->frames[0]->tileset, bkgd_cover_vram_addr, CPU);
+
+	SPR_setVRAMTileIndex(fire_spr, fire_fix_vram_addr);
+	SPR_setVRAMTileIndex(spr2, bkgd_cover_vram_addr);
+	SPR_setVRAMTileIndex(spr3, bkgd_cover_vram_addr);
+
+	start_fire_source();
+	BMP_setBufferCopy(0);
+	reset_scroll();
+
+	VDP_setPalette(PAL1, fire_cols);
+	SYS_enableInts();
+
+
+	init_fire_lut();
+    fire_running = 1;
+    fire_frame = 0;
+
+    SPR_update();
+
 }
 
+game_mode run_fire() {
+    fire_frame++;
 
-void scroll_fire_b() {
-	static int scroll_idx = 0;
-	int lines = FIRE_HEIGHT-8;
+    if(fire_running) {
+        BMP_waitWhileFlipRequestPending();
+        //BMP_waitFlipComplete();
 
-	int pos = scroll_idx;
-	int y_pos = 64+40;
-	while(lines) {
-		int scrolls_remaining = num_scrolls - pos;
-		if(lines <= scrolls_remaining) {
-			VDP_setHorizontalScrollLine(BG_B, y_pos, &scrolls[pos % num_scrolls], lines, DMA);
-			break;
-		} else {
-			VDP_setHorizontalScrollLine(BG_B, y_pos, &scrolls[pos % num_scrolls], scrolls_remaining, DMA);
-			y_pos += scrolls_remaining;
-			pos = 0;
-			lines -= scrolls_remaining;
-		}
-	}
+        spread_and_draw_fire_byte();
+        BMP_flipPartial(1, 12);
+        copy_fire_buffer_portion();
+    }
 
-	scroll_idx++;
-	if(scroll_idx >= num_scrolls) {
-		scroll_idx = 0;
-	}
+
+    cur_scroll_fixed += dscroll;
+    int cur_scroll = cur_scroll_fixed>>2;
+    
+    if(cur_scroll < -45) {
+        VDP_setVerticalScroll(BG_B, cur_scroll);
+    } else if (fire_running && !fire_hidden) {
+        SPR_setVisibility(fire_spr, HIDDEN);
+        //SPR_setVisibility(spr2, HIDDEN);
+        //SPR_setVisibility(spr3, HIDDEN);
+        SPR_update();
+        clear_fire_source();
+        fire_hidden = 1;
+        //run_fire = 0;
+    }
+
+
+    if(fire_frame == 290) {
+        fire_running = 0;
+        SPR_end();
+        BMP_clear();
+        BMP_flipPartial(0, 12);
+    } else if (fire_frame == 291) {
+        return MAIN_MENU;
+    }
+
+    return SAME_MODE;
+}
+
+void cleanup_fire() {
+    MEM_free(lookup_table_base);
+    BMP_end();
+    MEM_pack();
 }
