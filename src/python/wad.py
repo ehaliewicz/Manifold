@@ -1,6 +1,7 @@
 import copy, math, os, pickle, re, sys, struct
 from dataclasses import dataclass
 import BitVector
+from typing import List
 
 wad_data = None
 num_directory_entries = None
@@ -233,13 +234,13 @@ NODE_FORMAT = """
   dx                   short ;
   dy                   short ;
   right_box_top        short ;
-  .right_box_bottom     short ;
+  right_box_bottom     short ;
   right_box_left       short ;
-  .right_box_right      short ;
+  right_box_right      short ;
   left_box_top         short ;
-  .left_box_bottom      short ;
+  left_box_bottom      short ;
   left_box_left        short ;
-  .left_box_right       short ;
+  left_box_right       short ;
   right_child unsigned_short ;
   left_child  unsigned_short
 """
@@ -251,13 +252,13 @@ class Node:
     dx: int
     dy: int
     right_box_top: int
-    .right_box_bottom: int
+    right_box_bottom: int
     right_box_left: int
-    .right_box_right: int
+    right_box_right: int
     left_box_top: int
-    .left_box_bottom: int
+    left_box_bottom: int
     left_box_left: int
-    .left_box_right: int
+    left_box_right: int
     right_child: int
     left_child: int
 
@@ -270,15 +271,15 @@ class Node:
             .right_box_top = {}, .right_box_bottom = {},
             .right_box_left = {}, .right_box_right = {},
             .left_box_top = {}, .left_box_bottom = {},
-            .left_box_left = {}, ..left_box_right = {},
+            .left_box_left = {}, .left_box_right = {},
             .right_child = {}, .left_child = {}
             """.format(
                 self.partition_x_coord, self.partition_y_coord,
                 self.dx, self.dy,
-                self.right_box_top, self..right_box_bottom,
-                self.right_box_left, self..right_box_right,
-                self.left_box_top, self..left_box_bottom,
-                self.left_box_left, self..left_box_right,
+                self.right_box_top, self.right_box_bottom,
+                self.right_box_left, self.right_box_right,
+                self.left_box_top, self.left_box_bottom,
+                self.left_box_left, self.left_box_right,
                 self.right_child, self.left_child
             )
             + "}"
@@ -346,8 +347,70 @@ class Thing:
                     self.x_pos, self.y_pos, self.angle, self.thing_type, self.flags
                 ) + "}")
                 
+
+@dataclass
+class Blockmap:
+    x_origin: int
+    y_origin: int
+    num_columns: int
+    num_rows: int
+    num_offsets: int
+    offsets: List[int]
+    table: List[int]
+
+    def write_c(self):
+        num_cols = self.num_columns
+        num_offs = self.num_offsets
+        
+        chunked_offsets = [self.offsets[i:i+num_cols] for i in range(0, num_offs, num_cols)]
+        chunked_str_offsets = [", ".join([str(off) for off in chk]) for chk in chunked_offsets] 
+        chunked_table = [self.table[i:i+10] for i in range(0, len(self.table), 10)]
+        chunked_str_table = [", ".join([str(entry) for entry in chk]) for chk in chunked_table]
+        
+        joined_offsets = ",\n".join(chunked_str_offsets)
+        joined_table = ",\n".join(chunked_str_table)
+        
+        return ("{" +
+                """.x_origin = {}, .y_origin = {}, 
+                .num_columns = {}, .num_rows = {}, .num_offsets = {},
+                .offsets_plus_table = """.format(
+                    self.x_origin, self.y_origin,
+                    self.num_columns, self.num_rows, self.num_offsets,
+                ) + "{\n" +
+                joined_offsets + ",\n\n" + joined_table + 
+                "\n}" + 
+                "}")
+
+def read_blockmap(blockmap_dir, wad_data):
+    print("reading blockmap from wad")
+    print(blockmap_dir)
+    
+
+    cur_idx = blockmap_dir.ptr
+    (x_org, y_org, num_cols, num_rows) = struct.unpack_from('hhHH', wad_data, cur_idx)
+    cur_idx += 8
+    
+    num_offs = num_cols*num_rows
+    offsets_bytes = num_offs*2
+    
+    blockmap_table_bytes = blockmap_dir.size - (num_offs*2)
+    blockmap_table_entries = blockmap_table_bytes//2
+    
+    offsets_fmt_string = ('H' * num_offs)
+
+    offsets = [off-4 for off in (struct.unpack_from(offsets_fmt_string, wad_data, cur_idx))]
+    cur_idx += offsets_bytes
+
+    table_fmt_string = ('H' * blockmap_table_entries)
+    table = list(struct.unpack_from(table_fmt_string, wad_data, cur_idx))
+
+    return Blockmap(x_origin=x_org, y_origin=y_org,
+                    num_columns=num_cols, num_rows=num_rows,
+                    num_offsets=num_offs, offsets=offsets,
+                    table=table)
     
     
+                
 def strip_zeros(s):
     i = s.find(b'\x00')
     if i == -1:
@@ -368,11 +431,12 @@ def compile_format_string(fmt):
     
     
     struct_fmt = '<'
-    format_map = {'short': ('h', 2),
-          'unsigned_short': ('H', 2),
-          'int':  ('i', 4),
-          'unsigned_int': ('I', 4),
-          'char[8]': ('8s', 8)}
+    format_map = {
+        'short': ('h', 2),
+        'unsigned_short': ('H', 2),
+        'int':  ('i', 4),
+        'unsigned_int': ('I', 4),
+        'char[8]': ('8s', 8)}
     
     type_map = {'short': int,
                 'unsigned_short': int,
@@ -503,7 +567,11 @@ def read_level_data(level_dir):
 
     
     results['REJECT'] = reject_data
-        
+
+    level_dir['BLOCKMAP']
+    results['BLOCKMAP'] = read_blockmap(level_dir['BLOCKMAP'], wad_data)
+    
+    #sys.exit(1)
     
     return results
 
@@ -644,13 +712,16 @@ def read_wadfile(wadfile):
         total_unoptimized_size += full_size
 
         directory["{}_DATA".format(level_name)] = level_data
+        #print("{} unoptimized size {}".format(level_name, full_size))
+        #print("{} optimized size {}".format(level_name, optimized_size))
         
-        #total_optimized_size += optimized_size
+        
+        total_optimized_size += optimized_size
         print('.', end='', flush=True)
     print("")
 
     print("total unoptimized size: {}".format(total_unoptimized_size))
-    #print("total optimized size: {}".format(total_optimized_size))
+    print("total optimized size: {}".format(total_optimized_size))
     
     if not cachefile_exists:
         print("Saving WAD")
@@ -660,20 +731,47 @@ def read_wadfile(wadfile):
     return directory,is_doom_two
 
 def dump_level_data(output, level_data):
+    if '.c' in output:
+        output_level_name = output.split(".c")[0]
+    else:
+        output_level_name = output
+        
     with open(output, 'w') as f:
+        f.write("#include \"level.h\"\n")
         size = 0
         for thing in parse_things:
             (name,typ,_,obj_size) = thing
             objs = level_data[name]
             num_objs = len(objs)
             size += obj_size * num_objs
-            f.write("{} {}[{}] = ".format(name[0:-1].lower(), name.lower(), num_objs))
+            
+            type_name = name[0:-2] if name == 'VERTEXES' else name[0:-1]
+            f.write("static const {} {}[{}] = ".format(type_name.lower(), name.lower(), num_objs))
             f.write("{\n")
             for obj in objs:
                 f.write("    {},\n ".format(obj.write_c()))
                 
             f.write("};\n\n")
 
+        f.write("static const blockmap blkmap = " + level_data['BLOCKMAP'].write_c() + "\n};\n")
+        
+
+        level_def = ("const level {}".format(output_level_name) + " = {\n" +
+                     """
+                     .num_linedefs = {}
+                     .linedefs = linedefs,
+                     .nodes = nodes,
+                     .sectors = sectors,
+                     .num_segs = {},
+                     .segs = segs,
+                     .sidedefs = sidedefs,
+                     .ssectors = ssectors,
+                     .things = things,
+                     .num_vertexes = {},
+                     .vertexes = vertexes
+                     """ + "};\n")
+
+        f.write(level_def)
         size += len(level_data['REJECT'])
         
     print("dumped level with {} bytes to {}".format(size, output))
