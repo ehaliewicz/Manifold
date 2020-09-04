@@ -180,12 +180,7 @@ def clear_col_buffer():
     min_y_buffer = [0 for x in range(DRAW_WIDTH)]
     max_y_buffer = [DRAW_HEIGHT-1 for x in range(DRAW_WIDTH)]
     
-
-
-
-    
-
-                    
+               
 
 
 BACKFACE_CULLED = 'bface'
@@ -195,10 +190,6 @@ TRANSFORMED_WITH_NO_ONSCREEN_PIXELS = 'transformed_with_no_onscreen_pixels'
 
 WHITE = (255,255,255)
 GREEN = (  0,255,  0)
-
-
-
-
 
 
 
@@ -809,15 +800,15 @@ def draw_bsp_node(node, node_depth, surf, color=None, draw_left=True, draw_right
     if not color:
         color = bsp_depth_color(node_depth)
     lv1 = (node.left_box_left, node.left_box_top)
-    lv2 = (node.left_box_right, node.left_box_top)
-    lv3 = (node.left_box_right, node.left_box_bottom)
-    lv4 = (node.left_box_left, node.left_box_bottom)
+    lv2 = (node..left_box_right, node.left_box_top)
+    lv3 = (node..left_box_right, node..left_box_bottom)
+    lv4 = (node.left_box_left, node..left_box_bottom)
 
     
     rv1 = (node.right_box_left, node.right_box_top)
-    rv2 = (node.right_box_right, node.right_box_top)
-    rv3 = (node.right_box_right, node.right_box_bottom)
-    rv4 = (node.right_box_left, node.right_box_bottom)
+    rv2 = (node..right_box_right, node.right_box_top)
+    rv3 = (node..right_box_right, node..right_box_bottom)
+    rv4 = (node.right_box_left, node..right_box_bottom)
 
     # disabled: draw bounding boxes
     if draw_left:

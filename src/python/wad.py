@@ -233,13 +233,13 @@ NODE_FORMAT = """
   dx                   short ;
   dy                   short ;
   right_box_top        short ;
-  right_box_bottom     short ;
+  .right_box_bottom     short ;
   right_box_left       short ;
-  right_box_right      short ;
+  .right_box_right      short ;
   left_box_top         short ;
-  left_box_bottom      short ;
+  .left_box_bottom      short ;
   left_box_left        short ;
-  left_box_right       short ;
+  .left_box_right       short ;
   right_child unsigned_short ;
   left_child  unsigned_short
 """
@@ -251,13 +251,13 @@ class Node:
     dx: int
     dy: int
     right_box_top: int
-    right_box_bottom: int
+    .right_box_bottom: int
     right_box_left: int
-    right_box_right: int
+    .right_box_right: int
     left_box_top: int
-    left_box_bottom: int
+    .left_box_bottom: int
     left_box_left: int
-    left_box_right: int
+    .left_box_right: int
     right_child: int
     left_child: int
 
@@ -267,18 +267,18 @@ class Node:
             """
             .split_x = {}, .split_y = {},
             .split_dx = {}, .split_dy = {},
-            .right_box_top = {}, right_box_bottom = {},
-            .right_box_left = {}, right_box_right = {},
-            .left_box_top = {}, left_box_bottom = {},
-            .left_box_left = {}, left_box_right = {},
+            .right_box_top = {}, .right_box_bottom = {},
+            .right_box_left = {}, .right_box_right = {},
+            .left_box_top = {}, .left_box_bottom = {},
+            .left_box_left = {}, ..left_box_right = {},
             .right_child = {}, .left_child = {}
             """.format(
                 self.partition_x_coord, self.partition_y_coord,
                 self.dx, self.dy,
-                self.right_box_top, self.right_box_bottom,
-                self.right_box_left, self.right_box_right,
-                self.left_box_top, self.left_box_bottom,
-                self.left_box_left, self.left_box_right,
+                self.right_box_top, self..right_box_bottom,
+                self.right_box_left, self..right_box_right,
+                self.left_box_top, self..left_box_bottom,
+                self.left_box_left, self..left_box_right,
                 self.right_child, self.left_child
             )
             + "}"

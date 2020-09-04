@@ -1,8 +1,8 @@
 #include <genesis.h>
 #include "fire.h"
 #include "game_mode.h"
-#include "graphics.h"
-#include "music.h"
+#include "graphics_res.h"
+#include "music_res.h"
 
 
 static u8* lookup_table_base;

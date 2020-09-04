@@ -19,8 +19,8 @@ typedef struct {
     void (*clean_up)();
 } mode;
 
-game_mode cur_game_mode;
+extern game_mode cur_game_mode;
 void run_game_mode();
-
+void set_game_mode(game_mode md);
 
 #endif

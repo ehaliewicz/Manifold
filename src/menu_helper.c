@@ -1,5 +1,6 @@
 #include <genesis.h>
 #include "menu_helper.h"
+#include "joy_helper.h"
 
 int cur_line;
 
@@ -8,7 +9,7 @@ void reset_menu_frame() {
 }
 
 void draw_line(char* txt) { 
-    VDP_drawTextBG(BG_A, txt, 10, cur_line);
+    VDP_drawTextBG(BG_A, txt, 15, cur_line);
     cur_line += 2;
 }
 
@@ -17,25 +18,27 @@ void init_menu_state(menu* m, menu_state* s) {
     s->cur_item = 0;
 }
 
-void clear_menu(menu* m) {
-    reset_menu_frame();
-    draw_line("                                        ");
-    for(int i = 0; i < m->num_items; i++) {
-        draw_line("                                        ");
+void clear_menu() {
+    cur_line = 0;
+    for(int i = 0; i < 240/8; i++) {
+        VDP_drawText("                                        ", 0, i);
     }
-    reset_menu_frame();
 }
 
 void run_menu(menu_state* st) {
-
-    cur_line = 0;
 
     menu* cur_menu = st->cur_menu;
     int cur_item = st->cur_item;
     menu* prev_menu = st->prev_menu;
 
 
-    reset_menu_frame();
+    int max_lines = 30;
+    int num_lines = cur_menu->num_items*2;
+    int diff = max_lines - num_lines;
+    int start_off = diff/2;
+
+    cur_line = start_off;
+
     draw_line(cur_menu->header_text);
 
     char buf[40];

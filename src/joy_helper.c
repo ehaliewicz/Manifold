@@ -7,7 +7,9 @@ int joy_button_newly_pressed(u16 button) {
 	return (JOY_readJoypad(JOY_1) & button) && (!(button & last_joy));
 }
 
-
+int joy_button_held(u16 button) {
+    return (JOY_readJoypad(JOY_1) & button);
+}
 
 void update_joy() {
     last_joy = JOY_readJoypad(JOY_1);

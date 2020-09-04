@@ -28,6 +28,7 @@ void init_menu_state(menu* m, menu_state* st);
 
 void run_menu(menu_state* st);
 
+#define MAX_MENU_ITEMS 14
 
 
 #endif

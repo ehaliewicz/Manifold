@@ -54,14 +54,14 @@ def bsp_child_onscreen(node, left_child=True):
     
     if left_child:
         v1 = (node.left_box_left, node.left_box_top)
-        v2 = (node.left_box_right, node.left_box_top)
-        v3 = (node.left_box_right, node.left_box_bottom)
-        v4 = (node.left_box_left, node.left_box_bottom)
+        v2 = (node..left_box_right, node.left_box_top)
+        v3 = (node..left_box_right, node..left_box_bottom)
+        v4 = (node.left_box_left, node..left_box_bottom)
     else:
         v1 = (node.right_box_left, node.right_box_top)
-        v2 = (node.right_box_right, node.right_box_top)
-        v3 = (node.right_box_right, node.right_box_bottom)
-        v4 = (node.right_box_left, node.right_box_bottom)
+        v2 = (node..right_box_right, node.right_box_top)
+        v3 = (node..right_box_right, node..right_box_bottom)
+        v4 = (node.right_box_left, node..right_box_bottom)
 
 
     return draw.bbox_on_screen(v1,v2,v3,v4)

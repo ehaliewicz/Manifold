@@ -4,7 +4,7 @@
 #include "sfx.h"
 #include "music.h"
 
-int launch_new_mode = 0;
+static int launch_new_mode = 0;
 game_mode target_mode;
 
 void go_to_credits() {
@@ -34,7 +34,7 @@ menu level_select_menu = {
     .header_text = "Level select",
     .num_items = 1,
     .items = {
-        {.text = "E1M1", .submenu = NULL, .select = go_to_e1m1},
+        {.text = "E1M1", .submenu = NULL, .select = &go_to_e1m1},
     }
 };
 
@@ -70,11 +70,13 @@ menu main_menu = {
 menu_state main_menu_state;
 
 void init_main_menu() {
+    launch_new_mode = 0;
     init_menu_state(&main_menu, &main_menu_state);
 }
 
 
 game_mode run_main_menu() {
+    launch_new_mode = 0;
     run_menu(&main_menu_state);
     if(launch_new_mode) {
         return target_mode;
