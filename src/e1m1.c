@@ -11891,6 +11891,7 @@ const sector sectors[88] = {
 
 const level e1m1 = {
        .things = things,
+       .num_linedefs = 486,
        .linedefs = linedefs,
        .sidedefs = sidedefs,
        .num_vertexes = 470,

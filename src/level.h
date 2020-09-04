@@ -11,6 +11,7 @@
 #include "vertex.h"
 
 typedef struct {
+    const int num_linedefs;
     const linedef* linedefs;
     const node* nodes;
     const sector* sectors;

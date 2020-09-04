@@ -38,10 +38,22 @@ game_mode run_game() {
     
     Line l = {.col = 0xFF};
 
-    for(int i = 0; i < cur_level->num_segs; i++) {
-        seg cur_seg = cur_level->segs[i];
-        vertex v1 = cur_level->vertexes[cur_seg.begin_vert];
-        vertex v2 = cur_level->vertexes[cur_seg.end_vert];
+    // inverse project coordinates
+    const int zoom = 4;
+    const fix32 halfWidth = intToFix32(BMP_WIDTH)>>1;
+    const fix32 halfHeight = intToFix32(BMP_HEIGHT)>>1y
+
+    fix32 screen_left = (cur_player_x-halfWidth)*zoom;
+    fix32 screen_right = (cur_player_x+halfWidth)*zoom;
+    fix32 screen_top = (cur_player_y-halfWidth)*zoom;
+    fix32 screen_bot = (cur_player_y-halfheight)*zoom;
+    int cur_player_x*zoom - BMP_WIDTH/2;
+    int cur_player_y*zoom - BMP_HEIGHT/2;
+
+    for(int i = 0; i < cur_level->num_linedefs; i++) {
+        linedef line = cur_level->linedefs[i];
+        vertex v1 = cur_level->vertexes[line.v1];
+        vertex v2 = cur_level->vertexes[line.v2];
 
         fix32 tl1x = (intToFix32(v1.x) - cur_player_x);
         fix32 tl1y = (intToFix32(v1.y) - cur_player_y);
@@ -56,10 +68,10 @@ game_mode run_game() {
         fix32 r2x = fix32Mul(tl2x, c) - fix32Mul(tl2y, s);
         fix32 r2y = fix32Mul(tl2x, s) + fix32Mul(tl2y, c);
 
-        s16 tr1x = fix32ToInt(r1x>>3 + intToFix32(BMP_WIDTH/2));
-        s16 tr1y = fix32ToInt(r1y>>3 + intToFix32(BMP_HEIGHT/2));
-        s16 tr2x = fix32ToInt(r2x>>3 + intToFix32(BMP_WIDTH/2));
-        s16 tr2y = fix32ToInt(r2y>>3 + intToFix32(BMP_HEIGHT/2));
+        s16 tr1x = fix32ToInt(r1x/zoom + intToFix32(BMP_WIDTH/2));
+        s16 tr1y = fix32ToInt(r1y/zoom + intToFix32(BMP_HEIGHT/2));
+        s16 tr2x = fix32ToInt(r2x/zoom + intToFix32(BMP_WIDTH/2));
+        s16 tr2y = fix32ToInt(r2y/zoom + intToFix32(BMP_HEIGHT/2));
         //s16 tr1x = fix32ToInt(tl1x) + BMP_WIDTH/2;
         //s16 tr1y = fix32ToInt(tl1y) + BMP_HEIGHT/2;
         //s16 tr2x = fix32ToInt(tl2x) + BMP_WIDTH/2;
