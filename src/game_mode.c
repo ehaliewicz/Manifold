@@ -8,8 +8,7 @@ void print_invalid_mode();
 
 mode modes[6] = {
     {.name = "invalid mode", .start_up = &print_invalid_mode},
-    //{.name = "INTRO", .start_up = &init_fire, .clean_up = &cleanup_fire, .run = &run_fire},
-    {.name = "invalid mode", .start_up = &print_invalid_mode},
+    {.name = "INTRO", .start_up = &init_fire, .clean_up = &cleanup_fire, .run = &run_fire},
     {.name = "MAIN_MENU", .start_up = &init_main_menu, .clean_up = &cleanup_main_menu, .run = &run_main_menu},
     {.name = "IN_GAME", .start_up = &init_game, .clean_up = &cleanup_game, .run = &run_game},
     {.name = "PAUSE_MENU", .start_up = &print_invalid_mode},

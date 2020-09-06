@@ -12194,5 +12194,6 @@ const level e1m1 = {
                      .ssectors = ssectors,
                      .things = things,
                      .num_vertexes = 470,
-                     .vertexes = vertexes
+                     .vertexes = vertexes,
+                     .blockmap = blkmap
                      };

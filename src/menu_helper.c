@@ -9,7 +9,7 @@ void reset_menu_frame() {
 }
 
 void draw_line(char* txt) { 
-    VDP_drawTextBG(BG_A, txt, 15, cur_line);
+    VDP_drawTextBG(BG_A, txt, 12, cur_line);
     cur_line += 2;
 }
 

@@ -1,6 +1,9 @@
 #ifndef LEVEL_H
 #define LEVEL_H
 
+#include <genesis.h>
+
+#include "blockmap.h"
 #include "linedef.h"
 #include "node.h"
 #include "sector.h"
@@ -9,6 +12,8 @@
 #include "ssector.h"
 #include "thing.h"
 #include "vertex.h"
+
+
 
 typedef struct {
     const int num_linedefs;
@@ -22,6 +27,7 @@ typedef struct {
     const thing* things;
     const int num_vertexes;
     const vertex* vertexes;
+    const blockmap* blkmap;
 } level;
 
 extern const level* cur_level;

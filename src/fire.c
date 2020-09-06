@@ -2,6 +2,7 @@
 #include "fire.h"
 #include "game_mode.h"
 #include "graphics_res.h"
+#include "joy_helper.h"
 #include "music_res.h"
 
 
@@ -404,39 +405,45 @@ void init_fire() {
     SPR_update();
 
 }
-
 game_mode run_fire() {
     fire_frame++;
 
     if(fire_running) {
         BMP_waitWhileFlipRequestPending();
-        //BMP_waitFlipComplete();
 
         spread_and_draw_fire_byte();
         BMP_flipPartial(1, 12);
         copy_fire_buffer_portion();
     }
 
-
-    cur_scroll_fixed += dscroll;
-    int cur_scroll = cur_scroll_fixed>>2;
     
+    int skip = joy_button_newly_pressed(BUTTON_START);
+    if(skip) {
+        fire_frame = 180;
+        cur_scroll_fixed = -46<<2;
+    } else {
+        cur_scroll_fixed += dscroll;
+    }
+    
+    int cur_scroll = cur_scroll_fixed>>2;
+
+
     if(cur_scroll < -45) {
         VDP_setVerticalScroll(BG_B, cur_scroll);
     } else if (fire_running && !fire_hidden) {
         SPR_setVisibility(fire_spr, HIDDEN);
-        //SPR_setVisibility(spr2, HIDDEN);
-        //SPR_setVisibility(spr3, HIDDEN);
         SPR_update();
         clear_fire_source();
         fire_hidden = 1;
-        //run_fire = 0;
+    }
+
+    if(fire_hidden && skip) {
+        fire_frame = 290;
     }
 
 
     if(fire_frame == 290) {
         fire_running = 0;
-        SPR_end();
         BMP_clear();
         BMP_flipPartial(0, 12);
     } else if (fire_frame == 291) {
@@ -447,7 +454,12 @@ game_mode run_fire() {
 }
 
 void cleanup_fire() {
+    SPR_releaseSprite(fire_spr);
+    SPR_releaseSprite(spr2);
+    SPR_releaseSprite(spr3);
+    SPR_end();
     MEM_free(lookup_table_base);
     BMP_end();
+    VDP_clearPlane(BG_B, 1);
     MEM_pack();
 }

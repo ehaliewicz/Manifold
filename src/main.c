@@ -6,11 +6,7 @@
 
 int main() {
 
-
-	char buf[40];
-
-	//set_game_mode(INTRO);
-	set_game_mode(MAIN_MENU);
+	set_game_mode(INTRO);
 
 	while(1) {        
 
