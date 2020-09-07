@@ -7,26 +7,29 @@ typedef struct menu menu;
 
 typedef struct {
     char* text;
-    menu* submenu;
+    const menu* submenu;
     void (*select)();
     char* (*render)();
+    int selectable;
 } menu_item;
 
 struct menu {
     char* header_text;
     int num_items;
-    menu_item items[];
+    const menu_item items[];
 };
 
 typedef struct {
-    menu* cur_menu;
+    const menu* cur_menu;
     int cur_item;
-    menu* prev_menu;
+    const menu* prev_menu;
 } menu_state;
 
-void init_menu_state(menu* m, menu_state* st);
+void init_menu_state(const menu* m, menu_state* st);
 
 void run_menu(menu_state* st);
+
+void clear_menu();
 
 #define MAX_MENU_ITEMS 14
 

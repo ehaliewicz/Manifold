@@ -9,13 +9,25 @@ void reset_menu_frame() {
 }
 
 void draw_line(char* txt) { 
-    VDP_drawTextBG(BG_A, txt, 12, cur_line);
+    int num_chars = strlen(txt);
+    int diff = 40 - num_chars;
+
+    VDP_drawTextBG(BG_A, txt, (diff/2)-1, cur_line); // 12
     cur_line += 2;
 }
 
-void init_menu_state(menu* m, menu_state* s) {
+int find_first_selectable_item(menu* m) {
+    for(int i = 0; i < m->num_items; i++) {
+        if(m->items[i].selectable) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+void init_menu_state(const menu* m, menu_state* s) {
     s->cur_menu = m;
-    s->cur_item = 0;
+    s->cur_item = find_first_selectable_item(m);
 }
 
 void clear_menu() {
@@ -46,36 +58,36 @@ void run_menu(menu_state* st) {
     for(int i = 0; i < cur_menu->num_items; i++) {
         menu_item* rend_item = &(cur_menu->items[i]);
         char* rend_str = (rend_item->render == NULL ? "" : rend_item->render());
-        if(cur_item == i) {
-            sprintf(buf, "> %s %s", rend_item->text, rend_str);
-        } else {
-            sprintf(buf, "  %s %s", cur_menu->items[i].text, rend_str);
-        }
+        char* cursor = (cur_item == i) ? ">" : " ";
+       
+        sprintf(buf, "%s %s %s", cursor, rend_item->text, rend_str);
         draw_line(buf);
     }
 
 
-    if(joy_button_newly_pressed(BUTTON_UP)) {
+    if(joy_button_newly_pressed(BUTTON_UP) && (cur_item != -1))  {
         cur_item = ((st->cur_item == 0) ? cur_item : cur_item-1);
-    } else if (joy_button_newly_pressed(BUTTON_DOWN)) {
+    } else if (joy_button_newly_pressed(BUTTON_DOWN) && (cur_item != -1)) {
         cur_item = ((st->cur_item == cur_menu->num_items-1) ? cur_item : st->cur_item+1);
     } else if(joy_button_newly_pressed(BUTTON_A) || joy_button_newly_pressed(BUTTON_START)) {
-        // either select or submenu
+
         if(cur_menu->items[cur_item].select != NULL) {
             cur_menu->items[cur_item].select();
-        } else if (cur_menu->items[cur_item].submenu != NULL) {
+        }
+
+        if (cur_menu->items[cur_item].submenu != NULL) {
             clear_menu(cur_menu);
             prev_menu = cur_menu;
             cur_menu = cur_menu->items[cur_item].submenu;
-            cur_item = 0;
+            cur_item = find_first_selectable_item(cur_menu);
         }
-    } else if(joy_button_newly_pressed(BUTTON_B)) {
-        if(prev_menu != NULL) {
-            clear_menu(cur_menu);
-            cur_menu = prev_menu;
-            prev_menu = NULL; // CAN ONLY NEST ONCE!
-            cur_item = 0;
-        }
+
+    } else if(joy_button_newly_pressed(BUTTON_B) && (prev_menu != NULL)) {
+        clear_menu(cur_menu);
+        cur_menu = prev_menu;
+        prev_menu = NULL; // CAN ONLY NEST ONCE!
+        cur_item = find_first_selectable_item(cur_menu);
+        
     }
 
     st->cur_item = cur_item;

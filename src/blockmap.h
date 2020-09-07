@@ -14,4 +14,15 @@ typedef struct {
     const u16 offsets_plus_table[];
 } blockmap;
 
+#define BIG_BLOCKMAP_CELL_SIZE 256
+
+typedef struct {
+    s16 x_origin;
+    s16 y_origin;
+    u16 num_columns;
+    u16 num_rows;
+    u16 num_offsets;
+    const u16 offsets_plus_table[];
+} big_blockmap;
+
 #endif

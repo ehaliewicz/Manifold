@@ -22,19 +22,22 @@ void go_to_e1m1() {
     target_mode = IN_GAME;
 }
 
-menu load_game_menu = {
+
+#define TEXT_ITEM(str) {.text = (str), .submenu = NULL, .select = NULL, .render = NULL, .selectable = 0}
+
+const menu load_game_menu = {
     .header_text = "Load game",
     .num_items = 1,
     .items = {
-        {.text = "No saves found", .submenu = NULL, .select = NULL}
+        TEXT_ITEM("No saves found")
     }
 };
 
-menu level_select_menu = {
+const menu level_select_menu = {
     .header_text = "Level select",
     .num_items = 1,
     .items = {
-        {.text = "E1M1", .submenu = NULL, .select = &go_to_e1m1},
+        {.text = "E1M1", .submenu = NULL, .select = &go_to_e1m1, .selectable=1},
     }
 };
 
@@ -46,24 +49,40 @@ char* draw_music_state() {
     return (music_on ? "ON " : "OFF");
 }
 
-menu options_menu = {
+const menu options_menu = {
     .header_text = "Options",
     .num_items = 2,
     .items = {
-        {.text = "Sound Effects: ", .submenu = NULL, .select = &toggle_sfx, .render = &draw_sfx_state},
-        {.text = "Music: ", .submenu = NULL, .select = &toggle_music, .render = &draw_music_state}
+        {.text = "Sound Effects: ", .submenu = NULL, .select = &toggle_sfx, .render = &draw_sfx_state, .selectable=1},
+        {.text = "Music: ", .submenu = NULL, .select = &toggle_music, .render = &draw_music_state, .selectable=1}
     }
 };
 
-menu main_menu = {
+
+const menu credits_menu = {
+    .header_text = "Credits",
+    .num_items = 8,
+    .items = {
+        TEXT_ITEM("Programmer"),
+        TEXT_ITEM("Erik Haliewicz"),
+        TEXT_ITEM(""),
+        TEXT_ITEM("Thanks to the original iD team,"),
+        TEXT_ITEM("For making one of the best games of all time."),
+        TEXT_ITEM(""),
+        TEXT_ITEM("Thanks to Fabien Sanglard,"),
+        TEXT_ITEM("For writing the 'Game Engine Black Book Doom'")
+    }
+};
+
+const menu main_menu = {
     .header_text = "",
     .num_items = 5,
     .items = {
-        {.text = "New game", .submenu = NULL, .select = &go_to_new_game},
-        {.text = "Level select", .submenu = &level_select_menu, .select = NULL},
-        {.text = "Load game", .submenu = &load_game_menu, .select = NULL},
-        {.text = "Options", .submenu = &options_menu, .select = NULL},
-        {.text = "Credits", .submenu = NULL, .select = &go_to_credits},
+        {.text = "New game", .submenu = NULL, .select = &go_to_new_game, .selectable=1},
+        {.text = "Level select", .submenu = &level_select_menu, .select = NULL, .selectable=1},
+        {.text = "Load game", .submenu = &load_game_menu, .select = NULL, .selectable=1},
+        {.text = "Options", .submenu = &options_menu, .select = NULL, .selectable=1},
+        {.text = "Credits", .submenu = &credits_menu, .select = NULL, .selectable=1} // .select = &go_to_credits},
     }
 };
 
