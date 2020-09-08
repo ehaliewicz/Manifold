@@ -364,7 +364,7 @@ def calculate_big_blockmap(blkmap):
         num_cols += 1
     for y in range(0, blkmap.num_rows,2):
         for x in range(0, blkmap.num_columns, 2):
-            num_offset_vals += 1
+            num_offset_vals += 2
         num_rows += 1
             
     for y in range(0, blkmap.num_rows,2):
@@ -375,12 +375,13 @@ def calculate_big_blockmap(blkmap):
             b3 = index_blockmap(x+1, y+1, blkmap)
             new_cell = b0 | b1 | b2 | b3
 
+            
             empty_cell = False
             if len(new_cell) == 0:
                 empty_cell = True
             elif len(new_cell) == 1 and 0 in new_cell:
                 empty_cell = True
-                
+            
             offsets.append(num_offset_vals+len(table))
             if empty_cell:
                 offsets.append(0)
