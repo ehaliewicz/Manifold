@@ -105,9 +105,10 @@ def main():
     clock = pygame.time.Clock()
     font = pygame.font.Font('freesansbold.ttf',14)
 
+    
     wad.dump_level_data(output, level_data)
 
-    
+
     
     while(True):
 

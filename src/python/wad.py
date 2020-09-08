@@ -347,7 +347,86 @@ class Thing:
                     self.x_pos, self.y_pos, self.angle, self.thing_type, self.flags
                 ) + "}")
                 
+#@dataclass
+#class BigBlockmap():
+    
+    
+def calculate_big_blockmap(blkmap):
+    # cell size 256x256
+    num_cols = 0
+    num_rows = 0
+    num_offset_vals = 0
+    
+    table = []
+    offsets = []
 
+    for x in range(0, blkmap.num_columns, 2):
+        num_cols += 1
+    for y in range(0, blkmap.num_rows,2):
+        for x in range(0, blkmap.num_columns, 2):
+            num_offset_vals += 1
+        num_rows += 1
+            
+    for y in range(0, blkmap.num_rows,2):
+        for x in range(0, blkmap.num_columns, 2):
+            b0 = index_blockmap(x, y, blkmap)
+            b1 = index_blockmap(x+1, y, blkmap)
+            b2 = index_blockmap(x, y+1, blkmap)
+            b3 = index_blockmap(x+1, y+1, blkmap)
+            new_cell = b0 | b1 | b2 | b3
+
+            empty_cell = False
+            if len(new_cell) == 0:
+                empty_cell = True
+            elif len(new_cell) == 1 and 0 in new_cell:
+                empty_cell = True
+                
+            offsets.append(num_offset_vals+len(table))
+            if empty_cell:
+                offsets.append(0)
+            else:
+                offsets.append(len(new_cell))
+                for idx in new_cell:
+                    table.append(idx)
+                
+            
+    #return (blkmap.num_columns, blkmap.num_rows, blkmap.offsets, blkmap.table)
+    #return (num_cols, num_rows, offsets, table)
+    return Blockmap(x_origin = blkmap.x_origin,
+                    y_origin = blkmap.y_origin,
+                    num_columns = num_cols,
+                    num_rows = num_rows,
+                    num_offsets = num_offset_vals,
+                    offsets = offsets,
+                    table = table)
+
+def index_blockmap(x_cell, y_cell, blockmap):
+    if x_cell >= blockmap.num_columns:
+        return set()
+    if y_cell >= blockmap.num_rows:
+        return set()
+
+    
+    offset_idx = (y_cell * blockmap.num_columns + x_cell)
+    table_idx = blockmap.offsets[offset_idx]
+    
+    vals = []
+
+    while True:
+        val = blockmap.table[table_idx-blockmap.num_offsets]
+        if val == 65535:
+            break
+        #if val != 0:
+        vals.append(val)
+        table_idx += 1
+        
+
+    return set(vals)
+        
+
+
+
+    
 @dataclass
 class Blockmap:
     x_origin: int
@@ -357,7 +436,7 @@ class Blockmap:
     num_offsets: int
     offsets: List[int]
     table: List[int]
-
+        
     def write_c(self):
         num_cols = self.num_columns
         num_offs = self.num_offsets
@@ -568,8 +647,11 @@ def read_level_data(level_dir):
     
     results['REJECT'] = reject_data
 
-    level_dir['BLOCKMAP']
-    results['BLOCKMAP'] = read_blockmap(level_dir['BLOCKMAP'], wad_data)
+    #level_dir['BLOCKMAP']
+    blkmap = read_blockmap(level_dir['BLOCKMAP'], wad_data)
+    results['BLOCKMAP'] = blkmap
+    results['BIG_BLOCKMAP'] = calculate_big_blockmap(blkmap)
+
     
     #sys.exit(1)
     
@@ -754,6 +836,7 @@ def dump_level_data(output, level_data):
             f.write("};\n\n")
 
         f.write("static const blockmap blkmap = " + level_data['BLOCKMAP'].write_c() + "\n};\n")
+        f.write("static const blockmap big_blkmap = " + level_data['BIG_BLOCKMAP'].write_c() + "\n};\n")
         
 
         level_def = ("const level {}".format(output_level_name) + " = {\n" +
