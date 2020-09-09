@@ -852,7 +852,9 @@ def dump_level_data(output, level_data):
                      .ssectors = ssectors,
                      .things = things,
                      .num_vertexes = {},
-                     .vertexes = vertexes
+                     .vertexes = vertexes,
+                     .blockmap = &blkmap,
+                     .big_blockmap = &big_blkmap
                      """.format(
                          len(level_data['LINEDEFS']),
                          len(level_data['SEGS']),
