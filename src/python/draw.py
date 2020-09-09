@@ -527,7 +527,7 @@ def transform_seg(level_data, seg, topdown_draw_surf, persp_draw_surf, avg_secto
 
     
     portal = False
-    if linedef.right_sidedef != -1 and linedef.left_sidedef != -1:
+    if wad.linedef_is_portal(linedef): #.right_sidedef != -1 and linedef.left_sidedef != -1:
         # todo: handle portals
         portal = True
         #return DRAWN

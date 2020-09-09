@@ -350,49 +350,66 @@ class Thing:
 #@dataclass
 #class BigBlockmap():
     
-    
-def calculate_big_blockmap(blkmap):
+def linedef_is_portal(linedef):
+    return linedef.right_sidedef != -1 and linedef.left_sidedef != -1
+
+def calculate_render_blockmap(blkmap, level_data):
     # cell size 256x256
-    num_cols = 0
-    num_rows = 0
-    num_offset_vals = 0
-    
-    table = []
+    num_cols = blkmap.num_columns
+    num_rows = blkmap.num_rows
+    num_offset_vals = num_cols*num_rows
+
     offsets = []
+    table = []
 
-    for x in range(0, blkmap.num_columns, 2):
-        num_cols += 1
-    for y in range(0, blkmap.num_rows,2):
-        for x in range(0, blkmap.num_columns, 2):
-            num_offset_vals += 2
-        num_rows += 1
-            
-    for y in range(0, blkmap.num_rows,2):
-        for x in range(0, blkmap.num_columns, 2):
-            b0 = index_blockmap(x, y, blkmap)
-            b1 = index_blockmap(x+1, y, blkmap)
-            b2 = index_blockmap(x, y+1, blkmap)
-            b3 = index_blockmap(x+1, y+1, blkmap)
-            new_cell = b0 | b1 | b2 | b3
 
+    for y in range(0, blkmap.num_rows):
+        for x in range(0, blkmap.num_columns):
+            cell = index_blockmap(x, y, blkmap)
+            cell.remove(0)
             
-            empty_cell = False
-            if len(new_cell) == 0:
-                empty_cell = True
-            elif len(new_cell) == 1 and 0 in new_cell:
-                empty_cell = True
-            
-            offsets.append(num_offset_vals+len(table))
-            if empty_cell:
+            if len(cell) == 0:
+                # append a 0 to denote an empty cell
                 offsets.append(0)
+                continue
             else:
-                offsets.append(len(new_cell))
-                for idx in new_cell:
-                    table.append(idx)
+                offsets.append(num_offset_vals+len(table))
+
+
+            table.append(len(cell)) # append number of linedefs
+            for linedef_idx in sorted(cell):
+                linedef = level_data['LINEDEFS'][linedef_idx]
+                #print("linedef idx {}".format(linedef_idx))
+                linedef_byte_idx = linedef_idx>>3
+                #print("linedef byte idx {}".format(linedef_byte_idx))
+                linedef_bit_pos = (linedef_idx & 0b111)
+                linedef_bit_mask = 1<<linedef_bit_pos
+                #sys.exit(1)
+                is_portal = linedef_is_portal(linedef)
+
+                linedef_bit_mask_plus_is_portal = (linedef_bit_mask << 8) | (is_portal)
+                
+                table.append(linedef_byte_idx)
+                table.append(linedef_bit_mask_plus_is_portal)
+
+                v1_idx = linedef.begin_vert
+                v2_idx = linedef.end_vert
+                v1 = level_data['VERTEXES'][v1_idx]
+                v2 = level_data['VERTEXES'][v2_idx]
+                                
+                #table.append(v1_idx)
+                table.append(v1.x)
+                table.append(v1.y)
+                #table.append(v2_idx)
+                table.append(v2.x)
+                table.append(v2.y)
+    
                 
             
     #return (blkmap.num_columns, blkmap.num_rows, blkmap.offsets, blkmap.table)
     #return (num_cols, num_rows, offsets, table)
+    print("generated render blockmap of {} entries".format(len(table)))
+    print("from blockmap of {} entries".format(len(blkmap.table)))
     return Blockmap(x_origin = blkmap.x_origin,
                     y_origin = blkmap.y_origin,
                     num_columns = num_cols,
@@ -651,7 +668,7 @@ def read_level_data(level_dir):
     #level_dir['BLOCKMAP']
     blkmap = read_blockmap(level_dir['BLOCKMAP'], wad_data)
     results['BLOCKMAP'] = blkmap
-    results['BIG_BLOCKMAP'] = calculate_big_blockmap(blkmap)
+    results['RENDER_BLOCKMAP'] = calculate_render_blockmap(blkmap, results)
 
     
     #sys.exit(1)
@@ -837,7 +854,7 @@ def dump_level_data(output, level_data):
             f.write("};\n\n")
 
         f.write("static const blockmap blkmap = " + level_data['BLOCKMAP'].write_c() + "\n};\n")
-        f.write("static const blockmap big_blkmap = " + level_data['BIG_BLOCKMAP'].write_c() + "\n};\n")
+        f.write("static const blockmap render_blkmap = " + level_data['RENDER_BLOCKMAP'].write_c() + "\n};\n")
         
 
         level_def = ("const level {}".format(output_level_name) + " = {\n" +
@@ -854,7 +871,7 @@ def dump_level_data(output, level_data):
                      .num_vertexes = {},
                      .vertexes = vertexes,
                      .blockmap = &blkmap,
-                     .big_blockmap = &big_blkmap
+                     .render_blockmap = &render_blkmap
                      """.format(
                          len(level_data['LINEDEFS']),
                          len(level_data['SEGS']),
