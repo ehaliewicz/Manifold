@@ -28,7 +28,7 @@ typedef struct {
     const int num_vertexes;
     const vertex* vertexes;
     const blockmap* blkmap;
-    const big_blockmap* big_blkmap;
+    const render_blockmap* render_blkmap;
 } level;
 
 extern const level* cur_level;

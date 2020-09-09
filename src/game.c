@@ -11,6 +11,7 @@
 fix32 cur_player_x, cur_player_y;
 fix32 prescaled_player_x, prescaled_player_y;
 fix32 prescaled_player_x2, prescaled_player_y2;
+fix16 angleSin16Times64, angleCos16Times64;
 fix32 cur_player_angle;
 
 fix32 angleCos32, angleSin32;
@@ -74,7 +75,7 @@ void clear_linedef_processed_bitmap() {
     memset(processed_linedef_bitmap, 0, num_linedefs/8+1);
 }
 
-#define MAX_TRANSFORM_CACHE 64
+#define MAX_TRANSFORM_CACHE 4
 
 
 Vect2D_s16* vertex_transform_cache = NULL;
@@ -82,19 +83,19 @@ u8* vertex_transform_cache_map = NULL;
 int num_cached_vertexes = 0;
 
 void init_vertex_transform_cache() {
-    vertex_transform_cache = MEM_alloc(sizeof(Vect2D_s16) * MAX_TRANSFORM_CACHE);
+    vertex_transform_cache = MEM_alloc(sizeof(Vect2D_s16) * (MAX_TRANSFORM_CACHE+1));
     vertex_transform_cache_map = MEM_alloc(cur_level->num_vertexes);
     num_cached_vertexes = 0;
 }
 
 
-int is_vertex_cached(u16 vertex_idx) {
+inline int is_vertex_cached(u16 vertex_idx) {
     return vertex_transform_cache_map[vertex_idx];
 }
 
 void clear_vertex_transform_cache() {
     memset(vertex_transform_cache_map, 0, cur_level->num_vertexes);
-    num_cached_vertexes = 0;
+    num_cached_vertexes = 1;
 }
 
 void cache_transformed_vertex(int vertex_idx, Vect2D_s16 v) {
@@ -106,7 +107,7 @@ void cache_transformed_vertex(int vertex_idx, Vect2D_s16 v) {
     }
 }
 
-Vect2D_s16 get_transformed_vertex(int vertex_idx) {
+inline Vect2D_s16 get_transformed_vertex(int vertex_idx) {
     return vertex_transform_cache[vertex_transform_cache_map[vertex_idx]];
 }
 
@@ -165,251 +166,34 @@ s16 fast_div(s16 numer, s16 denom) {
 
 }
 
-void draw_subpixel_line(Line* l) {
-    s16 x1 = l->pt1.x;
-    s16 y1 = l->pt1.y;
-    s16 x2 = l->pt2.x;
-    s16 y2 = l->pt2.y;
-    u8 col = l->col;
-
-    s16 abs_dx = abs(x2-x1);
-    s16 abs_dy = abs(y2-y1);
-    s16 abs_int_dx = abs_dx>>4;
-    s16 abs_int_dy = abs_dy>>4;
-
-    if(abs_int_dx == 0) {
-        // perfectly vertical line
-        if(y1 > y2) {
-            SWAP_s16(y1, y2);
-        }
-        s16 int_x = round_subpix(x1);
-        s16 int_y1 = round_subpix(y1);
-        s16 int_y2 = round_subpix(y2);
-        u8* col_ptr = BMP_getWritePointer(int_x, int_y1);
-        if(int_x & 0b01) {
-            col = col & 0x0F;
-        } else {
-            col = col & 0xF0;
-        }
-        for(int y = int_y1; y <= int_y2; y+=2) {
-            //u8 px_col = *col_ptr;
-            *col_ptr = col;
-            col_ptr += 128;
-            *col_ptr = col;
-            col_ptr += 128;
-        }
-        
-
-    } else if (abs_int_dy == 0) {
-        if(x1 > x2) {
-            SWAP_s16(x1, x2);
-        }
-        s16 int_y = round_subpix(y1);
-        s16 int_x1 = round_subpix(x1);
-        s16 int_x2 = round_subpix(x2);
-        u8* ptr = BMP_getWritePointer(int_x1, int_y);
-        if(int_x1 & 0b1) {
-            u8 right_col = col & 0x0F;
-            *ptr++ = right_col;
-            int_x1++;
-            // write second part of first pixel
-        }
-        int pixels = (int_x2-int_x1);
-        int double_pixels = pixels>>1;
-        int rem = pixels&0b1;
-        memset(ptr, col, double_pixels);
-
-        //for(int i = 0; i < double_pixels; i++) {
-        //    *ptr++ = col;
-        //}
-        //ptr += double_pixels;
-        //if(rem) {
-        //    u8 left_col = 0xF0 & col;
-        //    *ptr++ = left_col;
-        //}
-
-    } else if (abs_dx == abs_dy) {
-        if(x1 > x2) {
-            SWAP_s16(x1,x2);
-            SWAP_s16(y1,y2);
-        }
-        s16 inc = (y2>y1) ? 1 : -1;
-
-        s16 int_y1 = round_subpix(y1);
-        s16 int_y2 = round_subpix(y2);
-        s16 int_x1 = round_subpix(x1);
-        s16 int_x2 = round_subpix(x2);
-        s16 cur_y = int_y1;
-        for(int x = int_x1; x <= int_x2; x++) {
-             BMP_setPixelFast(x, cur_y, col);
-             cur_y += inc;
-        }
-    } else if ((abs_int_dx + abs_int_dy) < 20) { 
-        l->pt1.x>>=4;
-        l->pt1.y>>=4;
-        l->pt2.x>>=4;
-        l->pt2.y>>=4;
-        BMP_drawLine(l);
-    } else if (abs_dx > abs_dy) {
-        // x major
-        if(x1 > x2) {
-            SWAP_s16(x1,x2);
-            SWAP_s16(y1,y2);
-        }
-        s16 dy = y2-y1;
-        s16 dx = x2-x1;
-        //s16 dy_over_dx = (dy<<4)/dx; 
-        s16 dy_over_dx = fast_div(dy<<4, dx);
-        //s16 dy_over_dx = fast_div(dy<<6, dx<<2);
-        s16 cur_y = y1;
-        s16 int_x1 = round_subpix(x1);
-        s16 int_x2 = round_subpix(x2);
-        for(int x = int_x1; x <= int_x2; x++) {
-            BMP_setPixelFast(x, (cur_y>>4), col);
-            cur_y += dy_over_dx;
-        }
-    } else {
-        if(y1 > y2) {
-            SWAP_s16(y1, y2);
-            SWAP_s16(x1, x2);
-        }
-        s16 dy = y2-y1;
-        s16 dx = x2-x1;
-        s16 dx_over_dy = fast_div(dx<<4, dy);
-        //s16 dx_over_dy = fast_div(dx<<6, dy<<2);
-        s16 cur_x = x1;
-        s16 int_y1 = round_subpix(y1);
-        s16 int_y2 = round_subpix(y2);
-        for(int y = int_y1; y <= int_y2; y++) {
-            BMP_setPixelFast((cur_x>>4), y, col);
-            cur_x += dx_over_dy;
-        }
-    }
-    /*else { 
-
-        l->pt1.x = round_subpix(l->pt1.x);
-        l->pt1.y = round_subpix(l->pt1.y);//>>4;
-        l->pt2.x = round_subpix(l->pt2.x);//>>4;
-        l->pt2.y = round_subpix(l->pt2.y);//>>4;
-        BMP_drawLine(l);
-    }*/
-
-}
-
-u8 compute_outcode(s16 x, s16 y, s16 max_x, s16 max_y) {
-    u8 code = INSIDE;
-    if(x < 0) {
-        code |= LEFT;
-    } else if (x > max_x) {
-        code |= RIGHT;
-    }
-    if(y < 0) {
-        code |= TOP;
-    } else if (y > max_y) {
-        code |= BOTTOM;
-    }
-    return code;
-}
-
-clip_result internal_clip_line(Line* l, s16 max_x, s16 max_y) {
-
-    s16 x1 = l->pt1.x; s16 x2 = l->pt2.x;
-    s16 y1 = l->pt1.y; s16 y2 = l->pt2.y;
-
-    u8 outcode0 = compute_outcode(x1, y1, max_x, max_y);
-    u8 outcode1 = compute_outcode(x2, y2, max_x, max_y);
-
-    clip_result res = OFFSCREEN;
-    while(1) {
-        if(!(outcode0 | outcode1)) {
-            // trivial accept, both points are inside window
-            res = ONSCREEN;
-            break;
-        } else if (outcode0 & outcode1) {
-            //res = OFFSCREEN;
-            return OFFSCREEN;
-            //break;
-        }
-
-        // At least one endpoint is outside the clip rectangle; pick it.
-        outcode code_out = outcode1 > outcode0 ? outcode1 : outcode0;
-
-        s32 new_x, new_y;  
-        if (code_out & TOP) {     
-            new_x = x1 + (x2-x1) * (0 - y1) / (y2-y1);
-            new_y = 0;
-        } else if (code_out & BOTTOM) { 
-            new_x = x1 + (x2-x1) * (max_y - y1) / (y2-y1);
-            new_y = max_y;
-        } else if (code_out & RIGHT) {  
-            new_y = y1 + (y2-y1) * (max_x-x1) / (x2-x1);
-            new_x = max_x;
-        } else if (code_out & LEFT) {  
-            new_y = y1 + (y2-y1) * (0-x1) / (x2-x1);
-            new_x = 0;
-        }
-
-        if (code_out == outcode0) {
-            x1 = new_x;
-            y1 = new_y;
-            outcode0 = compute_outcode(x1, y1, max_x, max_y);
-        } else {
-            x2 = new_x;
-            y2 = new_y;
-            outcode1 = compute_outcode(x2, y2, max_x, max_y);
-        }
-
-    }
-
-    l->pt1.x = x1;
-    l->pt1.y = y1;
-    l->pt2.x = x2;
-    l->pt2.y = y2;
-    return ONSCREEN;
-    
-}
 
 //const int zoom = 4;
+
+//#define ZOOM 4
+//#define ZOOM_SHIFT 2
 #define ZOOM 4
 #define ZOOM_SHIFT 2
 
-/*
-clip_result clip_line(Line* l) {
-    return internal_clip_line(l, int_max_x, int_max_y);
-}
 
-clip_result subpixel_clip_line(Line* l) {
-    return internal_clip_line(l, subpixel_max_x, subpixel_max_y);
-}
-*/
 
 static int pause_game = 0;
 static int quit_game = 0;
 
+  
 
-
-Vect2D_s16 transform_vert(u16 v_idx) {
-    if(is_vertex_cached(v_idx)) {
-        return get_transformed_vertex(v_idx);
-    }
-    vertex v = cur_level->vertexes[v_idx];
-    s16 x = v.x;
-    s16 y = v.y;
-
-    fix16 tlx = (x<<(6-ZOOM_SHIFT)) - prescaled_player_x;
-    fix16 tly = (y<<(6-ZOOM_SHIFT)) - prescaled_player_y;  // scaling factor of 2^6
+Vect2D_s16 inner_transform_vert(s16 x, s16 y) {
+    s16 tlx = ((x<<4)>>ZOOM_SHIFT) - prescaled_player_x2;
+    s16 tly = ((y<<4)>>ZOOM_SHIFT) - prescaled_player_y2; // scaling factor of 64 (2^6)
     
-    fix32 rx = ((tlx)*(angleCos16)) - ((tly)*(angleSin16)); // 2^12 scaling factor
-    fix32 ry = ((tlx)*(angleSin16)) + ((tly)*(angleCos16));
+    fix32 rx = ((tlx)*(angleCos16Times64)) - ((tly)*(angleSin16Times64)); // 12.4 * 1.12 = 13.16? result I know it's 16 bits of fractional precision
+    fix32 ry = ((tlx)*(angleSin16Times64)) + ((tly)*(angleCos16Times64));
     //fix32 rx = ((tlx<<2)*(angleCos16x4)) - ((tly<<2)*(angleSin16x4)); // 2^12 scaling factor
     //fix32 ry = ((tlx<<2)*(angleSin16x4)) + ((tly<<2)*(angleCos16x4));
 
 
-    fix16 trx_subpix = ((rx>>12) + (BMP_WIDTH/2));
-    fix16 try_subpix = ((ry>>12) + (BMP_HEIGHT/2));
-    s16 x_subpix16 = trx_subpix;
-    s16 y_subpix16 = (int_max_y)-try_subpix;
-    Vect2D_s16 vert = {.x = x_subpix16, .y = y_subpix16};
+    s16 trx = ((rx>>16) + (BMP_WIDTH>>1));
+    s16 try = (int_max_y)-((ry>>16) + (BMP_HEIGHT>>1));
+    Vect2D_s16 vert = {.x = trx, .y = try};
 
 
     //fix16 trx_subpix = ((rx>>8) + ((BMP_WIDTH/2)<<4));
@@ -449,6 +233,16 @@ Vect2D_s16 transform_vert(u16 v_idx) {
 }
 
 
+Vect2D_s16 transform_vert(u16 v_idx) {
+    if(is_vertex_cached(v_idx)) {
+        return get_transformed_vertex(v_idx);
+    }
+    vertex v = cur_level->vertexes[v_idx];
+    s16 x = v.x;
+    s16 y = v.y;   
+    return inner_transform_vert(x, y);    
+}               
+
 void draw_automap() {
     clear_vertex_transform_cache();
     clear_linedef_processed_bitmap();
@@ -458,15 +252,17 @@ void draw_automap() {
     int lines_onscreen = 0;
     int verts_reused = 0;
     int linedefs_skipped = 0;
+    int verts_drawn = 0;
+    int verts_cached = 0;
 
     // inverse project coordinates
 
     // inverse project window corners and figure out the min/max x/y blockmap coordinates to render
     
-    const blockmap* blkmap = cur_level->blkmap;
-    //const big_blockmap* big_blkmap = cur_level->big_blkmap;
-    int blockmap_min_x = blkmap->x_origin;
-    int blockmap_min_y = blkmap->y_origin;
+    //const blockmap* blkmap = cur_level->blkmap;
+    const render_blockmap* render_blkmap = cur_level->render_blkmap;
+    int blockmap_min_x = render_blkmap->x_origin;
+    int blockmap_min_y = render_blkmap->y_origin;
     //int blockmap_min_x = big_blkmap->x_origin;
     //int blockmap_min_y = big_blkmap->y_origin;
 
@@ -541,11 +337,11 @@ void draw_automap() {
 
     Line lin;
     int y_start = max(0, min_blockmap_y);
-    int y_end = min(max_blockmap_y, blkmap->num_rows-1);
+    int y_end = min(max_blockmap_y, render_blkmap->num_rows-1);
     int x_start = max(0, min_blockmap_x);
-    int x_end = min(max_blockmap_x, blkmap->num_columns-1);
+    int x_end = min(max_blockmap_x, render_blkmap->num_columns-1);
 
-    int num_cols = blkmap->num_columns;
+    int num_cols = render_blkmap->num_columns;
     int blockmap_y_off = y_start * num_cols;
     for(int y = y_start; y <= y_end; y++) {
         for(int x = x_start; x <= x_end; x++) {
@@ -553,14 +349,92 @@ void draw_automap() {
 
             int blockmap_offset_idx = blockmap_y_off+x;
             
-            int blockmap_table_idx = blkmap->offsets_plus_table[blockmap_offset_idx]+1;
+            int blockmap_table_idx = render_blkmap->offsets_plus_table[blockmap_offset_idx];
+            if(blockmap_table_idx == 0) {
+                continue;
+            }
 
-            const u16* linedef_list_ptr = &(blkmap->offsets_plus_table[blockmap_table_idx]);
+            const u16* cell_ptr =  &(render_blkmap->offsets_plus_table[blockmap_table_idx]);
+            u16 num_linedefs = *cell_ptr++;
 
-            
+            for(u16 i = 0; i < num_linedefs; i++) {
+                u16 linedef_byte_idx = *cell_ptr++;    
+                u8 byte = processed_linedef_bitmap[linedef_byte_idx];
+                u16 bit_mask_and_is_portal = *cell_ptr++;
+                u8 bit_mask = bit_mask_and_is_portal>>8;
+                if(byte == 0 || ((byte & bit_mask) == 0)) {
+                    processed_linedef_bitmap[linedef_byte_idx] |= bit_mask;
+                } else {
+                //if(byte == 0xFF || byte & bit_mask) {
+                    // skip rest of linedef
+                    // skip v1_index, v1x, v1y
+                    cell_ptr += 3;
+                    // skip v2_index, v2x, v2y
+                    cell_ptr += 3;
+                    //linedefs_skipped++;
+                    continue;
+                }
+
+                u8 is_portal = bit_mask_and_is_portal&0xFF; 
+                u16 v1 = *cell_ptr++;
+                Vect2D_s16 tv1;
+
+                u8 vertex1_cached = vertex_transform_cache_map[v1];
+                if(is_vertex_cached(v1)) {
+                    cell_ptr += 2; // skip over inline vertex x and y
+                    verts_reused++;
+
+                    tv1 = vertex_transform_cache[vertex1_cached];
+                } else {
+                    u16 v1x = *cell_ptr++;
+                    u16 v1y = *cell_ptr++;
+                    tv1 = inner_transform_vert(v1x, v1y);
+                }
+                u16 v2 = *cell_ptr++;
+                Vect2D_s16 tv2;
+                u8 vertex2_cached = vertex_transform_cache_map[v2];
+                if(is_vertex_cached(v2)) {
+                    verts_reused++;
+                    cell_ptr += 2; // skip over inline vertex x and y
+                    tv2 = vertex_transform_cache[vertex2_cached]; //get_transformed_vertex(v2);
+                } else {
+                    u16 v2x = *cell_ptr++;
+                    u16 v2y = *cell_ptr++;
+                    tv2 = inner_transform_vert(v2x, v2y);
+                }
+
+                //Vect2D_s16 tv1 = transform_vert(line.v1);
+                //Vect2D_s16 tv2 = transform_vert(line.v2);
+
+
+                u8 col = is_portal ? 0x11 : 0x22;
+
+                lin.pt1.x = tv1.x; 
+                lin.pt1.y = tv1.y;
+                lin.pt2.x = tv2.x;
+                lin.pt2.y = tv2.y;
+                lin.col = col;
+
+
+                if(BMP_clipLine(&lin)) {
+                    lines_onscreen++;
+                    //verts_cached+=2;
+                    verts_drawn+=2;
+                    cache_transformed_vertex(v1, tv1);
+                    cache_transformed_vertex(v2, tv2);
+
+                    BMP_drawLine(&lin);
+                    
+                }
+                
+            }
+
+            /*
             while(1) {
                 u16 linedef_idx = *linedef_list_ptr++;
                 if(linedef_idx == 0xFFFF) { break; }
+
+   
 
                 if(is_linedef_processed(linedef_idx)) { linedefs_skipped++; continue; }
                 set_linedef_processed(linedef_idx);
@@ -591,7 +465,7 @@ void draw_automap() {
                 }
             
             }
-
+            */
         }
         
         blockmap_y_off += num_cols;
@@ -623,14 +497,20 @@ void draw_automap() {
 
 
     BMP_showFPS(1);
-    char buf[32];
-    //sprintf(buf, "lines drawn %i.", lines_onscreen);
-    //BMP_drawText(buf, 0, 12);
-    //sprintf(buf, "vertexes reused %i.", verts_reused);
-    //BMP_drawText(buf, 0, 13);
-    //sprintf(buf, "linedefs skipped %i.", linedefs_skipped);
-    //BMP_drawText(buf, 0, 14);
     
+    char buf[32];
+    sprintf(buf, "lines drawn %i.", lines_onscreen);
+    BMP_drawText(buf, 0, 6);
+    sprintf(buf, "vertexes cached %i.", num_cached_vertexes-1);
+    BMP_drawText(buf, 0, 7);
+    sprintf(buf, "vertexes reused %i.", verts_reused);
+    BMP_drawText(buf, 0, 8);
+    sprintf(buf, "vertexes drawn %i.", verts_drawn);
+    BMP_drawText(buf, 0, 9);
+    sprintf(buf, "linedefs skipped %i.", linedefs_skipped);
+    BMP_drawText(buf, 0, 10);
+    
+
     //int y_off = 4;
     //char buf[32];
     //u32 fps = SYS_getFPS();
@@ -752,13 +632,15 @@ game_mode run_game() {
     angleSin32 = sinFix32(cur_player_angle); 
     angleCos16 = cosFix16(cur_player_angle);
     angleSin16 = sinFix16(cur_player_angle); 
-    angleCos16x4 = cosFix16(cur_player_angle)<<2;
-    angleSin16x4 = sinFix16(cur_player_angle)<<2; 
+    angleCos16x4 = angleCos16<<2;
+    angleSin16x4 = angleSin16<<2; 
+    angleSin16Times64 = angleSin16<<6;
+    angleCos16Times64 = angleCos16<<6;
 
     prescaled_player_x = ((cur_player_x>>ZOOM_SHIFT)>>(FIX32_FRAC_BITS-6)); // scaling factor is now 64 (2^6) instead of 1024 (2^10)
     prescaled_player_y = ((cur_player_y>>ZOOM_SHIFT)>>(FIX32_FRAC_BITS-6));
-    prescaled_player_x2 = ((cur_player_x>>ZOOM_SHIFT)>>(FIX32_FRAC_BITS-6))<<2; // scaling factor is now 256 (2^8) instead of 1024 (2^10)
-    prescaled_player_y2 = ((cur_player_y>>ZOOM_SHIFT)>>(FIX32_FRAC_BITS-6))<<2;
+    prescaled_player_x2 = ((cur_player_x>>ZOOM_SHIFT)>>(FIX32_FRAC_BITS-4)); // scaling factor is now 64 (2^6) instead of 1024 (2^10)
+    prescaled_player_y2 = ((cur_player_y>>ZOOM_SHIFT)>>(FIX32_FRAC_BITS-4));
     handle_input();
 
     //JOY_waitPress
@@ -779,7 +661,7 @@ game_mode run_game() {
 void cleanup_game() {
     BMP_end();
     MEM_free(processed_linedef_bitmap);
-    MEM_free(vertex_transform_cache_map);
-    MEM_free(vertex_transform_cache);
+    //MEM_free(vertex_transform_cache_map);
+    //MEM_free(vertex_transform_cache);
     MEM_pack();
 }
