@@ -4,6 +4,8 @@ IF "x%1" == "x" (
   %GENS% %CD%\out\rom.bin
 ) ELSE IF "%1" == "test" (
   %GENS% %CD%\out\rom.bin
+) ELSE IF "%1" == "asm" (
+  %GDK_WIN%\bin\make -f %GDK_WIN%\makefile.gen asm
 ) ELSE (
   %GDK_WIN%\bin\make -f %GDK_WIN%\makefile.gen %1
 ) 

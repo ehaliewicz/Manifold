@@ -67,10 +67,10 @@ const menu credits_menu = {
         TEXT_ITEM("Erik Haliewicz"),
         TEXT_ITEM(""),
         TEXT_ITEM("Thanks to the original iD team,"),
-        TEXT_ITEM("For making one of the best games of all time."),
+        TEXT_ITEM("For making DOOM."),
         TEXT_ITEM(""),
         TEXT_ITEM("Thanks to Fabien Sanglard,"),
-        TEXT_ITEM("For writing the 'Game Engine Black Book Doom'")
+        TEXT_ITEM("For writing 'Game Engine Black Book Doom'")
     }
 };
 

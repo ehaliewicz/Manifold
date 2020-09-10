@@ -26,6 +26,17 @@
       "problemMatcher": []
     },
     {
+      "label": "SGDK - Asm",
+      "type": "shell",
+      "command": ".\\build.bat asm",
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      },
+      "problemMatcher": []
+    },
+    {
       "label": "SGDK - Build & Test",
       "type": "shell",
       "command": ".\\build.bat",

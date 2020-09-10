@@ -10,13 +10,12 @@
 
 fix32 cur_player_x, cur_player_y;
 fix32 prescaled_player_x, prescaled_player_y;
-fix32 prescaled_player_x2, prescaled_player_y2;
-fix16 angleSin16Times64, angleCos16Times64;
+fix16 playerXFrac4, playerYFrac4;
 fix32 cur_player_angle;
 
 fix32 angleCos32, angleSin32;
 fix16 angleCos16, angleSin16;
-fix16 angleCos16x4, angleSin16x4;
+fix16 angleSinFrac12, angleCosFrac12;
 
 const fix32 angle_90_degrees = 256;
 const fix32 angle_58_degrees = 164; // 58 degrees from player viewpoint to top left of map
@@ -60,7 +59,8 @@ u8 is_linedef_processed(u16 linedef_idx) {
     if(byte == 0) {
         return 0;
     }
-    return byte & (1<<bit_idx);
+    u8 bit_mask = (1<<bit_idx);
+    return byte & bit_mask;
     
 }
 
@@ -179,55 +179,37 @@ s16 fast_div(s16 numer, s16 denom) {
 static int pause_game = 0;
 static int quit_game = 0;
 
+extern s16 trans_vert_x;
+extern s16 trans_vert_y;
+s16 asm_x_shifted;
+s16 asm_y_shifted;
+s16 asm_tlx;
+s16 asm_tly; 
+Vect2D_s16 transform_vert_native(s16 x, s16 y);
   
+Vect2D_s16 transform_res;
 
 Vect2D_s16 inner_transform_vert(s16 x, s16 y) {
-    s16 tlx = ((x<<4)>>ZOOM_SHIFT) - prescaled_player_x2;
-    s16 tly = ((y<<4)>>ZOOM_SHIFT) - prescaled_player_y2; // scaling factor of 64 (2^6)
+    //Vect2D_s16 res;
+    return transform_vert_native(x, y);
+    //return res;
+
+    //Vect2D_s16 res = {.x = trans_vert_x, .y = trans_vert_y};
+    //return res;
+    s16 x_shifted = ((x<<4)>>ZOOM_SHIFT);
+    s16 y_shifted = ((y<<4)>>ZOOM_SHIFT);
+    s16 tlx = x_shifted - playerXFrac4;
+    s16 tly = y_shifted - playerYFrac4; // scaling factor of 64 (2^6)
     
-    fix32 rx = ((tlx)*(angleCos16Times64)) - ((tly)*(angleSin16Times64)); // 12.4 * 1.12 = 13.16? result I know it's 16 bits of fractional precision
-    fix32 ry = ((tlx)*(angleSin16Times64)) + ((tly)*(angleCos16Times64));
-    //fix32 rx = ((tlx<<2)*(angleCos16x4)) - ((tly<<2)*(angleSin16x4)); // 2^12 scaling factor
-    //fix32 ry = ((tlx<<2)*(angleSin16x4)) + ((tly<<2)*(angleCos16x4));
+    fix32 rx = ((tlx)*(angleCosFrac12)) - ((tly)*(angleSinFrac12)); // 12.4 * 1.12 = 13.16? result I know it's 16 bits of fractional precision
+    fix32 ry = ((tlx)*(angleSinFrac12)) + ((tly)*(angleCosFrac12));
 
 
     s16 trx = ((rx>>16) + (BMP_WIDTH>>1));
-    s16 try = (int_max_y)-((ry>>16) + (BMP_HEIGHT>>1));
-    Vect2D_s16 vert = {.x = trx, .y = try};
+    //s16 try = (int_max_y)-((ry>>16) + (BMP_HEIGHT>>1));
+    s16 try = ((ry>>16) + (BMP_HEIGHT>>1))-(159);
+    Vect2D_s16 vert = {.x = trx, .y = -try};
 
-
-    //fix16 trx_subpix = ((rx>>8) + ((BMP_WIDTH/2)<<4));
-    //fix16 try_subpix = ((ry>>8) + ((BMP_HEIGHT/2)<<4));
-    //s16 x_subpix16 = trx_subpix;
-    //s16 y_subpix16 = (subpixel_max_y)-try_subpix;
-    
-    //Vect2D_s16 vert = {.x = x_subpix16>>4, .y = y_subpix16>>4};
-    /*
-    fix32 tlx = ((x<<6)/zoom) - prescaled_player_x;
-    fix32 tly = ((y<<6)/zoom) - prescaled_player_y;  // scaling factor of 2^6
-    
-    fix32 rx = (tlx*angleCos16) - (tly*angleSin16); // 2^12 scaling factor
-    fix32 ry = (tlx*angleSin16) + (tly*angleCos16);
-
-
-
-    fix32 trx_subpix = ((rx>>8) + ((BMP_WIDTH/2)<<4));
-    fix32 try_subpix = ((ry>>8) + ((BMP_HEIGHT/2)<<4));
-    s16 x_subpix16 = trx_subpix;
-    s16 y_subpix16 = (int_max_y<<4)-try_subpix;
-    */
-
-
-    /*
-    fix32 tlx = (intToFix32(x) - cur_player_x);
-    fix32 tly = (intToFix32(y) - cur_player_y);
-    fix32 rx = fix32Mul(tlx, angleCos32) - fix32Mul(tly, angleSin32);
-    fix32 ry = fix32Mul(tlx, angleSin32) + fix32Mul(tly, angleCos32);
-    fix32 trx_subpix = ((rx/zoom) + intToFix32(BMP_WIDTH/2));
-    fix32 try_subpix = ((ry/zoom) + intToFix32(BMP_HEIGHT/2));
-    s16 x_subpix16 = (trx_subpix) >> (FIX32_FRAC_BITS-4);    
-    s16 y_subpix16 = (FIX32(int_max_y)-try_subpix) >> (FIX32_FRAC_BITS-4);
-    */
     
     return vert;
 }
@@ -242,6 +224,88 @@ Vect2D_s16 transform_vert(u16 v_idx) {
     s16 y = v.y;   
     return inner_transform_vert(x, y);    
 }               
+
+typedef enum {
+    SINGLE_LINEDEF = 0,
+    POLY_LINEDEF = 1
+} linedef_segment_type;
+
+void draw_blockmap_cell(Line lin, u16* cell_ptr) {
+    u16 num_linedefs = *cell_ptr++;
+
+    for(u16 i = 0; i < num_linedefs; i++) {
+        u16 linedef_byte_idx = *cell_ptr++;    
+        u8 byte = processed_linedef_bitmap[linedef_byte_idx];
+        u16 bit_mask_and_is_portal = *cell_ptr++;
+        u8 bit_mask = bit_mask_and_is_portal>>8;
+        if(byte == 0 || ((byte & bit_mask) == 0)) {
+            processed_linedef_bitmap[linedef_byte_idx] |= bit_mask;
+        } else {
+        //if(byte == 0xFF || byte & bit_mask) {
+            // skip rest of linedef
+            // skip v1_index, v1x, v1y
+            cell_ptr += 3;
+            // skip v2_index, v2x, v2y
+            cell_ptr += 3;
+            //linedefs_skipped++;
+            continue;
+        }
+
+        u8 is_portal = bit_mask_and_is_portal&0xFF; 
+        u16 v1 = *cell_ptr++;
+        Vect2D_s16 tv1;
+
+        //u8 vertex1_cached = vertex_transform_cache_map[v1];
+        if(0) { // is_vertex_cached(v1)) {
+            cell_ptr += 2; // skip over inline vertex x and y
+            //verts_reused++;
+
+            //tv1 = vertex_transform_cache[vertex1_cached];
+        } else {
+            u16 v1x = *cell_ptr++;
+            u16 v1y = *cell_ptr++;
+            tv1 = inner_transform_vert(v1x, v1y);
+        }
+        u16 v2 = *cell_ptr++;
+        Vect2D_s16 tv2;
+        //u8 vertex2_cached = vertex_transform_cache_map[v2];
+        if(0) { //is_vertex_cached(v2)) {
+            //verts_reused++;
+            cell_ptr += 2; // skip over inline vertex x and y
+            //tv2 = vertex_transform_cache[vertex2_cached]; //get_transformed_vertex(v2);
+        } else {
+            u16 v2x = *cell_ptr++;
+            u16 v2y = *cell_ptr++;
+            tv2 = inner_transform_vert(v2x, v2y);
+        }
+
+        //Vect2D_s16 tv1 = transform_vert(line.v1);
+        //Vect2D_s16 tv2 = transform_vert(line.v2);
+
+
+        u8 col = is_portal ? 0x11 : 0x22;
+
+        lin.pt1.x = tv1.x; 
+        lin.pt1.y = tv1.y;
+        lin.pt2.x = tv2.x;
+        lin.pt2.y = tv2.y;
+        lin.col = col;
+
+
+        if(BMP_clipLine(&lin)) {
+            //lines_onscreen++;
+            //verts_cached+=2;
+            //verts_drawn+=2;
+            //cache_transformed_vertex(v1, tv1);
+            //cache_transformed_vertex(v2, tv2);
+
+            BMP_drawLine(&lin);
+            
+        }
+        
+    }
+
+}
 
 void draw_automap() {
     clear_vertex_transform_cache();
@@ -355,80 +419,7 @@ void draw_automap() {
             }
 
             const u16* cell_ptr =  &(render_blkmap->offsets_plus_table[blockmap_table_idx]);
-            u16 num_linedefs = *cell_ptr++;
-
-            for(u16 i = 0; i < num_linedefs; i++) {
-                u16 linedef_byte_idx = *cell_ptr++;    
-                u8 byte = processed_linedef_bitmap[linedef_byte_idx];
-                u16 bit_mask_and_is_portal = *cell_ptr++;
-                u8 bit_mask = bit_mask_and_is_portal>>8;
-                if(byte == 0 || ((byte & bit_mask) == 0)) {
-                    processed_linedef_bitmap[linedef_byte_idx] |= bit_mask;
-                } else {
-                //if(byte == 0xFF || byte & bit_mask) {
-                    // skip rest of linedef
-                    // skip v1_index, v1x, v1y
-                    cell_ptr += 3;
-                    // skip v2_index, v2x, v2y
-                    cell_ptr += 3;
-                    //linedefs_skipped++;
-                    continue;
-                }
-
-                u8 is_portal = bit_mask_and_is_portal&0xFF; 
-                u16 v1 = *cell_ptr++;
-                Vect2D_s16 tv1;
-
-                u8 vertex1_cached = vertex_transform_cache_map[v1];
-                if(is_vertex_cached(v1)) {
-                    cell_ptr += 2; // skip over inline vertex x and y
-                    verts_reused++;
-
-                    tv1 = vertex_transform_cache[vertex1_cached];
-                } else {
-                    u16 v1x = *cell_ptr++;
-                    u16 v1y = *cell_ptr++;
-                    tv1 = inner_transform_vert(v1x, v1y);
-                }
-                u16 v2 = *cell_ptr++;
-                Vect2D_s16 tv2;
-                u8 vertex2_cached = vertex_transform_cache_map[v2];
-                if(is_vertex_cached(v2)) {
-                    verts_reused++;
-                    cell_ptr += 2; // skip over inline vertex x and y
-                    tv2 = vertex_transform_cache[vertex2_cached]; //get_transformed_vertex(v2);
-                } else {
-                    u16 v2x = *cell_ptr++;
-                    u16 v2y = *cell_ptr++;
-                    tv2 = inner_transform_vert(v2x, v2y);
-                }
-
-                //Vect2D_s16 tv1 = transform_vert(line.v1);
-                //Vect2D_s16 tv2 = transform_vert(line.v2);
-
-
-                u8 col = is_portal ? 0x11 : 0x22;
-
-                lin.pt1.x = tv1.x; 
-                lin.pt1.y = tv1.y;
-                lin.pt2.x = tv2.x;
-                lin.pt2.y = tv2.y;
-                lin.col = col;
-
-
-                if(BMP_clipLine(&lin)) {
-                    lines_onscreen++;
-                    //verts_cached+=2;
-                    verts_drawn+=2;
-                    cache_transformed_vertex(v1, tv1);
-                    cache_transformed_vertex(v2, tv2);
-
-                    BMP_drawLine(&lin);
-                    
-                }
-                
-            }
-
+            draw_blockmap_cell(lin, cell_ptr);
             /*
             while(1) {
                 u16 linedef_idx = *linedef_list_ptr++;
@@ -498,17 +489,17 @@ void draw_automap() {
 
     BMP_showFPS(1);
     
-    char buf[32];
-    sprintf(buf, "lines drawn %i.", lines_onscreen);
-    BMP_drawText(buf, 0, 6);
-    sprintf(buf, "vertexes cached %i.", num_cached_vertexes-1);
-    BMP_drawText(buf, 0, 7);
-    sprintf(buf, "vertexes reused %i.", verts_reused);
-    BMP_drawText(buf, 0, 8);
-    sprintf(buf, "vertexes drawn %i.", verts_drawn);
-    BMP_drawText(buf, 0, 9);
-    sprintf(buf, "linedefs skipped %i.", linedefs_skipped);
-    BMP_drawText(buf, 0, 10);
+    //char buf[32];
+    //sprintf(buf, "lines drawn %i.", lines_onscreen);
+    //BMP_drawText(buf, 0, 6);
+    //sprintf(buf, "vertexes cached %i.", num_cached_vertexes-1);
+    //BMP_drawText(buf, 0, 7);
+    //sprintf(buf, "vertexes reused %i.", verts_reused);
+    //BMP_drawText(buf, 0, 8);
+    //sprintf(buf, "vertexes drawn %i.", verts_drawn);
+    //BMP_drawText(buf, 0, 9);
+    //sprintf(buf, "linedefs skipped %i.", linedefs_skipped);
+    //BMP_drawText(buf, 0, 10);
     
 
     //int y_off = 4;
@@ -632,15 +623,13 @@ game_mode run_game() {
     angleSin32 = sinFix32(cur_player_angle); 
     angleCos16 = cosFix16(cur_player_angle);
     angleSin16 = sinFix16(cur_player_angle); 
-    angleCos16x4 = angleCos16<<2;
-    angleSin16x4 = angleSin16<<2; 
-    angleSin16Times64 = angleSin16<<6;
-    angleCos16Times64 = angleCos16<<6;
+    angleSinFrac12 = angleSin16<<6;
+    angleCosFrac12 = angleCos16<<6;
 
     prescaled_player_x = ((cur_player_x>>ZOOM_SHIFT)>>(FIX32_FRAC_BITS-6)); // scaling factor is now 64 (2^6) instead of 1024 (2^10)
     prescaled_player_y = ((cur_player_y>>ZOOM_SHIFT)>>(FIX32_FRAC_BITS-6));
-    prescaled_player_x2 = ((cur_player_x>>ZOOM_SHIFT)>>(FIX32_FRAC_BITS-4)); // scaling factor is now 64 (2^6) instead of 1024 (2^10)
-    prescaled_player_y2 = ((cur_player_y>>ZOOM_SHIFT)>>(FIX32_FRAC_BITS-4));
+    playerXFrac4 = ((cur_player_x>>ZOOM_SHIFT)>>(FIX32_FRAC_BITS-4)); // scaling factor is now 16 (2^4) instead of 1024 (2^10)
+    playerYFrac4 = ((cur_player_y>>ZOOM_SHIFT)>>(FIX32_FRAC_BITS-4));
     handle_input();
 
     //JOY_waitPress
