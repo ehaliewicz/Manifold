@@ -75,42 +75,6 @@ void clear_linedef_processed_bitmap() {
     memset(processed_linedef_bitmap, 0, num_linedefs/8+1);
 }
 
-#define MAX_TRANSFORM_CACHE 4
-
-
-Vect2D_s16* vertex_transform_cache = NULL;
-u8* vertex_transform_cache_map = NULL;
-int num_cached_vertexes = 0;
-
-void init_vertex_transform_cache() {
-    vertex_transform_cache = MEM_alloc(sizeof(Vect2D_s16) * (MAX_TRANSFORM_CACHE+1));
-    vertex_transform_cache_map = MEM_alloc(cur_level->num_vertexes);
-    num_cached_vertexes = 0;
-}
-
-
-inline int is_vertex_cached(u16 vertex_idx) {
-    return vertex_transform_cache_map[vertex_idx];
-}
-
-void clear_vertex_transform_cache() {
-    memset(vertex_transform_cache_map, 0, cur_level->num_vertexes);
-    num_cached_vertexes = 1;
-}
-
-void cache_transformed_vertex(int vertex_idx, Vect2D_s16 v) {
-    int cached = is_vertex_cached(vertex_idx);
-    if((!cached) && num_cached_vertexes < MAX_TRANSFORM_CACHE) {
-        int assigned_idx = num_cached_vertexes++;
-        vertex_transform_cache_map[vertex_idx] = assigned_idx;
-        vertex_transform_cache[assigned_idx] = v;
-    }
-}
-
-inline Vect2D_s16 get_transformed_vertex(int vertex_idx) {
-    return vertex_transform_cache[vertex_transform_cache_map[vertex_idx]];
-}
-
 
 typedef enum {
     INSIDE = 0b00000,
@@ -169,8 +133,8 @@ s16 fast_div(s16 numer, s16 denom) {
 
 //const int zoom = 4;
 
-//#define ZOOM 4
-//#define ZOOM_SHIFT 2
+//#define ZOOM 8
+//#define ZOOM_SHIFT 3
 #define ZOOM 4
 #define ZOOM_SHIFT 2
 
@@ -190,12 +154,8 @@ Vect2D_s16 transform_vert_native(s16 x, s16 y);
 Vect2D_s16 transform_res;
 
 Vect2D_s16 inner_transform_vert(s16 x, s16 y) {
-    //Vect2D_s16 res;
     return transform_vert_native(x, y);
-    //return res;
 
-    //Vect2D_s16 res = {.x = trans_vert_x, .y = trans_vert_y};
-    //return res;
     s16 x_shifted = ((x<<4)>>ZOOM_SHIFT);
     s16 y_shifted = ((y<<4)>>ZOOM_SHIFT);
     s16 tlx = x_shifted - playerXFrac4;
@@ -214,7 +174,7 @@ Vect2D_s16 inner_transform_vert(s16 x, s16 y) {
     return vert;
 }
 
-
+/*
 Vect2D_s16 transform_vert(u16 v_idx) {
     if(is_vertex_cached(v_idx)) {
         return get_transformed_vertex(v_idx);
@@ -223,14 +183,103 @@ Vect2D_s16 transform_vert(u16 v_idx) {
     s16 x = v.x;
     s16 y = v.y;   
     return inner_transform_vert(x, y);    
-}               
+}        
+*/       
 
 typedef enum {
     SINGLE_LINEDEF = 0,
     POLY_LINEDEF = 1
 } linedef_segment_type;
 
-void draw_blockmap_cell(Line lin, u16* cell_ptr) {
+
+u8 compute_outcode(s16 x, s16 y, s16 min_x, s16 min_y, s16 max_x, s16 max_y) {
+    u8 code = INSIDE;
+    if(x < min_x) {
+        code |= LEFT;
+    } else if (x > max_x) {
+        code |= RIGHT;
+    }
+    if(y < min_y) {
+        code |= TOP;
+    } else if (y > max_y) {
+        code |= BOTTOM;
+    }
+    return code;
+}
+
+clip_result internal_clip_line(Line* l, s16 min_x, s16 min_y, s16 max_x, s16 max_y) {
+
+    s16 x1 = l->pt1.x; s16 x2 = l->pt2.x;
+    s16 y1 = l->pt1.y; s16 y2 = l->pt2.y;
+
+    u8 outcode0 = compute_outcode(x1, y1, min_x, min_y, max_x, max_y);
+    u8 outcode1 = compute_outcode(x2, y2, min_x, min_y, max_x, max_y);
+
+    clip_result res = OFFSCREEN;
+    while(1) {
+        if(!(outcode0 | outcode1)) {
+            // trivial accept, both points are inside window
+            res = ONSCREEN;
+            break;
+        } else if (outcode0 & outcode1) {
+            //res = OFFSCREEN;
+            return OFFSCREEN;
+            //break;
+        }
+
+        // At least one endpoint is outside the clip rectangle; pick it.
+        outcode code_out = outcode1 > outcode0 ? outcode1 : outcode0;
+
+        s32 new_x, new_y;  
+        if (code_out & TOP) {     
+            new_x = x1 + (x2-x1) * (min_y - y1) / (y2-y1);
+            new_y = min_y;
+        } else if (code_out & BOTTOM) { 
+            new_x = x1 + (x2-x1) * (max_y - y1) / (y2-y1);
+            new_y = max_y;
+        } else if (code_out & RIGHT) {  
+            new_y = y1 + (y2-y1) * (max_x-x1) / (x2-x1);
+            new_x = max_x;
+        } else if (code_out & LEFT) {  
+            new_y = y1 + (y2-y1) * (min_x-x1) / (x2-x1);
+            new_x = min_x;
+        }
+
+        if (code_out == outcode0) {
+            x1 = new_x;
+            y1 = new_y;
+            outcode0 = compute_outcode(x1, y1, min_x, min_y, max_x, max_y);
+        } else {
+            x2 = new_x;
+            y2 = new_y;
+            outcode1 = compute_outcode(x2, y2, min_x, min_y, max_x, max_y);
+        }
+
+    }
+
+    l->pt1.x = x1;
+    l->pt1.y = y1;
+    l->pt2.x = x2;
+    l->pt2.y = y2;
+    return ONSCREEN;
+    
+}
+
+#define WALL_COL 0x22
+#define PORTAL_COL 0x11
+
+
+int lines_onscreen = 0;
+int verts_reused = 0;
+int linedefs_skipped = 0;
+int verts_drawn = 0;
+int verts_cached = 0;
+int verts_trivially_reused = 0;
+int lines_transformed_then_clipped = 0;
+
+void draw_blockmap_cell(u16* cell_ptr) {
+    Line lin;
+
     u16 num_linedefs = *cell_ptr++;
 
     for(u16 i = 0; i < num_linedefs; i++) {
@@ -247,43 +296,32 @@ void draw_blockmap_cell(Line lin, u16* cell_ptr) {
             cell_ptr += 3;
             // skip v2_index, v2x, v2y
             cell_ptr += 3;
-            //linedefs_skipped++;
+            linedefs_skipped++;
             continue;
         }
 
         u8 is_portal = bit_mask_and_is_portal&0xFF; 
         u16 v1 = *cell_ptr++;
+        if(0) { //v1 == last_v2 || v1 == last_v1) {
+            verts_trivially_reused++;
+        }
         Vect2D_s16 tv1;
 
-        //u8 vertex1_cached = vertex_transform_cache_map[v1];
-        if(0) { // is_vertex_cached(v1)) {
-            cell_ptr += 2; // skip over inline vertex x and y
-            //verts_reused++;
-
-            //tv1 = vertex_transform_cache[vertex1_cached];
-        } else {
-            u16 v1x = *cell_ptr++;
-            u16 v1y = *cell_ptr++;
-            tv1 = inner_transform_vert(v1x, v1y);
-        }
+        u16 v1x = *cell_ptr++;
+        u16 v1y = *cell_ptr++;
         u16 v2 = *cell_ptr++;
         Vect2D_s16 tv2;
-        //u8 vertex2_cached = vertex_transform_cache_map[v2];
-        if(0) { //is_vertex_cached(v2)) {
-            //verts_reused++;
-            cell_ptr += 2; // skip over inline vertex x and y
-            //tv2 = vertex_transform_cache[vertex2_cached]; //get_transformed_vertex(v2);
-        } else {
-            u16 v2x = *cell_ptr++;
-            u16 v2y = *cell_ptr++;
-            tv2 = inner_transform_vert(v2x, v2y);
-        }
 
-        //Vect2D_s16 tv1 = transform_vert(line.v1);
-        //Vect2D_s16 tv2 = transform_vert(line.v2);
+        u16 v2x = *cell_ptr++;
+        u16 v2y = *cell_ptr++;
 
+        tv1 = inner_transform_vert(v1x, v1y);
+        tv2 = inner_transform_vert(v2x, v2y);
 
-        u8 col = is_portal ? 0x11 : 0x22;
+        //last_v2 = v2;
+        //last_v1 = v1;
+
+        u8 col = is_portal ? PORTAL_COL : WALL_COL;
 
         lin.pt1.x = tv1.x; 
         lin.pt1.y = tv1.y;
@@ -296,6 +334,10 @@ void draw_blockmap_cell(Line lin, u16* cell_ptr) {
             //lines_onscreen++;
             //verts_cached+=2;
             //verts_drawn+=2;
+            //vertex_transform_cache[v1].cached_frame = cur_frame;
+            //vertex_transform_cache[v1].transformed_vert = tv1;
+            //vertex_transform_cache[v2].cached_frame = cur_frame;
+            //vertex_transform_cache[v2].transformed_vert = tv2;
             //cache_transformed_vertex(v1, tv1);
             //cache_transformed_vertex(v2, tv2);
 
@@ -307,17 +349,18 @@ void draw_blockmap_cell(Line lin, u16* cell_ptr) {
 
 }
 
-void draw_automap() {
-    clear_vertex_transform_cache();
+void draw_automap(u32 cur_frame) {
     clear_linedef_processed_bitmap();
     BMP_waitWhileFlipRequestPending();
     BMP_clear();
 
-    int lines_onscreen = 0;
-    int verts_reused = 0;
-    int linedefs_skipped = 0;
-    int verts_drawn = 0;
-    int verts_cached = 0;
+    lines_onscreen = 0;
+    verts_reused = 0;
+    linedefs_skipped = 0;
+    verts_drawn = 0;
+    verts_cached = 0;
+    verts_trivially_reused = 0;
+    lines_transformed_then_clipped = 0;
 
     // inverse project coordinates
 
@@ -398,8 +441,6 @@ void draw_automap() {
     int min_blockmap_y = fix32ToRoundedInt(min_world_y-intToFix32(blockmap_min_y))/BLOCKMAP_CELL_SIZE;
     int max_blockmap_y = fix32ToRoundedInt(max_world_y-intToFix32(blockmap_min_y))/BLOCKMAP_CELL_SIZE;
 
-
-    Line lin;
     int y_start = max(0, min_blockmap_y);
     int y_end = min(max_blockmap_y, render_blkmap->num_rows-1);
     int x_start = max(0, min_blockmap_x);
@@ -419,49 +460,35 @@ void draw_automap() {
             }
 
             const u16* cell_ptr =  &(render_blkmap->offsets_plus_table[blockmap_table_idx]);
-            draw_blockmap_cell(lin, cell_ptr);
-            /*
-            while(1) {
-                u16 linedef_idx = *linedef_list_ptr++;
-                if(linedef_idx == 0xFFFF) { break; }
-
-   
-
-                if(is_linedef_processed(linedef_idx)) { linedefs_skipped++; continue; }
-                set_linedef_processed(linedef_idx);
-                
-                linedef line = cur_level->linedefs[linedef_idx];
-                int is_portal = line.left_sidedef != 0xFFFF && line.right_sidedef != 0xFFFF;
-
-                Vect2D_s16 tv1 = transform_vert(line.v1);
-                Vect2D_s16 tv2 = transform_vert(line.v2);
+            draw_blockmap_cell(cell_ptr);
 
 
-                u8 col = is_portal ? 0x11 : 0x22;
-
-                lin.pt1.x = tv1.x; 
-                lin.pt1.y = tv1.y;
-                lin.pt2.x = tv2.x;
-                lin.pt2.y = tv2.y;
-                lin.col = col;
-
-
-                if(BMP_clipLine(&lin)) {
-                    lines_onscreen++;
-                    cache_transformed_vertex(line.v1, tv1);
-                    cache_transformed_vertex(line.v2, tv2);
-
-                    BMP_drawLine(&lin);
-                    
-                }
-            
-            }
-            */
         }
         
         blockmap_y_off += num_cols;
 
     }
+
+    linedef line0 = cur_level->linedefs[0];
+    u8 line0_is_portal = line0.left_sidedef != 0xFFFF && line0.right_sidedef != 0xFFFF;
+    u8 line0_bitmask = 0b00000001;
+    u16 line0_v1 = line0.v1;
+    u16 line0_v1_x = cur_level->vertexes[line0_v1].x;
+    u16 line0_v1_y = cur_level->vertexes[line0_v1].y;
+
+    u16 line0_v2 = line0.v2;
+    u16 line0_v2_x = cur_level->vertexes[line0_v2].x;
+    u16 line0_v2_y = cur_level->vertexes[line0_v2].y;
+
+    Vect2D_s16 l0tv1 = inner_transform_vert(line0_v1_x, line0_v1_y);
+    Vect2D_s16 l0tv2 = inner_transform_vert(line0_v2_x, line0_v2_y);
+
+    Line lin;
+    lin.pt1 = l0tv1;
+    lin.pt2 = l0tv2;
+    lin.col = line0_is_portal ? PORTAL_COL : WALL_COL;
+    if(BMP_clipLine(&lin)) { BMP_drawLine(&lin); }
+    //draw_blockmap_cell(blockmap_cell_with_linedef_0);
 
 
     lin.col = 0xFF;
@@ -490,16 +517,20 @@ void draw_automap() {
     BMP_showFPS(1);
     
     //char buf[32];
+    //sprintf(buf, "lines transformed then clipped %i.", lines_transformed_then_clipped);
+    //BMP_drawText(buf, 0, 5);
     //sprintf(buf, "lines drawn %i.", lines_onscreen);
     //BMP_drawText(buf, 0, 6);
-    //sprintf(buf, "vertexes cached %i.", num_cached_vertexes-1);
+    //sprintf(buf, "vertexes cached %i.", verts_cached);
     //BMP_drawText(buf, 0, 7);
     //sprintf(buf, "vertexes reused %i.", verts_reused);
     //BMP_drawText(buf, 0, 8);
-    //sprintf(buf, "vertexes drawn %i.", verts_drawn);
+    //sprintf(buf, "verts trivially reused %i.", verts_trivially_reused);
     //BMP_drawText(buf, 0, 9);
-    //sprintf(buf, "linedefs skipped %i.", linedefs_skipped);
+    //sprintf(buf, "vertexes drawn %i.", verts_drawn);
     //BMP_drawText(buf, 0, 10);
+    //sprintf(buf, "linedefs skipped %i.", linedefs_skipped);
+    //BMP_drawText(buf, 0, 11);
     
 
     //int y_off = 4;
@@ -518,7 +549,7 @@ void draw_automap() {
     //DMA_doDma(DMA_VRAM, bmp, BMP_FB0TILE+(2*32), (BMP_FB0ENDTILEINDEX-BMP_FB0TILE)/2, 4);
 }
 
-const fix32 move_speed = 15;
+const fix32 move_speed = 4*ZOOM; //15;
 
 void handle_input() {
     int strafe = joy_button_pressed(BUTTON_C);
@@ -541,7 +572,7 @@ void handle_input() {
             cur_player_y += leftAngleCos*move_speed;
             cur_player_x += leftAngleSin*move_speed;
         } else {
-            cur_player_angle -= 8;
+            cur_player_angle -= 14;
         }
     } else if (joy_button_pressed(BUTTON_RIGHT)) {
         if(strafe) {
@@ -551,7 +582,7 @@ void handle_input() {
             cur_player_y += leftAngleCos*move_speed;
             cur_player_x += leftAngleSin*move_speed;
         } else {
-            cur_player_angle += 8;
+            cur_player_angle += 14;
         }
     }
 
@@ -590,7 +621,10 @@ void cleanup_pause_menu() {
     
 }
 
+static int cur_frame;
 void init_game() {
+    cur_frame = 0;
+
     quit_game = 0;
     if(pause_game) {
         pause_game = 0;
@@ -609,7 +643,6 @@ void init_game() {
     BMP_setBufferCopy(0);
     BMP_flip(0);
     init_processed_linedef_bitmap(); 
-    init_vertex_transform_cache();
     XGM_stopPlay();
     if(music_on) {
         XGM_startPlay(xgm_e1m4);
@@ -618,7 +651,7 @@ void init_game() {
 
 
 game_mode run_game() {
-
+    
     angleCos32 = cosFix32(cur_player_angle);
     angleSin32 = sinFix32(cur_player_angle); 
     angleCos16 = cosFix16(cur_player_angle);
@@ -642,7 +675,8 @@ game_mode run_game() {
     }
     */
    
-    draw_automap();
+    draw_automap(cur_frame);
+    cur_frame++;
 
     return SAME_MODE;
 }
@@ -650,7 +684,5 @@ game_mode run_game() {
 void cleanup_game() {
     BMP_end();
     MEM_free(processed_linedef_bitmap);
-    //MEM_free(vertex_transform_cache_map);
-    //MEM_free(vertex_transform_cache);
     MEM_pack();
 }
