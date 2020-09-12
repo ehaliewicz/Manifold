@@ -1,4 +1,4 @@
-import copy, math, os, pickle, re, sys, struct
+simport copy, math, os, pickle, re, sys, struct
 from dataclasses import dataclass
 import BitVector
 from typing import List
@@ -83,7 +83,7 @@ def is_level_name(nm):
 
 DIRECTORY_ENTRY_SIZE = 16
 DIRECTORY_ENTRY_FORMAT = """
-  ptr int ;
+  ptr int 
   size int ; 
   name char[8]
 """
@@ -353,6 +353,19 @@ class Thing:
 def linedef_is_portal(linedef):
     return linedef.right_sidedef != -1 and linedef.left_sidedef != -1
 
+
+def optimize_linedef_entries(entries):
+    linedefs_with_vertexes = {}
+    for (linedef,v1,v2) in entries: 
+        lst = linedefs_with_vertexes.get(v1, list())
+        lst.append(linedef)
+        linedefs_with_vertexes[v1] = lst
+        lst = linedefs_with_vertexes.get(v2, list())
+        lst2.append(linedef)
+        linedefs_with_vertexes[v2] = lst
+
+    
+
 def calculate_render_blockmap(blkmap, level_data):
     # cell size 256x256
     num_cols = blkmap.num_columns
@@ -362,9 +375,11 @@ def calculate_render_blockmap(blkmap, level_data):
     offsets = []
     table = []
 
+    
 
     for y in range(0, blkmap.num_rows):
         for x in range(0, blkmap.num_columns):
+            blockmap_linedef_entries = []
             cell = index_blockmap(x, y, blkmap)
             cell.remove(0)
             
@@ -379,30 +394,38 @@ def calculate_render_blockmap(blkmap, level_data):
             table.append(len(cell)) # append number of linedefs
             for linedef_idx in sorted(cell):
                 linedef = level_data['LINEDEFS'][linedef_idx]
+
+                v1_idx = linedef.begin_vert
+                v2_idx = linedef.end_vert
+                blockmap_linedef_entries.append((linedef_idx, v1_idx, v2_idx))
+
+
+            for (linedef_idx, v1_idx, v2_idx) in blockmap_linedef_entries:
                 #print("linedef idx {}".format(linedef_idx))
                 linedef_byte_idx = linedef_idx>>3
                 #print("linedef byte idx {}".format(linedef_byte_idx))
                 linedef_bit_pos = (linedef_idx & 0b111)
                 linedef_bit_mask = 1<<linedef_bit_pos
                 #sys.exit(1)
-                is_portal = linedef_is_portal(linedef)
-
+                line_color = 0x11 if linedef_is_portal(linedef) else 0x22
+                
                 linedef_bit_mask_plus_is_portal = (linedef_bit_mask << 8) | (is_portal)
                 
                 table.append(linedef_byte_idx)
                 table.append(linedef_bit_mask_plus_is_portal)
-
-                v1_idx = linedef.begin_vert
-                v2_idx = linedef.end_vert
+                
+                
                 v1 = level_data['VERTEXES'][v1_idx]
                 v2 = level_data['VERTEXES'][v2_idx]
-                                
+
+                
                 #table.append(v1_idx)
                 table.append(v1.x)
                 table.append(v1.y)
                 #table.append(v2_idx)
                 table.append(v2.x)
                 table.append(v2.y)
+            print(blockmap_linedefs)
     
                 
             
