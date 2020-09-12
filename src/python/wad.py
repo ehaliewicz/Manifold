@@ -365,8 +365,14 @@ def optimize_linedef_entries(entries):
         linedefs_with_vertexes[v2] = lst
 
     
+BITMASK = 'bitmask'
+BITPOS = 'bitpos'
 
-def calculate_render_blockmap(blkmap, level_data):
+IS_PORTAL_FLAG = 'is_portal'
+LINE_COLOR = 'line_color'
+
+        
+def calculate_render_blockmap(blkmap, level_data, bit_type, is_portal_type, include_vertex_ids):
     # cell size 256x256
     num_cols = blkmap.num_columns
     num_rows = blkmap.num_rows
@@ -406,23 +412,28 @@ def calculate_render_blockmap(blkmap, level_data):
                 #print("linedef byte idx {}".format(linedef_byte_idx))
                 linedef_bit_pos = (linedef_idx & 0b111)
                 linedef_bit_mask = 1<<linedef_bit_pos
-                #sys.exit(1)
-                line_color = 0x11 if linedef_is_portal(linedef) else 0x22
-                
-                linedef_bit_mask_plus_is_portal = (linedef_bit_mask << 8) | (is_portal)
-                
+                linedef_bit_thing = linedef_bit_pos if bit_type === BITPOS else linedef_bit_mask
+
+                is_portal = linedef_is_portal(linedef)
+                line_color = 0x11 if is_portal else 0x22
+                portal_thing = line_color if is_portal_type == LINE_COLOR else is_portal
+
+                linedef_bit_plus_is_portal = (linedef_bit_thing << 8) | portal_thing
                 table.append(linedef_byte_idx)
-                table.append(linedef_bit_mask_plus_is_portal)
+                
+                table.append(linedef_bit_plus_is_portal)
                 
                 
                 v1 = level_data['VERTEXES'][v1_idx]
                 v2 = level_data['VERTEXES'][v2_idx]
 
-                
-                #table.append(v1_idx)
+
+                if include_vertex_ids:
+                    table.append(v1_idx)
                 table.append(v1.x)
                 table.append(v1.y)
-                #table.append(v2_idx)
+                if include_vertex_ids:
+                    table.append(v2_idx)
                 table.append(v2.x)
                 table.append(v2.y)
             print(blockmap_linedefs)
