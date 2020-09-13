@@ -73,7 +73,6 @@ transform_vert_native:
 
 
 draw_blockmap_cell_native:
-	| movm.l %d2-%d5/%a2-%a4, -(%sp)
 	movm.l %d2-%d7/%a2-%a6, -(%sp)
 	
 	move.l 4+44(%sp), %a2		| load pointer to line struct (where we store transformed line data for BMP_clipLine and BMP_drawLine)
@@ -81,65 +80,59 @@ draw_blockmap_cell_native:
 	move.l 8+44(%sp), %a3		| load cell pointer into a0
 	move.l 12+44(%sp), %d6		| load cur frame in d6
 	
-	move.l %a2, -(%sp)			| push onto stack for BMP_clipLine/BMP_drawLine
+	move.l %a2, -(%sp)			| push line pointer onto stack for BMP_clipLine/BMP_drawLine
 
-	move.l (vertex_cache_frames), %a5
-	move.l (cached_vertexes), %a6
+	move.l (vertex_cache_frames), %a5	   | load vertex cached frames into a5
+	move.l (cached_vertexes), %a6		   | load vertex cache into a6
 	move.l (processed_linedef_bitmap), %a4 | load linedef bitmap into a4
 
-
-	move.w (%a3)+, %d5		| d5 = linedef count
+	move.w (%a3)+, %d5		  | d5 = linedef count
 	subq.w #1, %d5
 draw_blockmap_cell_loop:
 	move.w (%a3)+, %d0		  | d0 = linedef byte index
 	move.b (%a3)+, %d2 		  | d2 = bitpos
 	bset.b %d2, 0(%a4, %d0.w)
 	beq.b draw_linedef
-skip_linedef:
-	| add.l #12, %a3			 
-	| add.l #9, %a3			      | skip 9 bytes, 6 for each vertex * 2, plus one for color
-	add.l #13, %a3
+skip_linedef:		      
+	add.l #13, %a3				| skip 13 bytes, 6 for each vertex * 2, plus one for color
 	bra.w draw_blockmap_linedef_loop_test	
 draw_linedef:
-	move.b (%a3)+, 9(%a2)		  | d3 = color (ignored for now)
+	move.b (%a3)+, 9(%a2)		| copy color directly into line struct
 
-	
-	move.w (%a3)+, %d7			| load vertex idx * 4
-	cmp.l 0(%a5, %d7.w), %d6
-	bne.b dont_reuse_v1
+	| vertex caching logic for vertex #1
+	move.w (%a3)+, %d7			| load vertex idx (prescaled by 4 for fast cache lookup)
+	cmp.l 0(%a5, %d7.w), %d6	| check if the current frame matches the one in the vertex cache
+	bne.b dont_reuse_v1			| if they're not equal, transform this vertex and cache it
 reuse_v1:
-	move.l 0(%a6, %d7.w), (%a2)
-	addq.l #4, %a3
-	bra.b handle_v2
+	move.l 0(%a6, %d7.w), (%a2) | load vertex from vertex cache and store directly into line struct
+	addq.l #4, %a3				| skip past vertex coordinates
+	bra.b handle_v2				| and jump to vertex #2
 
 dont_reuse_v1:
 	move.w (%a3)+, %d0			| load vertex x component
 	move.w (%a3)+, %d2			| load vertex y component
-	TRANSFORM_VERT				| transform
+	TRANSFORM_VERT				| transform vertex and place results into d0 (2 16-bit components)
 	move.l %d0, (%a2)			| write transformed vertex to line struct
-
-	move.l %d0, 0(%a6, %d7.w)  | write to vertex cache
-	move.l %d6, 0(%a5, %d7.w)  | write frame to vertex cache
+	move.l %d0, 0(%a6, %d7.w)   | write to vertex cache
+	move.l %d6, 0(%a5, %d7.w)   | write current frame to vertex cached frame
 	
-
+	| vertex caching logic for vertex #2
 handle_v2:
-	move.w (%a3)+, %d7			| load vertex idx * 4
-	cmp.l 0(%a5, %d7.w), %d6
-	bne.b dont_reuse_v2
+	move.w (%a3)+, %d7			 | load vertex idx (prescaled by 4 for fast cache lookup)
+	cmp.l 0(%a5, %d7.w), %d6     | check if the current frame matches the one in the vertex cache
+	bne.b dont_reuse_v2			 | if they're not equal, transform this vertex and cache it
 reuse_v2:
-	move.l 0(%a6, %d7.w), 4(%a2)
-	addq.l #4, %a3
-	bra clip_line
+	move.l 0(%a6, %d7.w), 4(%a2) | load vertex from vertex cache and store directly into line struct
+	addq.l #4, %a3				 | skip past vertex coordinates
+	bra clip_line				 | and jump to vertex #2
 
 dont_reuse_v2:
-	| addq.l #2, %a3				| skip vertex idx
 	move.w (%a3)+, %d0			| load vertex x component
 	move.w (%a3)+, %d2			| load vertex y component
-	TRANSFORM_VERT				| transform
+	TRANSFORM_VERT				| transform vertex and place results into d0 (2 16-bit components)
 	move.l %d0, 4(%a2)			| write transformed vertex to line struct
-
 	move.l %d0, 0(%a6, %d7.w)  | write to vertex cache
-	move.l %d6, 0(%a5, %d7.w)  | write frame to vertex cache
+	move.l %d6, 0(%a5, %d7.w)  | write current frame to vertex cached frame
 
 clip_line:
 	jsr BMP_clipLine
@@ -148,7 +141,6 @@ clip_line:
 	tst.w %d0							
 	beq.b skip_draw_line
 
-	
 	| clip line modifies it's argument so we can just call drawLine right away afterwards
 	jsr BMP_drawLine
 skip_draw_line:
@@ -159,5 +151,4 @@ draw_blockmap_linedef_loop_test:
 	addq.l #4, %sp 					| pop line pointer off stack
 
     movm.l (%sp)+,%d2-%d7/%a2-%a6
-    | movm.l (%sp)+,%d2-%d5/%a2-%a4
 	rts
