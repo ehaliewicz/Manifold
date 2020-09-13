@@ -1,6 +1,5 @@
-simport copy, math, os, pickle, re, sys, struct
+import copy, math, os, pickle, re, sys, struct
 from dataclasses import dataclass
-import BitVector
 from typing import List
 
 wad_data = None
@@ -83,7 +82,7 @@ def is_level_name(nm):
 
 DIRECTORY_ENTRY_SIZE = 16
 DIRECTORY_ENTRY_FORMAT = """
-  ptr int 
+  ptr int ;
   size int ; 
   name char[8]
 """
@@ -388,6 +387,9 @@ def calculate_render_blockmap(blkmap, level_data, bit_type, is_portal_type, incl
             blockmap_linedef_entries = []
             cell = index_blockmap(x, y, blkmap)
             cell.remove(0)
+
+            #print(cell)
+            
             
             if len(cell) == 0:
                 # append a 0 to denote an empty cell
@@ -396,8 +398,8 @@ def calculate_render_blockmap(blkmap, level_data, bit_type, is_portal_type, incl
             else:
                 offsets.append(num_offset_vals+len(table))
 
-
-            table.append(len(cell)) # append number of linedefs
+            new_table_entries = []
+            new_table_entries.append(len(cell)) # append number of linedefs
             for linedef_idx in sorted(cell):
                 linedef = level_data['LINEDEFS'][linedef_idx]
 
@@ -406,37 +408,45 @@ def calculate_render_blockmap(blkmap, level_data, bit_type, is_portal_type, incl
                 blockmap_linedef_entries.append((linedef_idx, v1_idx, v2_idx))
 
 
+            
+            
             for (linedef_idx, v1_idx, v2_idx) in blockmap_linedef_entries:
                 #print("linedef idx {}".format(linedef_idx))
                 linedef_byte_idx = linedef_idx>>3
                 #print("linedef byte idx {}".format(linedef_byte_idx))
                 linedef_bit_pos = (linedef_idx & 0b111)
                 linedef_bit_mask = 1<<linedef_bit_pos
-                linedef_bit_thing = linedef_bit_pos if bit_type === BITPOS else linedef_bit_mask
+                linedef_bit_thing = linedef_bit_pos if bit_type == BITPOS else linedef_bit_mask
 
                 is_portal = linedef_is_portal(linedef)
                 line_color = 0x11 if is_portal else 0x22
                 portal_thing = line_color if is_portal_type == LINE_COLOR else is_portal
 
                 linedef_bit_plus_is_portal = (linedef_bit_thing << 8) | portal_thing
-                table.append(linedef_byte_idx)
+                new_table_entries.append(linedef_byte_idx)
                 
-                table.append(linedef_bit_plus_is_portal)
+                new_table_entries.append(linedef_bit_plus_is_portal)
                 
                 
                 v1 = level_data['VERTEXES'][v1_idx]
                 v2 = level_data['VERTEXES'][v2_idx]
 
-
+                
                 if include_vertex_ids:
-                    table.append(v1_idx)
-                table.append(v1.x)
-                table.append(v1.y)
+                    new_table_entries.append(v1_idx)
+                new_table_entries.append(v1.x)
+                new_table_entries.append(v1.y)
                 if include_vertex_ids:
-                    table.append(v2_idx)
-                table.append(v2.x)
-                table.append(v2.y)
-            print(blockmap_linedefs)
+                    new_table_entries.append(v2_idx)
+                new_table_entries.append(v2.x)
+                new_table_entries.append(v2.y)
+            #print(blockmap_linedef_entries)
+            #print(new_table_entries)
+            table += new_table_entries
+            #print(table)
+            
+            
+            
     
                 
             
@@ -444,6 +454,8 @@ def calculate_render_blockmap(blkmap, level_data, bit_type, is_portal_type, incl
     #return (num_cols, num_rows, offsets, table)
     print("generated render blockmap of {} entries".format(len(table)))
     print("from blockmap of {} entries".format(len(blkmap.table)))
+    #print(table)
+    
     return Blockmap(x_origin = blkmap.x_origin,
                     y_origin = blkmap.y_origin,
                     num_columns = num_cols,
@@ -702,7 +714,11 @@ def read_level_data(level_dir):
     #level_dir['BLOCKMAP']
     blkmap = read_blockmap(level_dir['BLOCKMAP'], wad_data)
     results['BLOCKMAP'] = blkmap
-    results['RENDER_BLOCKMAP'] = calculate_render_blockmap(blkmap, results)
+    results['RENDER_BLOCKMAP'] = calculate_render_blockmap(
+        blkmap, results,
+        bit_type=BITPOS,
+        is_portal_type=LINE_COLOR,
+        include_vertex_ids=False)
 
     
     #sys.exit(1)
