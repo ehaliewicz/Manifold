@@ -371,7 +371,7 @@ IS_PORTAL_FLAG = 'is_portal'
 LINE_COLOR = 'line_color'
 
         
-def calculate_render_blockmap(blkmap, level_data, bit_type, is_portal_type, include_vertex_ids):
+def calculate_render_blockmap(blkmap, level_data, bit_type, is_portal_type, include_vertex_ids, zoom_factor):
     # cell size 256x256
     num_cols = blkmap.num_columns
     num_rows = blkmap.num_rows
@@ -435,14 +435,15 @@ def calculate_render_blockmap(blkmap, level_data, bit_type, is_portal_type, incl
                 
                 if include_vertex_ids:
                     new_table_entries.append(v1_idx*4)
-                    
-                new_table_entries.append(v1.x)
-                new_table_entries.append(v1.y)
+
+                
+                new_table_entries.append((v1.x<<4)/zoom_factor)
+                new_table_entries.append((v1.y<<4)/zoom_factor)
                 if include_vertex_ids:
                     new_table_entries.append(v2_idx*4)
 
-                new_table_entries.append(v2.x)
-                new_table_entries.append(v2.y)
+                new_table_entries.append((v2.x<<4)/zoom_factor)
+                new_table_entries.append((v2.y<<4)/zoom_factor)
             #print(blockmap_linedef_entries)
             #print(new_table_entries)
             table += new_table_entries
@@ -721,7 +722,8 @@ def read_level_data(level_dir):
         blkmap, results,
         bit_type=BITPOS,
         is_portal_type=LINE_COLOR,
-        include_vertex_ids=True)
+        include_vertex_ids=True,
+        zoom_factor=6)
 
     
     #sys.exit(1)
