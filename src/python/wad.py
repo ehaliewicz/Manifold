@@ -411,6 +411,7 @@ def calculate_render_blockmap(blkmap, level_data, bit_type, is_portal_type, incl
             
             
             for (linedef_idx, v1_idx, v2_idx) in blockmap_linedef_entries:
+                linedef = level_data['LINEDEFS'][linedef_idx]
                 #print("linedef idx {}".format(linedef_idx))
                 linedef_byte_idx = linedef_idx>>3
                 #print("linedef byte idx {}".format(linedef_byte_idx))
@@ -433,11 +434,13 @@ def calculate_render_blockmap(blkmap, level_data, bit_type, is_portal_type, incl
 
                 
                 if include_vertex_ids:
-                    new_table_entries.append(v1_idx)
+                    new_table_entries.append(v1_idx*4)
+                    
                 new_table_entries.append(v1.x)
                 new_table_entries.append(v1.y)
                 if include_vertex_ids:
-                    new_table_entries.append(v2_idx)
+                    new_table_entries.append(v2_idx*4)
+
                 new_table_entries.append(v2.x)
                 new_table_entries.append(v2.y)
             #print(blockmap_linedef_entries)
@@ -718,7 +721,7 @@ def read_level_data(level_dir):
         blkmap, results,
         bit_type=BITPOS,
         is_portal_type=LINE_COLOR,
-        include_vertex_ids=False)
+        include_vertex_ids=True)
 
     
     #sys.exit(1)
