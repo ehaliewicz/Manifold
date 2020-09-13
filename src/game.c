@@ -138,6 +138,8 @@ s16 fast_div(s16 numer, s16 denom) {
 #define ZOOM 4
 #define ZOOM_SHIFT 2
 
+u32* vertex_cache_frames;
+u32* cached_vertexes;
 
 
 static int pause_game = 0;
@@ -277,6 +279,10 @@ int verts_cached = 0;
 int verts_trivially_reused = 0;
 int lines_transformed_then_clipped = 0;
 
+void draw_blockmap_cell_native(Line* l, u16* cell_ptr);
+
+
+
 void draw_blockmap_cell(u16* cell_ptr) {
     Line lin;
 
@@ -286,22 +292,29 @@ void draw_blockmap_cell(u16* cell_ptr) {
         u16 linedef_byte_idx = *cell_ptr++;    
         u8 byte = processed_linedef_bitmap[linedef_byte_idx];
         u16 bit_mask_and_is_portal = *cell_ptr++;
-        u8 bit_mask = bit_mask_and_is_portal>>8;
+        u8 bit_pos = bit_mask_and_is_portal>>8;
+        u8 bit_mask = (1 << bit_pos);
+        //u8 bit_mask = bit_mask_and_is_portal>>8;
         if(byte == 0 || ((byte & bit_mask) == 0)) {
             processed_linedef_bitmap[linedef_byte_idx] |= bit_mask;
         } else {
         //if(byte == 0xFF || byte & bit_mask) {
             // skip rest of linedef
             // skip v1_index, v1x, v1y
-            cell_ptr += 3;
+            //cell_ptr += 3;
             // skip v2_index, v2x, v2y
-            cell_ptr += 3;
+            //cell_ptr += 3;
+            // skip v1x, v1y
+            cell_ptr += 2;
+            // skip v2x, v2y
+            cell_ptr += 2;
+
             linedefs_skipped++;
             continue;
         }
 
         u8 is_portal = bit_mask_and_is_portal&0xFF; 
-        u16 v1 = *cell_ptr++;
+        //u16 v1 = *cell_ptr++;
         if(0) { //v1 == last_v2 || v1 == last_v1) {
             verts_trivially_reused++;
         }
@@ -309,7 +322,7 @@ void draw_blockmap_cell(u16* cell_ptr) {
 
         u16 v1x = *cell_ptr++;
         u16 v1y = *cell_ptr++;
-        u16 v2 = *cell_ptr++;
+        //u16 v2 = *cell_ptr++;
         Vect2D_s16 tv2;
 
         u16 v2x = *cell_ptr++;
@@ -460,8 +473,12 @@ void draw_automap(u32 cur_frame) {
             }
 
             const u16* cell_ptr =  &(render_blkmap->offsets_plus_table[blockmap_table_idx]);
-            draw_blockmap_cell(cell_ptr);
-
+            //if(cur_frame & 0b1) {
+                //draw_blockmap_cell(cell_ptr);
+            //} else {
+                Line l;
+                draw_blockmap_cell_native(&l, cell_ptr);
+            //}
 
         }
         
@@ -624,7 +641,9 @@ void cleanup_pause_menu() {
 static int cur_frame;
 void init_game() {
     cur_frame = 0;
-
+    SYS_disableInts();
+    VDP_setScreenHeight224();
+    SYS_enableInts();
     quit_game = 0;
     if(pause_game) {
         pause_game = 0;
