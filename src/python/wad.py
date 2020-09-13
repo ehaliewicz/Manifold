@@ -909,7 +909,7 @@ def dump_level_data(output, level_data):
             f.write("};\n\n")
 
         f.write("static const blockmap blkmap = " + level_data['BLOCKMAP'].write_c() + ";\n")
-        f.write("static const blockmap render_blkmap = " + level_data['RENDER_BLOCKMAP'].write_c() + ";\n")
+        f.write("static const render_blockmap render_blkmap = " + level_data['RENDER_BLOCKMAP'].write_c() + ";\n")
         
 
         level_def = ("const level {}".format(output_level_name) + " = {\n" +
@@ -925,8 +925,8 @@ def dump_level_data(output, level_data):
                      .things = things,
                      .num_vertexes = {},
                      .vertexes = vertexes,
-                     .blockmap = &blkmap,
-                     .render_blockmap = &render_blkmap
+                     .blkmap = &blkmap,
+                     .render_blkmap = &render_blkmap
                      """.format(
                          len(level_data['LINEDEFS']),
                          len(level_data['SEGS']),
