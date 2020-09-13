@@ -908,13 +908,13 @@ def dump_level_data(output, level_data):
                 
             f.write("};\n\n")
 
-        f.write("static const blockmap blkmap = " + level_data['BLOCKMAP'].write_c() + "\n;\n")
-        f.write("static const blockmap render_blkmap = " + level_data['RENDER_BLOCKMAP'].write_c() + "\n;\n")
+        f.write("static const blockmap blkmap = " + level_data['BLOCKMAP'].write_c() + ";\n")
+        f.write("static const blockmap render_blkmap = " + level_data['RENDER_BLOCKMAP'].write_c() + ";\n")
         
 
         level_def = ("const level {}".format(output_level_name) + " = {\n" +
                      """
-                     .num_linedefs = {}
+                     .num_linedefs = {},
                      .linedefs = linedefs,
                      .nodes = nodes,
                      .sectors = sectors,
