@@ -437,13 +437,13 @@ def calculate_render_blockmap(blkmap, level_data, bit_type, is_portal_type, incl
                     new_table_entries.append(v1_idx*4)
 
                 
-                new_table_entries.append((v1.x<<4)/zoom_factor)
-                new_table_entries.append((v1.y<<4)/zoom_factor)
+                new_table_entries.append((v1.x<<4)//zoom_factor)
+                new_table_entries.append((v1.y<<4)//zoom_factor)
                 if include_vertex_ids:
                     new_table_entries.append(v2_idx*4)
 
-                new_table_entries.append((v2.x<<4)/zoom_factor)
-                new_table_entries.append((v2.y<<4)/zoom_factor)
+                new_table_entries.append((v2.x<<4)//zoom_factor)
+                new_table_entries.append((v2.y<<4)//zoom_factor)
             #print(blockmap_linedef_entries)
             #print(new_table_entries)
             table += new_table_entries
