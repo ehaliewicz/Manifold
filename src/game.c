@@ -49,30 +49,20 @@ void init_processed_linedef_bitmap() {
     processed_linedef_bitmap = MEM_alloc(num_linedefs/8+1);
 }
 
-
-
-
-u8 is_linedef_processed(u16 linedef_idx) {
-    u16 byte_idx = linedef_idx>>3;
-    u8 bit_idx = linedef_idx & 0b111;
-    u8 byte = processed_linedef_bitmap[byte_idx];
-    if(byte == 0) {
-        return 0;
-    }
-    u8 bit_mask = (1<<bit_idx);
-    return byte & bit_mask;
-    
-}
-
-void set_linedef_processed(u16 linedef_idx) {
-    u16 byte_idx = linedef_idx>>3;
-    u8 bit_idx = linedef_idx & 0b111;
-    processed_linedef_bitmap[byte_idx] |= (1<<bit_idx);
-}
-
 void clear_linedef_processed_bitmap() {
     int num_linedefs = cur_level->num_linedefs;
     memset(processed_linedef_bitmap, 0, num_linedefs/8+1);
+}
+
+
+u32* vertex_cache_frames;
+u32* cached_vertexes;
+
+void init_vertex_cache() {
+    int num_vertexes = cur_level->num_vertexes;
+    vertex_cache_frames = MEM_alloc((num_vertexes+4) * sizeof(u32));
+    cached_vertexes = MEM_alloc((num_vertexes+4) * sizeof(Vect2D_s16));
+    memsetU32(vertex_cache_frames, 0xFFFFFFFF, num_vertexes);
 }
 
 
@@ -133,13 +123,15 @@ s16 fast_div(s16 numer, s16 denom) {
 
 //const int zoom = 4;
 
+#define ZOOM 6
+
 //#define ZOOM 8
 //#define ZOOM_SHIFT 3
-#define ZOOM 4
-#define ZOOM_SHIFT 2
 
-u32* vertex_cache_frames;
-u32* cached_vertexes;
+//#define ZOOM 4
+//#define ZOOM_SHIFT 2
+
+
 
 
 static int pause_game = 0;
@@ -156,10 +148,13 @@ Vect2D_s16 transform_vert_native(s16 x, s16 y);
 Vect2D_s16 transform_res;
 
 Vect2D_s16 inner_transform_vert(s16 x, s16 y) {
-    return transform_vert_native(x, y);
+    //return transform_vert_native(x, y);
 
-    s16 x_shifted = ((x<<4)>>ZOOM_SHIFT);
-    s16 y_shifted = ((y<<4)>>ZOOM_SHIFT);
+    //s16 x_shifted = ((x<<4)/ZOOM); //>>ZOOM_SHIFT);
+    //s16 y_shifted = ((y<<4)/ZOOM); //ZOOM_SHIFT);
+    s16 x_shifted = x;
+    s16 y_shifted = y;
+    
     s16 tlx = x_shifted - playerXFrac4;
     s16 tly = y_shifted - playerYFrac4; // scaling factor of 64 (2^6)
     
@@ -188,85 +183,6 @@ Vect2D_s16 transform_vert(u16 v_idx) {
 }        
 */       
 
-typedef enum {
-    SINGLE_LINEDEF = 0,
-    POLY_LINEDEF = 1
-} linedef_segment_type;
-
-
-u8 compute_outcode(s16 x, s16 y, s16 min_x, s16 min_y, s16 max_x, s16 max_y) {
-    u8 code = INSIDE;
-    if(x < min_x) {
-        code |= LEFT;
-    } else if (x > max_x) {
-        code |= RIGHT;
-    }
-    if(y < min_y) {
-        code |= TOP;
-    } else if (y > max_y) {
-        code |= BOTTOM;
-    }
-    return code;
-}
-
-clip_result internal_clip_line(Line* l, s16 min_x, s16 min_y, s16 max_x, s16 max_y) {
-
-    s16 x1 = l->pt1.x; s16 x2 = l->pt2.x;
-    s16 y1 = l->pt1.y; s16 y2 = l->pt2.y;
-
-    u8 outcode0 = compute_outcode(x1, y1, min_x, min_y, max_x, max_y);
-    u8 outcode1 = compute_outcode(x2, y2, min_x, min_y, max_x, max_y);
-
-    clip_result res = OFFSCREEN;
-    while(1) {
-        if(!(outcode0 | outcode1)) {
-            // trivial accept, both points are inside window
-            res = ONSCREEN;
-            break;
-        } else if (outcode0 & outcode1) {
-            //res = OFFSCREEN;
-            return OFFSCREEN;
-            //break;
-        }
-
-        // At least one endpoint is outside the clip rectangle; pick it.
-        outcode code_out = outcode1 > outcode0 ? outcode1 : outcode0;
-
-        s32 new_x, new_y;  
-        if (code_out & TOP) {     
-            new_x = x1 + (x2-x1) * (min_y - y1) / (y2-y1);
-            new_y = min_y;
-        } else if (code_out & BOTTOM) { 
-            new_x = x1 + (x2-x1) * (max_y - y1) / (y2-y1);
-            new_y = max_y;
-        } else if (code_out & RIGHT) {  
-            new_y = y1 + (y2-y1) * (max_x-x1) / (x2-x1);
-            new_x = max_x;
-        } else if (code_out & LEFT) {  
-            new_y = y1 + (y2-y1) * (min_x-x1) / (x2-x1);
-            new_x = min_x;
-        }
-
-        if (code_out == outcode0) {
-            x1 = new_x;
-            y1 = new_y;
-            outcode0 = compute_outcode(x1, y1, min_x, min_y, max_x, max_y);
-        } else {
-            x2 = new_x;
-            y2 = new_y;
-            outcode1 = compute_outcode(x2, y2, min_x, min_y, max_x, max_y);
-        }
-
-    }
-
-    l->pt1.x = x1;
-    l->pt1.y = y1;
-    l->pt2.x = x2;
-    l->pt2.y = y2;
-    return ONSCREEN;
-    
-}
-
 #define WALL_COL 0x22
 #define PORTAL_COL 0x11
 
@@ -279,7 +195,7 @@ int verts_cached = 0;
 int verts_trivially_reused = 0;
 int lines_transformed_then_clipped = 0;
 
-void draw_blockmap_cell_native(Line* l, u16* cell_ptr);
+void draw_blockmap_cell_native(Line* l, u16* cell_ptr, u32 cur_frame);
 
 
 
@@ -301,28 +217,26 @@ void draw_blockmap_cell(u16* cell_ptr) {
         //if(byte == 0xFF || byte & bit_mask) {
             // skip rest of linedef
             // skip v1_index, v1x, v1y
-            //cell_ptr += 3;
+            cell_ptr += 3;
             // skip v2_index, v2x, v2y
-            //cell_ptr += 3;
+            cell_ptr += 3;
             // skip v1x, v1y
-            cell_ptr += 2;
+            //cell_ptr += 2;
             // skip v2x, v2y
-            cell_ptr += 2;
+            //cell_ptr += 2;
 
             linedefs_skipped++;
             continue;
         }
 
-        u8 is_portal = bit_mask_and_is_portal&0xFF; 
-        //u16 v1 = *cell_ptr++;
-        if(0) { //v1 == last_v2 || v1 == last_v1) {
-            verts_trivially_reused++;
-        }
+        u8 col = bit_mask_and_is_portal&0xFF; 
+        u16 v1 = *cell_ptr++;
+        
         Vect2D_s16 tv1;
 
         u16 v1x = *cell_ptr++;
         u16 v1y = *cell_ptr++;
-        //u16 v2 = *cell_ptr++;
+        u16 v2 = *cell_ptr++;
         Vect2D_s16 tv2;
 
         u16 v2x = *cell_ptr++;
@@ -334,7 +248,7 @@ void draw_blockmap_cell(u16* cell_ptr) {
         //last_v2 = v2;
         //last_v1 = v1;
 
-        u8 col = is_portal ? PORTAL_COL : WALL_COL;
+        //u8 col = is_portal ? PORTAL_COL : WALL_COL;
 
         lin.pt1.x = tv1.x; 
         lin.pt1.y = tv1.y;
@@ -403,7 +317,7 @@ void draw_automap(u32 cur_frame) {
 
     */
     
-    int world_half_screen_diag_length = 152 << ZOOM_SHIFT;
+    int world_half_screen_diag_length = 152 * ZOOM; //<< ZOOM_SHIFT;
 
     fix32 top_left_angle = (cur_player_angle-angle_58_degrees);
     fix32 top_left_angle_sin = sinFix32(top_left_angle);
@@ -474,10 +388,10 @@ void draw_automap(u32 cur_frame) {
 
             const u16* cell_ptr =  &(render_blkmap->offsets_plus_table[blockmap_table_idx]);
             //if(cur_frame & 0b1) {
-                //draw_blockmap_cell(cell_ptr);
+                draw_blockmap_cell(cell_ptr);
             //} else {
-                Line l;
-                draw_blockmap_cell_native(&l, cell_ptr);
+                //Line l;
+                //draw_blockmap_cell_native(&l, cell_ptr, cur_frame);
             //}
 
         }
@@ -642,7 +556,7 @@ static int cur_frame;
 void init_game() {
     cur_frame = 0;
     SYS_disableInts();
-    VDP_setScreenHeight224();
+    //VDP_setScreenHeight224();
     SYS_enableInts();
     quit_game = 0;
     if(pause_game) {
@@ -662,6 +576,7 @@ void init_game() {
     BMP_setBufferCopy(0);
     BMP_flip(0);
     init_processed_linedef_bitmap(); 
+    init_vertex_cache();
     XGM_stopPlay();
     if(music_on) {
         XGM_startPlay(xgm_e1m4);
@@ -678,10 +593,15 @@ game_mode run_game() {
     angleSinFrac12 = angleSin16<<6;
     angleCosFrac12 = angleCos16<<6;
 
-    prescaled_player_x = ((cur_player_x>>ZOOM_SHIFT)>>(FIX32_FRAC_BITS-6)); // scaling factor is now 64 (2^6) instead of 1024 (2^10)
-    prescaled_player_y = ((cur_player_y>>ZOOM_SHIFT)>>(FIX32_FRAC_BITS-6));
-    playerXFrac4 = ((cur_player_x>>ZOOM_SHIFT)>>(FIX32_FRAC_BITS-4)); // scaling factor is now 16 (2^4) instead of 1024 (2^10)
-    playerYFrac4 = ((cur_player_y>>ZOOM_SHIFT)>>(FIX32_FRAC_BITS-4));
+    prescaled_player_x = ((cur_player_x/ZOOM)>>(FIX32_FRAC_BITS-6)); // scaling factor is now 64 (2^6) instead of 1024 (2^10)
+    prescaled_player_y = ((cur_player_y/ZOOM)>>(FIX32_FRAC_BITS-6));
+    //prescaled_player_x = ((cur_player_x>>ZOOM_SHIFT)>>(FIX32_FRAC_BITS-6)); // scaling factor is now 64 (2^6) instead of 1024 (2^10)
+    //prescaled_player_y = ((cur_player_y>>ZOOM_SHIFT)>>(FIX32_FRAC_BITS-6));
+    
+    playerXFrac4 = ((cur_player_x/ZOOM)>>(FIX32_FRAC_BITS-4)); // scaling factor is now 16 (2^4) instead of 1024 (2^10)
+    playerYFrac4 = ((cur_player_y/ZOOM)>>(FIX32_FRAC_BITS-4));
+    //playerXFrac4 = ((cur_player_x>>ZOOM_SHIFT)>>(FIX32_FRAC_BITS-4)); // scaling factor is now 16 (2^4) instead of 1024 (2^10)
+    //playerYFrac4 = ((cur_player_y>>ZOOM_SHIFT)>>(FIX32_FRAC_BITS-4));
     handle_input();
 
     //JOY_waitPress

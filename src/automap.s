@@ -5,8 +5,8 @@ transform_vert_native:
 	movm.l %d2-%d4,-(%sp)
 	move.w 12+4+2(%sp),%d0
 	move.w 12+8+2(%sp),%d2
-	lsl.w #2,%d0
-	lsl.w #2,%d2
+	lsl.w #1,%d0
+	lsl.w #1,%d2
 	sub.w playerXFrac4,%d0
 	sub.w playerYFrac4,%d2
 	move.w %d0, %d1         | d0 = d1 = tlx
@@ -36,8 +36,11 @@ transform_vert_native:
 	| result x<<16|y in d0
 
 	| move scale coordinates to 12.4 fixed point (but also divide by zoom factor of 4, so it's a left shift of 2)
-	lsl.w #2,%d0
-	lsl.w #2,%d2
+	
+	| lsl.w #2,%d0
+	| lsl.w #2,%d2
+	lsl.w #1, %d0		| zoom of 8
+	lsl.w #1, %d2
 
 
 	| perform translation
@@ -70,11 +73,21 @@ transform_vert_native:
 
 
 draw_blockmap_cell_native:
-	movm.l %d2-%d5/%a2-%a4, -(%sp)
+	| movm.l %d2-%d5/%a2-%a4, -(%sp)
+	movm.l %d2-%d7/%a2-%a6, -(%sp)
 	
-	move.l 4+28(%sp), %a2		| load pointer to line struct (where we store transformed line data for BMP_clipLine and BMP_drawLine)
-	move.l 8+28(%sp), %a3		| load cell pointer into a0
+	move.l 4+44(%sp), %a2		| load pointer to line struct (where we store transformed line data for BMP_clipLine and BMP_drawLine)
+
+	move.l 8+44(%sp), %a3		| load cell pointer into a0
+	move.l 12+44(%sp), %d6		| load cur frame in d6
+	
+	move.l %a2, -(%sp)			| push onto stack for BMP_clipLine/BMP_drawLine
+
+	move.l (vertex_cache_frames), %a5
+	move.l (cached_vertexes), %a6
 	move.l (processed_linedef_bitmap), %a4 | load linedef bitmap into a4
+
+
 
 	move.w (%a3)+, %d5		| d5 = linedef count
 	subq.w #1, %d5
@@ -85,8 +98,8 @@ draw_blockmap_cell_loop:
 	beq.b draw_linedef
 skip_linedef:
 	| add.l #12, %a3			 
-	| addq.l #8, %a3			  | skip 8 bytes, 6 for each vertex * 2
-	add.l #9, %a3
+	| add.l #9, %a3			      | skip 9 bytes, 6 for each vertex * 2, plus one for color
+	add.l #13, %a3
 	bra.w draw_blockmap_linedef_loop_test	
 draw_linedef:
 	move.b (%a3)+, 9(%a2)		  | d3 = color (ignored for now)
@@ -94,12 +107,13 @@ draw_linedef:
 
 	| addq.l #2, %a3				| skip vertex idx
 	
-	| testing for vertex caching
-	| move.w (%a3), %d0
-	| cmp.w 0(%a4, %d0.w), %d5
-	| nop
-	| bra dont_reuse_v1
-	| nop
+	move.w (%a3)+, %d7			| load vertex idx * 4
+	cmp.l 0(%a5, %d7.w), %d6
+	bne.b dont_reuse_v1
+reuse_v1:
+	move.l 0(%a6, %d7.w), (%a2)
+	addq.l #4, %a3
+	bra.b handle_v2
 
 dont_reuse_v1:
 	move.w (%a3)+, %d0			| load vertex x component
@@ -107,12 +121,18 @@ dont_reuse_v1:
 	TRANSFORM_VERT				| transform
 	move.l %d0, (%a2)			| write transformed vertex to line struct
 
+	move.l %d0, 0(%a6, %d7.w)  | write to vertex cache
+	move.l %d6, 0(%a5, %d7.w)  | write frame to vertex cache
+	
 
-	| move.w (%a3), %d0
-	| cmp.w 0(%a4, %d0.w), %d5
-	| nop
-	| bra dont_reuse_v2
-	| nop
+handle_v2:
+	move.w (%a3)+, %d7			| load vertex idx * 4
+	cmp.l 0(%a5, %d7.w), %d6
+	bne.b dont_reuse_v2
+reuse_v2:
+	move.l 0(%a6, %d7.w), 4(%a2)
+	addq.l #4, %a3
+	bra clip_line
 
 dont_reuse_v2:
 	| addq.l #2, %a3				| skip vertex idx
@@ -121,24 +141,27 @@ dont_reuse_v2:
 	TRANSFORM_VERT				| transform
 	move.l %d0, 4(%a2)			| write transformed vertex to line struct
 
-	| move.l %a3, -(%sp)			| stash grid cell pointer
+	move.l %d0, 0(%a6, %d7.w)  | write to vertex cache
+	move.l %d6, 0(%a5, %d7.w)  | write frame to vertex cache
 
-	move.l %a2, -(%sp)			| put transformed line pointer on stack for BMP_clipLine/BMP_drawLine
-
-
+clip_line:
 	jsr BMP_clipLine
 
 	| returns a result in d0, 0 if offscreen
 	tst.w %d0							
 	beq.b skip_draw_line
 
+	
 	| clip line modifies it's argument so we can just call drawLine right away afterwards
 	jsr BMP_drawLine
 skip_draw_line:
-	addq.l #4, %sp				| pop transformed line pointer off stack
+	| addq.l #4, %sp				| pop transformed line pointer off stack
 
 draw_blockmap_linedef_loop_test:
 	dbf %d5, draw_blockmap_cell_loop
 
-    movm.l (%sp)+,%d2-%d5/%a2-%a4
+	addq.l #4, %sp 					| pop line pointer off stack
+
+    movm.l (%sp)+,%d2-%d7/%a2-%a6
+    | movm.l (%sp)+,%d2-%d5/%a2-%a4
 	rts
