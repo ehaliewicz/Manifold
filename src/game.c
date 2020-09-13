@@ -148,7 +148,7 @@ Vect2D_s16 transform_vert_native(s16 x, s16 y);
 Vect2D_s16 transform_res;
 
 Vect2D_s16 inner_transform_vert(s16 x, s16 y) {
-    //return transform_vert_native(x, y);
+    return transform_vert_native(x, y);
 
     //s16 x_shifted = ((x<<4)/ZOOM); //>>ZOOM_SHIFT);
     //s16 y_shifted = ((y<<4)/ZOOM); //ZOOM_SHIFT);
@@ -388,10 +388,10 @@ void draw_automap(u32 cur_frame) {
 
             const u16* cell_ptr =  &(render_blkmap->offsets_plus_table[blockmap_table_idx]);
             //if(cur_frame & 0b1) {
-                draw_blockmap_cell(cell_ptr);
+                //draw_blockmap_cell(cell_ptr);
             //} else {
-                //Line l;
-                //draw_blockmap_cell_native(&l, cell_ptr, cur_frame);
+                Line l;
+                draw_blockmap_cell_native(&l, cell_ptr, cur_frame);
             //}
 
         }
@@ -402,14 +402,14 @@ void draw_automap(u32 cur_frame) {
 
     linedef line0 = cur_level->linedefs[0];
     u8 line0_is_portal = line0.left_sidedef != 0xFFFF && line0.right_sidedef != 0xFFFF;
-    u8 line0_bitmask = 0b00000001;
+
     u16 line0_v1 = line0.v1;
-    u16 line0_v1_x = cur_level->vertexes[line0_v1].x;
-    u16 line0_v1_y = cur_level->vertexes[line0_v1].y;
+    u16 line0_v1_x = (cur_level->vertexes[line0_v1].x<<4)/ZOOM;
+    u16 line0_v1_y = (cur_level->vertexes[line0_v1].y<<4)/ZOOM;
 
     u16 line0_v2 = line0.v2;
-    u16 line0_v2_x = cur_level->vertexes[line0_v2].x;
-    u16 line0_v2_y = cur_level->vertexes[line0_v2].y;
+    u16 line0_v2_x = (cur_level->vertexes[line0_v2].x<<4)/ZOOM;
+    u16 line0_v2_y = (cur_level->vertexes[line0_v2].y<<4)/ZOOM;
 
     Vect2D_s16 l0tv1 = inner_transform_vert(line0_v1_x, line0_v1_y);
     Vect2D_s16 l0tv2 = inner_transform_vert(line0_v2_x, line0_v2_y);
@@ -438,8 +438,8 @@ void draw_automap(u32 cur_frame) {
     
     Vect2D_s16 pts[3] = {
         {.x = BMP_WIDTH/2, .y = (BMP_HEIGHT/2)-2},
-        {.x = (BMP_WIDTH/2)+2, .y = (BMP_HEIGHT/2)+2},
-        {.x = (BMP_WIDTH/2)-2, .y = (BMP_HEIGHT/2)+2},
+        {.x = (BMP_WIDTH/2)+1, .y = (BMP_HEIGHT/2)+1},
+        {.x = (BMP_WIDTH/2)-1, .y = (BMP_HEIGHT/2)+1},
     };
     
     BMP_drawPolygon(pts, 3, 0x11);

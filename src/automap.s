@@ -5,8 +5,8 @@ transform_vert_native:
 	movm.l %d2-%d4,-(%sp)
 	move.w 12+4+2(%sp),%d0
 	move.w 12+8+2(%sp),%d2
-	lsl.w #1,%d0
-	lsl.w #1,%d2
+	| lsl.w #1,%d0
+	| lsl.w #1,%d2
 	sub.w playerXFrac4,%d0
 	sub.w playerYFrac4,%d2
 	move.w %d0, %d1         | d0 = d1 = tlx
@@ -39,8 +39,8 @@ transform_vert_native:
 	
 	| lsl.w #2,%d0
 	| lsl.w #2,%d2
-	lsl.w #1, %d0		| zoom of 8
-	lsl.w #1, %d2
+	| lsl.w #1, %d0		| zoom of 8
+	| lsl.w #1, %d2
 
 
 	| perform translation
@@ -88,7 +88,6 @@ draw_blockmap_cell_native:
 	move.l (processed_linedef_bitmap), %a4 | load linedef bitmap into a4
 
 
-
 	move.w (%a3)+, %d5		| d5 = linedef count
 	subq.w #1, %d5
 draw_blockmap_cell_loop:
@@ -104,8 +103,6 @@ skip_linedef:
 draw_linedef:
 	move.b (%a3)+, 9(%a2)		  | d3 = color (ignored for now)
 
-
-	| addq.l #2, %a3				| skip vertex idx
 	
 	move.w (%a3)+, %d7			| load vertex idx * 4
 	cmp.l 0(%a5, %d7.w), %d6
@@ -155,7 +152,6 @@ clip_line:
 	| clip line modifies it's argument so we can just call drawLine right away afterwards
 	jsr BMP_drawLine
 skip_draw_line:
-	| addq.l #4, %sp				| pop transformed line pointer off stack
 
 draw_blockmap_linedef_loop_test:
 	dbf %d5, draw_blockmap_cell_loop
