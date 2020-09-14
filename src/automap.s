@@ -77,14 +77,14 @@ draw_blockmap_cell_native:
 	
 	move.l 4+44(%sp), %a2		| load pointer to line struct (where we store transformed line data for BMP_clipLine and BMP_drawLine)
 
-	move.l 8+44(%sp), %a3		| load cell pointer into a0
+	move.l 8+44(%sp), %a3		| load cell pointer into a3
 	move.l 12+44(%sp), %d6		| load cur frame in d6
 	
 	move.l %a2, -(%sp)			| push line pointer onto stack for BMP_clipLine/BMP_drawLine
 
+	move.l (processed_linedef_bitmap), %a4 | load linedef bitmap into a4
 	move.l (vertex_cache_frames), %a5	   | load vertex cached frames into a5
 	move.l (cached_vertexes), %a6		   | load vertex cache into a6
-	move.l (processed_linedef_bitmap), %a4 | load linedef bitmap into a4
 
 	move.w (%a3)+, %d5		  | d5 = linedef count
 	subq.w #1, %d5
@@ -135,15 +135,9 @@ dont_reuse_v2:
 	move.l %d6, 0(%a5, %d7.w)  | write current frame to vertex cached frame
 
 clip_line:
-	jsr BMP_clipLine
+	bra.w clipAndMaybeDrawMapLine
 
-	| returns a result in d0, 0 if offscreen
-	tst.w %d0							
-	beq.b skip_draw_line
-
-	| clip line modifies it's argument so we can just call drawLine right away afterwards
-	jsr BMP_drawLine
-skip_draw_line:
+after_draw_map_line:
 
 draw_blockmap_linedef_loop_test:
 	dbf %d5, draw_blockmap_cell_loop
@@ -152,3 +146,330 @@ draw_blockmap_linedef_loop_test:
 
     movm.l (%sp)+,%d2-%d7/%a2-%a6
 	rts
+
+
+
+.macro func _name, _align=2
+    .section .text.asm.\_name
+    .globl  \_name
+    .type   \_name, @function
+    .align \_align
+  \_name:
+.endm
+
+
+func clipAndMaybeDrawMapLine
+    movm.l %d2-%d7/%a2-%a5,-(%sp)
+
+    move.l 40(%sp),%a0          | a0 = &line
+
+    movm.w (%a0),%d2-%d5        | d2 = x1, d3 = y1, d4 = x2, d5 = y2
+
+    move.w #255,%d0             | d0 = BMP_WIDTH - 1
+    move.w #159,%d1             | d1 = BMP_HEIGHT - 1
+
+    cmp.w %d0,%d2               | if (((u16) x1 < BMP_WIDTH) &&
+    jhi .L50
+    cmp.w %d0,%d4               |     ((u16) x2 < BMP_WIDTH) &&
+    jhi .L50
+    cmp.w %d1,%d3               |     ((u16) y1 < BMP_HEIGHT) &&
+    jhi .L50
+    cmp.w %d1,%d5               |     ((u16) y2 < BMP_HEIGHT))
+    jhi .L50
+
+    | movm.w %d2-%d5,(%a0)        |   update line
+    | moveq #1,%d0                |   return 1;
+    | movm.l (%sp)+,%d2-%d7/%a2-%a5
+    bra.w drawMapLine
+    | rts
+
+.L60:
+    move.w %d4,%d6
+    sub.w %d2,%d6               | d6 = dx = x2 - x1;
+    move.w %d5,%d7
+    sub.w %d3,%d7               | d7 = dy = y2 - y1;
+
+    tst.w %d2                   | if (x1 < 0)
+    jge .L38                    | {
+
+    muls.w %d7,%d2              |   y1 -= (x1 * dy) / dx;
+    divs.w %d6,%d2
+    sub.w %d2,%d3
+    moveq #0,%d2                |   x1 = 0;
+    jra .L39                    | }
+
+.L38:
+    cmp.w %d0,%d2               | else if (x1 >= BMP_WIDTH)
+    jle .L39                    | {
+
+    sub.w %d0,%d2
+    muls.w %d7,%d2              |   y1 -= ((x1 - (BMP_WIDTH - 1)) * dy) / dx;
+    divs.w %d6,%d2
+    sub.w %d2,%d3
+    move.w %d0,%d2              |   x1 = BMP_WIDTH - 1;
+                                | }
+.L39:
+    tst.w %d4                   | if (x2 < 0)
+    jge .L41                    | {
+
+    muls.w %d7,%d4              |   y2 -= (x2 * dy) / dx;
+    divs.w %d6,%d4
+    sub.w %d4,%d5
+    moveq #0,%d4                |   x2 = 0;
+    jra .L42                    | }
+
+.L41:
+    cmp.w %d0,%d4               | else if (x2 >= BMP_WIDTH)
+    jle .L42                    | {
+
+    sub.w %d0,%d4
+    muls.w %d7,%d4              |   y2 -= ((x2 - (BMP_WIDTH - 1)) * dy) / dx;
+    divs.w %d6,%d4
+    sub.w %d4,%d5
+    move.w %d0,%d4              |   x2 = BMP_WIDTH - 1;
+                                | }
+.L42:
+    tst.w %d3                   | if (y1 < 0)
+    jge .L44                    | {
+
+    muls.w %d6,%d3              |   x1 -= (y1 * dx) / dy;
+    divs.w %d7,%d3
+    sub.w %d3,%d2
+    moveq #0,%d3                |   y1 = 0;
+    jra .L45                    | }
+
+.L44:
+    cmp.w %d1,%d3               | else if (y1 >= BMP_HEIGHT)
+    jle .L45                    | {
+
+    sub.w %d1,%d3
+    muls.w %d6,%d3              |   x1 -= ((y1 - (BMP_HEIGHT - 1)) * dx) / dy;
+    divs.w %d7,%d3
+    sub.w %d3,%d2
+    move.w %d1,%d3              |   y1 = BMP_HEIGHT - 1;
+
+.L45:                            | }
+    tst.w %d5                   | if (y2 < 0)
+    jge .L47                    | {
+
+    muls.w %d6,%d5              |   x2 -= (y2 * dx) / dy;
+    divs.w %d7,%d5
+    sub.w %d5,%d4
+    moveq #0,%d5                |   y2 = 0;
+    jra .L48                    | }
+
+.L47:
+    cmp.w %d1,%d5               | else if (y2 >= BMP_HEIGHT)
+    jle .L48                    | {
+
+    sub.w %d1,%d5
+    muls.w %d6,%d5              |   x2 -= ((y2 - (BMP_HEIGHT - 1)) * dx) / dy;
+    divs.w %d7,%d5
+    sub.w %d5,%d4
+    move.w %d1,%d5              |   y2 = BMP_HEIGHT - 1;
+                                | }
+.L48:
+    cmp.w %d0,%d2               | if (((u16) x1 < BMP_WIDTH) &&
+    jhi .L50
+    cmp.w %d0,%d4               |     ((u16) x2 < BMP_WIDTH) &&
+    jhi .L50
+    cmp.w %d1,%d3               |     ((u16) y1 < BMP_HEIGHT) &&
+    jhi .L50
+    cmp.w %d1,%d5               |     ((u16) y2 < BMP_HEIGHT))
+    jhi .L50                    | {
+
+    | movm.w %d2-%d5,(%a0)        |   update line
+    | moveq #1,%d0                |   return 1;
+    | movm.l (%sp)+,%d2-%d7/%a2-%a5
+    | rts                         | }
+    bra.w drawMapLine
+
+.L50:
+    tst.w %d2                   | if (((x1 < 0) && (x2 < 0)) ||
+    jge .L53
+    tst.w %d4
+    jlt .L52
+
+.L53:
+    cmp.w %d0,%d2               |     ((x1 >= BMP_WIDTH) && (x2 >= BMP_WIDTH)) ||
+    jle .L54
+    cmp.w %d0,%d4
+    jgt .L52
+
+.L54:
+    tst.w %d3                   |     ((y1 < 0) && (y2 < 0)) ||
+    jge .L55
+    tst.w %d5
+    jlt .L52
+
+.L55:
+    cmp.w %d1,%d3               |     ((y1 >= BMP_HEIGHT) && (y2 >= BMP_HEIGHT)))
+    jle .L60
+    cmp.w %d1,%d5
+    jle .L60
+
+.L52:
+    | moveq #0,%d0                |   return 0;
+    movm.l (%sp)+,%d2-%d7/%a2-%a5
+	bra.w after_draw_map_line
+    | rts
+
+
+
+
+
+
+
+func drawMapLine
+    | movem.l %d2-%d7/%a2-%a5,-(%sp)
+
+    | move.l  44(%sp),%a0     | a0 = &line
+    | movem.w (%a0)+,%d2-%d6  | d2 = x1, d3 = y1, d4 = x2, d5 = y2, d6 = col
+    move.w 8(%a0), %d6
+
+.dl_start:
+    moveq   #1,%d0          | d0 = stepx = 1
+    move.w  #128,%d1        | d1 = stepy = BMP_PITCH;
+
+    sub.w   %d2,%d4         | d4 = deltax
+    jge     .dl_01          | {
+
+    neg.w   %d4             |     deltax = -deltax;
+    neg.w   %d0             |     stepx = -stepx;
+                            | }
+.dl_01:
+    sub.w   %d3,%d5         | d5 = deltay
+    jge     .dl_02          | {
+
+    neg.w   %d5             |     deltay = -deltay;
+    neg.w   %d1             |     stepy = -stepy;
+                            | }
+.dl_02:                     |
+    move.w  %d0,%a2         | a2 = stepx
+    move.w  %d1,%a3         | a3 = stepy
+    move.w  %d4,%a4         | a4 = dx
+    move.w  %d5,%a5         | a5 = dy
+
+    move.l  bmp_buffer_write,%d7
+    lsl.w   #7,%d3
+    add.w   %d3,%d7         | d7.l = &bmp_buffer_write[y1 * BMP_PITCH]
+    move.l  %d7,%a0         | a0 = *dst = &bmp_buffer_write[y1 * BMP_PITCH]
+
+    moveq   #-0x10,%d0      | d0 = mu = 0xF0
+    moveq   #0x0F,%d1       | d1 = md = 0x0F
+    move.b  %d6,%d7
+    and.b   %d0,%d6         | d6 = cu = col & mu
+    and.b   %d1,%d7         | d7 = cd = col & md
+
+
+    cmp.w   %d4,%d5         | if (deltax < deltay)
+    jge     .dl_on_dy       | {
+
+.dl_on_dx:
+    move.w  %d4,%d3         |   d2 = x
+    asr.w   #1,%d3          |   d3 = delta = dx >> 1
+                            |   d4 = cnt = dx
+
+.dl_dx_loop:                |   while(cnt--)
+    move.w  %d2,%d5         |   {
+    lsr.w   #1,%d5          |     d5 = x >> 1
+    jcs     .dl_dx_odd      |     if (x & 1)
+                            |     {
+.dl_dx_even:
+    lea     (%a0,%d5.w),%a1 |       a1 = d = dst + (x >> 1)
+
+    move.b  (%a1),%d5
+    and.b   %d1,%d5
+    or.b    %d6,%d5
+    move.b  %d5,(%a1)       |       *d = (*d & md) | cu
+
+    add.w   %a2,%d2         |       x += stepx
+    sub.w   %a5,%d3         |       if ((delta -= dy) < 0)
+    jpl     .dl_dx_even_1   |       {
+
+    add.w   %a3,%a0         |         dst += stepy; (can be 16 bits as dst is in RAM)
+    add.w   %a4,%d3         |         delta += dx;
+
+.dl_dx_even_1:              |       }
+    dbra    %d4,.dl_dx_loop |     }
+
+.dl_end:
+    movem.l (%sp)+,%d2-%d7/%a2-%a5
+	bra.w after_draw_map_line
+    | rts
+                            |     else
+.dl_dx_odd:                 |     {
+    lea     (%a0,%d5.w),%a1 |       a1 = d = dst + (x >> 1)
+
+    move.b  (%a1),%d5
+    and.b   %d0,%d5
+    or.b    %d7,%d5
+    move.b  %d5,(%a1)       |       *d = (*d & mu) | cd
+
+    add.w   %a2,%d2         |       x += stepx
+    sub.w   %a5,%d3         |       if ((delta -= dy) < 0)
+    jpl     .dl_dx_odd_1    |       {
+
+    add.w   %a3,%a0         |           dst += stepy; (can be 16 bits as dst is in RAM)
+    add.w   %a4,%d3         |           delta += dx;
+
+.dl_dx_odd_1:               |       }
+    dbra    %d4,.dl_dx_loop |     }
+
+    movem.l (%sp)+,%d2-%d7/%a2-%a5
+	bra.w after_draw_map_line
+    | rts
+
+.dl_on_dy:
+    move.w  %d5,%d3         |   d2 = x
+    asr.w   #1,%d3          |   d3 = delta = dy >> 1
+    move.w  %d5,%d4         |   d4 = cnt = dy
+
+.dl_dy_loop:                |   while(cnt--)
+    move.w  %d2,%d5         |   {
+    lsr.w   #1,%d5          |     d5 = x >> 1
+    jcs     .dl_dy_odd      |     if (x & 1)
+                            |     {
+.dl_dy_even:
+    lea     (%a0,%d5.w),%a1 |       a1 = d = dst + (x >> 1)
+
+    move.b  (%a1),%d5
+    and.b   %d1,%d5
+    or.b    %d6,%d5
+    move.b  %d5,(%a1)       |       *d = (*d & md) | cu
+
+    add.w   %a3,%a0         |       dst += stepy; (can be 16 bits as dst is in RAM)
+    sub.w   %a4,%d3         |       if ((delta -= dx) < 0)
+    jpl     .dl_dy_even_1   |       {
+
+    add.w   %a2,%d2         |         x += stepx
+    add.w   %a5,%d3         |         delta += dy;
+
+.dl_dy_even_1:              |       }
+    dbra    %d4,.dl_dy_loop |     }
+
+    movem.l (%sp)+,%d2-%d7/%a2-%a5
+	bra.w after_draw_map_line
+    | rts
+                            |     else
+.dl_dy_odd:                 |     {
+    lea     (%a0,%d5.w),%a1 |       a1 = d = dst + (x >> 1)
+
+    move.b  (%a1),%d5
+    and.b   %d0,%d5
+    or.b    %d7,%d5
+    move.b  %d5,(%a1)       |       *d = (*d & mu) | cd
+
+    add.w   %a3,%a0         |       dst += stepy; (can be 16 bits as dst is in RAM)
+    sub.w   %a4,%d3         |       if ((delta -= dx) < 0)
+    jpl     .dl_dy_odd_1    |       {
+
+    add.w   %a2,%d2         |         x += stepx
+    add.w   %a5,%d3         |         delta += dy;
+
+.dl_dy_odd_1:               |       }
+    dbra    %d4,.dl_dy_loop |     }
+
+    movem.l (%sp)+,%d2-%d7/%a2-%a5
+	bra.w after_draw_map_line
+    | rts
