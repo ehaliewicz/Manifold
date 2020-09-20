@@ -23,10 +23,12 @@ transform_vert_native:
     swap %d0
     add.w #128, %d0
     swap %d0
-    swap %d1 
-    moveq #70, %d2
-    sub.w %d1, %d2
-    move.w %d2, %d0
+    swap %d1
+
+    sub.w #79, %d1
+    neg.w %d1
+    move.w %d1, %d0
+
     movm.l (%sp)+,%d2-%d4
     rts
 
@@ -65,9 +67,9 @@ transform_vert_native:
     swap %d0				| move rx back to high portion of d0
     swap %d1 				| get integer portion of ry
 
-    moveq #70, %d2			| adjust to center of screen (and flip vertically)
-    sub.w %d1, %d2
-    move.w %d2, %d0			| move ry into low word of d0
+    sub.w #79, %d1
+    neg.w %d1
+    move.w %d1, %d0
 
 	.endm
 

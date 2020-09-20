@@ -5,8 +5,9 @@
 fast_div_native:
     lea log_table, %a0
     lea exp_table, %a1
-    move.w div_numer, %d0
-    move.w div_denom, %d1
+
+    | move.w div_numer, %d0  | load arguments here
+    | move.w div_denom, %d1  | load arguments here
     move.b (%a0,%d0.w),%d0  | take numerators's log
     sub.b (%a0,%d1.w),%d0   | subtract denominator's log
     blt.b fast_div_zero

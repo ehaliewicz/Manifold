@@ -10,9 +10,10 @@ int main() {
 
 	while(1) {        
 
+		update_joy();
+		
 		run_game_mode();
 		
-		update_joy();
 	}
 	return (0);
 }

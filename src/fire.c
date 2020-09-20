@@ -379,6 +379,7 @@ void init_fire() {
 	SPR_setVisibility(spr2, VISIBLE);
 	SPR_setVisibility(spr3, VISIBLE);
 
+    // side effect: loads palette!
 	VDP_drawImageEx(BG_B, &doom_logo, 0x0360, 8, 0, 1, 1);
 
 	const int fire_fix_vram_addr = 0x300;
@@ -429,7 +430,7 @@ game_mode run_fire() {
 
 
     if(cur_scroll < -45) {
-        VDP_setVerticalScroll(BG_B, cur_scroll);
+        //VDP_setVerticalScroll(BG_B, cur_scroll);
     } else if (fire_running && !fire_hidden) {
         SPR_setVisibility(fire_spr, HIDDEN);
         SPR_update();

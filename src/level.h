@@ -18,11 +18,14 @@
 typedef struct {
     const int num_linedefs;
     const linedef* linedefs;
+    const int num_nodes;
     const node* nodes;
+    const int num_sectors;
     const sector* sectors;
     const int num_segs;
     const seg* segs;
     const sidedef* sidedefs;
+    const int num_ssectors;
     const ssector* ssectors;
     const thing* things;
     const int num_vertexes;
