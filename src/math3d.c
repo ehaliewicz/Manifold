@@ -51,6 +51,7 @@ s16 project_and_adjust_2d(Vect2D_s32 trans_map_vert) {
 }
 
 
+//const s32 near_z = 160 << FIX32_FRAC_BITS;
 const s32 near_z = 40 << FIX32_FRAC_BITS;
 
 int is_behind_near_plane(Vect2D_s32 transformed_map_vert) {
@@ -67,13 +68,12 @@ clip_result clip_map_vertex(Vect2D_s32* trans_v1, Vect2D_s32* trans_v2) {
     s32 rx2 = trans_v2->x;
     s32 rz2 = trans_v2->y;
 
-    if(rz1 < near_z && rz2 < near_z) {
+    if(rz1 <= near_z && rz2 <= near_z) {
         return OFFSCREEN;
     }
-    if(rz1 >= near_z && rz2 >= near_z) {
+    if(rz1 > near_z && rz2 > near_z) {
         return UNCLIPPED;
     }    
-    return OFFSCREEN;
 
     s32 dz = rz2-rz1;
     s32 dx = rx2-rx1;

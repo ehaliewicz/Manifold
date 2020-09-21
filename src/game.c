@@ -20,8 +20,34 @@ fix32 angleCos32, angleSin32;
 fix16 angleCos16, angleSin16;
 fix16 angleSinFrac12, angleCosFrac12;
 
+u16 threeDPalette[16] = {
+    RGB24_TO_VDPCOLOR(0xFFFFFF),
+    RGB24_TO_VDPCOLOR(0xFFFFFF),
+    RGB24_TO_VDPCOLOR(0xFFFFFF),
+    RGB24_TO_VDPCOLOR(0xFFFFFF),
+    RGB24_TO_VDPCOLOR(0xFFFFFF),
+    RGB24_TO_VDPCOLOR(0xFFFFFF),
+    RGB24_TO_VDPCOLOR(0xFFFFFF),
+    RGB24_TO_VDPCOLOR(0xFFFFFF),
+    RGB24_TO_VDPCOLOR(0xFFFFFF),
+    RGB24_TO_VDPCOLOR(0xFFFFFF),
+    RGB24_TO_VDPCOLOR(0xFFFFFF),
+    RGB24_TO_VDPCOLOR(0xFFFFFF),
+    RGB24_TO_VDPCOLOR(0xFFFFFF),
+    RGB24_TO_VDPCOLOR(0xFFFFFF),
+    RGB24_TO_VDPCOLOR(0xFFFFFF),
+    RGB24_TO_VDPCOLOR(0xFFFFFF)
+};
 
-const u16 gamePalette[16] = {
+void init_3d_palette() {
+    for(int i = 0; i < 16; i++) {
+        //u16 col = RGB24_TO_VDPCOLOR((random() << 8) | random());
+        u16 col = RGB24_TO_VDPCOLOR(((random() & 0xFF)<<16) |( (random()&0xFF)<<8) | (random()&0xFF));
+        //threeDPalette[i] = col;
+    }
+}
+
+u16 mapPalette[16] = {
     RGB24_TO_VDPCOLOR(0),
     RGB24_TO_VDPCOLOR(0xFF0000),
     RGB24_TO_VDPCOLOR(0xFFFF00),
@@ -94,42 +120,21 @@ int cur_frame;
 int automap_mode;
 int draw_solid;
 
+void draw_wall(u16 v1_idx, u16 v2_idx, s16 ceil_height, s16 floor_height, u8 is_portal) {
+    vertex v1 = cur_level->vertexes[v1_idx];
+    vertex v2 = cur_level->vertexes[v2_idx];
 
-
-void draw_3d_view(u32 cur_frame) {
-
-    linedef line = cur_level->linedefs[42];
-
-    vertex v1 = cur_level->vertexes[line.v1];
-    vertex v2 = cur_level->vertexes[line.v2];
-
-
-
-    char buf[32];
-
-
-    BMP_waitWhileFlipRequestPending();
-    BMP_clear();
-
-    traverse_bsp_nodes_front_to_back(cur_player_x, cur_player_y);
-
-    //if(BMP_clipLine(&l)) {
-    //    BMP_drawLine(&l);
-    //}
-
-
-    
-
-    Vect2D_s32 trans_v1 = transform_map_vert(v1.x, v1.y);
-    Vect2D_s32 trans_v2 = transform_map_vert(v2.x, v2.y);
+    volatile Vect2D_s32 trans_v1 = transform_map_vert(v1.x, v1.y);
+    volatile Vect2D_s32 trans_v2 = transform_map_vert(v2.x, v2.y);
+    //if(trans_v2.x <= trans_v1.x) { return; }
 
     // clip against near z plane if necessary
     clip_result clipped = clip_map_vertex(&trans_v1, &trans_v2);
 
     if(clipped != OFFSCREEN) {
         // project map vertex with height attributes
-        transformed_vert screen_v1 = project_and_adjust_3d(trans_v1, -20, 20);
-        transformed_vert screen_v2 = project_and_adjust_3d(trans_v2, -20, 20);
+        transformed_vert screen_v1 = project_and_adjust_3d(trans_v1, floor_height, ceil_height);
+        transformed_vert screen_v2 = project_and_adjust_3d(trans_v2, floor_height, ceil_height);
         
         u8 col = clipped != UNCLIPPED ? 0x11 : 0x22;
         
@@ -140,8 +145,7 @@ void draw_3d_view(u32 cur_frame) {
         Line l3d_right = {.pt1 = {.x = screen_v2.x, .y = screen_v2.yceil}, .pt2 = {.x = screen_v2.x, .y = screen_v2.yfloor}, .col = col};
 
 
-
-        if(draw_solid) {
+        if(0) { //draw_solid) {
             Vect2D_s16 pts[4] = {
                 {screen_v1.x, screen_v1.yceil},
                 {screen_v2.x, screen_v2.yceil},
@@ -153,16 +157,18 @@ void draw_3d_view(u32 cur_frame) {
 
         } else {
             if(BMP_clipLine(&l3d_ceil)) {
-                BMP_drawLine(&l3d_ceil);
+                BMP_drawLine(&l3d_ceil);     
             }
             if(BMP_clipLine(&l3d_floor)) {
-                BMP_drawLine(&l3d_floor);
+                BMP_drawLine(&l3d_floor);   
             }
-            if(BMP_clipLine(&l3d_left)) {
-                BMP_drawLine(&l3d_left);
-            }
-            if(BMP_clipLine(&l3d_right)) {
-                BMP_drawLine(&l3d_right);
+            if(!is_portal) {
+                if(BMP_clipLine(&l3d_left)) {
+                    BMP_drawLine(&l3d_left);   
+                }
+                if(BMP_clipLine(&l3d_right)) {
+                    BMP_drawLine(&l3d_right);         
+                }
             }
         }
         
@@ -172,11 +178,39 @@ void draw_3d_view(u32 cur_frame) {
 
 
 
+}
 
-    //BMP_drawPolygon(playerPolygon, 3, 0x11);
 
-    //sprintf(buf, "screen x %i,%i     ", scrn_x1, scrn_x2);
-    //BMP_drawText(buf, 4, 11);
+void draw_3d_view(u32 cur_frame) {
+
+    BMP_waitWhileFlipRequestPending();
+    BMP_clear();
+
+    //linedef line = cur_level->linedefs[42];
+    //draw_wall(line.v1, line.v2);
+
+    for(int i = 140; i < 180; i++) { //cur_level->num_ssectors; i++) {
+        ssector ssect = cur_level->ssectors[i];
+        seg fst_seg = cur_level->segs[ssect.first_seg];
+        linedef line = cur_level->linedefs[fst_seg.linedef];
+        sidedef side = cur_level->sidedefs[(fst_seg.direction == 0) ? line.right_sidedef : line.left_sidedef];
+        int line_is_portal = line.left_sidedef != 0xFFFF && line.right_sidedef != 0xFFFF;
+        sector cur_sect = cur_level->sectors[side.sector_ref];
+
+        for(int j = 0; j < ssect.num_segs; j++) {
+            seg cur_seg = cur_level->segs[ssect.first_seg+j];
+            draw_wall(cur_seg.begin_vert, cur_seg.end_vert, cur_sect.ceil_height, cur_sect.floor_height, line_is_portal);
+        }
+
+    }
+
+
+    //traverse_bsp_nodes_front_to_back(cur_player_x, cur_player_y);
+
+    //if(BMP_clipLine(&l)) {
+    //    BMP_drawLine(&l);
+    //}
+
 
 
     BMP_showFPS(1);
@@ -258,6 +292,8 @@ void cleanup_pause_menu() {
     
 }
 
+u16* cur_palette = NULL;
+
 void init_game() {
     draw_solid = 0;
     automap_mode = 0;
@@ -274,7 +310,11 @@ void init_game() {
         cur_player_angle = 0;
     }
 
-    VDP_setPalette(PAL1, gamePalette);
+    init_3d_palette();
+
+    cur_palette = threeDPalette;
+    VDP_setPalette(PAL1, threeDPalette);
+    
 
     clear_menu();
 
@@ -319,8 +359,16 @@ game_mode run_game() {
     */
     if(automap_mode) {
         draw_automap(cur_frame);
+        if(cur_palette != mapPalette) {
+            VDP_setPalette(PAL1, mapPalette);
+            cur_palette = mapPalette;
+        }
     } else {
         draw_3d_view(cur_frame);
+        if(cur_palette != threeDPalette) {
+            VDP_setPalette(PAL1, threeDPalette);
+            cur_palette = threeDPalette;
+        }
     }
     cur_frame++;
 

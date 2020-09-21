@@ -1,6 +1,7 @@
 import copy, math, os, pickle, re, sys, struct
 from dataclasses import dataclass
 from typing import List
+import itertools
 
 wad_data = None
 num_directory_entries = None
@@ -45,10 +46,9 @@ def read_wad_header():
     global num_directory_entries,directory_index
     assert read_fixed_len_string(0, 4) == 'IWAD'
     num_directory_entries,directory_index = read_ints(4, num=2)
-    #print("num directory_entries: {}".format(num_directory_entries))
 
 
-episodes = '1234'
+episodes = '123' # '1234'
 missions = '123456789'
 
 is_doom_two = None
@@ -387,8 +387,6 @@ def calculate_render_blockmap(blkmap, level_data, bit_type, is_portal_type, incl
             blockmap_linedef_entries = []
             cell = index_blockmap(x, y, blkmap)
             cell.remove(0)
-
-            #print(cell)
             
             
             if len(cell) == 0:
@@ -412,9 +410,7 @@ def calculate_render_blockmap(blkmap, level_data, bit_type, is_portal_type, incl
             
             for (linedef_idx, v1_idx, v2_idx) in blockmap_linedef_entries:
                 linedef = level_data['LINEDEFS'][linedef_idx]
-                #print("linedef idx {}".format(linedef_idx))
                 linedef_byte_idx = linedef_idx>>3
-                #print("linedef byte idx {}".format(linedef_byte_idx))
                 linedef_bit_pos = (linedef_idx & 0b111)
                 linedef_bit_mask = 1<<linedef_bit_pos
                 linedef_bit_thing = linedef_bit_pos if bit_type == BITPOS else linedef_bit_mask
@@ -444,21 +440,10 @@ def calculate_render_blockmap(blkmap, level_data, bit_type, is_portal_type, incl
 
                 new_table_entries.append((v2.x<<4)//zoom_factor)
                 new_table_entries.append((v2.y<<4)//zoom_factor)
-            #print(blockmap_linedef_entries)
-            #print(new_table_entries)
+
             table += new_table_entries
-            #print(table)
             
-            
-            
-    
                 
-            
-    #return (blkmap.num_columns, blkmap.num_rows, blkmap.offsets, blkmap.table)
-    #return (num_cols, num_rows, offsets, table)
-    print("generated render blockmap of {} entries".format(len(table)))
-    print("from blockmap of {} entries".format(len(blkmap.table)))
-    #print(table)
     
     return Blockmap(x_origin = blkmap.x_origin,
                     y_origin = blkmap.y_origin,
@@ -467,6 +452,118 @@ def calculate_render_blockmap(blkmap, level_data, bit_type, is_portal_type, incl
                     num_offsets = num_offset_vals,
                     offsets = offsets,
                     table = table)
+
+def split_list_into_chunks(l, n): 
+    for i in range(0, len(l), n):  
+        yield l[i:i + n] 
+
+def calculate_subsector_reject(reject_table, level_data):
+    #print(reject_table)
+    sector_to_subsectors = {}
+    #print(level_data['SSECTORS'])
+    num_ssectors = len(level_data['SSECTORS'])
+    for ssector_idx, ssector in enumerate(level_data['SSECTORS']):
+        sector_idx = get_subsector_sector_idx(ssector, level_data)
+        lst = sector_to_subsectors.get(sector_idx, [])
+        lst.append(ssector_idx)
+        sector_to_subsectors[sector_idx]= lst
+
+    
+    #num_sectors = len(level['SECTORS'])
+    #bit_idx = (src_sector_idx * num_sectors) + dest_sector_idx
+    sectors = level_data['SECTORS']
+    num_sectors = len(sectors)
+
+    num_bits = num_ssectors * num_ssectors
+    num_bytes = num_bits / 8
+    int_num_bytes = num_bits // 8
+    if int_num_bytes < num_bytes:
+        num_bytes = int_num_bytes + 1
+    else:
+        num_bytes = int_num_bytes
+    result_table = [0 for i in range(num_bytes)]
+    
+    print("expanded sector pvs {} bytes to ssector pvs {} bytes".format((num_sectors*num_sectors)/8, num_bytes))
+    
+    set_bits = 0
+    ssector_to_pvs_bits = {}
+    ssector_to_pvs_bytes = {}
+
+    for src_sector_idx in range(num_sectors):
+        for dest_sector_idx in range(num_sectors):
+            if maybe_line_of_sight(src_sector_idx, dest_sector_idx, level_data):
+                src_ssectors = sector_to_subsectors.get(src_sector_idx, [])
+                dst_ssectors = sector_to_subsectors.get(dest_sector_idx, [])
+                for src_ssector_idx in src_ssectors:
+                    if src_ssector_idx not in ssector_to_pvs_bytes:
+                        ssector_to_pvs_bytes[src_ssector_idx] = [0 for i in range(num_ssectors)]
+                        ssector_to_pvs_bits[src_ssector_idx] = [0 for i in range(math.ceil(num_ssectors/8))]
+
+                    for dst_ssector_idx in dst_ssectors:
+                        bit_idx = (src_ssector_idx * num_ssectors) + dst_ssector_idx
+                        byte_idx = bit_idx // 8
+                        bit_pos = bit_idx % 8
+
+                        result_table[byte_idx] |= (1 << bit_pos)
+
+                        list_idx  = dst_ssector_idx 
+                        ssector_to_pvs_bytes[src_ssector_idx][list_idx] = 1
+                        
+                        list_bit_idx = dst_ssector_idx
+                        list_byte_idx = list_bit_idx // 8
+                        list_bit_pos = list_bit_idx % 8
+                        ssector_to_pvs_bits[src_ssector_idx][list_byte_idx] |= (1 << list_bit_pos)
+                        set_bits += 1
+    
+    #print(ssector_to_pvs)
+
+    compressed_ssector_to_pvs = {}
+    compressed_lists_total = 0
+
+    for ssector_idx, pvs in ssector_to_pvs_bytes.items():
+        pvs_bits = ssector_to_pvs_bits[ssector_idx]
+
+        rle_run_lst = []
+        runs = itertools.groupby(pvs, lambda a: a)
+        local_num_runs = 0
+        for run_val,run_iter in runs:
+            run_lst = list(run_iter)
+            subruns = split_list_into_chunks(run_lst, 127)
+            for subrun in subruns:
+                if run_val == 0:
+                    rle_run_lst.append(-len(subrun))
+                else:
+                    rle_run_lst.append(len(subrun))
+                local_num_runs += 1
+        #if local_num_runs > len(pvs_bits):
+            #print("wtf!!!")
+            #print("bits: {}".format(pvs_bits))
+            #print("extracted bytes: {}".format(pvs))
+            #print(rle_run_lst)
+            #sys.exit(1)
+        compressed_lists_total += local_num_runs
+        #print("pvs: {}".format(pvs))
+        #print("rle pvs: {}".format(rle_run_lst))
+
+        #print(pvs)
+
+    print("{}% set bits".format(set_bits*100/num_bits))
+    print("compressed ssector pvs from {} bytes to {} bytes".format(num_bytes, compressed_lists_total))
+    #print(result_table)
+
+    #num_sectors = len(level['SECTORS'])
+    #bit_idx = (src_sector_idx * num_sectors) + dest_sector_idx
+
+    #byte_idx = int(bit_idx / 8)
+
+    
+    #bit_pos = bit_idx % 8
+    
+    #return (level['REJECT'][byte_idx] & (1 << bit_pos) == 0)
+
+
+    #print(sector_to_subsectors)
+
 
 def index_blockmap(x_cell, y_cell, blockmap):
     if x_cell >= blockmap.num_columns:
@@ -529,8 +626,8 @@ class Blockmap:
                 "}")
 
 def read_blockmap(blockmap_dir, wad_data):
-    print("reading blockmap from wad")
-    print(blockmap_dir)
+    #print("reading blockmap from wad")
+    #print(blockmap_dir)
     
 
     cur_idx = blockmap_dir.ptr
@@ -717,6 +814,7 @@ def read_level_data(level_dir):
 
     #level_dir['BLOCKMAP']
     blkmap = read_blockmap(level_dir['BLOCKMAP'], wad_data)
+
     results['BLOCKMAP'] = blkmap
     results['RENDER_BLOCKMAP'] = calculate_render_blockmap(
         blkmap, results,
@@ -724,6 +822,9 @@ def read_level_data(level_dir):
         is_portal_type=LINE_COLOR,
         include_vertex_ids=True,
         zoom_factor=6)
+    results['SSECTOR_REJECT'] = calculate_subsector_reject(
+        reject_data, results
+    )
 
     
     #sys.exit(1)
@@ -834,7 +935,7 @@ def read_wadfile(wadfile):
     cachefile = get_cachefile_name(wadfile)
 
     cachefile_exists = os.path.exists(cachefile) 
-    if cachefile_exists:
+    if False: #cachefile_exists:
         print("Loading previously dumped WAD {}".format(wadfile))
         with open(cachefile, "rb") as f:
             return pickle.load(f)
@@ -917,10 +1018,12 @@ def dump_level_data(output, level_data):
                      .num_linedefs = {},
                      .linedefs = linedefs,
                      .nodes = nodes,
+                     .num_sectors = {},
                      .sectors = sectors,
                      .num_segs = {},
                      .segs = segs,
                      .sidedefs = sidedefs,
+                     .num_ssectors = {},
                      .ssectors = ssectors,
                      .things = things,
                      .num_vertexes = {},
@@ -929,7 +1032,9 @@ def dump_level_data(output, level_data):
                      .render_blkmap = &render_blkmap
                      """.format(
                          len(level_data['LINEDEFS']),
+                         len(level_data['SECTORS']),
                          len(level_data['SEGS']),
+                         len(level_data['SSECTORS']),
                          len(level_data['VERTEXES'])
                      ) + "};\n")
 
