@@ -1,6 +1,6 @@
 import math, pygame, sys
 
-import bsp, draw, wad, span_buffer
+import bsp, draw, portal, pvs, wad, span_buffer
 import cProfile
 
 DEFAULT_WADFILE = "./doom.wad"
@@ -16,8 +16,6 @@ BLIT_HEIGHT = draw.DRAW_HEIGHT*2
 SCREEN_WIDTH = BLIT_WIDTH*2
 SCREEN_HEIGHT = BLIT_HEIGHT
 
-PROJECTED_WIDTH = 256
-PROJECTED_HEIGHT = 144
 
 
 
@@ -25,7 +23,8 @@ def init():
     global screen, topdown_draw_surf, persp_draw_surf, scale_surf
     pygame.init()
     pygame.font.init()
-    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+
+    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), flags=pygame.RLEACCEL)
     pygame.display.set_caption('WAD loader')
     
     topdown_draw_surf = pygame.Surface((draw.DRAW_WIDTH, draw.DRAW_HEIGHT), flags=pygame.SRCALPHA)
@@ -52,6 +51,7 @@ def flip(stats_func=lambda : None):
 
     
     stats_func()
+
     screen.fill(BLACK)
     screen.blit(scale_surf, (0, 0))
 
@@ -63,7 +63,8 @@ def flip(stats_func=lambda : None):
     
     # update the screen
     pygame.display.flip()
-
+    #pygame.display.update()
+    
 level = None
 output = None
     
@@ -85,12 +86,13 @@ def main():
 
     
     if not level:
-        raw_level = input("Enter map to load > ")
-        level = raw_level.strip()
-
-    if not output:
-        raw_output = input("Enter file to dump map to > ")
-        output = raw_output.strip()
+        #raw_level = input("Enter map to load > ")
+        #level = raw_level.strip()
+        level = "E1M1"
+        
+    #if not output:
+    #    raw_output = input("Enter file to dump map to > ")
+    #    output = raw_output.strip()
     
     level_data = directory[level+'_DATA']
     things = level_data['THINGS']
@@ -105,14 +107,33 @@ def main():
     clock = pygame.time.Clock()
     font = pygame.font.Font('freesansbold.ttf',14)
 
-    
-    wad.dump_level_data(output, level_data)
 
+    print("Calculating pvs")
+
+    sect_mgr = portal.SectorManager(level_data['NODES'], level_data['SSECTORS'])
+
+    sect_mgr.generate_portal_sector_graph()
+    
+    
+    #global_pvs = pvs.calc_pvs(False, level_data)
+    #level_data['PVS'] = global_pvs
+
+    print("finished calculating pvs")
+
+    sys.exit(1)
+    #sect_pvs = pvs.calc_pvs(0, True, level_data)
+    #print("got pvs for sector 0: ")
+    #print(str(sect_pvs));
+
+    
+    #wad.dump_level_data(output, level_data)
+    
 
     
     while(True):
+        draw.clear_col_buffer()
+        span_buffer.clear_span_buffer()
 
-        span_buffer.reset(PROJECTED_WIDTH)
         
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -140,11 +161,16 @@ def main():
                     draw.draw_outline = not draw.draw_outline
                 elif event.key == pygame.K_t:
                     draw.show_render_traversal = not draw.show_render_traversal
+
+                elif event.key == pygame.K_q:
+                    pygame.quit()
+                    sys.exit()
                     
                 if draw.zoom <= 0:
                     draw.zoom = 1
         
         keys=pygame.key.get_pressed()
+        
         if keys[pygame.K_LEFT]:
             draw.cam_angle -= .08
         elif keys[pygame.K_RIGHT]:
@@ -163,12 +189,12 @@ def main():
         if move:
             draw.cam_x += (math.sin(draw.cam_angle) * factor)
             draw.cam_y += (math.cos(draw.cam_angle) * factor)
-            
         
-        
+                
         # erase the screen
         topdown_draw_surf.fill(BLACK)
-        persp_draw_surf.fill(BLACK)
+        if draw.draw_outline:
+            persp_draw_surf.fill(BLACK)
         
         
 
@@ -184,10 +210,12 @@ def main():
 
         ssect_callback = lambda ssect: None
         
-        
-        cur_subsector = bsp.find_subsector_for_position(level_data,
-                                                        draw.cam_x, draw.cam_y,
-                                                        node_callback)
+
+        cur_subsector_num = bsp.find_subsector_idx_for_position(level_data,
+                                                                draw.cam_x, draw.cam_y,
+                                                                node_callback)
+
+        cur_subsector = level_data['SSECTORS'][cur_subsector_num]
         
         cur_sector_idx = wad.get_subsector_sector_idx(cur_subsector, level_data)
         cur_sector = level_data['SECTORS'][cur_sector_idx]
@@ -210,20 +238,33 @@ def main():
 
             
         
-        def bound_func(ssect):
+        def bound_func(ssect_idx, ssect):
             draw.ssect_draw_visible_segs(level_data, topdown_draw_surf, persp_draw_surf, ssect)
 
 
-        draw.clear_col_buffer()
-        span_buffer.clear_span_buffer()
+            
+
         if not draw.draw_outline:
             draw.fill_floors(persp_draw_surf)
-        bsp.traverse_bsp_front_to_back(level_data,
-                                       draw.cam_x, draw.cam_y, cur_subsector,
-                                       draw_node_callback,
-                                       ssect_callback = bound_func)
 
-                
+
+        
+        
+        #bsp.traverse_all_bsp_nodes(level_data,
+        #ssect_callback=bound_func)
+            
+        #bsp.traverse_bsp_front_to_back(level_data,
+        #                               draw.cam_x, draw.cam_y, cur_subsector,
+        #                               draw_node_callback,
+        #                               ssect_callback = bound_func)
+
+        
+
+        bsp.iterate_cur_pvs(level_data,
+                            draw.cam_x, draw.cam_y, cur_subsector_num,
+                            draw_node_callback,
+                            ssect_callback = bound_func)
+                             
 
         draw.draw_player(topdown_draw_surf, color=RED)
         
@@ -301,5 +342,6 @@ def main():
 
 
 if __name__ == '__main__':
-    #cProfile.run("main()")
+    #cProfile.run("main()", "./profile.stats")
+    #pstats.stats("profile.stats")
     main()

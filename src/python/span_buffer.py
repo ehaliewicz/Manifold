@@ -1,10 +1,11 @@
-from intervaltree import Interval, IntervalTree
+#from intervaltree import Interval, IntervalTree
 
 span_buffer = None
 
 def clear_span_buffer():
-    global span_buffer
-    span_buffer = IntervalTree()
+    pass
+    #global span_buffer
+    #span_buffer = IntervalTree()
     
 def does_interval_overlap(x1, x2):
     return span_buffer.overlaps(Interval(x1, x2))
@@ -23,9 +24,9 @@ def insert_interval(x1, x2):
     #span_buffer[
     
 
-def reset(max_width):
-    global span_buf
-    span_buf = [(0, max_width)]
+#def reset(max_width):
+    #global span_buf
+    #span_buf = [(0, max_width)]
 
 def __span_intersects_span(span1, span2):
     (span1_x1, span1_x2) = span1

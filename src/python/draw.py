@@ -148,8 +148,8 @@ def ssect_draw_visible_segs(level_data, topdown_draw_surf, persp_draw_surf, ssec
             
 
 
-DRAW_WIDTH = 400
-DRAW_HEIGHT = 300
+DRAW_WIDTH = 300 #400
+DRAW_HEIGHT = 200 #300
 
 def rasterize_line(x1, x2, y1a, y2a):
     # y1b and y2b are left and right y coordinates of bottom of wall
@@ -514,22 +514,25 @@ def transform_seg(level_data, seg, topdown_draw_surf, persp_draw_surf, avg_secto
     #    if (disp_v1_x > disp_v2_x):
     #        assert False, "This should never happen anymore!"
     #        return BACKFACE_CULLED
-        
-    pygame.draw.line(topdown_draw_surf, (255,255,255), disp_v1, disp_v2)
 
-
+    
     linedef_idx = seg.linedef
     linedef = level_data['LINEDEFS'][linedef_idx]
+    
+    portal =  wad.linedef_is_portal(linedef)
+    topdown_col = (255,0,0) if portal else (255,255,255)
+    pygame.draw.line(topdown_draw_surf, topdown_col, disp_v1, disp_v2)
+
+    
     
     
     sector_idx = wad.seg_sector_idx(seg, level_data)
     sector = level_data['SECTORS'][sector_idx]
 
-    
-    portal = False
-    if wad.linedef_is_portal(linedef): #.right_sidedef != -1 and linedef.left_sidedef != -1:
+     
+    if portal: #.right_sidedef != -1 and linedef.left_sidedef != -1:
         # todo: handle portals
-        portal = True
+        
         #return DRAWN
 
         other_sector_idx = wad.portal_seg_other_sector_idx(seg, level_data)
@@ -644,7 +647,8 @@ def transform_seg(level_data, seg, topdown_draw_surf, persp_draw_surf, avg_secto
             flat_col = (255,0,0)
 
         res = TRANSFORMED_WITH_NO_ONSCREEN_PIXELS
-            
+
+        
         for x in range(clipped_left_x, clipped_right_x+1):
             draw_edge = x == clipped_left_x or x == clipped_right_x-1
 

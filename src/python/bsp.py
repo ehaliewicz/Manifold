@@ -9,7 +9,7 @@ import wad
 
 
 def is_ssect_idx(idx):
-    return (idx & (1<<15))
+    return (idx & (1<<15)) != 0
 
 
 def is_on_left(node, x, y):
@@ -66,11 +66,28 @@ def bsp_child_onscreen(node, left_child=True):
 
     return draw.bbox_on_screen(v1,v2,v3,v4)
 
+
+def get_bsp_tree_bounds(level_data):
+    nodes = level_data['NODES']
+    root_node_idx = len(nodes)-1
+    node = nodes[root_node_idx]
+
+    xs = [
+        node.left_box_left, node.left_box_right,
+        node.right_box_left, node.right_box_right,
+    ]
+
+    ys = [
+        node.left_box_top, node.left_box_bottom,
+        node.right_box_top, node.right_box_bottom,
+    ]
+    
+    return [min(xs), max(xs), min(ys), max(ys)]
     
     
 def traverse_bsp_front_to_back(level_data,
                                x, y, start_subsector,
-                               node_callback=lambda node,left_child_first: None,
+                               node_callback=lambda node,visiting_left, visiting_right: None,
                                ssect_callback=lambda ssect: None):
     nodes = level_data['NODES']
     ssectors = level_data['SSECTORS']
@@ -86,9 +103,10 @@ def traverse_bsp_front_to_back(level_data,
         if is_ssect_idx(node_idx):
             subsector = ssectors[get_real_idx(node_idx)]
             dest_sector_idx = wad.get_subsector_sector_idx(subsector, level_data)
-            if ((not draw.pvs_check) or
-                (draw.pvs_check and wad.maybe_line_of_sight(src_sector_idx, dest_sector_idx, level_data))):
-                ssect_callback(ssectors[get_real_idx(node_idx)])
+            if True: #((not draw.pvs_check) or
+                # (draw.pvs_check and wad.maybe_line_of_sight(src_sector_idx, dest_sector_idx, level_data))):
+                real_idx = get_real_idx(node_idx)
+                ssect_callback(real_idx, ssectors[real_idx])
             return
 
         node = nodes[get_real_idx(node_idx)]
@@ -128,10 +146,11 @@ def traverse_bsp_front_to_back(level_data,
     recurse(root_node_idx)
 
 
+                 
+    
 
-    
-    
-def find_subsector_for_position(level_data,
+            
+def find_subsector_idx_for_position(level_data,
                                 x, y,
                                 node_callback=lambda node: None):
     nodes = level_data['NODES']
@@ -140,7 +159,7 @@ def find_subsector_for_position(level_data,
     depth = 0
     while True:        
         if is_ssect_idx(node_idx):
-            return level_data['SSECTORS'][get_real_idx(node_idx)]
+            return get_real_idx(node_idx)
         else:
             node = nodes[get_real_idx(node_idx)]
             if is_on_left(node, x, y):
@@ -151,3 +170,42 @@ def find_subsector_for_position(level_data,
                 node_idx = node.right_child
             depth += 1
 
+            
+    
+def find_subsector_for_position(level_data,
+                                x, y,
+                                node_callback=lambda node: None):
+    idx = find_subsector_idx_for_position(level_data, x ,y, node_callback)
+    return level_data['SSECTORS'][idx]
+
+
+def iterate_cur_pvs(level_data,
+                    x, y,
+                    cur_ssect_num,
+                    node_callback = lambda node, visiting_left, visiting_right: None,
+                    ssect_callback = lambda ssect_idx, ssect: None):
+    
+    global_pvs = level_data['PVS']
+
+    cur_ssector = level_data['SSECTORS'][cur_ssect_num]
+    
+    cur_pvs = global_pvs[cur_ssect_num]
+
+    def ssector_callback(ssect_idx, ssect):
+        if ssect_idx in cur_pvs:
+            ssect_callback(ssect_idx, ssect) 
+        
+
+    
+    traverse_bsp_front_to_back(level_data,
+                               x, y, cur_ssector,
+                               node_callback,
+                               ssect_callback=ssector_callback)
+
+    
+    #ssectors = level_data['SSECTORS'] 
+    #for ssect_num in cur_pvs:
+    #    ssect_callback(ssectors[ssect_num])
+        
+    
+    

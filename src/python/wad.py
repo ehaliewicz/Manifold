@@ -348,6 +348,9 @@ class Thing:
                 
 #@dataclass
 #class BigBlockmap():
+
+    
+    
     
 def linedef_is_portal(linedef):
     return linedef.right_sidedef != -1 and linedef.left_sidedef != -1
@@ -457,112 +460,6 @@ def split_list_into_chunks(l, n):
     for i in range(0, len(l), n):  
         yield l[i:i + n] 
 
-def calculate_subsector_reject(reject_table, level_data):
-    #print(reject_table)
-    sector_to_subsectors = {}
-    #print(level_data['SSECTORS'])
-    num_ssectors = len(level_data['SSECTORS'])
-    for ssector_idx, ssector in enumerate(level_data['SSECTORS']):
-        sector_idx = get_subsector_sector_idx(ssector, level_data)
-        lst = sector_to_subsectors.get(sector_idx, [])
-        lst.append(ssector_idx)
-        sector_to_subsectors[sector_idx]= lst
-
-    
-    #num_sectors = len(level['SECTORS'])
-    #bit_idx = (src_sector_idx * num_sectors) + dest_sector_idx
-    sectors = level_data['SECTORS']
-    num_sectors = len(sectors)
-
-    num_bits = num_ssectors * num_ssectors
-    num_bytes = num_bits / 8
-    int_num_bytes = num_bits // 8
-    if int_num_bytes < num_bytes:
-        num_bytes = int_num_bytes + 1
-    else:
-        num_bytes = int_num_bytes
-    result_table = [0 for i in range(num_bytes)]
-    
-    print("expanded sector pvs {} bytes to ssector pvs {} bytes".format((num_sectors*num_sectors)/8, num_bytes))
-    
-    set_bits = 0
-    ssector_to_pvs_bits = {}
-    ssector_to_pvs_bytes = {}
-
-    for src_sector_idx in range(num_sectors):
-        for dest_sector_idx in range(num_sectors):
-            if maybe_line_of_sight(src_sector_idx, dest_sector_idx, level_data):
-                src_ssectors = sector_to_subsectors.get(src_sector_idx, [])
-                dst_ssectors = sector_to_subsectors.get(dest_sector_idx, [])
-                for src_ssector_idx in src_ssectors:
-                    if src_ssector_idx not in ssector_to_pvs_bytes:
-                        ssector_to_pvs_bytes[src_ssector_idx] = [0 for i in range(num_ssectors)]
-                        ssector_to_pvs_bits[src_ssector_idx] = [0 for i in range(math.ceil(num_ssectors/8))]
-
-                    for dst_ssector_idx in dst_ssectors:
-                        bit_idx = (src_ssector_idx * num_ssectors) + dst_ssector_idx
-                        byte_idx = bit_idx // 8
-                        bit_pos = bit_idx % 8
-
-                        result_table[byte_idx] |= (1 << bit_pos)
-
-                        list_idx  = dst_ssector_idx 
-                        ssector_to_pvs_bytes[src_ssector_idx][list_idx] = 1
-                        
-                        list_bit_idx = dst_ssector_idx
-                        list_byte_idx = list_bit_idx // 8
-                        list_bit_pos = list_bit_idx % 8
-                        ssector_to_pvs_bits[src_ssector_idx][list_byte_idx] |= (1 << list_bit_pos)
-                        set_bits += 1
-    
-    #print(ssector_to_pvs)
-
-    compressed_ssector_to_pvs = {}
-    compressed_lists_total = 0
-
-    for ssector_idx, pvs in ssector_to_pvs_bytes.items():
-        pvs_bits = ssector_to_pvs_bits[ssector_idx]
-
-        rle_run_lst = []
-        runs = itertools.groupby(pvs, lambda a: a)
-        local_num_runs = 0
-        for run_val,run_iter in runs:
-            run_lst = list(run_iter)
-            subruns = split_list_into_chunks(run_lst, 127)
-            for subrun in subruns:
-                if run_val == 0:
-                    rle_run_lst.append(-len(subrun))
-                else:
-                    rle_run_lst.append(len(subrun))
-                local_num_runs += 1
-        #if local_num_runs > len(pvs_bits):
-            #print("wtf!!!")
-            #print("bits: {}".format(pvs_bits))
-            #print("extracted bytes: {}".format(pvs))
-            #print(rle_run_lst)
-            #sys.exit(1)
-        compressed_lists_total += local_num_runs
-        #print("pvs: {}".format(pvs))
-        #print("rle pvs: {}".format(rle_run_lst))
-
-        #print(pvs)
-
-    print("{}% set bits".format(set_bits*100/num_bits))
-    print("compressed ssector pvs from {} bytes to {} bytes".format(num_bytes, compressed_lists_total))
-    #print(result_table)
-
-    #num_sectors = len(level['SECTORS'])
-    #bit_idx = (src_sector_idx * num_sectors) + dest_sector_idx
-
-    #byte_idx = int(bit_idx / 8)
-
-    
-    #bit_pos = bit_idx % 8
-    
-    #return (level['REJECT'][byte_idx] & (1 << bit_pos) == 0)
-
-
-    #print(sector_to_subsectors)
 
 
 def index_blockmap(x_cell, y_cell, blockmap):
@@ -809,6 +706,10 @@ def read_level_data(level_dir):
     idx = level_dir['REJECT'].ptr
     reject_data = wad_data[idx:idx+reject_table_num_bytes]
 
+    for i,node in enumerate(results['NODES']):
+        node.idx = i
+    for i,ssect in enumerate(results['SSECTORS']):
+        ssect.idx = i
     
     results['REJECT'] = reject_data
 
@@ -822,9 +723,7 @@ def read_level_data(level_dir):
         is_portal_type=LINE_COLOR,
         include_vertex_ids=True,
         zoom_factor=6)
-    results['SSECTOR_REJECT'] = calculate_subsector_reject(
-        reject_data, results
-    )
+
 
     
     #sys.exit(1)
@@ -960,10 +859,10 @@ def read_wadfile(wadfile):
         full_size = sum(d.size for d in level_directory.values())
 
         level_sidedefs = level_data['SIDEDEFS']
-        base_sidedefs, opt_sidedefs, size = optimize_sidedefs(level_sidedefs)
-        optimized_size = full_size
-        optimized_size -= level_directory['SIDEDEFS'].size
-        optimized_size += size
+        #base_sidedefs, opt_sidedefs, size = optimize_sidedefs(level_sidedefs)
+        #optimized_size = full_size
+        #optimized_size -= level_directory['SIDEDEFS'].size
+        #optimized_size += size
         
         total_unoptimized_size += full_size
 
@@ -972,7 +871,7 @@ def read_wadfile(wadfile):
         #print("{} optimized size {}".format(level_name, optimized_size))
         
         
-        total_optimized_size += optimized_size
+        #total_optimized_size += optimized_size
         print('.', end='', flush=True)
     print("")
 
