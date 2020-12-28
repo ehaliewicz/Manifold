@@ -430,7 +430,7 @@ game_mode run_fire() {
 
 
     if(cur_scroll < -45) {
-        //VDP_setVerticalScroll(BG_B, cur_scroll);
+        VDP_setVerticalScroll(BG_B, cur_scroll);
     } else if (fire_running && !fire_hidden) {
         SPR_setVisibility(fire_spr, HIDDEN);
         SPR_update();

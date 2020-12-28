@@ -1,6 +1,7 @@
 #include <genesis.h>
 #include "automap.h"
 #include "bsp.h"
+#include "draw_queues.h"
 #include "game.h"
 #include "game_mode.h"
 #include "graphics_res.h"
@@ -10,9 +11,11 @@
 #include "music.h"
 #include "music_res.h"
 #include "menu_helper.h"
+#include "seg.h"
 #include "span_buf.h"
+#include "ssector.h"
 
-fix32 cur_player_x, cur_player_y;
+fix32 cur_player_x, cur_player_y, cur_player_z;
 fix16 playerXFrac4, playerYFrac4;
 fix32 cur_player_angle;
 
@@ -116,9 +119,61 @@ static int quit_game = 0;
 
 const fix32 move_speed = 4*ZOOM; //15;
 
+typedef enum {
+    AUTOMAP = 0,
+    GAME_WIREFRAME = 1,
+    GAME_SOLID = 2 
+} draw_mode;
+
 int cur_frame;
-int automap_mode;
-int draw_solid;
+draw_mode render_mode;
+int debug_draw = 0;
+
+//u8 column_buffer[W];
+//u8 columns_remaining;
+
+//void clear_column_buffer() {
+//    columns_remaining = 0;
+//    memset(column_buffer, 0, sizeof(column_buffer));
+//}
+
+void bresenham_line(u8 x0, u8 x1, u8 y0, u8 y1, u8 col) {
+    /*
+    x0 >>= 1;
+    x1 >>= 1;
+    if(x0 > x1) {
+        u8 tmp = x0;
+        x0 = x1;
+        x1 = tmp;
+        tmp = y0;
+        y0 = y1;
+        y1 = tmp;
+    }
+    u8* ptr = BMP_getWritePointer(x0>>1, y0);
+    for(u8 x = x0; x <= x1; x++) {
+        *ptr++ = col;
+    }
+    return;
+
+    return;
+    */
+
+    int dx =  abs (x1 - x0), sx = x0 < x1 ? 1 : -1;
+    int dy = -abs (y1 - y0), sy = y0 < y1 ? 1 : -1; 
+    int err = dx + dy, e2; /* error value e_xy */
+    
+    for (;;){  /* loop */
+        //if(column_buffer[x0] == 0) {
+            BMP_setPixel(x0, y0, col);
+        //    column_buffer[x0] = 1;
+        //}
+        //setPixel (x0,y0);
+        if (x0 == x1 && y0 == y1) { break; }
+        e2 = 2 * err;
+        if (e2 >= dy) { err += dy; x0 += sx; } /* e_xy+e_x > 0 */
+        if (e2 <= dx) { err += dx; y0 += sy; } /* e_xy+e_y < 0 */
+    }
+}
 
 void draw_wall(u16 v1_idx, u16 v2_idx, s16 ceil_height, s16 floor_height, u8 is_portal) {
     vertex v1 = cur_level->vertexes[v1_idx];
@@ -145,7 +200,7 @@ void draw_wall(u16 v1_idx, u16 v2_idx, s16 ceil_height, s16 floor_height, u8 is_
         Line l3d_right = {.pt1 = {.x = screen_v2.x, .y = screen_v2.yceil}, .pt2 = {.x = screen_v2.x, .y = screen_v2.yfloor}, .col = col};
 
 
-        if(0) { //draw_solid) {
+        if(render_mode == GAME_SOLID) {
             Vect2D_s16 pts[4] = {
                 {screen_v1.x, screen_v1.yceil},
                 {screen_v2.x, screen_v2.yceil},
@@ -157,17 +212,21 @@ void draw_wall(u16 v1_idx, u16 v2_idx, s16 ceil_height, s16 floor_height, u8 is_
 
         } else {
             if(BMP_clipLine(&l3d_ceil)) {
-                BMP_drawLine(&l3d_ceil);     
+                bresenham_line(l3d_ceil.pt1.x, l3d_ceil.pt2.x, l3d_ceil.pt1.y, l3d_ceil.pt2.y, col);
+                //BMP_drawLine(&l3d_ceil);     
             }
             if(BMP_clipLine(&l3d_floor)) {
-                BMP_drawLine(&l3d_floor);   
+                bresenham_line(l3d_floor.pt1.x, l3d_floor.pt2.x, l3d_floor.pt1.y, l3d_floor.pt2.y, col);
+                //BMP_drawLine(&l3d_floor);   
             }
             if(!is_portal) {
                 if(BMP_clipLine(&l3d_left)) {
-                    BMP_drawLine(&l3d_left);   
+                    bresenham_line(l3d_left.pt1.x, l3d_left.pt2.x, l3d_left.pt1.y, l3d_left.pt2.y, col);
+                    //BMP_drawLine(&l3d_left);   
                 }
                 if(BMP_clipLine(&l3d_right)) {
-                    BMP_drawLine(&l3d_right);         
+                    bresenham_line(l3d_right.pt1.x, l3d_right.pt2.x, l3d_right.pt1.y, l3d_right.pt2.y, col);
+                    //BMP_drawLine(&l3d_right);         
                 }
             }
         }
@@ -181,16 +240,26 @@ void draw_wall(u16 v1_idx, u16 v2_idx, s16 ceil_height, s16 floor_height, u8 is_
 }
 
 
+
 void draw_3d_view(u32 cur_frame) {
 
     BMP_waitWhileFlipRequestPending();
     BMP_clear();
 
+    clear_draw_ssector_queue();
+    //clear_span_buffer();
+    //clear_column_buffer();
+
+    u16 root_node_idx = cur_level->num_nodes-1;
+
+    draw_bsp_node(cur_player_x, cur_player_y, root_node_idx);
+
     //linedef line = cur_level->linedefs[42];
     //draw_wall(line.v1, line.v2);
 
-    for(int i = 140; i < 180; i++) { //cur_level->num_ssectors; i++) {
-        ssector ssect = cur_level->ssectors[i];
+    for(int i = 0; i < num_draw_ssectors; i++) {
+        u16 sect_idx = draw_ssector_queue[i];
+        ssector ssect = cur_level->ssectors[sect_idx];
         seg fst_seg = cur_level->segs[ssect.first_seg];
         linedef line = cur_level->linedefs[fst_seg.linedef];
         sidedef side = cur_level->sidedefs[(fst_seg.direction == 0) ? line.right_sidedef : line.left_sidedef];
@@ -200,28 +269,53 @@ void draw_3d_view(u32 cur_frame) {
         for(int j = 0; j < ssect.num_segs; j++) {
             seg cur_seg = cur_level->segs[ssect.first_seg+j];
             draw_wall(cur_seg.begin_vert, cur_seg.end_vert, cur_sect.ceil_height, cur_sect.floor_height, line_is_portal);
+            if(debug_draw) {
+                BMP_flip(0);
+            }
         }
+        //if(columns_remaining == 0) {
+        //    break;
+        //}
 
     }
 
 
-    //traverse_bsp_nodes_front_to_back(cur_player_x, cur_player_y);
+    char buf[32];
+    sprintf(buf, "ssectors: %i ", num_draw_ssectors);
 
-    //if(BMP_clipLine(&l)) {
-    //    BMP_drawLine(&l);
-    //}
-
-
-
+    BMP_drawText(buf, 1, 3);
     BMP_showFPS(1);
     BMP_flip(1);
     return;
 }
 
 
+/*
+u16 ssect_sector_idx(ssector* ssect) {    
+    u16 seg_idx = ssect->first_seg;
+    seg *s = &(cur_level->segs[seg_idx]);
+    linedef *l = &(cur_level->linedefs[s->linedef]);
+    sidedef *side;
+    if(s->direction) {
+        side = &(cur_level->sidedefs[l->left_sidedef]);
+    } else {
+        side = &(cur_level->sidedefs[l->right_sidedef]);
+    }
+    return side->sector_ref;
+}
+*/
+
+u16 last_joy = 0;
 
 void handle_input() {
     int strafe = joy_button_pressed(BUTTON_C);
+
+    //ssector* cur_ssect = find_subsector_for_position(cur_player_x, cur_player_y, cur_level->num_nodes-1);
+
+    //u16 sector_idx = ssect_sector_idx(cur_ssect);
+    //sector* cur_sector = &(cur_level->sectors[sector_idx]);
+
+    //cur_player_z = cur_sector->floor_height;
 
     if(joy_button_pressed(BUTTON_DOWN)) {
         cur_player_y -= angleCos32*move_speed;
@@ -254,15 +348,62 @@ void handle_input() {
             cur_player_angle += 10;
         }
     }
+    //find_
 
     pause_game = joy_button_pressed(BUTTON_START);
 
-    if(!automap_mode) {
-        automap_mode = JOY_readJoypad(JOY_1) & BUTTON_Y;
-    } else if (JOY_readJoypad(JOY_1) & BUTTON_B) {
-        automap_mode = 0;
+    u16 joy = JOY_readJoypad(JOY_1);
+    // state table
+    // AUTOMAP_MODE
+    // x -> goes back to game mode, y nothing, z nothing
+    // WIREFRAME
+    // x -> goes to automap mode, y goes to solid mode, z turns on debug
+    // SOLID
+    // x -> goes to automap mode, y goes to wireframe mode, z turns on debug
+
+    const int render_mode_table[3][3] = {
+        // automap
+        {GAME_WIREFRAME, 0,              0},
+        // wireframe
+        {AUTOMAP,        GAME_SOLID,     1},
+        // solid
+        {AUTOMAP,        GAME_WIREFRAME, 1}
+    };
+
+
+    int* transition_table = render_mode_table[render_mode];
+
+    #define NEW_BTN(btn) ((joy & btn) && (last_joy & btn) == 0)
+
+    if(NEW_BTN(BUTTON_X)) {
+        render_mode = transition_table[0];
+    } else if (NEW_BTN(BUTTON_Y)) {
+        render_mode = transition_table[1];
+    } else if (NEW_BTN(BUTTON_Z)) {
+        if(transition_table[2]) {
+            debug_draw = !debug_draw;
+        }
     }
-    draw_solid = JOY_readJoypad(JOY_1) & BUTTON_Z;
+
+
+    last_joy = joy;
+
+    /*
+    if(joy & BUTTON_Y) {
+        if(render_mode == AUTOMAP) {
+            render_mode = GAME_WIREFRAME;
+        } else {
+            render_mode = AUTOMAP;
+        }
+    } else if (joy & BUTTON_Z) {
+        render_mode = (render_mode == GAME_SOLID ? GAME_WIREFRAMEGAME_SOLID;
+    } else {
+        render_mode = GAME_WIREFRAME;
+    }
+    if(joy & BUTTON_X) {
+        debug_draw = !debug_draw;
+    }
+    */
 }
 
 
@@ -295,9 +436,9 @@ void cleanup_pause_menu() {
 u16* cur_palette = NULL;
 
 void init_game() {
-    draw_solid = 0;
-    automap_mode = 0;
+    render_mode = GAME_WIREFRAME;
     cur_frame = 0;
+    debug_draw = 0;
     SYS_disableInts();
     //VDP_setScreenHeight224();
     SYS_enableInts();
@@ -307,6 +448,7 @@ void init_game() {
     } else {
         cur_player_x = intToFix32(cur_level->things[0].x);
         cur_player_y = intToFix32(cur_level->things[0].y);
+        cur_player_z = intToFix32(0);
         cur_player_angle = 0;
     }
 
@@ -324,11 +466,18 @@ void init_game() {
     BMP_flip(0);
     init_processed_linedef_bitmap(); 
     init_vertex_cache();
-    init_span_buf();
+    init_span_buffer();
 
     XGM_stopPlay();
     if(music_on) {
         XGM_startPlay(xgm_e1m4);
+    }
+}
+
+void maybe_set_palette(u16* new_palette) {
+    if(cur_palette != new_palette) {
+        VDP_setPalette(PAL1, new_palette);
+        cur_palette = new_palette;
     }
 }
 
@@ -357,19 +506,21 @@ game_mode run_game() {
         return MAIN_MENU;
     }
     */
-    if(automap_mode) {
-        draw_automap(cur_frame);
-        if(cur_palette != mapPalette) {
-            VDP_setPalette(PAL1, mapPalette);
-            cur_palette = mapPalette;
-        }
-    } else {
-        draw_3d_view(cur_frame);
-        if(cur_palette != threeDPalette) {
-            VDP_setPalette(PAL1, threeDPalette);
-            cur_palette = threeDPalette;
-        }
-    }
+   if(debug_draw) {
+            BMP_setBufferCopy(1);
+   } else {
+       BMP_setBufferCopy(0);
+   }
+   switch(render_mode) {
+       case AUTOMAP:
+            draw_automap(cur_frame);
+            maybe_set_palette(mapPalette);
+        break;
+        case GAME_WIREFRAME:
+        case GAME_SOLID:
+            draw_3d_view(cur_frame);
+            maybe_set_palette(threeDPalette);
+   }
     cur_frame++;
 
     return SAME_MODE;
@@ -379,6 +530,7 @@ game_mode run_game() {
 void cleanup_game() {
     BMP_end();
     cleanup_automap();
+    cleanup_span_buffer();
     MEM_free(vertex_cache_frames);
     MEM_free(cached_vertexes);
     MEM_pack();

@@ -11,6 +11,7 @@ extern int draw_solid;
 
 extern fix32 cur_player_x;
 extern fix32 cur_player_y;
+extern fix32 cur_player_z;
 extern fix16 playerXFrac4;
 extern fix16 playerYFrac4;
 extern fix32 cur_player_angle;

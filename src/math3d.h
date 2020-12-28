@@ -3,13 +3,14 @@
 
 #include <genesis.h>
 
-
-#define ASPECT_RATIO (BMP_WIDTH/BMP_HEIGHT)
+#define SCREEN_WIDTH BMP_PITCH
+#define SCREEN_HEIGHT BMP_HEIGHT
+#define ASPECT_RATIO (SCREEN_WIDTH /SCREEN_HEIGHT)
 #define SCALE 1
-#define CONST1 128
-#define CONST2 80
-#define CONST3 80
-#define CONST4 128
+#define CONST1 64 // SCREEN_WIDTH/2 (SCREEN_WIDTH / 2)
+#define CONST2 80 // SCREEN_WIDTH/2 * SCALE / MIN(1, ASPECT_RATIO)
+#define CONST3 80 // SCREEN_HEIGHT/2
+#define CONST4 80 // SCREEN_HEIGHT/2 * SCALE / MAX(1, ASPECT_RATIO)
 
 typedef struct {
     s16 x, yfloor, yceil;

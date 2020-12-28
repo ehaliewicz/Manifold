@@ -1,36 +1,25 @@
-#ifndef SPAN_BUF_H
-#define SPAN_BUF_H
+#ifndef SPAN_BUF
+#define SPAN_BUF
 
 #include <genesis.h>
-#include "math3d.h"
+#include "common.h"
+
+#define MAX_SPANS W
 
 typedef struct {
-    u8 x1, x2;
-    u8 tex_or_color;   // only 256 different textures possible
-} wall_draw_span;
+  s16 clip_x1;
+  s16 clip_x2;
+} render_span;
 
-typedef struct {
-    u8 x1, y2;
-    u8 y1a, y1b;
-    u8 y2a, y2b;
-} portal_draw_span;
+extern int num_render_spans;
+extern render_span* render_spans_for_wall; //[MAX_SPANS];
 
-#define MAX_WALL_DRAW_SPANS 64
-#define MAX_PORTAL_DRAW_SPANS 64
+// inserts a span into the span buffer data structure
+// drawing wall spans as necessary
+int insert_span(s16 x1, s16 x2, u8 insert);
 
-extern wall_draw_span wall_draw_spans[MAX_WALL_DRAW_SPANS];
-extern portal_draw_span portal_draw_spans[MAX_WALL_DRAW_SPANS];
-
-void init_span_buf();
-
-int span_intersects_with_drawable_screen(u8 x1, u8 x2);
-int point_intersects_with_drawable_screen(u8 x);
-
-
-// returns number of spans inserted into either wall_draw_spans or portal_draw_spans
-int insert_solid_color_wall_span(transformed_vert v1, transformed_vert v2, u8 col);
-int insert_textured_wall_span(transformed_vert v1, transformed_vert v2, u8 texture);
-int insert_portal_span(transformed_vert v1, transformed_vert v2);
-
+void init_span_buffer();
+void clear_span_buffer();
+void cleanup_span_buffer();
 
 #endif
