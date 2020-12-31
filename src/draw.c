@@ -2,6 +2,7 @@
 #include "game.h"
 #include "level.h"
 #include "math3d.h"
+#include "portal.h"
 
 
 //u32 column_buffer[128] = { 0 };
@@ -64,15 +65,12 @@ int is_backfacing(u16 wall_id, fix32 cur_player_angle) {
 
 // TODO: optimize backface culling!
 // 
-vis_query_result is_visible(vertex v1, vertex v2, u16 window_min, u16 window_max) {
+vis_query_result is_visible(volatile Vect2D_s32 trans_v1, volatile Vect2D_s32 trans_v2, u16 window_min, u16 window_max) {
     vis_query_result res; 
     res.visible = 0;
 
     // with optimized backface culling
     //if(is_backfacing(wall.backface_angle)
-
-    volatile Vect2D_s32 trans_v1 = transform_map_vert(v1.x, v1.y);
-    volatile Vect2D_s32 trans_v2 = transform_map_vert(v2.x, v2.y);
 
     //if(trans_v1.x <= trans_v2.x) { return res;}
 
@@ -99,10 +97,8 @@ vis_query_result is_visible(vertex v1, vertex v2, u16 window_min, u16 window_max
 
 
 
-int draw_wall_from_verts(vertex v1, vertex v2, s16 ceil_height, s16 floor_height, u16 window_min, u16 window_max) {
+int draw_wall_from_verts(volatile Vect2D_s32 trans_v1, volatile Vect2D_s32 trans_v2, s16 ceil_height, s16 floor_height, u16 window_min, u16 window_max) {
 
-    volatile Vect2D_s32 trans_v1 = transform_map_vert(v1.x, v1.y);
-    volatile Vect2D_s32 trans_v2 = transform_map_vert(v2.x, v2.y);
     //if(trans_v1.x <= trans_v2.x) { return; }
 
     // clip against near z plane if necessary
