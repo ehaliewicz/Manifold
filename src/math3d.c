@@ -18,13 +18,13 @@ Vect2D_s32 transform_map_vert(s16 x, s16 y) {
 
     //return transform_vert_native(x, y);
     
-    //s16 tlx = fix32ToInt(intToFix32(x) - cur_player_x);
-    //s16 tly = fix32ToInt(intToFix32(y) - cur_player_y);
-    s32 tlx = intToFix32(x) - cur_player_x;
-    s32 tly = intToFix32(y) - cur_player_y;
+    //s16 tlx = fix32ToInt(intToFix32(x) - cur_player_pos.x);
+    //s16 tly = fix32ToInt(intToFix32(y) - cur_player_pos.y);
+    s32 tlx = intToFix32(x) - cur_player_pos.x;
+    s32 tly = intToFix32(y) - cur_player_pos.y;
 
-    //s32 tlx = (intToFix32(x) - cur_player_x);
-    //s32 tly = (intToFix32(y) - cur_player_y);
+    //s32 tlx = (intToFix32(x) - cur_player_pos.x);
+    //s32 tly = (intToFix32(y) - cur_player_pos.y);
 
     // 10 fractional bits
 
@@ -112,12 +112,12 @@ transformed_vert project_and_adjust_3d(Vect2D_s32 trans_map_vert, s16 floor, s16
     s16 transX = CONST1 + cosnt2RxDivZ;
 
     // needs to adjust by camera height here
-    s16 const4RyCeil = (CONST4 * (ceil - fix32ToInt(cur_player_z)));
+    s16 const4RyCeil = (CONST4 * (ceil - fix32ToInt(cur_player_pos.z)));
     s16 const4RyCeilDivZ = ((const4RyCeil)<<FIX32_FRAC_BITS) / rz;
 
     s16 yceil = CONST3 + const4RyCeilDivZ;
 
-    s16 const4RyFloor = (CONST4 * (floor - fix32ToInt(cur_player_z)));
+    s16 const4RyFloor = (CONST4 * (floor - fix32ToInt(cur_player_pos.z)));
     s16 const4RyFloorDivZ = ((const4RyFloor)<<FIX32_FRAC_BITS) / rz;
 
     s16 yfloor = CONST3 + const4RyFloorDivZ;

@@ -10,6 +10,7 @@
 #include "seg.h"
 #include "sidedef.h"
 #include "ssector.h"
+#include "portal_map.h"
 #include "thing.h"
 #include "vertex.h"
 
@@ -35,5 +36,10 @@ typedef struct {
 } level;
 
 extern const level* cur_level;
+extern const portal_map* cur_portal_map;
+
+void set_level(level* l);
+
+void set_portal_map(portal_map* l);
 
 #endif

@@ -2,6 +2,7 @@
 #include "automap.h"
 #include "bsp.h"
 #include "draw_queues.h"
+#include "e1m1.h"
 #include "game.h"
 #include "game_mode.h"
 #include "graphics_res.h"
@@ -11,13 +12,16 @@
 #include "music.h"
 #include "music_res.h"
 #include "menu_helper.h"
+#include "portal.h"
+#include "portal_map.h"
+#include "portal_small_map.h"
 #include "seg.h"
 #include "span_buf.h"
 #include "ssector.h"
 
-fix32 cur_player_x, cur_player_y, cur_player_z;
+player_pos cur_player_pos;
+
 fix16 playerXFrac4, playerYFrac4;
-fix32 cur_player_angle;
 
 fix32 angleCos32, angleSin32;
 fix16 angleCos16, angleSin16;
@@ -119,11 +123,6 @@ static int quit_game = 0;
 
 const fix32 move_speed = 4*ZOOM; //15;
 
-typedef enum {
-    AUTOMAP = 0,
-    GAME_WIREFRAME = 1,
-    GAME_SOLID = 2 
-} draw_mode;
 
 int cur_frame;
 draw_mode render_mode;
@@ -137,122 +136,31 @@ int debug_draw = 0;
 //    memset(column_buffer, 0, sizeof(column_buffer));
 //}
 
-void bresenham_line(u8 x0, u8 x1, u8 y0, u8 y1, u8 col) {
-    /*
-    x0 >>= 1;
-    x1 >>= 1;
-    if(x0 > x1) {
-        u8 tmp = x0;
-        x0 = x1;
-        x1 = tmp;
-        tmp = y0;
-        y0 = y1;
-        y1 = tmp;
-    }
-    u8* ptr = BMP_getWritePointer(x0>>1, y0);
-    for(u8 x = x0; x <= x1; x++) {
-        *ptr++ = col;
-    }
-    return;
-
-    return;
-    */
-
-    int dx =  abs (x1 - x0), sx = x0 < x1 ? 1 : -1;
-    int dy = -abs (y1 - y0), sy = y0 < y1 ? 1 : -1; 
-    int err = dx + dy, e2; /* error value e_xy */
-    
-    for (;;){  /* loop */
-        //if(column_buffer[x0] == 0) {
-            BMP_setPixel(x0, y0, col);
-        //    column_buffer[x0] = 1;
-        //}
-        //setPixel (x0,y0);
-        if (x0 == x1 && y0 == y1) { break; }
-        e2 = 2 * err;
-        if (e2 >= dy) { err += dy; x0 += sx; } /* e_xy+e_x > 0 */
-        if (e2 <= dx) { err += dx; y0 += sy; } /* e_xy+e_y < 0 */
-    }
-}
-
-void draw_wall(u16 v1_idx, u16 v2_idx, s16 ceil_height, s16 floor_height, u8 is_portal) {
+void draw_wall(u16 v1_idx, u16 v2_idx, s16 ceil_height, s16 floor_height) {
     vertex v1 = cur_level->vertexes[v1_idx];
     vertex v2 = cur_level->vertexes[v2_idx];
-
-    volatile Vect2D_s32 trans_v1 = transform_map_vert(v1.x, v1.y);
-    volatile Vect2D_s32 trans_v2 = transform_map_vert(v2.x, v2.y);
-    //if(trans_v2.x <= trans_v1.x) { return; }
-
-    // clip against near z plane if necessary
-    clip_result clipped = clip_map_vertex(&trans_v1, &trans_v2);
-
-    if(clipped != OFFSCREEN) {
-        // project map vertex with height attributes
-        transformed_vert screen_v1 = project_and_adjust_3d(trans_v1, floor_height, ceil_height);
-        transformed_vert screen_v2 = project_and_adjust_3d(trans_v2, floor_height, ceil_height);
-        
-        u8 col = clipped != UNCLIPPED ? 0x11 : 0x22;
-        
-        Line l3d_ceil = {.pt1 = {.x = screen_v1.x, .y = screen_v1.yceil}, .pt2 = {.x = screen_v2.x, .y = screen_v2.yceil}, .col = col};
-        Line l3d_floor = {.pt1 = {.x = screen_v1.x, .y = screen_v1.yfloor}, .pt2 = {.x = screen_v2.x, .y = screen_v2.yfloor}, .col = col};
-
-        Line l3d_left = {.pt1 = {.x = screen_v1.x, .y = screen_v1.yceil}, .pt2 = {.x = screen_v1.x, .y = screen_v1.yfloor}, .col = col};
-        Line l3d_right = {.pt1 = {.x = screen_v2.x, .y = screen_v2.yceil}, .pt2 = {.x = screen_v2.x, .y = screen_v2.yfloor}, .col = col};
-
-
-        if(render_mode == GAME_SOLID) {
-            Vect2D_s16 pts[4] = {
-                {screen_v1.x, screen_v1.yceil},
-                {screen_v2.x, screen_v2.yceil},
-                {screen_v2.x, screen_v2.yfloor},
-                {screen_v1.x, screen_v1.yfloor}
-            };
-
-            BMP_drawPolygon(pts, 4, col);
-
-        } else {
-            if(BMP_clipLine(&l3d_ceil)) {
-                bresenham_line(l3d_ceil.pt1.x, l3d_ceil.pt2.x, l3d_ceil.pt1.y, l3d_ceil.pt2.y, col);
-                //BMP_drawLine(&l3d_ceil);     
-            }
-            if(BMP_clipLine(&l3d_floor)) {
-                bresenham_line(l3d_floor.pt1.x, l3d_floor.pt2.x, l3d_floor.pt1.y, l3d_floor.pt2.y, col);
-                //BMP_drawLine(&l3d_floor);   
-            }
-            if(!is_portal) {
-                if(BMP_clipLine(&l3d_left)) {
-                    bresenham_line(l3d_left.pt1.x, l3d_left.pt2.x, l3d_left.pt1.y, l3d_left.pt2.y, col);
-                    //BMP_drawLine(&l3d_left);   
-                }
-                if(BMP_clipLine(&l3d_right)) {
-                    bresenham_line(l3d_right.pt1.x, l3d_right.pt2.x, l3d_right.pt1.y, l3d_right.pt2.y, col);
-                    //BMP_drawLine(&l3d_right);         
-                }
-            }
-        }
-        
-
-    }
-    
-
-
-
+    //draw_wall_from_verts(v1, v2, ceil_height, floor_height);
 }
-
-
 
 void draw_3d_view(u32 cur_frame) {
 
     BMP_waitWhileFlipRequestPending();
     BMP_clear();
 
+    clear_portal_cache();
+    portal_rend(0, cur_frame);
+
+
+/*
     clear_draw_ssector_queue();
+
+
     //clear_span_buffer();
     //clear_column_buffer();
 
     u16 root_node_idx = cur_level->num_nodes-1;
 
-    draw_bsp_node(cur_player_x, cur_player_y, root_node_idx);
+    draw_bsp_node(cur_player_pos.x, cur_player_pos.y, root_node_idx);
 
     //linedef line = cur_level->linedefs[42];
     //draw_wall(line.v1, line.v2);
@@ -278,12 +186,12 @@ void draw_3d_view(u32 cur_frame) {
         //}
 
     }
+*/
 
+    //char buf[32];
+    //sprintf(buf, "ssectors: %i ", num_draw_ssectors);
 
-    char buf[32];
-    sprintf(buf, "ssectors: %i ", num_draw_ssectors);
-
-    BMP_drawText(buf, 1, 3);
+    //BMP_drawText(buf, 1, 3);
     BMP_showFPS(1);
     BMP_flip(1);
     return;
@@ -310,42 +218,42 @@ u16 last_joy = 0;
 void handle_input() {
     int strafe = joy_button_pressed(BUTTON_C);
 
-    //ssector* cur_ssect = find_subsector_for_position(cur_player_x, cur_player_y, cur_level->num_nodes-1);
+    //ssector* cur_ssect = find_subsector_for_position(cur_player_pos.x, cur_player_pos.y, cur_level->num_nodes-1);
 
     //u16 sector_idx = ssect_sector_idx(cur_ssect);
     //sector* cur_sector = &(cur_level->sectors[sector_idx]);
 
-    //cur_player_z = cur_sector->floor_height;
+    //cur_player_pos.z = cur_sector->floor_height;
 
-    if(joy_button_pressed(BUTTON_DOWN)) {
-        cur_player_y -= angleCos32*move_speed;
-        cur_player_x -= angleSin32*move_speed;
+    if(joy_button_pressed(BUTTON_DOWN)) {   
+        cur_player_pos.y -= angleCos32*move_speed;
+        cur_player_pos.x  -= angleSin32*move_speed;
         
     } else if (joy_button_pressed(BUTTON_UP)) {
-        cur_player_y += angleCos32*move_speed;
-        cur_player_x += angleSin32*move_speed;
+        cur_player_pos.y += angleCos32*move_speed;
+        cur_player_pos.x += angleSin32*move_speed;
     }
     
 
     if (joy_button_pressed(BUTTON_LEFT)) {
         if(strafe) {
-            fix32 leftAngle = (cur_player_angle-ANGLE_90_DEGREES);
+            fix32 leftAngle = (cur_player_pos.ang-ANGLE_90_DEGREES);
             fix32 leftAngleSin = sinFix32(leftAngle);
             fix32 leftAngleCos = cosFix32(leftAngle);
-            cur_player_y += leftAngleCos*move_speed;
-            cur_player_x += leftAngleSin*move_speed;
+            cur_player_pos.y += leftAngleCos*move_speed;
+            cur_player_pos.x += leftAngleSin*move_speed;
         } else {
-            cur_player_angle -= 10;
+            cur_player_pos.ang -= 10;
         }
     } else if (joy_button_pressed(BUTTON_RIGHT)) {
         if(strafe) {
-            fix32 leftAngle = (cur_player_angle+ANGLE_90_DEGREES);
+            fix32 leftAngle = (cur_player_pos.ang+ANGLE_90_DEGREES);
             fix32 leftAngleSin = sinFix32(leftAngle);
             fix32 leftAngleCos = cosFix32(leftAngle);
-            cur_player_y += leftAngleCos*move_speed;
-            cur_player_x += leftAngleSin*move_speed;
+            cur_player_pos.y += leftAngleCos*move_speed;
+            cur_player_pos.x += leftAngleSin*move_speed;
         } else {
-            cur_player_angle += 10;
+            cur_player_pos.ang += 10;
         }
     }
     //find_
@@ -442,14 +350,35 @@ void init_game() {
     SYS_disableInts();
     //VDP_setScreenHeight224();
     SYS_enableInts();
+
+    set_level(&e1m1);
+
+    set_portal_map(&portal_level_1);
+
+
+
     quit_game = 0;
     if(pause_game) {
         pause_game = 0;
     } else {
-        cur_player_x = intToFix32(cur_level->things[0].x);
-        cur_player_y = intToFix32(cur_level->things[0].y);
-        cur_player_z = intToFix32(0);
-        cur_player_angle = 0;
+        
+        int sect_0_verts[6] = {0,1,7,13,12,6};
+        int avg_sect0_x = 0; //erts[0].x + verts[1].x + 
+        int avg_sect0_y = 0;
+        for(int i = 0; i < 6; i++) {
+            int vidx = sect_0_verts[i];
+            avg_sect0_x += cur_portal_map->vertexes[vidx].x;
+            avg_sect0_y += cur_portal_map->vertexes[vidx].y;
+        }
+        avg_sect0_x /= 6;
+        avg_sect0_y /= 6;
+        cur_player_pos.x = intToFix32(avg_sect0_x);
+        cur_player_pos.y = intToFix32(avg_sect0_y);
+
+        //cur_player_pos.x = intToFix32(cur_level->things[0].x);
+        //cur_player_pos.y = intToFix32(cur_level->things[0].y);
+        cur_player_pos.z = intToFix32(0);
+        cur_player_pos.ang = 0;
     }
 
     init_3d_palette();
@@ -468,6 +397,8 @@ void init_game() {
     init_vertex_cache();
     init_span_buffer();
 
+    init_portal_renderer();
+
     XGM_stopPlay();
     if(music_on) {
         XGM_startPlay(xgm_e1m4);
@@ -484,16 +415,16 @@ void maybe_set_palette(u16* new_palette) {
 
 game_mode run_game() {
     
-    angleCos32 = cosFix32(cur_player_angle);
-    angleSin32 = sinFix32(cur_player_angle); 
-    angleCos16 = cosFix16(cur_player_angle);
-    angleSin16 = sinFix16(cur_player_angle); 
+    angleCos32 = cosFix32(cur_player_pos.ang);
+    angleSin32 = sinFix32(cur_player_pos.ang); 
+    angleCos16 = cosFix16(cur_player_pos.ang);
+    angleSin16 = sinFix16(cur_player_pos.ang); 
     angleSinFrac12 = angleSin16<<6;
     angleCosFrac12 = angleCos16<<6;
 
     
-    playerXFrac4 = ((cur_player_x/ZOOM)>>(FIX32_FRAC_BITS-4)); // scaling factor is now 16 (2^4) instead of 1024 (2^10)
-    playerYFrac4 = ((cur_player_y/ZOOM)>>(FIX32_FRAC_BITS-4));
+    playerXFrac4 = ((cur_player_pos.x/ZOOM)>>(FIX32_FRAC_BITS-4)); // scaling factor is now 16 (2^4) instead of 1024 (2^10)
+    playerYFrac4 = ((cur_player_pos.y/ZOOM)>>(FIX32_FRAC_BITS-4));
 
     handle_input();
 
@@ -507,7 +438,7 @@ game_mode run_game() {
     }
     */
    if(debug_draw) {
-            BMP_setBufferCopy(1);
+        BMP_setBufferCopy(1);
    } else {
        BMP_setBufferCopy(0);
    }

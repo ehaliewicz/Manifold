@@ -2,19 +2,26 @@
 #define GAME_H
 
 #include <genesis.h>
+#include "draw.h"
 #include "game_mode.h"
+#include "vertex.h"
 
 extern int cur_frame;
 extern int automap_mode;
-extern int draw_solid;
+draw_mode render_mode;
 
 
-extern fix32 cur_player_x;
-extern fix32 cur_player_y;
-extern fix32 cur_player_z;
+typedef struct {
+    fix32 x;
+    fix32 y;
+    fix32 z;
+    fix32 ang;
+} player_pos;
+
+
+extern player_pos cur_player_pos;
 extern fix16 playerXFrac4;
 extern fix16 playerYFrac4;
-extern fix32 cur_player_angle;
 
 
 #define ANGLE_90_DEGREES 256
@@ -29,8 +36,11 @@ extern fix16 angleSin16;
 extern s16 angleSinFrac12;
 extern s16 angleCosFrac12;
 
+
+
 void init_game();
 game_mode run_game();
 void cleanup_game();
+
 
 #endif

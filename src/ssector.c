@@ -47,7 +47,7 @@ void traverse_and_render_ssector_graph(int ply_ssector) {
                 adj_ssector = seg_adjacent_subsector(cur_seg);
             }
 
-            if(is_backfacing(cur_seg, cur_player_angle)) {
+            if(is_backfacing(cur_seg, cur_player_pos.ang)) {
                 continue;
             }
 

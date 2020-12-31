@@ -195,32 +195,32 @@ void draw_automap(u32 cur_frame) {
     
     int world_half_screen_diag_length = 152 * ZOOM; //<< ZOOM_SHIFT;
 
-    fix32 top_left_angle = (cur_player_angle-ANGLE_58_DEGREES);
+    fix32 top_left_angle = (cur_player_pos.ang-ANGLE_58_DEGREES);
     fix32 top_left_angle_sin = sinFix32(top_left_angle);
     fix32 top_left_angle_cos = cosFix32(top_left_angle);
 
     fix32 top_left_x_off = top_left_angle_sin * world_half_screen_diag_length;
     fix32 top_left_y_off = top_left_angle_cos * world_half_screen_diag_length;
 
-    fix32 world_screen_top_left_x = cur_player_x + top_left_x_off;
-    fix32 world_screen_top_left_y = cur_player_y + top_left_y_off;
+    fix32 world_screen_top_left_x = cur_player_pos.x + top_left_x_off;
+    fix32 world_screen_top_left_y = cur_player_pos.y + top_left_y_off;
 
-    fix32 world_screen_bottom_right_x = cur_player_x - top_left_x_off;
-    fix32 world_screen_bottom_right_y = cur_player_y - top_left_y_off;
+    fix32 world_screen_bottom_right_x = cur_player_pos.x - top_left_x_off;
+    fix32 world_screen_bottom_right_y = cur_player_pos.y - top_left_y_off;
 
 
-    fix32 top_right_angle = (cur_player_angle+ANGLE_58_DEGREES);
+    fix32 top_right_angle = (cur_player_pos.ang+ANGLE_58_DEGREES);
     fix32 top_right_angle_sin = sinFix32(top_right_angle);
     fix32 top_right_angle_cos = cosFix32(top_right_angle);
 
     fix32 top_right_x_off = top_right_angle_sin * world_half_screen_diag_length;
     fix32 top_right_y_off = top_right_angle_cos * world_half_screen_diag_length;
 
-    fix32 world_screen_top_right_x = cur_player_x + top_right_x_off;
-    fix32 world_screen_top_right_y = cur_player_y + top_right_y_off;
+    fix32 world_screen_top_right_x = cur_player_pos.x + top_right_x_off;
+    fix32 world_screen_top_right_y = cur_player_pos.y + top_right_y_off;
 
-    fix32 world_screen_bottom_left_x = cur_player_x - top_right_x_off;
-    fix32 world_screen_bottom_left_y = cur_player_y - top_right_y_off;
+    fix32 world_screen_bottom_left_x = cur_player_pos.x - top_right_x_off;
+    fix32 world_screen_bottom_left_y = cur_player_pos.y - top_right_y_off;
 
     
 

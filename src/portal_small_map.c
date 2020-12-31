@@ -1,7 +1,13 @@
+#include <genesis.h>
+#include "portal_map.h"
+#include "vertex.h"
+
 // 7 sectors
 
 #define SECTOR_SIZE 4
 #define NUM_SECTORS 7
+
+#define NUM_WALLS 32
 
 #define NUM_VERTS 16
 #define VERT_SIZE 2
@@ -10,26 +16,26 @@
 // 56 bytes of wall reference data for sectors
 
 // start wall, num walls, floor height, ceiling height
-int16_t sectors[SECTOR_SIZE*NUM_SECTORS] = {
+const s16 sectors[SECTOR_SIZE*NUM_SECTORS] = {
     // sector 0 6 walls
-    0,  6, 0, 10,
+    0,  6, -80, 216,
     // sector 1, 4 walls
-    6,  4, 0, 10,
+    6,  4, -80, 216,
     // sector 2, 4 walls
-    10, 4, 0, 10,
+    10, 4, -80, 216,
     // sector 3, 6 walls
-    14, 6, 0, 10,
+    14, 6, -80, 216,
     // sector 4, 4 walls
-    20, 4, 0, 10,
+    20, 4, -80, 216,
     // sector 5, 4 walls
-    24, 4, 0, 10,
+    24, 4, -80, 216,
     // sector 6, 4 walls
-    28, 4, 0, 10
+    28, 4, -80, 216
 };
 
 
 // 64 bytes of vertex references for walls
-int16_t walls[32] = {
+const u16 walls[32] = {
     // sector 0 walls
     0,1,7,13,12,6,
     // sector 1 walls
@@ -50,7 +56,7 @@ int16_t walls[32] = {
 
 // -1 if not portal, otherwise an integer referencing another sector
 
-int16_t portals[32] = {
+const s16 portals[32] = {
     // sector 0 portal refs
     -1,1,-1,6,-1,5,
     // sector 1 portal refs
@@ -69,11 +75,10 @@ int16_t portals[32] = {
 
 
 
-
-#define VERT(y,x) ((x*100)/2),(y*100)
+#define VERT(y1,x1) { .x = ((x1*3*10)), .y = (y1*4*10) }
 
 // x needs to be divided by two
-int16_t verts[NUM_VERTS*VERT_SIZE] = {
+const vertex verts[NUM_VERTS*VERT_SIZE] = {
     VERT(14,46),		      
     VERT(13,90),
     VERT(29,109),
@@ -94,8 +99,12 @@ int16_t verts[NUM_VERTS*VERT_SIZE] = {
 
 
 
-uint8_t vert_transform_cache[NUM_VERTS];
-uint8_t sector_visited_cache[NUM_SECTORS]; // i don't know if this helps much, but we might be able to use it
-
-
-
+const portal_map portal_level_1 = {
+    .num_sectors = NUM_SECTORS,
+    .num_walls = NUM_WALLS,
+    .num_verts = NUM_VERTS,
+    .sectors = sectors,
+    .walls = walls,
+    .portals = portals,
+    .vertexes = verts,
+};

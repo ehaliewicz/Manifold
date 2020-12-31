@@ -7,6 +7,7 @@
 #include "math3d.h"
 
 #include "span_buf.h"
+#include "ssector.h"
 
 // returns 1 if on-screen
 int face_on_screen(Vect2D_s32 trans_v1, Vect2D_s32 trans_v2) {
@@ -119,9 +120,9 @@ int is_on_left(const node* nd, fix32 x, fix32 y) {
 ssector* find_subsector_for_position(fix32 x, fix32 y, int root_node_idx) {
     const node* nodes = cur_level->nodes;
     const ssector* subsectors = cur_level->ssectors;
-      int recur(int node_idx) {
+    int recur(int node_idx) {
         if(is_ssector_idx(node_idx)) {
-            return &subsectors[get_node_real_idx(node_idx)];
+            return node_idx;
         } else {
             const node* nd = &(nodes[get_node_real_idx(node_idx)]);
             int on_left = is_on_left(nd, x, y);
@@ -130,7 +131,7 @@ ssector* find_subsector_for_position(fix32 x, fix32 y, int root_node_idx) {
         }
     }
     
-    recur(root_node_idx);
+    return  &subsectors[get_node_real_idx(recur(root_node_idx))];
 }
 
 
