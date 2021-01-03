@@ -1,37 +1,41 @@
+#include <genesis.h>
+#include "portal_map.h"
+#include "vertex.h"
+
 #define SECTOR_SIZE 4
 #define NUM_SECTORS 10
 
-#define NUM_VERTS 27
+#define NUM_VERTS 28
 #define VERT_SIZE 2
 
 #define NUM_WALLS 52
 
-int16_t sectors[SECTOR_SIZE*NUM_SECTORS] = {
+const s16 sectors[SECTOR_SIZE*NUM_SECTORS] = {
     // sector 0 
-    0, 6, floor, ceil,
+    0, 6, -80, 216,
     // sector 1
-    6, 6, floor, ceil,
+    6, 6, -80, 216,
     // sector 2
-    12, 6, floor, ceil,
+    12, 6, -80, 216,
     // sector 3
-    18, 6, floor, ceil,
+    18, 6, -80, 216,
     // sector 4
-    24, 6, floor, ceil,
+    24, 6, -80, 216,
     // sector 5
-    30, 6, floor, ceil,
+    30, 6, -80, 216,
     // sector 6
-    36, 4, floor, ceil,
+    36, 4, -80, 216,
     // sector 7
-    40, 4, floor, ceil,
+    40, 4, -80, 216,
     // sector 8
-    44, 4, floor, ceil,
+    44, 4, -80, 216,
     // sector 9
-    48, 4, floor, ceil
+    48, 4, -80, 216
 };
 
 
 
-int16_t walls[NUM_WALLS] = {
+const u16 walls[NUM_WALLS] = {
     // sector 0 walls 
     0, 1, 9, 8, 7, 6,
     // sector 1 walls
@@ -55,7 +59,7 @@ int16_t walls[NUM_WALLS] = {
 };
 
 
-int16_t portals[NUM_WALLS] = {
+const s16 portals[NUM_WALLS] = {
     // sector 0 portals
     -1, 1, -1, 6, -1, 5,
     // sector 1 portals
@@ -81,7 +85,7 @@ int16_t portals[NUM_WALLS] = {
 
 #define VERT(y1,x1) { .x = (x1 * 30), .y = (y1*40) }
 
-vertex vertexes[NUM_VERTS] = {
+const vertex vertexes[NUM_VERTS] = {
     VERT(14,46),			      
     VERT(13,90),
     VERT(29,110),
@@ -112,3 +116,13 @@ vertex vertexes[NUM_VERTS] = {
     VERT(26,50),
 };
 
+
+const portal_map portal_level_1 = {
+    .num_sectors = NUM_SECTORS,
+    .num_walls = NUM_WALLS,
+    .num_verts = NUM_VERTS,
+    .sectors = sectors,
+    .walls = walls,
+    .portals = portals,
+    .vertexes = vertexes,
+};

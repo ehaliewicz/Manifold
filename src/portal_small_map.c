@@ -1,3 +1,5 @@
+/*
+
 #include <genesis.h>
 #include "portal_map.h"
 #include "vertex.h"
@@ -99,6 +101,7 @@ const vertex verts[NUM_VERTS*VERT_SIZE] = {
 
 
 
+
 const portal_map portal_level_1 = {
     .num_sectors = NUM_SECTORS,
     .num_walls = NUM_WALLS,
@@ -108,3 +111,5 @@ const portal_map portal_level_1 = {
     .portals = portals,
     .vertexes = verts,
 };
+
+*/
