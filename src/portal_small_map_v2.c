@@ -79,7 +79,36 @@ int16_t portals[NUM_WALLS] = {
 };
 
 
+#define VERT(y1,x1) { .x = (x1 * 30), .y = (y1*40) }
+
 vertex vertexes[NUM_VERTS] = {
-			      
+    VERT(14,46),			      
+    VERT(13,90),
+    VERT(29,110),
+    VERT(46,96),
+    VERT(46,48),
+    VERT(27,35),
+    VERT(18,55),
+    VERT(18,67),
+    VERT(18,76),
+    VERT(18,84),
+    VERT(21,87),
+    VERT(25,91),
+    VERT(30,97),
+    VERT(32,95),
+    VERT(38,91),
+    VERT(41,88),
+    VERT(41,76),
+    VERT(41,67),
+    VERT(41,55),
+    VERT(35,52),
+    VERT(31,49),
+    VERT(27,46),
+    VERT(26,47),
+    VERT(20,53),
+    VERT(20,56),
+    VERT(32,92),
+    VERT(38,86),
+    VERT(26,50),
 };
 
