@@ -22,36 +22,36 @@ const s16 sectors[SECTOR_SIZE*NUM_SECTORS] = {
     // sector 0 6 walls
     0,  6, -80, 216,
     // sector 1, 4 walls
-    6,  4, -80, 216,
+    7,  4, -80, 216,
     // sector 2, 4 walls
-    10, 4, -80, 216,
+    12, 4, -80, 216,
     // sector 3, 6 walls
-    14, 6, -80, 216,
+    17, 6, -80, 216,
     // sector 4, 4 walls
-    20, 4, -80, 216,
-    // sector 5, 4 walls
     24, 4, -80, 216,
+    // sector 5, 4 walls
+    29, 4, -80, 216,
     // sector 6, 4 walls
-    28, 4, -80, 216
+    36, 4, -80, 216
 };
 
 
 // 64 bytes of vertex references for walls
 const u16 walls[32] = {
     // sector 0 walls
-    0,1,7,13,12,6,
+    0,1,7,13,12,6,0,
     // sector 1 walls
-    1,2,8,7,
+    1,2,8,7,1,
     // sector 2 walls
-    2,3,9,8,
+    2,3,9,8,2,
     // sector 3 walls
-    3,4,10,14,15,9,
+    3,4,10,14,15,9,3,
     // sector 4 walls
-    4,5,11,10,
+    4,5,11,10,4,
     // sector 5 walls
-    5,0,6,11,
+    5,0,6,11,5,
     // sector 6 walls
-    12,13,15,14
+    12,13,15,14,12
 };
 
 // 64 bytes of sector references for walls

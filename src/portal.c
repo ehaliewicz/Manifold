@@ -87,10 +87,9 @@ void portal_rend(u16 src_sector, u32 cur_frame) {
         Vect2D_s32 prev_transformed_vert = transform_map_vert(init_v1.x, init_v1.y);
 
         for(int i = 0; i < num_walls; i++) {
-            int last_wall = (i == num_walls-1);
-            u16 v2_idx = map->walls[last_wall ? wall_offset : wall_offset+i+1];
-            vertex v2 = map->vertexes[v2_idx];
-
+	    u16 v2_idx = map->walls[wall_offset+i+1];
+	    vertex v2 = map->vertexes[v2_idx];
+	    
             s16 portal_sector = map->portals[i+wall_offset];
             int is_portal = portal_sector != -1;
 

@@ -4,16 +4,18 @@
 
 #include <genesis.h>
 #include "vertex.h"
+#include "vis_range.h"
 
 
 typedef struct {
-    int num_sectors;
-    int num_walls;
-    int num_verts;
-    s16* sectors;
-    u16* walls;
-    s16* portals;
+    const int num_sectors;
+    const int num_walls;
+    const int num_verts;
+    const s16* sectors;
+    const u16* walls;
+    const s16* portals;
     const vertex* vertexes;
+    const vis_range wall_vis_ranges;
 } portal_map;
 
 
