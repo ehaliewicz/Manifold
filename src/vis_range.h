@@ -4,7 +4,7 @@
 
 
 typedef struct {
-  int16 two_ranges;
+  u8 two_ranges;
   // up two four angles
   // if only one range is present
   // the first two represent the min and max angle this wall is visible between
