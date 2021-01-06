@@ -20,19 +20,17 @@ Vect2D_s32 transform_map_vert(s16 x, s16 y) {
     
     //s16 tlx = fix32ToInt(intToFix32(x) - cur_player_pos.x);
     //s16 tly = fix32ToInt(intToFix32(y) - cur_player_pos.y);
+
     s32 tlx = intToFix32(x) - cur_player_pos.x;
     s32 tly = intToFix32(y) - cur_player_pos.y;
-
-    //s32 tlx = (intToFix32(x) - cur_player_pos.x);
-    //s32 tly = (intToFix32(y) - cur_player_pos.y);
 
     // 10 fractional bits
 
     //s32 rx = ((tlx)*(angleCos32)) - ((tly)*(angleSin32)); // 22 * 22.10 = 22.10
     //s32 ry = ((tlx)*(angleSin32)) + ((tly)*(angleCos32));
     
-    s32 rx = fix32Mul((tlx),(angleCos32)) - fix32Mul((tly),(angleSin32));
-    s32 ry = fix32Mul((tlx),(angleSin32)) + fix32Mul((tly),(angleCos32));
+    s32 rx = fix32Mul((tlx),(angleSin32)) - fix32Mul((tly),(angleCos32));
+    s32 ry = fix32Mul((tlx),(angleCos32)) + fix32Mul((tly),(angleSin32));
 
     return (Vect2D_s32){.x = rx, .y = ry};
 }

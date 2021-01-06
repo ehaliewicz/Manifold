@@ -43,9 +43,9 @@ void init_fire_lut() {
 		u8 next_fire_0 = (next_h << 4 | next_l);
 		u8 next_fire_1 = (next_h << 4 | l);
 		u8 next_fire_2 = (h << 4 | next_l);
-        u8 retain_fire =      (h << 4 | l);
+        //u8 retain_fire =      (h << 4 | l);
 		
-        int rand_bits = random() & 0b11;
+        //int rand_bits = random() & 0b11;
 
         table_0[i] = next_fire_0;
         table_1[i] = next_fire_1;

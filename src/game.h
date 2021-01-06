@@ -15,7 +15,8 @@ typedef struct {
     fix32 x;
     fix32 y;
     fix32 z;
-    fix32 ang;
+    u16 ang;
+    u16 cur_sector;
 } player_pos;
 
 
@@ -24,6 +25,8 @@ extern fix16 playerXFrac4;
 extern fix16 playerYFrac4;
 
 
+#define ANGLE_360_DEGREES 1024
+#define ANGLE_180_DEGREES 512
 #define ANGLE_90_DEGREES 256
  // 58 degrees from player viewpoint to top left of map
 #define ANGLE_58_DEGREES 164

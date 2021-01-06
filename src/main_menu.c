@@ -61,16 +61,9 @@ const menu options_menu = {
 
 const menu credits_menu = {
     .header_text = "Credits",
-    .num_items = 8,
+    .num_items = 1,
     .items = {
-        TEXT_ITEM("Programmer"),
-        TEXT_ITEM("Erik Haliewicz"),
-        TEXT_ITEM(""),
-        TEXT_ITEM("Thanks to the original iD team,"),
-        TEXT_ITEM("For making DOOM."),
-        TEXT_ITEM(""),
-        TEXT_ITEM("Thanks to Fabien Sanglard,"),
-        TEXT_ITEM("For writing 'Game Engine Black Book Doom'")
+        TEXT_ITEM("blah"),
     }
 };
 

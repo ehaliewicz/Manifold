@@ -12,12 +12,9 @@ typedef enum {
 
 typedef struct {
     collision_type type;
-    union {
-        player_pos new_player_pos;
-        u16 new_sector;
-    };
+    player_pos new_player_pos;
 } collision_result;
 
-collision_result check_for_collision(s16 cur_sector, player_pos position);
+collision_result check_for_collision(player_pos cur_position, player_pos new_position);
 
 #endif

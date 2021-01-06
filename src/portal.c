@@ -1,6 +1,7 @@
 #include <genesis.h>
 #include "common.h"
 #include "draw.h"
+#include "game.h"
 #include "level.h"
 #include "math3D.h"
 #include "portal_map.h"
@@ -76,6 +77,7 @@ void portal_rend(u16 src_sector, u32 cur_frame) {
         u16 window_max = cur_item.x2;
 
         s16 wall_offset = sector_wall_offset(sector, map);
+        s16 portal_offset = sector_portal_offset(sector, map);
         s16 num_walls = sector_num_walls(sector, map);
 
         s16 floor_height = sector_floor_height(sector, map); 
@@ -85,28 +87,87 @@ void portal_rend(u16 src_sector, u32 cur_frame) {
         u16 init_v1_idx = map->walls[wall_offset];
         vertex init_v1 = map->vertexes[init_v1_idx];
         Vect2D_s32 prev_transformed_vert = transform_map_vert(init_v1.x, init_v1.y);
+        
+        s16 last_frontfacing_wall = -1;
+        
+        u16 prev_v2_idx; // = map->walls[wall_offset];
 
-        for(int i = 0; i < num_walls; i++) {
-	    u16 v2_idx = map->walls[wall_offset+i+1];
-	    vertex v2 = map->vertexes[v2_idx];
+        for(s16 i = 0; i < num_walls; i++) {
+	        u16 v2_idx = map->walls[wall_offset+i+1];
+	        vertex v2 = map->vertexes[v2_idx];
 	    
-            s16 portal_sector = map->portals[i+wall_offset];
+            s16 portal_sector = map->portals[portal_offset+i];
             int is_portal = portal_sector != -1;
 
-            volatile Vect2D_s32 trans_v1 = prev_transformed_vert;
-            volatile Vect2D_s32 trans_v2 = transform_map_vert(v2.x, v2.y);
-            prev_transformed_vert = trans_v2;
-            if(is_portal && !queue_full()) {
-                vis_query_result vis = is_visible(trans_v1, trans_v2, window_min, window_max);
+            vis_range rng = map->wall_vis_ranges[portal_offset+i];
+            u16 ang = cur_player_pos.ang;
+            
+            ang &= 1023;
+            
+            u8 front_facing = (rng.angles[0] <= ang && rng.angles[1] >= ang);
+            if(!front_facing && rng.two_ranges) {
+                front_facing = (rng.angles[2] <= ang && rng.angles[3] >= ang);
+            }
 
-                if(vis.visible) {
-                    queue_item.x1 = vis.x1;
-                    queue_item.x2 = vis.x2;
-                    queue_item.sector = portal_sector;
-                    queue_push(queue_item);
-                }
+            if(!front_facing) { 
+                prev_v2_idx = v2_idx;
+                break;
+            }
+
+            /*
+            u16 wall_idx = wall_offset+i;
+            if(wall_idx == 0) {
+                BMP_drawText("drawing first wall", 1, 11);
+                char buf[32]; sprintf(buf, "front-facing %i", front_facing);
+                BMP_drawText(buf, 1, 12);
+                sprintf(buf, "angles %i <= ang <= %i", rng.angles[0], rng.angles[1]);
+                BMP_drawText(buf, 1, 13);
+                sprintf(buf, "angles %i <= ang <= %i", rng.angles[2], rng.angles[3]);
+                BMP_drawText(buf, 1, 14);
+            }
+            */
+            
+
+            volatile Vect2D_s32 trans_v1;
+            if (last_frontfacing_wall == i-1) {
+                // if we didn't backface cull the previous wall, reuse the result of it's transformed v2 as our v1
+                trans_v1 = prev_transformed_vert;
             } else {
-                draw_wall_from_verts(trans_v1, trans_v2, ceil_height, floor_height, window_min, window_max);
+                // else grab the vertex and transform it
+                vertex v1 = map->vertexes[prev_v2_idx];
+                trans_v1 = transform_map_vert(v1.x, v1.y);
+            }
+            // = (prev_vert == i-1) ? prev_transformed_vert : transform_map_vert(v1.x, v1.y);
+            volatile Vect2D_s32 trans_v2 = transform_map_vert(v2.x, v2.y);
+            last_frontfacing_wall = i;
+            prev_transformed_vert = trans_v2;
+
+
+            vis_query_result vis = is_visible(trans_v1, trans_v2, window_min, window_max);
+            if(vis.visible) {
+                if (is_portal) {
+
+                    // TODO: draw step up from floor
+                    // draw step down from ceiling
+                    s16 neighbor_floor_height = sector_floor_height(portal_sector, cur_portal_map);
+                    s16 neighbor_ceil_height = sector_ceil_height(portal_sector, cur_portal_map);
+                    if(neighbor_floor_height > floor_height && neighbor_floor_height < ceil_height) {
+                        draw_wall_from_verts(trans_v1, trans_v2, neighbor_floor_height, floor_height, window_min, window_max);
+                    }
+                    if(neighbor_ceil_height < ceil_height && neighbor_ceil_height > floor_height) {
+                        draw_wall_from_verts(trans_v1, trans_v2, neighbor_ceil_height, ceil_height, window_min, window_max);
+                    }
+
+                    if (neighbor_ceil_height > floor_height && neighbor_floor_height < ceil_height && !queue_full()) {
+
+                        //queue_item.x1 = vis.x1;
+                        //queue_item.x2 = vis.x2;
+                        //queue_item.sector = portal_sector;
+                        //queue_push(queue_item);
+                    }
+                } else {
+                    draw_wall_from_verts(trans_v1, trans_v2, ceil_height, floor_height, window_min, window_max);
+                }
             }
         }
         sector_visited_cache[sector]++;

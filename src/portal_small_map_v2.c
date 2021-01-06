@@ -2,40 +2,38 @@
 #include "portal_map.h"
 #include "vertex.h"
 
-#define SECTOR_SIZE 4
 #define NUM_SECTORS 10
 
 #define NUM_VERTS 28
-#define VERT_SIZE 2
 
 #define NUM_WALLS 52
 
 const s16 sectors[SECTOR_SIZE*NUM_SECTORS] = {
-    // sector 0 
-    0, 6, -80, 216,
+    // sector 0   wall_offset, portal_offset, num_walls, floor_height, ceil_height
+    0,  0, 6, -80, 216,
     // sector 1
-    7, 6, -80, 216,
+    7,  6, 6, -80, 216,
     // sector 2
-    14, 6, -80, 216,
+    14, 12, 6, -80, 216,
     // sector 3
-    21, 6, -80, 216,
+    21, 18, 6, -80, 216,
     // sector 4
-    28, 6, -80, 216,
+    28, 24, 6, -80, 216,
     // sector 5
-    35, 6, -80, 216,
+    35, 30, 6, -80, 216,
     // sector 6
-    42, 4, -80, 216,
+    42, 36, 4, -80, 216,
     // sector 7
-    47, 4, -80, 216,
+    47, 40, 4, -20, 156,
     // sector 8
-    52, 4, -80, 216,
+    52, 44, 4, -20, 156,
     // sector 9
-    57, 4, -80, 216
+    57, 48, 4, -80, 216
 };
 
 
 
-const u16 walls[NUM_WALLS] = {
+const u16 walls[NUM_WALLS+NUM_SECTORS] = {
     // sector 0 walls 
     0, 1, 9, 8, 7, 6, 0,
     // sector 1 walls
@@ -49,70 +47,14 @@ const u16 walls[NUM_WALLS] = {
     // sector 5 walls
     5, 0, 6, 23, 22, 21, 5,
     // sector 6 walls
-    7, 8, 17, 16, 7,
+    7, 8, 16, 17, 7,
     // sector 7 walls
     25, 13, 14, 26, 25,
     // sector 8 walls
     23, 24, 27, 22, 23,
     // sector 9 walls
-    10, 11, 19, 20 10,
+    10, 11, 19, 20, 10,
 };
-
-const vis_range vis_ranges[NUM_WALLS] = {
-    {.two_ranges = 1, .angles = { 0,90,281,348 } },
-    {.two_ranges = 0, .angles = { 135,303 } }, 
-    {.two_ranges = 0, .angles = { 101,270 } }, 
-    {.two_ranges = 0, .angles = { 101,270 } }, 
-    {.two_ranges = 0, .angles = { 101,270 } }, 
-    {.two_ranges = 0, .angles = { 66,236 } }, 
-    {.two_ranges = 1, .angles = { 0,45,236,348 } },
-    {.two_ranges = 0, .angles = { 101,270 } }, 
-    {.two_ranges = 0, .angles = { 56,225 } }, 
-    {.two_ranges = 0, .angles = { 56,225 } }, 
-    {.two_ranges = 0, .angles = { 56,225 } }, 
-    {.two_ranges = 1, .angles = { 0,123,315,348 } },
-    {.two_ranges = 0, .angles = { 146,315 } }, 
-    {.two_ranges = 0, .angles = { 66,236 } }, 
-    {.two_ranges = 1, .angles = { 0,135,326,348 } },
-    {.two_ranges = 1, .angles = { 0,146,337,348 } },
-    {.two_ranges = 1, .angles = { 0,135,326,348 } },
-    {.two_ranges = 1, .angles = { 0,90,281,348 } },
-    {.two_ranges = 0, .angles = { 101,270 } }, 
-    {.two_ranges = 1, .angles = { 0,123,315,348 } },
-    {.two_ranges = 1, .angles = { 0,90,281,348 } },
-    {.two_ranges = 1, .angles = { 0,90,281,348 } },
-    {.two_ranges = 1, .angles = { 0,90,281,348 } },
-    {.two_ranges = 1, .angles = { 0,56,247,348 } },
-    {.two_ranges = 0, .angles = { 45,213 } }, 
-    {.two_ranges = 1, .angles = { 0,90,281,348 } },
-    {.two_ranges = 1, .angles = { 0,33,225,348 } },
-    {.two_ranges = 1, .angles = { 0,33,225,348 } },
-    {.two_ranges = 1, .angles = { 0,21,213,348 } },
-    {.two_ranges = 0, .angles = { 135,303 } }, 
-    {.two_ranges = 1, .angles = { 0,135,326,348 } },
-    {.two_ranges = 1, .angles = { 0,56,247,348 } },
-    {.two_ranges = 0, .angles = { 146,315 } }, 
-    {.two_ranges = 0, .angles = { 146,315 } }, 
-    {.two_ranges = 0, .angles = { 146,315 } }, 
-    {.two_ranges = 0, .angles = { 101,270 } }, 
-    {.two_ranges = 1, .angles = { 0,90,281,348 } },
-    {.two_ranges = 0, .angles = { 168,337 } }, 
-    {.two_ranges = 1, .angles = { 0,90,281,348 } },
-    {.two_ranges = 0, .angles = { 21,191 } }, 
-    {.two_ranges = 1, .angles = { 0,90,281,348 } },
-    {.two_ranges = 0, .angles = { 156,326 } }, 
-    {.two_ranges = 0, .angles = { 101,270 } }, 
-    {.two_ranges = 1, .angles = { 0,135,326,348 } },
-    {.two_ranges = 1, .angles = { 0,90,281,348 } },
-    {.two_ranges = 0, .angles = { 146,315 } }, 
-    {.two_ranges = 0, .angles = { 101,270 } }, 
-    {.two_ranges = 1, .angles = { 0,135,326,348 } },
-    {.two_ranges = 1, .angles = { 0,45,236,348 } },
-    {.two_ranges = 0, .angles = { 112,281 } }, 
-    {.two_ranges = 0, .angles = { 45,213 } }, 
-    {.two_ranges = 1, .angles = { 0,101,292,348 } },  
-};
-
 
 const s16 portals[NUM_WALLS] = {
     // sector 0 portals
@@ -136,6 +78,63 @@ const s16 portals[NUM_WALLS] = {
     // sector 9 portals
     1, -1, 4, -1
 };
+
+
+const vis_range vis_ranges[NUM_WALLS] = {
+    {.two_ranges = 1, .angles = { 354,1024,0,110 } },
+    {.two_ranges = 0, .angles = { 384,861 } },
+    {.two_ranges = 0, .angles = { 287,768 } },
+    {.two_ranges = 0, .angles = { 287,768 } },
+    {.two_ranges = 0, .angles = { 287,768 } },
+    {.two_ranges = 0, .angles = { 190,671 } },
+    {.two_ranges = 1, .angles = { 0,256,799,989 } },
+    {.two_ranges = 1, .angles = { 0,128,671,989 } },
+    {.two_ranges = 0, .angles = { 287,768 } },
+    {.two_ranges = 0, .angles = { 159,640 } },
+    {.two_ranges = 0, .angles = { 159,640 } },
+    {.two_ranges = 0, .angles = { 256,733 } },
+    {.two_ranges = 1, .angles = { 0,349,896,989 } },
+    {.two_ranges = 1, .angles = { 0,128,671,989 } },
+    {.two_ranges = 0, .angles = { 415,896 } },
+    {.two_ranges = 0, .angles = { 190,671 } },
+    {.two_ranges = 1, .angles = { 0,384,927,989 } },
+    {.two_ranges = 0, .angles = { 62,543 } },
+    {.two_ranges = 1, .angles = { 0,384,927,989 } },
+    {.two_ranges = 1, .angles = { 0,256,799,989 } },
+    {.two_ranges = 0, .angles = { 415,896 } },
+    {.two_ranges = 0, .angles = { 287,768 } },
+    {.two_ranges = 1, .angles = { 0,349,896,989 } },
+    {.two_ranges = 1, .angles = { 0,287,830,989 } },
+    {.two_ranges = 1, .angles = { 0,256,799,989 } },
+    {.two_ranges = 1, .angles = { 0,256,799,989 } },
+    {.two_ranges = 1, .angles = { 0,159,702,989 } },
+    {.two_ranges = 0, .angles = { 287,768 } },
+    {.two_ranges = 0, .angles = { 128,605 } },
+    {.two_ranges = 1, .angles = { 0,159,702,989 } },
+    {.two_ranges = 1, .angles = { 0,93,640,989 } },
+    {.two_ranges = 1, .angles = { 0,93,640,989 } },
+    {.two_ranges = 1, .angles = { 0,62,605,989 } },
+    {.two_ranges = 0, .angles = { 384,861 } },
+    {.two_ranges = 0, .angles = { 128,605 } },
+    {.two_ranges = 1, .angles = { 0,256,799,989 } },
+    {.two_ranges = 1, .angles = { 0,159,702,989 } },
+    {.two_ranges = 0, .angles = { 415,896 } },
+    {.two_ranges = 0, .angles = { 415,896 } },
+    {.two_ranges = 0, .angles = { 31,512 } },
+    {.two_ranges = 0, .angles = { 287,768 } },
+    {.two_ranges = 1, .angles = { 0,287,830,989 } },
+    {.two_ranges = 1, .angles = { 0,256,799,989 } },
+    {.two_ranges = 0, .angles = { 318,799 } },
+    {.two_ranges = 1, .angles = { 0,256,799,989 } },
+    {.two_ranges = 0, .angles = { 62,543 } },
+    {.two_ranges = 1, .angles = { 0,159,702,989 } },
+    {.two_ranges = 0, .angles = { 318,799 } },
+    {.two_ranges = 0, .angles = { 446,927 } },
+    {.two_ranges = 0, .angles = { 287,768 } },
+    {.two_ranges = 1, .angles = { 0,384,927,989 } },
+    {.two_ranges = 1, .angles = { 0,256,799,989 } },
+}; 
+
 
 
 #define VERT(y1,x1) { .x = (x1 * 30), .y = (y1*40) }

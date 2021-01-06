@@ -1,6 +1,7 @@
 #include <genesis.h>
 #include "automap.h"
 #include "bsp.h"
+#include "collision.h"
 #include "draw_queues.h"
 #include "e1m1.h"
 #include "game.h"
@@ -49,7 +50,7 @@ u16 threeDPalette[16] = {
 void init_3d_palette() {
     for(int i = 0; i < 16; i++) {
         //u16 col = RGB24_TO_VDPCOLOR((random() << 8) | random());
-        u16 col = RGB24_TO_VDPCOLOR(((random() & 0xFF)<<16) |( (random()&0xFF)<<8) | (random()&0xFF));
+        //u16 col = RGB24_TO_VDPCOLOR(((random() & 0xFF)<<16) |( (random()&0xFF)<<8) | (random()&0xFF));
         //threeDPalette[i] = col;
     }
 }
@@ -136,11 +137,15 @@ int debug_draw = 0;
 //    memset(column_buffer, 0, sizeof(column_buffer));
 //}
 
+
+/*
 void draw_wall(u16 v1_idx, u16 v2_idx, s16 ceil_height, s16 floor_height) {
     vertex v1 = cur_level->vertexes[v1_idx];
     vertex v2 = cur_level->vertexes[v2_idx];
     //draw_wall_from_verts(v1, v2, ceil_height, floor_height);
 }
+*/
+
 
 void draw_3d_view(u32 cur_frame) {
 
@@ -148,7 +153,7 @@ void draw_3d_view(u32 cur_frame) {
     BMP_clear();
 
     clear_portal_cache();
-    portal_rend(0, cur_frame);
+    portal_rend(cur_player_pos.cur_sector, cur_frame);
 
 
 /*
@@ -215,6 +220,9 @@ u16 ssect_sector_idx(ssector* ssect) {
 
 u16 last_joy = 0;
 
+
+Vect2D_f32 *sector_jump_positions = NULL;
+
 void handle_input() {
     int strafe = joy_button_pressed(BUTTON_C);
 
@@ -226,36 +234,82 @@ void handle_input() {
     //cur_player_pos.z = cur_sector->floor_height;
 
     if(joy_button_pressed(BUTTON_DOWN)) {   
-        cur_player_pos.y -= angleCos32*move_speed;
-        cur_player_pos.x  -= angleSin32*move_speed;
+        cur_player_pos.y -= angleSin32*move_speed;
+        cur_player_pos.x -= angleCos32*move_speed;
         
     } else if (joy_button_pressed(BUTTON_UP)) {
-        cur_player_pos.y += angleCos32*move_speed;
-        cur_player_pos.x += angleSin32*move_speed;
+        cur_player_pos.y += angleSin32*move_speed;
+        cur_player_pos.x += angleCos32*move_speed;
     }
     
 
     if (joy_button_pressed(BUTTON_LEFT)) {
         if(strafe) {
-            fix32 leftAngle = (cur_player_pos.ang-ANGLE_90_DEGREES);
-            fix32 leftAngleSin = sinFix32(leftAngle);
-            fix32 leftAngleCos = cosFix32(leftAngle);
-            cur_player_pos.y += leftAngleCos*move_speed;
-            cur_player_pos.x += leftAngleSin*move_speed;
+            u16 leftAngle = (cur_player_pos.ang+ANGLE_90_DEGREES);
+            fix32 leftDy = sinFix32(leftAngle);
+            fix32 leftDx = cosFix32(leftAngle);
+            cur_player_pos.y += leftDy*move_speed;
+            cur_player_pos.x += leftDx*move_speed;
         } else {
-            cur_player_pos.ang -= 10;
+            cur_player_pos.ang += 10;
+            if(cur_player_pos.ang > 1023) {
+                cur_player_pos.ang -= 1024;
+            }
         }
     } else if (joy_button_pressed(BUTTON_RIGHT)) {
         if(strafe) {
-            fix32 leftAngle = (cur_player_pos.ang+ANGLE_90_DEGREES);
-            fix32 leftAngleSin = sinFix32(leftAngle);
-            fix32 leftAngleCos = cosFix32(leftAngle);
-            cur_player_pos.y += leftAngleCos*move_speed;
-            cur_player_pos.x += leftAngleSin*move_speed;
+            u16 rightAngle = (cur_player_pos.ang-ANGLE_90_DEGREES);
+            fix32 rightDy = sinFix32(rightAngle);
+            fix32 rightDx = cosFix32(rightAngle);
+            cur_player_pos.y += rightDy*move_speed;
+            cur_player_pos.x += rightDx*move_speed;
         } else {
-            cur_player_pos.ang += 10;
+            if(cur_player_pos.ang < 10) {
+                cur_player_pos.ang = 1024 - (10-cur_player_pos.ang);
+            } else {
+                cur_player_pos.ang -= 10;
+            }
         }
     }
+    //cur_player_pos = new_player_pos;
+    /*
+    collision_result collision = check_for_collision(cur_player_pos, new_player_pos);
+    cur_player_pos = collision.new_player_pos;
+    if(collision.type == COLLIDED) {
+        BMP_drawText("COLLIDED   ", 1, 4);
+    } else if (collision.type == SECTOR_TRANSITION) {
+        BMP_drawText("TRANSIT SECTOR   ", 1, 4);
+    } else {
+        BMP_drawText("NO COLLISION   ", 1, 4);
+    }
+    */
+    char buf[32];
+    sprintf(buf, "sect: %i  ", cur_player_pos.cur_sector);
+    BMP_drawText(buf, 1, 4);
+    sprintf(buf, "ang: %i  ", cur_player_pos.ang);
+    BMP_drawText(buf, 1, 5);
+
+    char buf1[10];
+    char buf2[10];
+
+    fix32ToStr(cur_player_pos.x, buf1, 1);
+    fix32ToStr(cur_player_pos.y, buf2, 1);
+    sprintf(buf, "x %s", buf1);
+    BMP_drawText(buf, 1, 7);
+    sprintf(buf, "y %s", buf2);
+    BMP_drawText(buf, 1, 8);
+
+    fix16 dx = cosFix16(cur_player_pos.ang);
+    fix16ToStr(dx, buf1, 2);
+    fix16 dy = sinFix16(cur_player_pos.ang);
+    fix16ToStr(dy, buf2, 2);
+    sprintf(buf, "dx %s", buf1);
+    BMP_drawText(buf, 1, 9);
+    sprintf(buf, "dy %s", buf2);
+    BMP_drawText(buf, 1, 10);
+    
+
+
     //find_
 
     pause_game = joy_button_pressed(BUTTON_START);
@@ -343,6 +397,29 @@ void cleanup_pause_menu() {
 
 u16* cur_palette = NULL;
 
+
+void init_sector_jump_positions() {
+    sector_jump_positions = MEM_alloc(sizeof(Vect2D_f32) * cur_portal_map->num_sectors);
+    for(int i = 0; i < 10; i++) {
+
+        int avg_sect_x = 0; //erts[0].x + verts[1].x + 
+        int avg_sect_y = 0;
+        int num_walls = sector_num_walls(i, cur_portal_map);
+        int wall_offset = sector_wall_offset(i, cur_portal_map);
+
+        for(int j = 0; j < num_walls; j++) {
+            int vidx = cur_portal_map->walls[wall_offset+j];
+            avg_sect_x += cur_portal_map->vertexes[vidx].x;
+            avg_sect_y += cur_portal_map->vertexes[vidx].y;
+        }
+        avg_sect_x /= num_walls;
+        avg_sect_y /= num_walls;
+        sector_jump_positions[i].x = intToFix32(avg_sect_x);
+        sector_jump_positions[i].y = intToFix32(avg_sect_y);
+    }
+}
+
+
 void init_game() {
     render_mode = GAME_WIREFRAME;
     cur_frame = 0;
@@ -361,19 +438,10 @@ void init_game() {
     if(pause_game) {
         pause_game = 0;
     } else {
+        init_sector_jump_positions();
         
-        int sect_0_verts[6] = {0,1,7,13,12,6};
-        int avg_sect0_x = 0; //erts[0].x + verts[1].x + 
-        int avg_sect0_y = 0;
-        for(int i = 0; i < 6; i++) {
-            int vidx = sect_0_verts[i];
-            avg_sect0_x += cur_portal_map->vertexes[vidx].x;
-            avg_sect0_y += cur_portal_map->vertexes[vidx].y;
-        }
-        avg_sect0_x /= 6;
-        avg_sect0_y /= 6;
-        cur_player_pos.x = intToFix32(avg_sect0_x);
-        cur_player_pos.y = intToFix32(avg_sect0_y);
+        cur_player_pos.x = sector_jump_positions[0].x; //intToFix32(avg_sect0_x);
+        cur_player_pos.y = sector_jump_positions[0].y;  //intToFix32(avg_sect0_y);
 
         //cur_player_pos.x = intToFix32(cur_level->things[0].x);
         //cur_player_pos.y = intToFix32(cur_level->things[0].y);
@@ -462,6 +530,7 @@ void cleanup_game() {
     BMP_end();
     cleanup_automap();
     cleanup_span_buffer();
+    MEM_free(sector_jump_positions);
     MEM_free(vertex_cache_frames);
     MEM_free(cached_vertexes);
     MEM_pack();

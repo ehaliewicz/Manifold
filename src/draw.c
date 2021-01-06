@@ -98,6 +98,7 @@ vis_query_result is_visible(volatile Vect2D_s32 trans_v1, volatile Vect2D_s32 tr
 
 
 int draw_wall_from_verts(volatile Vect2D_s32 trans_v1, volatile Vect2D_s32 trans_v2, s16 ceil_height, s16 floor_height, u16 window_min, u16 window_max) {
+    
 
     //if(trans_v1.x <= trans_v2.x) { return; }
 
@@ -116,16 +117,19 @@ int draw_wall_from_verts(volatile Vect2D_s32 trans_v1, volatile Vect2D_s32 trans
     u8 col = clipped != UNCLIPPED ? 0x11 : 0x22;
 
 
-    if(screen_v1.x >= screen_v2.x) {
-        return 0;
-    }
+    //if(screen_v1.x >= screen_v2.x) {
+    //    return 0;
+    //}
     
-    Line l3d_ceil = {.pt1 = {.x = screen_v1.x, .y = screen_v1.yceil}, .pt2 = {.x = screen_v2.x, .y = screen_v2.yceil}, .col = col};
-    Line l3d_floor = {.pt1 = {.x = screen_v1.x, .y = screen_v1.yfloor}, .pt2 = {.x = screen_v2.x, .y = screen_v2.yfloor}, .col = col};
+    Line l3d_ceil = {.pt1 = {.x = screen_v1.x, .y = screen_v1.yceil}, 
+                     .pt2 = {.x = screen_v2.x, .y = screen_v2.yceil}, .col = col};
+    Line l3d_floor = {.pt1 = {.x = screen_v1.x, .y = screen_v1.yfloor}, 
+                      .pt2 = {.x = screen_v2.x, .y = screen_v2.yfloor}, .col = col};
 
     Line l3d_left = {.pt1 = {.x = screen_v1.x, .y = screen_v1.yceil}, .pt2 = {.x = screen_v1.x, .y = screen_v1.yfloor}, .col = col};
     Line l3d_right = {.pt1 = {.x = screen_v2.x, .y = screen_v2.yceil}, .pt2 = {.x = screen_v2.x, .y = screen_v2.yfloor}, .col = col};
         
+    /*
     if(render_mode == GAME_SOLID) {    
         Vect2D_s16 pts[4] = {
             {screen_v1.x, screen_v1.yceil},
@@ -137,22 +141,22 @@ int draw_wall_from_verts(volatile Vect2D_s32 trans_v1, volatile Vect2D_s32 trans
         BMP_drawPolygon(pts, 4, col);
 
     } else {
-        if(
-            BMP_clipLine(&l3d_ceil)) {
-            bresenham_line(l3d_ceil.pt1.x, l3d_ceil.pt2.x, l3d_ceil.pt1.y, l3d_ceil.pt2.y, window_min, window_max, col);
-        }
-        if(BMP_clipLine(&l3d_floor)) {
-            bresenham_line(l3d_floor.pt1.x, l3d_floor.pt2.x, l3d_floor.pt1.y, l3d_floor.pt2.y, window_min, window_max, col);
-        }
-        
-        if(BMP_clipLine(&l3d_left)) {
-            bresenham_line(l3d_left.pt1.x, l3d_left.pt2.x, l3d_left.pt1.y, l3d_left.pt2.y, window_min, window_max, col);
-        }
-        if(BMP_clipLine(&l3d_right)) {
-            bresenham_line(l3d_right.pt1.x, l3d_right.pt2.x, l3d_right.pt1.y, l3d_right.pt2.y, window_min, window_max, col);
-        }
-        
+    */
+    if(BMP_clipLine(&l3d_ceil)) {
+        bresenham_line(l3d_ceil.pt1.x, l3d_ceil.pt2.x, l3d_ceil.pt1.y, l3d_ceil.pt2.y, window_min, window_max, col);
     }
+    if(BMP_clipLine(&l3d_floor)) {
+        bresenham_line(l3d_floor.pt1.x, l3d_floor.pt2.x, l3d_floor.pt1.y, l3d_floor.pt2.y, window_min, window_max, col);
+    }
+    
+    if(BMP_clipLine(&l3d_left)) {
+        bresenham_line(l3d_left.pt1.x, l3d_left.pt2.x, l3d_left.pt1.y, l3d_left.pt2.y, window_min, window_max, col);
+    }
+    if(BMP_clipLine(&l3d_right)) {
+        bresenham_line(l3d_right.pt1.x, l3d_right.pt2.x, l3d_right.pt1.y, l3d_right.pt2.y, window_min, window_max, col);
+    }
+        
+    //}
     
     return 1;
 
