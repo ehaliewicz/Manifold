@@ -18,6 +18,7 @@ typedef struct {
     const s16* portals;
     const vertex* vertexes;
     const vis_range* wall_vis_ranges;
+    const u16* wall_norm_angles;
 } portal_map;
 
 

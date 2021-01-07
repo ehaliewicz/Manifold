@@ -9,7 +9,6 @@
 
 void bresenham_line(u8 x0, u8 x1, u8 y0, u8 y1, u16 win_min, u16 win_max, u8 col) {
     //col = col<<4 |
-
     
     int dx =  abs (x1 - x0), sx = x0 < x1 ? 1 : -1;
     int dy = -abs (y1 - y0), sy = y0 < y1 ? 1 : -1; 
@@ -85,8 +84,8 @@ vis_query_result is_visible(volatile Vect2D_s32 trans_v1, volatile Vect2D_s32 tr
     s16 x1 = project_and_adjust_2d(trans_v2);
     if(x1 >= window_max) { return res; }
 
-    if(x1 >= x2) {
-        return res;
+    if(x1 == x2) { // x1 >= x2
+       return res;
     }
     res.visible = 1;
     res.x1 = max(x1, window_min);
@@ -117,9 +116,9 @@ int draw_wall_from_verts(volatile Vect2D_s32 trans_v1, volatile Vect2D_s32 trans
     u8 col = clipped != UNCLIPPED ? 0x11 : 0x22;
 
 
-    //if(screen_v1.x >= screen_v2.x) {
-    //    return 0;
-    //}
+    if(screen_v1.x == screen_v2.x) {
+        return 0;
+    }
     
     Line l3d_ceil = {.pt1 = {.x = screen_v1.x, .y = screen_v1.yceil}, 
                      .pt2 = {.x = screen_v2.x, .y = screen_v2.yceil}, .col = col};

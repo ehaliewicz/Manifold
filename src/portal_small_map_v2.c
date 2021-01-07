@@ -112,7 +112,7 @@ const u16 wall_normal_angles[NUM_WALLS] = {
 768,
 };
 
-const vis_range angle_ranges[NUM_WALLS] = {
+const vis_range vis_ranges[NUM_WALLS] = {
 {.two_ranges = 1, .angles = { 0,3,516,1023 } },
 {.two_ranges = 0, .angles = { 114,625 } }, 
 {.two_ranges = 0, .angles = { 0,512 } }, 
@@ -234,5 +234,6 @@ const portal_map portal_level_1 = {
     .walls = walls,
     .portals = portals,
     .vertexes = vertexes,
-    .wall_vis_ranges = vis_ranges
+    .wall_vis_ranges = vis_ranges,
+    .wall_norm_angles = wall_normal_angles
 };
