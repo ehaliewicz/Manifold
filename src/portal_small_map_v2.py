@@ -88,7 +88,7 @@ def radians_to_degrees(rads):
     return rads*180/math.pi
 
 def degrees_to_binary_degrees(degs):
-    return degs * 1024 / 360
+    return (degs * 1024) // 360
 
     
 
@@ -107,8 +107,15 @@ def normalize(x, y):
     csqr = (x*x)+(y*y)
     mag = math.sqrt(csqr)
     return (x/mag, y/mag)
-    
 
+
+def vector_to_degrees(x, y):
+    degs = radians_to_degrees(math.atan2(-y, x))
+    if degs < 0:
+        return 360+degs
+    else:
+        return degs
+    
 def degrees_to_vector(degrees):
     rads = degrees_to_radians(degrees)
     x = math.cos(rads)
@@ -136,7 +143,7 @@ def backfacing(ang, v1, v2):
     
 
     dot = ((ax * wx) + (ay * wy))
-    backfacing = dot >= 0
+    backfacing = dot > 0
     
     #if ang >= 225:
     #print("angle {}".format(ang))
@@ -200,7 +207,13 @@ def main():
             # walls are defined clockwise
             #tbl = []
             #print((v1,v2))
-            tbl = [(ang, backfacing(ang, v1, v2)) for ang in iterate_angles()]
+
+            nx,ny = get_normal_from_vertices(v1, v2)
+            norm_angle = vector_to_degrees(nx,ny)
+            print(degrees_to_binary_degrees(norm_angle))
+            continue
+        
+            tbl = [(ang, maybe_visible(ang, v1, v2)) for ang in iterate_angles()]
             
             def similar_test(a, b):
                 (aang, avis) = a
