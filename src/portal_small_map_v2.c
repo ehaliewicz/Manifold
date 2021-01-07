@@ -111,61 +111,6 @@ const u8 wall_normal_quadrants[NUM_WALLS] = {
 3
 };
 
-const vis_range vis_ranges[NUM_WALLS] = {
-{.two_ranges = 1, .angles = { 0,3,516,1023 } },
-{.two_ranges = 0, .angles = { 114,625 } }, 
-{.two_ranges = 0, .angles = { 0,512 } }, 
-{.two_ranges = 0, .angles = { 0,512 } }, 
-{.two_ranges = 0, .angles = { 0,512 } }, 
-{.two_ranges = 1, .angles = { 0,443,956,1023 } },
-{.two_ranges = 1, .angles = { 0,3,516,1023 } },
-{.two_ranges = 0, .angles = { 403,914 } }, 
-{.two_ranges = 0, .angles = { 13,524 } }, 
-{.two_ranges = 1, .angles = { 0,398,911,1023 } },
-{.two_ranges = 1, .angles = { 0,384,897,1023 } },
-{.two_ranges = 1, .angles = { 0,484,997,1023 } },
-{.two_ranges = 1, .angles = { 0,113,626,1023 } },
-{.two_ranges = 0, .angles = { 403,914 } }, 
-{.two_ranges = 0, .angles = { 144,655 } }, 
-{.two_ranges = 1, .angles = { 0,420,933,1023 } },
-{.two_ranges = 1, .angles = { 0,128,641,1023 } },
-{.two_ranges = 1, .angles = { 0,310,823,1023 } },
-{.two_ranges = 1, .angles = { 0,128,641,1023 } },
-{.two_ranges = 1, .angles = { 0,12,525,1023 } },
-{.two_ranges = 0, .angles = { 144,655 } }, 
-{.two_ranges = 0, .angles = { 0,512 } }, 
-{.two_ranges = 1, .angles = { 0,101,614,1023 } },
-{.two_ranges = 1, .angles = { 0,36,549,1023 } },
-{.two_ranges = 1, .angles = { 0,0,513,1023 } },
-{.two_ranges = 1, .angles = { 0,0,513,1023 } },
-{.two_ranges = 0, .angles = { 421,932 } }, 
-{.two_ranges = 0, .angles = { 0,512 } }, 
-{.two_ranges = 1, .angles = { 0,353,866,1023 } },
-{.two_ranges = 0, .angles = { 445,956 } }, 
-{.two_ranges = 0, .angles = { 361,872 } }, 
-{.two_ranges = 0, .angles = { 361,872 } }, 
-{.two_ranges = 0, .angles = { 332,843 } }, 
-{.two_ranges = 0, .angles = { 102,613 } }, 
-{.two_ranges = 1, .angles = { 0,353,866,1023 } },
-{.two_ranges = 1, .angles = { 0,0,513,1023 } },
-{.two_ranges = 0, .angles = { 444,955 } }, 
-{.two_ranges = 0, .angles = { 129,640 } }, 
-{.two_ranges = 0, .angles = { 129,640 } }, 
-{.two_ranges = 1, .angles = { 0,269,782,1023 } },
-{.two_ranges = 0, .angles = { 0,512 } }, 
-{.two_ranges = 1, .angles = { 0,44,557,1023 } },
-{.two_ranges = 1, .angles = { 0,0,513,1023 } },
-{.two_ranges = 0, .angles = { 48,559 } }, 
-{.two_ranges = 1, .angles = { 0,0,513,1023 } },
-{.two_ranges = 1, .angles = { 0,316,829,1023 } },
-{.two_ranges = 0, .angles = { 429,940 } }, 
-{.two_ranges = 0, .angles = { 57,568 } }, 
-{.two_ranges = 0, .angles = { 161,672 } }, 
-{.two_ranges = 0, .angles = { 0,512 } }, 
-{.two_ranges = 1, .angles = { 0,128,641,1023 } },
-{.two_ranges = 1, .angles = { 0,0,513,1023 } },
-};
-
 
 const s16 portals[NUM_WALLS] = {
     // sector 0 portals
@@ -233,6 +178,5 @@ const portal_map portal_level_1 = {
     .walls = walls,
     .portals = portals,
     .vertexes = vertexes,
-    .wall_vis_ranges = vis_ranges,
-    .wall_norm_angles = wall_normal_angles
+    .wall_norm_quadrants = wall_normal_quadrants
 };
