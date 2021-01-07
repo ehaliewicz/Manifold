@@ -223,8 +223,24 @@ u16 last_joy = 0;
 
 Vect2D_f32 *sector_jump_positions = NULL;
 
+static int last_pressed_b = 0;
+
 void handle_input() {
     int strafe = joy_button_pressed(BUTTON_C);
+    //cur_player_pos.z = sector_floor_height(cur_player_pos.cur_sector, cur_portal_map);
+
+    int pressed_b = joy_button_pressed(BUTTON_B);
+    if(!last_pressed_b && pressed_b) {
+        last_pressed_b = 1;
+        int next_sector = cur_player_pos.cur_sector + 1;
+        if(next_sector >= cur_portal_map->num_sectors) {
+            next_sector = 0;
+        }
+        cur_player_pos.x = sector_jump_positions[next_sector].x;
+        cur_player_pos.y = sector_jump_positions[next_sector].y;
+        cur_player_pos.cur_sector = next_sector;
+    }
+    last_pressed_b = pressed_b;
 
     //ssector* cur_ssect = find_subsector_for_position(cur_player_pos.x, cur_player_pos.y, cur_level->num_nodes-1);
 
@@ -283,15 +299,19 @@ void handle_input() {
         BMP_drawText("NO COLLISION   ", 1, 4);
     }
     */
-    char buf[32];
-    sprintf(buf, "sect: %i  ", cur_player_pos.cur_sector);
-    BMP_drawText(buf, 1, 4);
-    sprintf(buf, "ang: %i  ", cur_player_pos.ang);
-    BMP_drawText(buf, 1, 5);
 
+    
+    char buf[32];
+    sprintf(buf, "cur sector: %i  ", cur_player_pos.cur_sector);
+    BMP_drawText(buf, 1, 4);
+
+    //sprintf(buf, "ang: %i  ", cur_player_pos.ang);
+    //BMP_drawText(buf, 1, 5);
+
+    /*
     char buf1[10];
     char buf2[10];
-
+    
     fix32ToStr(cur_player_pos.x, buf1, 1);
     fix32ToStr(cur_player_pos.y, buf2, 1);
     sprintf(buf, "x %s", buf1);
@@ -307,6 +327,7 @@ void handle_input() {
     BMP_drawText(buf, 1, 9);
     sprintf(buf, "dy %s", buf2);
     BMP_drawText(buf, 1, 10);
+    */
     
 
 

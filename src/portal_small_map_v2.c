@@ -53,7 +53,7 @@ const u16 walls[NUM_WALLS+NUM_SECTORS] = {
     // sector 8 walls
     23, 24, 27, 22, 23,
     // sector 9 walls
-    10, 11, 19, 20 10,
+    10, 11, 19, 20, 10,
 };
 
 const vis_range angle_ranges[NUM_WALLS] = {

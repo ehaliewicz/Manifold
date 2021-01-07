@@ -109,10 +109,10 @@ void portal_rend(u16 src_sector, u32 cur_frame) {
                 front_facing = (rng.angles[2] <= ang && rng.angles[3] >= ang);
             }
 
-            if(!front_facing) { 
-                prev_v2_idx = v2_idx;
-                break;
-            }
+            //if(!front_facing) { 
+            //    prev_v2_idx = v2_idx;
+            //    break;
+            //}
 
             /*
             u16 wall_idx = wall_offset+i;
@@ -160,10 +160,10 @@ void portal_rend(u16 src_sector, u32 cur_frame) {
 
                     if (neighbor_ceil_height > floor_height && neighbor_floor_height < ceil_height && !queue_full()) {
 
-                        //queue_item.x1 = vis.x1;
-                        //queue_item.x2 = vis.x2;
-                        //queue_item.sector = portal_sector;
-                        //queue_push(queue_item);
+                        queue_item.x1 = vis.x1;
+                        queue_item.x2 = vis.x2;
+                        queue_item.sector = portal_sector;
+                        queue_push(queue_item);
                     }
                 } else {
                     draw_wall_from_verts(trans_v1, trans_v2, ceil_height, floor_height, window_min, window_max);
