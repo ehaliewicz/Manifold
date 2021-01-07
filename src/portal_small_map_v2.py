@@ -90,7 +90,9 @@ def radians_to_degrees(rads):
 def degrees_to_binary_degrees(degs):
     return (degs * 1024) // 360
 
-    
+def degrees_to_quadrant(degs):
+    return int(degs//90)
+        
 
 #   0   0
 # 256 360
@@ -210,7 +212,8 @@ def main():
 
             nx,ny = get_normal_from_vertices(v1, v2)
             norm_angle = vector_to_degrees(nx,ny)
-            print(degrees_to_binary_degrees(norm_angle))
+            #print(degrees_to_binary_degrees(norm_angle))
+            print(degrees_to_quadrant(norm_angle))
             continue
         
             tbl = [(ang, maybe_visible(ang, v1, v2)) for ang in iterate_angles()]
