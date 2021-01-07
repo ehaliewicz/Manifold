@@ -305,8 +305,8 @@ void handle_input() {
     sprintf(buf, "cur sector: %i  ", cur_player_pos.cur_sector);
     BMP_drawText(buf, 1, 4);
 
-    //sprintf(buf, "ang: %i  ", cur_player_pos.ang);
-    //BMP_drawText(buf, 1, 5);
+    sprintf(buf, "ang: %i  ", cur_player_pos.ang);
+    BMP_drawText(buf, 1, 5);
 
     /*
     char buf1[10];

@@ -93,39 +93,41 @@ void portal_rend(u16 src_sector, u32 cur_frame) {
         u16 prev_v2_idx; // = map->walls[wall_offset];
 
         for(s16 i = 0; i < num_walls; i++) {
+
 	        u16 v2_idx = map->walls[wall_offset+i+1];
+            vis_range rng = map->wall_vis_ranges[portal_offset+i];
+            u16 ang = cur_player_pos.ang;
+            
+            ang = 1024-ang;
+            ang &= 1023;
+            
+            u8 frontfacing = (rng.angles[0] <= ang && rng.angles[1] >= ang);
+            if(!frontfacing && rng.two_ranges) {
+                frontfacing = (rng.angles[2] <= ang && rng.angles[3] >= ang);
+            }
+
+            //if(backfacing) { 
+            //    prev_v2_idx = v2_idx;
+            //    break;
+            //}
+
 	        vertex v2 = map->vertexes[v2_idx];
 	    
             s16 portal_sector = map->portals[portal_offset+i];
             int is_portal = portal_sector != -1;
 
-            vis_range rng = map->wall_vis_ranges[portal_offset+i];
-            u16 ang = cur_player_pos.ang;
             
-            ang &= 1023;
-            
-            u8 front_facing = (rng.angles[0] <= ang && rng.angles[1] >= ang);
-            if(!front_facing && rng.two_ranges) {
-                front_facing = (rng.angles[2] <= ang && rng.angles[3] >= ang);
-            }
-
-            //if(!front_facing) { 
-            //    prev_v2_idx = v2_idx;
-            //    break;
-            //}
-
-            /*
             u16 wall_idx = wall_offset+i;
-            if(wall_idx == 0) {
-                BMP_drawText("drawing first wall", 1, 11);
-                char buf[32]; sprintf(buf, "front-facing %i", front_facing);
+            if(wall_idx == 3) {
+                BMP_drawText("drawing third wall", 1, 11);
+                char buf[32]; sprintf(buf, "frontfacing %i", frontfacing);
                 BMP_drawText(buf, 1, 12);
                 sprintf(buf, "angles %i <= ang <= %i", rng.angles[0], rng.angles[1]);
                 BMP_drawText(buf, 1, 13);
                 sprintf(buf, "angles %i <= ang <= %i", rng.angles[2], rng.angles[3]);
                 BMP_drawText(buf, 1, 14);
             }
-            */
+            
             
 
             volatile Vect2D_s32 trans_v1;
@@ -160,10 +162,10 @@ void portal_rend(u16 src_sector, u32 cur_frame) {
 
                     if (neighbor_ceil_height > floor_height && neighbor_floor_height < ceil_height && !queue_full()) {
 
-                        queue_item.x1 = vis.x1;
-                        queue_item.x2 = vis.x2;
-                        queue_item.sector = portal_sector;
-                        queue_push(queue_item);
+                        //queue_item.x1 = vis.x1;
+                        //queue_item.x2 = vis.x2;
+                        //queue_item.sector = portal_sector;
+                        //queue_push(queue_item);
                     }
                 } else {
                     draw_wall_from_verts(trans_v1, trans_v2, ceil_height, floor_height, window_min, window_max);
