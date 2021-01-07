@@ -50,34 +50,34 @@ walls = [
 
 
 vertexes = [
-    (14,46),			      
-    (13,90),
-    (29,110),
-    (46,96),
-    (46,48),
-    (27,35),
-    (18,55),
-    (18,67),
-    (18,76),
-    (18,84),
-    (21,87),
-    (25,91),
-    (30,97),
-    (32,95),
-    (38,91),
-    (41,88),
-    (41,76),
-    (41,67),
-    (41,55),
-    (35,52),
-    (31,49),
-    (27,46),
-    (26,47),
-    (20,53),
-    (20,56),
-    (32,92),
-    (38,86),
-    (26,50)
+    (46,14),			      
+    (90,13),
+    (110,29),
+    (96,46),
+    (48,46),
+    (35,27),
+    (55,18),
+    (67,18),
+    (76,18),
+    (84,18),
+    (87,21),
+    (91,25),
+    (97,30),
+    (95,32),
+    (91,38),
+    (88,41),
+    (76,41),
+    (67,41),
+    (55,41),
+    (52,35),
+    (49,31),
+    (46,27),
+    (47,26),
+    (53,20),
+    (56,20),
+    (92,32),
+    (86,38),
+    (50,26)
 ]
 
 
@@ -87,6 +87,10 @@ def degrees_to_radians(degs):
 def radians_to_degrees(rads):
     return rads*180/math.pi
     
+def radians_to_binary_degrees(rads):
+    degs = radians_to_degrees(rads)
+    return degs * 1024 / 360
+
 
 #   0   0
 # 256 360
@@ -94,7 +98,7 @@ def radians_to_degrees(rads):
 
 def iterate_angles():
     # angle
-    num_angs = 32
+    num_angs = 1024
     for i in range(num_angs): #1024):
         yield degrees_to_radians((i*360)/num_angs) 
 
@@ -119,7 +123,7 @@ def backfacing(ang, v1, v2):
     (wx, wy) = get_normal_from_vertices(v1, v2)
     (ax, ay) = radians_to_vector(ang)
 
-    return ((ax * wx) + (ay * wy)) >= 0
+    return ((ax * wx) + (ay * wy)) < 0
 
 def maybe_visible(ang, v1, v2):
     return (not backfacing(ang, v1, v2))
@@ -172,7 +176,7 @@ def main():
             # walls are defined clockwise
             #tbl = []
             #print((v1,v2))
-            tbl = [(ang, maybe_visible(ang, v1, v2)) for ang in iterate_angles()]
+            tbl = [(radians_to_binary_degrees(ang), maybe_visible(ang, v1, v2)) for ang in iterate_angles()]
 
             def similar_test(a, b):
                 (aang, avis) = a
@@ -180,14 +184,13 @@ def main():
                 return avis == bvis
 
             chunked = group_into_similar_chunks(similar_test, tbl)
-
             filtered = filter(lambda chk: chk[0][1], chunked)
-            mapped = map(lambda chk: (radians_to_degrees(chk[0][0]), radians_to_degrees(chk[-1][0])), filtered)
-
+            mapped = list(map(lambda chk: (chk[0][0], chk[-1][0]), filtered))
+            
             formatted = ','.join(map(lambda chk: "{},{}".format(int(chk[0]), int(chk[1])), mapped))
             
             #wall_angle_ranges.append(mapped)
-            
+
             assert (len(mapped) in [1,2])
             if len(mapped) == 2:
                 print("{.two_ranges = 1, .angles = { " + str(formatted) + " } },")
@@ -201,3 +204,8 @@ if __name__ == '__main__':
     main()
     
 
+    
+    #  256 =  90
+    #  512 = 180
+    #  768 = 270
+    # 1024 = 360
