@@ -86,11 +86,11 @@ def degrees_to_radians(degs):
 
 def radians_to_degrees(rads):
     return rads*180/math.pi
-    
-def radians_to_binary_degrees(rads):
-    degs = radians_to_degrees(rads)
+
+def degrees_to_binary_degrees(degs):
     return degs * 1024 / 360
 
+    
 
 #   0   0
 # 256 360
@@ -100,13 +100,24 @@ def iterate_angles():
     # angle
     num_angs = 1024
     for i in range(num_angs): #1024):
-        yield degrees_to_radians((i*360)/num_angs) 
+        yield (i*360)/num_angs 
 
 
-def radians_to_vector(rad):
-    x = math.cos(rad)
-    y = math.sin(rad)
-    return (x,y)
+def normalize(x, y):
+    csqr = (x*x)+(y*y)
+    mag = math.sqrt(csqr)
+    return (x/mag, y/mag)
+    
+
+def degrees_to_vector(degrees):
+    rads = degrees_to_radians(degrees)
+    x = math.cos(rads)
+    y = -math.sin(rads)
+    
+    #print("{} -> {}".format(degrees, degrees_to_radians(degrees)))
+    
+    #print("{},{}".format(x, y))
+    return normalize(x,y)
 
 
 def get_normal_from_vertices(v1, v2):
@@ -116,14 +127,27 @@ def get_normal_from_vertices(v1, v2):
     dx = x2-x1
     dy = y2-y1
     
-    return (-dy, dx)
+    return normalize(-dy, dx)
 
 
 def backfacing(ang, v1, v2):
     (wx, wy) = get_normal_from_vertices(v1, v2)
-    (ax, ay) = radians_to_vector(ang)
+    (ax, ay) = degrees_to_vector(ang)
+    
 
-    return ((ax * wx) + (ay * wy)) < 0
+    dot = ((ax * wx) + (ay * wy))
+    backfacing = dot >= 0
+    
+    #if ang >= 225:
+    #print("angle {}".format(ang))
+    #print("- v1 {} v2 {}".format(v1, v2))
+    #print("- wall normal {},{}".format(wx, wy))
+    #print("- cam vector {},{}".format(ax, ay))
+    #print("- dot product {}".format(dot))
+    #print("backfacing {}".format(backfacing))
+    #exit()
+    
+    return backfacing
 
 def maybe_visible(ang, v1, v2):
     return (not backfacing(ang, v1, v2))
@@ -176,16 +200,20 @@ def main():
             # walls are defined clockwise
             #tbl = []
             #print((v1,v2))
-            tbl = [(radians_to_binary_degrees(ang), maybe_visible(ang, v1, v2)) for ang in iterate_angles()]
-
+            tbl = [(ang, backfacing(ang, v1, v2)) for ang in iterate_angles()]
+            
             def similar_test(a, b):
                 (aang, avis) = a
                 (bang, bvis) = b
                 return avis == bvis
 
             chunked = group_into_similar_chunks(similar_test, tbl)
-            filtered = filter(lambda chk: chk[0][1], chunked)
-            mapped = list(map(lambda chk: (chk[0][0], chk[-1][0]), filtered))
+            backfacing_chunks = filter(lambda chk: chk[0][1], chunked)
+            mapped = list(map(lambda chk: (degrees_to_binary_degrees(chk[0][0]),
+                                           degrees_to_binary_degrees(chk[-1][0])), backfacing_chunks))
+            
+            
+            
             
             formatted = ','.join(map(lambda chk: "{},{}".format(int(chk[0]), int(chk[1])), mapped))
             
@@ -201,6 +229,7 @@ def main():
     print("};")
 
 if __name__ == '__main__':
+    
     main()
     
 
