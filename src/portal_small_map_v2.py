@@ -179,6 +179,10 @@ def group_into_similar_chunks(similar_test, lst):
     return chunks
 
 
+def sector_bboxes(sector, map_data):
+    
+    
+
     
             
     
@@ -196,7 +200,7 @@ def main():
         for i,widx in enumerate(vert_indexes):
 
             last_wall_for_sector = i == len(vert_indexes)-1
-            nwidx = woff if last_wall_for_sector else widx+1
+            nwidx = widx+1
             #print("i1 {} i2 {}".format(widx, nwidx))
             
             vidx = walls[widx]
@@ -212,7 +216,7 @@ def main():
 
             nx,ny = get_normal_from_vertices(v1, v2)
             norm_angle = vector_to_degrees(nx,ny)
-            #print(degrees_to_binary_degrees(norm_angle))
+            
             print(degrees_to_quadrant(norm_angle))
             continue
         
