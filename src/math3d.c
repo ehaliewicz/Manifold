@@ -38,7 +38,7 @@ Vect2D_s32 transform_map_vert(s16 x, s16 y) {
 
 
 
-s16 project_and_adjust_2d(Vect2D_s32 trans_map_vert) {
+s16 project_and_adjust_x(Vect2D_s32 trans_map_vert) {
     s32 rx = trans_map_vert.x;
     s32 rz = trans_map_vert.y;
 
@@ -50,7 +50,7 @@ s16 project_and_adjust_2d(Vect2D_s32 trans_map_vert) {
 
 
 //const s32 near_z = 160 << FIX32_FRAC_BITS;
-const s32 near_z = 40 << FIX32_FRAC_BITS;
+const s32 near_z = 20 << FIX32_FRAC_BITS; //40 << FIX32_FRAC_BITS;
 
 int is_behind_near_plane(Vect2D_s32 transformed_map_vert) {
     return transformed_map_vert.y < near_z;
@@ -122,4 +122,16 @@ transformed_vert project_and_adjust_3d(Vect2D_s32 trans_map_vert, s16 floor, s16
 
     transformed_vert ret = {.x = transX, .yceil = (BMP_HEIGHT-1)-yceil, .yfloor = (BMP_HEIGHT-1)-yfloor};
     return ret;
+}
+
+
+s16 project_and_adjust_y(Vect2D_s32 trans_map_vert, s16 y) {    
+    s32 rz = trans_map_vert.y;
+
+    s16 const4Ry = (CONST4 * (y - fix32ToInt(cur_player_pos.z)));
+    s16 const4RyDivZ = ((const4Ry)<<FIX32_FRAC_BITS) / rz;
+
+    s16 yproj = CONST3 + const4RyDivZ;
+
+    return (BMP_HEIGHT-1)-yproj;
 }

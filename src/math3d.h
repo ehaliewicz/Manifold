@@ -32,7 +32,8 @@ Vect2D_s32 transform_map_vert(s16 x, s16 y);
 clip_result clip_map_vertex(Vect2D_s32* trans_v1, Vect2D_s32* trans_v2);
 
 // project map vertex without height attributes
-s16 project_and_adjust_2d(Vect2D_s32 trans_map_vert);
+s16 project_and_adjust_x(Vect2D_s32 trans_map_vert);
+s16 project_and_adjust_y(Vect2D_s32 trans_map_vert, s16 y);
 
 int is_behind_near_plane(Vect2D_s32 transformed_map_vert);
 

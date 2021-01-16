@@ -53,64 +53,83 @@ const u16 walls[NUM_WALLS+NUM_SECTORS] = {
     // sector 8 walls
     23, 24, 27, 22, 23,
     // sector 9 walls
-    10, 11, 19, 20, 10,
+    10, 11, 19, 20, 10
 };
 
 const u8 wall_normal_quadrants[NUM_WALLS] = {
-					   3
-1
-1
-1
-1
-0
-3
-2
-1
-0
-0
-0
-3
-2
-1
-0
-3
-0
-3
-3
-1
-1
-3
-3
-3
-3
-2
-1
-0
-2
-2
-2
-2
-1
-0
-3
-2
-1
-1
-0
-1
-3
-3
-1
-3
-0
-2
-1
-1
-1
-3
-3
-};
+    // sector 0
+    QUADRANT_3,
+    QUADRANT_1,
+    FACING_UP,
+    FACING_UP,
+    FACING_UP,
+    QUADRANT_0,
 
+    // sector 1
+    QUADRANT_2,
+    QUADRANT_1,
+    QUADRANT_0,
+    QUADRANT_0,
+    QUADRANT_0,
+    QUADRANT_3,
+
+    // sector 2
+    QUADRANT_1,
+    QUADRANT_0,
+    QUADRANT_3,
+    QUADRANT_3,
+    QUADRANT_3,
+    QUADRANT_3,
+
+    // sector 3
+    FACING_UP,
+    QUADRANT_3,
+    FACING_DOWN,
+    FACING_DOWN,
+    FACING_DOWN,
+    QUADRANT_2,
+
+    // sector 4
+    QUADRANT_0,
+    FACING_DOWN,
+    QUADRANT_2,
+    QUADRANT_2,
+    QUADRANT_2,
+    QUADRANT_1,
+
+    // sector 5
+    QUADRANT_3,
+    QUADRANT_2,
+    QUADRANT_1,
+    QUADRANT_1,
+    QUADRANT_1,
+    FACING_UP,
+
+    // sector 6
+    FACING_DOWN,
+    FACING_LEFT,
+    FACING_UP,
+    FACING_RIGHT,
+
+    // sector 7
+    FACING_DOWN,
+    QUADRANT_1,
+    FACING_UP,
+    QUADRANT_3,
+
+    // sector 8
+    FACING_DOWN,
+    QUADRANT_1,
+    FACING_UP,
+    QUADRANT_3,
+
+    // sector 9
+    QUADRANT_2,
+    QUADRANT_1,
+    QUADRANT_0,
+    QUADRANT_3
+
+};
 
 const s16 portals[NUM_WALLS] = {
     // sector 0 portals
@@ -136,7 +155,7 @@ const s16 portals[NUM_WALLS] = {
 };
 
 
-#define VERT(y1,x1) { .x = (x1 * 30), .y = (y1*40) }
+#define VERT(y1,x1) { .x = (x1 * 30), .y = ((110-y1)*40) }
 
 const vertex vertexes[NUM_VERTS] = {
     VERT(14,46),			      

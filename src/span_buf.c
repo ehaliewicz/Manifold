@@ -41,13 +41,13 @@ int num_render_spans;
 render_span* render_spans_for_wall; //[MAX_SPANS];
 
 void init_span_buffer() {
-  all_spans = MEM_alloc(sizeof(span) * MAX_SPANS);
-  render_spans_for_wall = MEM_alloc(sizeof(render_span) * MAX_SPANS);
+  //all_spans = MEM_alloc(sizeof(span) * MAX_SPANS);
+  //render_spans_for_wall = MEM_alloc(sizeof(render_span) * MAX_SPANS);
 }
 
 void cleanup_span_buffer() {
-  MEM_free(all_spans);
-  MEM_free(render_spans_for_wall);
+  //MEM_free(all_spans);
+  //MEM_free(render_spans_for_wall);
 }
 
 void enqueue_render_span(s16 clip_x1, s16 clip_x2) {

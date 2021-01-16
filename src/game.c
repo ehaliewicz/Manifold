@@ -152,6 +152,7 @@ void draw_3d_view(u32 cur_frame) {
     BMP_waitWhileFlipRequestPending();
     BMP_clear();
 
+    clear_2d_buffers();
     clear_portal_cache();
     portal_rend(cur_player_pos.cur_sector, cur_frame);
 
@@ -231,7 +232,6 @@ void handle_input() {
 
     int pressed_b = joy_button_pressed(BUTTON_B);
     if(!last_pressed_b && pressed_b) {
-        last_pressed_b = 1;
         int next_sector = cur_player_pos.cur_sector + 1;
         if(next_sector >= cur_portal_map->num_sectors) {
             next_sector = 0;
@@ -248,86 +248,66 @@ void handle_input() {
     //sector* cur_sector = &(cur_level->sectors[sector_idx]);
 
     //cur_player_pos.z = cur_sector->floor_height;
+    
+    player_pos new_player_pos = cur_player_pos;
 
+    int moved = 0;
     if(joy_button_pressed(BUTTON_DOWN)) {   
-        cur_player_pos.y -= angleSin32*move_speed;
-        cur_player_pos.x -= angleCos32*move_speed;
-        
+        new_player_pos.y -= angleSin32*move_speed;
+        new_player_pos.x -= angleCos32*move_speed;
+        moved = 1;
     } else if (joy_button_pressed(BUTTON_UP)) {
-        cur_player_pos.y += angleSin32*move_speed;
-        cur_player_pos.x += angleCos32*move_speed;
+        new_player_pos.y += angleSin32*move_speed;
+        new_player_pos.x += angleCos32*move_speed;
+        moved = 1;
     }
     
 
     if (joy_button_pressed(BUTTON_LEFT)) {
         if(strafe) {
+            moved = 1;
             u16 leftAngle = (cur_player_pos.ang+ANGLE_90_DEGREES);
             fix32 leftDy = sinFix32(leftAngle);
             fix32 leftDx = cosFix32(leftAngle);
-            cur_player_pos.y += leftDy*move_speed;
-            cur_player_pos.x += leftDx*move_speed;
+            new_player_pos.y += leftDy*move_speed;
+            new_player_pos.x += leftDx*move_speed;
         } else {
-            cur_player_pos.ang += 10;
-            if(cur_player_pos.ang > 1023) {
-                cur_player_pos.ang -= 1024;
+            new_player_pos.ang += 10;
+            if(new_player_pos.ang > 1023) {
+                new_player_pos.ang -= 1024;
             }
         }
     } else if (joy_button_pressed(BUTTON_RIGHT)) {
         if(strafe) {
+            moved = 1;
             u16 rightAngle = (cur_player_pos.ang-ANGLE_90_DEGREES);
             fix32 rightDy = sinFix32(rightAngle);
             fix32 rightDx = cosFix32(rightAngle);
-            cur_player_pos.y += rightDy*move_speed;
-            cur_player_pos.x += rightDx*move_speed;
+            new_player_pos.y += rightDy*move_speed;
+            new_player_pos.x += rightDx*move_speed;
         } else {
-            if(cur_player_pos.ang < 10) {
-                cur_player_pos.ang = 1024 - (10-cur_player_pos.ang);
+            if(new_player_pos.ang < 10) {
+                new_player_pos.ang = 1024 - (10-new_player_pos.ang);
             } else {
-                cur_player_pos.ang -= 10;
+                new_player_pos.ang -= 10;
             }
         }
     }
-    //cur_player_pos = new_player_pos;
-    /*
-    collision_result collision = check_for_collision(cur_player_pos, new_player_pos);
-    cur_player_pos = collision.new_player_pos;
-    if(collision.type == COLLIDED) {
-        BMP_drawText("COLLIDED   ", 1, 4);
-    } else if (collision.type == SECTOR_TRANSITION) {
-        BMP_drawText("TRANSIT SECTOR   ", 1, 4);
-    } else {
-        BMP_drawText("NO COLLISION   ", 1, 4);
-    }
-    */
 
-    
+    cur_player_pos = new_player_pos;
+    //cur_player_pos.cur_sector = find_sector(cur_player_pos);
+
+    if(moved) {
+        //u16 new_sector = find_sector(cur_player_pos);
+        //cur_player_pos.cur_sector = new_sector;
+
+    }
+
     char buf[32];
     sprintf(buf, "cur sector: %i  ", cur_player_pos.cur_sector);
-    BMP_drawText(buf, 1, 5);
-
-    sprintf(buf, "ang: %i  ", cur_player_pos.ang);
-    BMP_drawText(buf, 1, 6);
-
-    /*
-    char buf1[10];
-    char buf2[10];
-    
-    fix32ToStr(cur_player_pos.x, buf1, 1);
-    fix32ToStr(cur_player_pos.y, buf2, 1);
-    sprintf(buf, "x %s", buf1);
-    BMP_drawText(buf, 1, 7);
-    sprintf(buf, "y %s", buf2);
-    BMP_drawText(buf, 1, 8);
-
-    fix16 dx = cosFix16(cur_player_pos.ang);
-    fix16ToStr(dx, buf1, 2);
-    fix16 dy = sinFix16(cur_player_pos.ang);
-    fix16ToStr(dy, buf2, 2);
-    sprintf(buf, "dx %s", buf1);
-    BMP_drawText(buf, 1, 9);
-    sprintf(buf, "dy %s", buf2);
-    BMP_drawText(buf, 1, 10);
-    */
+    BMP_drawText(buf, 1, 3);
+    sprintf(buf, "moved: %i", moved);
+    BMP_drawText(buf, 1, 4);
     
 
 
@@ -455,6 +435,7 @@ void init_game() {
 
 
 
+
     quit_game = 0;
     if(pause_game) {
         pause_game = 0;
@@ -485,6 +466,7 @@ void init_game() {
     init_processed_linedef_bitmap(); 
     init_vertex_cache();
     init_span_buffer();
+    init_2d_buffers();
 
     init_portal_renderer();
 
@@ -554,5 +536,6 @@ void cleanup_game() {
     MEM_free(sector_jump_positions);
     MEM_free(vertex_cache_frames);
     MEM_free(cached_vertexes);
+    release_2d_buffers();
     MEM_pack();
 }

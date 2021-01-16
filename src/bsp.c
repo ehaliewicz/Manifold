@@ -16,8 +16,8 @@ int face_on_screen(Vect2D_s32 trans_v1, Vect2D_s32 trans_v2) {
         return 0;
     }
 
-    s16 screen_x1 = project_and_adjust_2d(trans_v1);
-    s16 screen_x2 = project_and_adjust_2d(trans_v2);
+    s16 screen_x1 = project_and_adjust_x(trans_v1);
+    s16 screen_x2 = project_and_adjust_x(trans_v2);
     Line l; 
     l.pt1.x = screen_x1;
     l.pt1.y = 0; 

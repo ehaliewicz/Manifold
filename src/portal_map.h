@@ -9,6 +9,17 @@
 #define SECTOR_SIZE 5
 #define VERT_SIZE 2
 
+typedef enum {
+    QUADRANT_0,
+    QUADRANT_1,
+    QUADRANT_2,
+    QUADRANT_3,
+    FACING_UP,
+    FACING_LEFT,
+    FACING_DOWN,
+    FACING_RIGHT
+} normal_quadrant;
+
 typedef struct {
     const int num_sectors;
     const int num_walls;
