@@ -16,7 +16,7 @@ typedef struct {
     u16 collided_with;
 } collision_result;
 
-collision_result check_for_collision(player_pos cur_position, player_pos new_position);
+Vect2D_f32 check_for_collision(fix32 curx, fix32 cury, fix32 newx, fix32 newy, u16 cur_sector);
 
 u16 find_sector(player_pos cur_player_pos);
 #endif

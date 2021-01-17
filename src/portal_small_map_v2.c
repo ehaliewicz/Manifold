@@ -56,6 +56,29 @@ const u16 walls[NUM_WALLS+NUM_SECTORS] = {
     10, 11, 19, 20, 10
 };
 
+const s16 portals[NUM_WALLS] = {
+    // sector 0 portals
+    -1, 1, -1, 6, -1, 5,
+    // sector 1 portals
+    -1, 2, -1, 9, -1, 0,
+    // sector 2 portals
+    -1, 3, -1, 7, -1, 1,
+    // sector 3 portals
+    -1, 4, -1, 6, -1, 2,
+    // sector 4 portals
+    -1, 5, -1, 9, -1, 3,
+    // sector 5 portals
+    -1, 0, -1, 8, -1, 4,
+    // sector 6 portals
+    0, -1, 3, -1,
+    // sector 7 portals
+    -1, 2, -1, -1,
+    // sector 8 portals
+    -1, -1, -1, 5,
+    // sector 9 portals
+    1, -1, 4, -1
+};
+
 const u8 wall_normal_quadrants[NUM_WALLS] = {
     // sector 0
     QUADRANT_3,
@@ -130,30 +153,6 @@ const u8 wall_normal_quadrants[NUM_WALLS] = {
     QUADRANT_3
 
 };
-
-const s16 portals[NUM_WALLS] = {
-    // sector 0 portals
-    -1, 1, -1, 6, -1, 5,
-    // sector 1 portals
-    -1, 2, -1, 9, -1, 0,
-    // sector 2 portals
-    -1, 3, -1, 7, -1, 1,
-    // sector 3 portals
-    -1, 4, -1, 6, -1, 2,
-    // sector 4 portals
-    -1, 5, -1, 9, -1, 3,
-    // sector 5 portals
-    -1, 0, -1, 8, -1, 4,
-    // sector 6 portals
-    0, -1, 3, -1,
-    // sector 7 portals
-    -1, 2, -1, -1,
-    // sector 8 portals
-    -1, -1, -1, 5,
-    // sector 9 portals
-    1, -1, 4, -1
-};
-
 
 #define VERT(y1,x1) { .x = (x1 * 30), .y = ((110-y1)*40) }
 

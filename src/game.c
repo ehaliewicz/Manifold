@@ -249,19 +249,13 @@ void handle_input() {
 
     //cur_player_pos.z = cur_sector->floor_height;
     
-    player_pos new_player_pos = cur_player_pos;
+    //player_pos new_player_pos = cur_player_pos;
 
     int moved = 0;
-    if(joy_button_pressed(BUTTON_DOWN)) {   
-        new_player_pos.y -= angleSin32*move_speed;
-        new_player_pos.x -= angleCos32*move_speed;
-        moved = 1;
-    } else if (joy_button_pressed(BUTTON_UP)) {
-        new_player_pos.y += angleSin32*move_speed;
-        new_player_pos.x += angleCos32*move_speed;
-        moved = 1;
-    }
-    
+    fix32 curx = cur_player_pos.x;
+    fix32 cury = cur_player_pos.y;
+    fix32 newx, newy;
+    u16 newang = cur_player_pos.ang;
 
     if (joy_button_pressed(BUTTON_LEFT)) {
         if(strafe) {
@@ -269,12 +263,12 @@ void handle_input() {
             u16 leftAngle = (cur_player_pos.ang+ANGLE_90_DEGREES);
             fix32 leftDy = sinFix32(leftAngle);
             fix32 leftDx = cosFix32(leftAngle);
-            new_player_pos.y += leftDy*move_speed;
-            new_player_pos.x += leftDx*move_speed;
+            newy = cury + leftDy*move_speed;
+            newx = curx + leftDx*move_speed;
         } else {
-            new_player_pos.ang += 10;
-            if(new_player_pos.ang > 1023) {
-                new_player_pos.ang -= 1024;
+            newang += 10;
+            if(newang > 1023) {
+                newang -= 1024;
             }
         }
     } else if (joy_button_pressed(BUTTON_RIGHT)) {
@@ -283,24 +277,35 @@ void handle_input() {
             u16 rightAngle = (cur_player_pos.ang-ANGLE_90_DEGREES);
             fix32 rightDy = sinFix32(rightAngle);
             fix32 rightDx = cosFix32(rightAngle);
-            new_player_pos.y += rightDy*move_speed;
-            new_player_pos.x += rightDx*move_speed;
+            newy += rightDy*move_speed;
+            newx += rightDx*move_speed;
         } else {
-            if(new_player_pos.ang < 10) {
-                new_player_pos.ang = 1024 - (10-new_player_pos.ang);
+            if(newang < 10) {
+                newang = 1024 - (10-newang);
             } else {
-                new_player_pos.ang -= 10;
+                newang -= 10;
             }
         }
+    }    
+    if(joy_button_pressed(BUTTON_DOWN)) {   
+        newy = cury - angleSin32*move_speed;
+        newx = curx - angleCos32*move_speed;
+        moved = 1;
+    } else if (joy_button_pressed(BUTTON_UP)) {
+        newy = cury + angleSin32*move_speed;
+        newx = curx + angleCos32*move_speed;
+        moved = 1;
     }
+    
 
-    cur_player_pos = new_player_pos;
     //cur_player_pos.cur_sector = find_sector(cur_player_pos);
-
+    cur_player_pos.ang = newang;
     if(moved) {
         //u16 new_sector = find_sector(cur_player_pos);
         //cur_player_pos.cur_sector = new_sector;
-
+        Vect2D_f32 npos_vec = check_for_collision(curx, cury, newx, newy, cur_player_pos.cur_sector);
+        cur_player_pos.x = npos_vec.x;
+        cur_player_pos.y = npos_vec.y;
     }
 
     char buf[32];

@@ -12,7 +12,7 @@ fix32 vxs32(fix32 x0, fix32 y0, fix32 x1, fix32 y1) {
 }
 
 #define PointSide16(px,py, x0,y0, x1,y1) vxs16((x1)-(x0), (y1)-(y0), (px)-(x0), (py)-(y0))
-#define PointSide32(px,py, x0,y0, x1,y1) vxs32((x1)-(x0), (y1)-(y0), (px)-(x0), (py)-(y0))
+#define PointSide32(px,py, x0,y0, x1,y1) vxs32((x1)-(x0), (y1)-(y0), (px)-(x0), (py)-(y0)) 
 
 #define Overlap(a0,a1,b0,b1) (min(a0,a1) <= max(b0,b1) && min(b0,b1) <= max(a0,a1))
 #define IntersectBox(x0,y0, x1,y1, x2,y2, x3,y3) (Overlap(x0,x1,x2,x3) && Overlap(y0,y1,y2,y3))
@@ -53,46 +53,79 @@ u8 on_backfacing_side_of_wall(fix16 x, fix16 y, u16 wall_idx) {
 /*
 collision_result check_for_collision(player_pos cur_position, player_pos new_position) {
 
-    
-    fix32 curx = cur_position.x;
-    fix32 cury = cur_position.y;
-    u16 cur_sector = cur_position.cur_sector;
-
-    u16 new_sector = cur_sector;
+Vect2D_f32 check_for_collision(fix32 curx, fix32 cury, fix32 newx, fix32 newy, u16 cur_sector) {
+    u16 wall_off = sector_wall_offset(cur_sector, cur_portal_map);
+    u16 portal_off = sector_portal_offset(cur_sector, cur_portal_map);
+    u16 num_walls = sector_num_walls(cur_sector, cur_portal_map);
 
 
-    collision_type coll_type = NO_COLLISION;
-    u16 collided_with;
-
-    int num_walls = sector_num_walls(cur_sector, cur_portal_map);
-    int wall_offset = sector_wall_offset(cur_sector, cur_portal_map);
-    int portal_offset = sector_portal_offset(cur_sector, cur_portal_map);
+    int got_x_collision = 0;
+    int got_y_collision = 0;
 
 
-    fix32 newx = new_position.x;
-    fix32 newy = new_position.y;
-    fix32 dx = newx-curx;
-    fix32 dy = newy-cury;
+    int moved = 0;
+    for(int i = 0; i < num_walls; i++) {
+        u16 wall_idx = i+wall_off;
+        u16 v1_idx = cur_portal_map->walls[wall_idx];
+        u16 v2_idx = cur_portal_map->walls[wall_idx];
+        vertex v1 = cur_portal_map->vertexes[v1_idx];
+        vertex v2 = cur_portal_map->vertexes[v2_idx];
 
+        fix16 v1x = intToFix16(v1.x);
+        fix16 v1y = intToFix16(v1.y);
+        fix16 v2x = intToFix16(v2.x);
+        fix16 v2y = intToFix16(v2.y);
 
-    collision_result res;
-    res.type = coll_type;
-    res.new_player_pos.x = curx + dx; 
-    res.new_player_pos.y = newy + dy;
-    res.new_player_pos.z = cur_position.z;
-    res.new_player_pos.ang = new_position.ang;
-    res.new_player_pos.cur_sector = new_sector;
-    res.collided_with = collided_with;
+        int oldside = PointSide16(fix32ToFix16(curx), fix32ToFix16(cury), v1x, v1y, v2x, v2y);
+        int newside = PointSide16(fix32ToFix16(newx), fix32ToFix16(cury), v1x, v1y, v2x, v2y);
 
-    if(new_sector != cur_sector) {
-        // if we've moved, check for new sector
-
-        //ply.where.z = ply.cur_sector->floor_height + eye_height;
+        //int signold = (oldside < 0 ? -1 : oldside == 0 ? 0 : 1);
+        //int signnew = (newside < 0 ? -1 : newside == 0 ? 0 : 1);
+        if(oldside != newside) { //(signold != signnew) {
+            got_x_collision = 1;
+            break;
+        }
     }
+
+    if(!got_x_collision) {
+        moved = 1;
+        curx = newx;
+    }
+
+    for(int i = 0; i < num_walls; i++) {
+        u16 wall_idx = i+wall_off;
+        u16 v1_idx = cur_portal_map->walls[wall_idx];
+        u16 v2_idx = cur_portal_map->walls[wall_idx];
+        vertex v1 = cur_portal_map->vertexes[v1_idx];
+        vertex v2 = cur_portal_map->vertexes[v2_idx];
+
+        fix16 v1x = intToFix16(v1.x);
+        fix16 v1y = intToFix16(v1.y);
+        fix16 v2x = intToFix16(v2.x);
+        fix16 v2y = intToFix16(v2.y);
+
+        int oldside = PointSide16(fix32ToFix16(curx), fix32ToFix16(cury), v1x, v1y, v2x, v2y);
+        int newside = PointSide16(fix32ToFix16(curx), fix32ToFix16(newy), v1x, v1y, v2x, v2y);
+
+        //int signold = (oldside < 0 ? -1 : oldside == 0 ? 0 : 1);
+        //int signnew = (newside < 0 ? -1 : newside == 0 ? 0 : 1);
+        if(oldside != newside) { //(signold != signnew) {
+            got_y_collision = 1;
+            break;
+        }
+    }
+
+    if(!got_y_collision) {
+        moved = 1;
+        cury = newy;
+    }
+
+    Vect2D_f32 res = {.x = curx, .y = cury};
     return res;
 
 }
 */
+
 
 u8 in_sector(player_pos cur_player_pos, u16 test_sector) {
 

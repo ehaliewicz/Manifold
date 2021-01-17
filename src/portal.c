@@ -116,10 +116,13 @@ void portal_rend(u16 src_sector, u32 cur_frame) {
             }        
 
             prev_v2_idx = v2_idx;
+            
             normal_quadrant normal_dir = map->wall_norm_quadrants[portal_idx];
+            
             u8 backfacing;
             s16 intPx = fix32ToInt(cur_player_pos.x);
             s16 intPy = fix32ToInt(cur_player_pos.y);
+
             switch(normal_dir) {
                 case QUADRANT_0:
                     backfacing = (intPx < v2.x && intPy < v1.y);
