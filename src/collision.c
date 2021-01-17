@@ -42,6 +42,14 @@ u8 on_left_of_wall(fix16 x, fix16 y, u16 wall_idx) {
     //return point_on_left(x, y, v1x, v1y, v2x, v2y);
 }
 
+u8 on_backfacing_side_of_wall(fix16 x, fix16 y, u16 wall_idx) {
+#ifdef FLIP_VERTICALLY
+  return !on_left_of_wall(x,y,wall_idx);
+#else
+  return on_left_of_wall(x,y,wall_idx);
+#endif     
+  }
+
 /*
 collision_result check_for_collision(player_pos cur_position, player_pos new_position) {
 
@@ -94,10 +102,12 @@ u8 in_sector(player_pos cur_player_pos, u16 test_sector) {
     fix16 x = fix32ToFix16(cur_player_pos.x);
     fix16 y = fix32ToFix16(cur_player_pos.y);
 
+    
     for(int i = 0; i < num_walls; i++) {
         u16 wall_idx = wall_offset+i;
-        if(on_left_of_wall(x, y, wall_idx)) {
-            return 0;
+
+	if(on_backfacing_side_of_wall(x, y, wall_idx)) {
+	  return 0;
         }
     }
     

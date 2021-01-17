@@ -48,38 +48,44 @@ walls = [
     10, 11, 19, 20, 10
 ]
 
+def VERT(y,x):
+    return (x*30),((110-y)*40)
 
 vertexes = [
-    (46,14),			      
-    (90,13),
-    (110,29),
-    (96,46),
-    (48,46),
-    (35,27),
-    (55,18),
-    (67,18),
-    (76,18),
-    (84,18),
-    (87,21),
-    (91,25),
-    (97,30),
-    (95,32),
-    (91,38),
-    (88,41),
-    (76,41),
-    (67,41),
-    (55,41),
-    (52,35),
-    (49,31),
-    (46,27),
-    (47,26),
-    (53,20),
-    (56,20),
-    (92,32),
-    (86,38),
-    (50,26)
+    VERT(14,46),			      
+    VERT(13,90),
+    VERT(29,110),
+    VERT(46,96),
+    VERT(46,48),
+    VERT(27,35),
+    VERT(18,55),
+    VERT(18,67),
+    VERT(18,76),
+    VERT(18,84),
+    VERT(21,87),
+    VERT(25,91),
+    VERT(30,97),
+    VERT(32,95),
+    VERT(38,91),
+    VERT(41,88),
+    VERT(41,76),
+    VERT(41,67),
+    VERT(41,55),
+    VERT(35,52),
+    VERT(31,49),
+    VERT(27,46),
+    VERT(26,47),
+    VERT(20,53),
+    VERT(20,56),
+    VERT(32,92),
+    VERT(38,86),
+    VERT(26,50),
 ]
 
+inside_sect_0 = VERT(15,69)
+outside_sect_0 = VERT(11,69)
+
+inside_sect_1 = VERT(21,94)
 
 def degrees_to_radians(degs):
     return (degs * math.pi) / 180
@@ -161,6 +167,22 @@ def backfacing(ang, v1, v2):
 def maybe_visible(ang, v1, v2):
     return (not backfacing(ang, v1, v2))
 
+def line_intersection(line1, line2):
+    xdiff = (line1[0][0] - line1[1][0], line2[0][0] - line2[1][0])
+    ydiff = (line1[0][1] - line1[1][1], line2[0][1] - line2[1][1])
+
+    def det(a, b):
+        return a[0] * b[1] - a[1] * b[0]
+
+    div = det(xdiff, ydiff)
+    if div == 0:
+       raise Exception('lines do not intersect')
+
+    d = (det(*line1), det(*line2))
+    x = det(d, xdiff) / div
+    y = det(d, ydiff) / div
+    return x, y
+
 def group_into_similar_chunks(similar_test, lst):
     cur_lst = []
     chunks = []
@@ -179,12 +201,74 @@ def group_into_similar_chunks(similar_test, lst):
     return chunks
 
 
-def sector_bboxes(sector, map_data):
-    
+def find_outside_bbox(sector):
+    (woff,wnum, f, c) = sector
     
 
+    verts = []
+    vert_indexes = range(woff, woff+wnum)
+    for i,widx in enumerate(vert_indexes):
+        
+        nwidx = widx+1
+        
+        vidx = walls[widx]
+        nvidx = walls[nwidx]
+        
+        v1 = vertexes[vidx]
+        v2 = vertexes[nvidx]
+        
+        verts.append(v1)
+        verts.append(v2)
+
+    xs = [x for (x,y) in verts]
+    ys = [y for (x,y) in verts]
+
+    min_x = min(xs)
+    max_x = max(xs)
+    min_y = min(ys)
+    max_y = max(ys)
+    return ((min_x,min_y), (max_x, max_y))
+
+
+def is_valid_candidate(candidate):
+    ((min_x,min_y),(max_x,max_y)) = candidate
+    return min_x < max_x and min_y < max_y
+
+
+def vxs(x1,y1, x2,y2):
+    return ((x1)*(y2) - (x2)*(y1))
+     
+
+def point_side(px,py, v1x,v1y, v2x,v2y):
+    return vxs((v2x)-(v1x), (v2y)-(v1y), (px)-(v1x), (py)-(v1y))
+
+def on_left(x,y,v1,v2):
+    (v1x,v1y) = v1
+    (v2x,v2y) = v2
+    return point_side(x,y, v1x,v1y, v2x,v2y) < 0 
+
+
+def is_outside(x,y,sector):
     
-            
+    (woff, wnum, f, c) = sector
+    vert_indexes = range(woff, woff+wnum)
+    
+    for i,widx in enumerate(vert_indexes):
+        
+        nwidx = widx+1
+        
+        vidx = walls[widx]
+        nvidx = walls[nwidx]
+        
+        v1 = vertexes[vidx]
+        v2 = vertexes[nvidx]
+
+        if not on_left(x,y,v1,v2):
+            return True
+
+    return False
+
+
     
 def main():
     sectors2 = []
@@ -192,6 +276,24 @@ def main():
         sectors2.append([sectors[i] for i in range(sidx, sidx+4)])
 
 
+    
+    inside_0_x,inside_0_y = inside_sect_0
+    outside_0_x,outside_0_y = outside_sect_0
+
+    inside_1_x,inside_1_y = inside_sect_1
+    
+    print(is_outside(inside_0_x,inside_0_y, sectors2[0]))
+    print(is_outside(outside_0_x,outside_0_y, sectors2[0]))
+    print(is_outside(inside_1_x,  inside_1_y,  sectors2[0]))
+    
+    print(is_outside(inside_0_x,  inside_0_y,  sectors2[1]))
+    print(is_outside(outside_0_x, outside_0_y, sectors2[1]))
+    print(is_outside(inside_1_x,  inside_1_y,  sectors2[1]))
+    
+    
+    exit()
+    
+        
     wall_angle_ranges = []
     print("vis_range angle_ranges[NUM_WALLS] = {")
     
@@ -199,21 +301,15 @@ def main():
         vert_indexes = range(woff, woff+wnum)
         for i,widx in enumerate(vert_indexes):
 
-            last_wall_for_sector = i == len(vert_indexes)-1
             nwidx = widx+1
-            #print("i1 {} i2 {}".format(widx, nwidx))
-            
+
             vidx = walls[widx]
             nvidx = walls[nwidx]
-            #print("vi1 {} vi2 {}".format(vidx, nvidx))
-            
+                        
             v1 = vertexes[vidx]
             v2 = vertexes[nvidx]
             
-            # walls are defined clockwise
-            #tbl = []
-            #print((v1,v2))
-
+            
             nx,ny = get_normal_from_vertices(v1, v2)
             norm_angle = vector_to_degrees(nx,ny)
             
@@ -249,6 +345,7 @@ def main():
     print("};")
 
 if __name__ == '__main__':
+
     
     main()
     
