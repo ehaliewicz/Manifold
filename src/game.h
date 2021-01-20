@@ -8,8 +8,8 @@
 
 extern int cur_frame;
 extern int automap_mode;
-draw_mode render_mode;
-
+extern draw_mode render_mode;
+extern int debug_draw;
 
 typedef struct {
     fix32 x;

@@ -89,11 +89,14 @@ void portal_rend(u16 src_sector, u32 cur_frame) {
         
         u16 init_v1_idx = map->walls[wall_offset];
         vertex init_v1 = map->vertexes[init_v1_idx];
-        Vect2D_s32 prev_transformed_vert = transform_map_vert(init_v1.x, init_v1.y);
+        Vect2D_f32 prev_transformed_vert = transform_map_vert(init_v1.x, init_v1.y);
         
         s16 last_frontfacing_wall = -1;
         
         u16 prev_v2_idx = init_v1_idx;
+
+        s16 intPx = fix32ToInt(cur_player_pos.x);
+        s16 intPy = fix32ToInt(cur_player_pos.y);
 
         for(s16 i = 0; i < num_walls; i++) {
 	        u16 v2_idx = map->walls[wall_offset+i+1];
@@ -107,7 +110,9 @@ void portal_rend(u16 src_sector, u32 cur_frame) {
             s16 portal_sector = map->portals[portal_idx];
             int is_portal = portal_sector != -1;
             
-            volatile Vect2D_s32 trans_v1;
+            //u8 wall_col = map->wall_colors[portal_idx];
+
+            volatile Vect2D_f32 trans_v1;
 
             if(last_frontfacing_wall == i-1) {
                 trans_v1 = prev_transformed_vert;
@@ -117,11 +122,10 @@ void portal_rend(u16 src_sector, u32 cur_frame) {
 
             prev_v2_idx = v2_idx;
             
+            
             normal_quadrant normal_dir = map->wall_norm_quadrants[portal_idx];
             
             u8 backfacing;
-            s16 intPx = fix32ToInt(cur_player_pos.x);
-            s16 intPy = fix32ToInt(cur_player_pos.y);
 
             switch(normal_dir) {
                 case QUADRANT_0:
@@ -155,17 +159,10 @@ void portal_rend(u16 src_sector, u32 cur_frame) {
                 continue;
             }
             
+            
             last_frontfacing_wall = i;
-            volatile Vect2D_s32 trans_v2 = transform_map_vert(v2.x, v2.y);
+            volatile Vect2D_f32 trans_v2 = transform_map_vert(v2.x, v2.y);
             prev_transformed_vert = trans_v2;
-
-            //if(portal_idx == 6) {
-            //    char buf[32];
-            //    sprintf(buf, "backfacing %i", backfacing);
-            //    BMP_drawText(buf, 1, 9);
-            //}
-
-
             
             clip_result clipped = clip_map_vertex(&trans_v1, &trans_v2);    
     
@@ -198,13 +195,22 @@ void portal_rend(u16 src_sector, u32 cur_frame) {
                     // draw step from ceiling
                    s16 nx1_ytop = project_and_adjust_y(trans_v1, neighbor_ceil_height);
                    s16 nx2_ytop = project_and_adjust_y(trans_v2, neighbor_ceil_height);
-                   draw_top_step(x1, x1_ytop, nx1_ytop, x2, x2_ytop, nx2_ytop, window_min, window_max);
+                   draw_top_step(x1, x1_ytop, nx1_ytop, x2, x2_ytop, nx2_ytop, window_min, window_max, 0xFF);
+                   if(debug_draw) {
+                       BMP_flip(1);
+                       waitMs(500);
+                   }
                 }
+                
                 if(neighbor_floor_height > floor_height && neighbor_floor_height < ceil_height) {
                     // draw step from floor
                    s16 nx1_ybot = project_and_adjust_y(trans_v1, neighbor_floor_height);
                    s16 nx2_ybot = project_and_adjust_y(trans_v2, neighbor_floor_height);
-                   draw_bot_step(x1, nx1_ybot, x1_ybot, x2, nx2_ybot, x2_ybot, window_min, window_max);
+                   draw_bot_step(x1, nx1_ybot, x1_ybot, x2, nx2_ybot, x2_ybot, window_min, window_max, 0xFF);
+                   if(debug_draw) {
+                       BMP_flip(1);
+                       waitMs(500);
+                   }
                 }
 
                 if (neighbor_ceil_height > floor_height && neighbor_floor_height < ceil_height && !queue_full()) {
@@ -216,16 +222,20 @@ void portal_rend(u16 src_sector, u32 cur_frame) {
                     queue_push(queue_item);
                 }
             } else {
-                draw_wall(x1, x1_ytop, x1_ybot, x2, x2_ytop, x2_ybot, window_min, window_max);
+                draw_wall(x1, x1_ytop, x1_ybot, x2, x2_ytop, x2_ybot, window_min, window_max, 0xFF);
+                   if(debug_draw) {
+                       BMP_flip(1);
+                       waitMs(500);
+                   }
 
             }
         }
         sector_visited_cache[sector]++;
     }
 
-    //char buf[32];
-    //sprintf(buf, "sectors visited: %i  ", visited);
-    //BMP_drawText(buf, 0, 4);
+    char buf[32];
+    sprintf(buf, "sectors visited: %i  ", visited);
+    BMP_drawText(buf, 1, 3);
     //sprintf(buf, "walls pre-culled %i  ", pre_transform_backfacing_walls);
     //BMP_drawText(buf, 0, 5);
     //sprintf(buf, "walls post-culled %i  ", post_project_backfacing_walls);

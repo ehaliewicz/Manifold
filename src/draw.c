@@ -72,92 +72,9 @@ void bresenham_line(u8 x0, u8 x1, u8 y0, u8 y1, u16 win_min, u16 win_max, u8 col
     
 }
 
-/*
-typedef struct {
-    u8 has_two_ranges:1;
-    u8 rng_0_min; u8 rng_0_max;
-    u8 rng_1_min; u8 rng_1_max;
-} backfacing_entry;
-
-backfacing_entry wall_backfacing_table[32];
-
-int is_backfacing(u16 wall_id, fix32 cur_player_angle) {
-    u8 ply_ang = quantize_angle(cur_player_angle);
-    backfacing_entry wall_entry = wall_backfacing_table[wall_id];
-    if(ply_ang >= wall_entry.rng_0_min && ply_ang <= wall_entry.rng_0_max) {
-        return 0;
-    }
-
-    if(wall_entry.has_two_ranges && ply_ang >= wall_entry.rng_1_min && ply_ang <= wall_entry.rng_1_max) {
-        return 0;
-    }
-    return 1;
-}
-*/
 
 // TODO: optimize backface culling!
 // 
-
-/*
-
-    FULLY_NEAR_CLIPPED,
-    NEAR_CLIPPED_LEFT,
-    NEAR_CLIPPED_RIGHT,
-    OUTSIDE_FRUSTUM,
-    PARTIALLY_FRUSTUM_CLIPPED,
-    FULLY_VISIBLE,
-*/
-/*
-vis_query_result is_visible(volatile Vect2D_s32 trans_v1, volatile Vect2D_s32 trans_v2, s16 floor, s16 ceil, u16 window_min, u16 window_max) {
-    vis_query_result res; 
-
-
-    // with optimized backface culling
-    //if(is_backfacing(wall.backface_angle)
-
-    //if(trans_v1.x <= trans_v2.x) { return res;}
-
-    
-    s16 x1 = project_and_adjust_x(trans_v1);
-    s16 x2 = project_and_adjust_x(trans_v2);
-
-    if(x1 >= x2) {
-        res.visible = 0;
-        return res;
-    }
-
-    res.visible = 1;
-
-    if(x1 < window_min) {
-        res.draw_x1 = window_min;
-    } else {
-        res.draw_x1 = x1;
-    }
-
-    if(x2 > window_max) {
-        res.draw_x1 = x1;
-        res.draw_x2 = window_max;
-    }
-    
-    if(clipped == LEFT_CLIPPED) {
-        res.window_x1 = window_min;
-        res.window_x2 = res.draw_x2-1;
-    } else if (clipped == RIGHT_CLIPPED) {
-        res.window_x1 = res.draw_x1+2;
-        res.window_x2 = window_max;
-    } else {
-        res.window_x1 = res.draw_x1+2;
-        res.window_x2 = res.draw_x2-1;
-    }
-
-    res.x1_ytop = project_and_adjust_y(trans_v1, ceil);
-    res.x1_ybot = project_and_adjust_y(trans_v1, floor);
-    res.x2_ytop = project_and_adjust_y(trans_v2, ceil);
-    res.x2_ybot = project_and_adjust_y(trans_v2, floor);
-
-    return res;
-}
-*/
 
 s16 *ytop; //[W];
 s16 *ybot; //[W];
@@ -211,7 +128,8 @@ void draw_scaled_vertical_line(s16 x, s16 scaled_y0, s16 scaled_y1, u8 col, u8* 
 
 void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
               s16 x2, s16 x2_ytop, s16 x2_ybot,
-              u16 window_min, u16 window_max) {
+              u16 window_min, u16 window_max,
+              u8 wall_col) {
     
     u8 col = 0x11;
 
@@ -255,6 +173,7 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
         if(top_draw_y < bot_draw_y) { 
             *(col_ptr+(top_draw_y)) = col;
             *(col_ptr+(bot_draw_y)) = col;
+            //draw_scaled_vertical_line(x, top_draw_y, bot_draw_y, col, col_ptr);
          }
         
         LOOP_NEXT_COLUMN;
@@ -273,7 +192,8 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
 
 void draw_top_step(s16 x1, s16 x1_ytop, s16 x1_ybot,
               s16 x2, s16 x2_ytop, s16 x2_ybot,
-              u16 window_min, u16 window_max) {
+              u16 window_min, u16 window_max,
+              u8 wall_col) {
     
     u8 col = 0x11;
 
@@ -319,7 +239,8 @@ void draw_top_step(s16 x1, s16 x1_ytop, s16 x1_ybot,
 
         if(top_draw_y < bot_draw_y) { 
             *(col_ptr+(top_draw_y)) = col;
-            *(col_ptr+(bot_draw_y)) = col;
+            *(col_ptr+(bot_draw_y)) = col; 
+            //draw_scaled_vertical_line(x, top_draw_y, bot_draw_y, col, col_ptr);
          }
         if(top_draw_y > min_drawable_y) { ytop[x] = top_draw_y+128; }
 
@@ -338,7 +259,8 @@ void draw_top_step(s16 x1, s16 x1_ytop, s16 x1_ybot,
 
 void draw_bot_step(s16 x1, s16 x1_ytop, s16 x1_ybot,
               s16 x2, s16 x2_ytop, s16 x2_ybot,
-              u16 window_min, u16 window_max) {
+              u16 window_min, u16 window_max,
+              u8 wall_col) {
     
     u8 col = 0x11;
 
@@ -381,7 +303,8 @@ void draw_bot_step(s16 x1, s16 x1_ytop, s16 x1_ybot,
 
         if(top_draw_y < bot_draw_y) { 
             *(col_ptr+(top_draw_y)) = col;
-            *(col_ptr+(bot_draw_y)) = col;
+            *(col_ptr+(bot_draw_y)) = col; 
+            //draw_scaled_vertical_line(x, top_draw_y, bot_draw_y, col, col_ptr);
          }
 
         if(bot_draw_y < max_drawable_y) { ybot[x] = bot_draw_y-128; }
@@ -397,4 +320,3 @@ void draw_bot_step(s16 x1, s16 x1_ytop, s16 x1_ybot,
 
     return; 
 }
-

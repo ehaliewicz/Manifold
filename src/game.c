@@ -1,9 +1,5 @@
 #include <genesis.h>
-#include "automap.h"
-#include "bsp.h"
 #include "collision.h"
-#include "draw_queues.h"
-#include "e1m1.h"
 #include "game.h"
 #include "game_mode.h"
 #include "graphics_res.h"
@@ -16,9 +12,7 @@
 #include "portal.h"
 #include "portal_map.h"
 #include "portal_small_map.h"
-#include "seg.h"
 #include "span_buf.h"
-#include "ssector.h"
 
 player_pos cur_player_pos;
 
@@ -77,17 +71,6 @@ u16 mapPalette[16] = {
 
 
 
-u32* vertex_cache_frames;
-u32* cached_vertexes;
-
-
-void init_vertex_cache() {
-    int num_vertexes = cur_level->num_vertexes;
-    vertex_cache_frames = MEM_alloc((num_vertexes+4) * sizeof(u32));
-    cached_vertexes = MEM_alloc((num_vertexes+4) * sizeof(Vect2D_s16));
-    memsetU32(vertex_cache_frames, 0xFFFFFFFF, num_vertexes);
-}
-
 
 typedef enum {
     INSIDE = 0b00000,
@@ -122,7 +105,7 @@ static int quit_game = 0;
 
 
 
-const fix32 move_speed = 4*ZOOM; //15;
+const fix32 move_speed = 24; 
 
 
 int cur_frame;
@@ -157,67 +140,11 @@ void draw_3d_view(u32 cur_frame) {
     portal_rend(cur_player_pos.cur_sector, cur_frame);
 
 
-/*
-    clear_draw_ssector_queue();
-
-
-    //clear_span_buffer();
-    //clear_column_buffer();
-
-    u16 root_node_idx = cur_level->num_nodes-1;
-
-    draw_bsp_node(cur_player_pos.x, cur_player_pos.y, root_node_idx);
-
-    //linedef line = cur_level->linedefs[42];
-    //draw_wall(line.v1, line.v2);
-
-    for(int i = 0; i < num_draw_ssectors; i++) {
-        u16 sect_idx = draw_ssector_queue[i];
-        ssector ssect = cur_level->ssectors[sect_idx];
-        seg fst_seg = cur_level->segs[ssect.first_seg];
-        linedef line = cur_level->linedefs[fst_seg.linedef];
-        sidedef side = cur_level->sidedefs[(fst_seg.direction == 0) ? line.right_sidedef : line.left_sidedef];
-        int line_is_portal = line.left_sidedef != 0xFFFF && line.right_sidedef != 0xFFFF;
-        sector cur_sect = cur_level->sectors[side.sector_ref];
-
-        for(int j = 0; j < ssect.num_segs; j++) {
-            seg cur_seg = cur_level->segs[ssect.first_seg+j];
-            draw_wall(cur_seg.begin_vert, cur_seg.end_vert, cur_sect.ceil_height, cur_sect.floor_height, line_is_portal);
-            if(debug_draw) {
-                BMP_flip(0);
-            }
-        }
-        //if(columns_remaining == 0) {
-        //    break;
-        //}
-
-    }
-*/
-
-    //char buf[32];
-    //sprintf(buf, "ssectors: %i ", num_draw_ssectors);
-
-    //BMP_drawText(buf, 1, 3);
     BMP_showFPS(1);
     BMP_flip(1);
     return;
 }
 
-
-/*
-u16 ssect_sector_idx(ssector* ssect) {    
-    u16 seg_idx = ssect->first_seg;
-    seg *s = &(cur_level->segs[seg_idx]);
-    linedef *l = &(cur_level->linedefs[s->linedef]);
-    sidedef *side;
-    if(s->direction) {
-        side = &(cur_level->sidedefs[l->left_sidedef]);
-    } else {
-        side = &(cur_level->sidedefs[l->right_sidedef]);
-    }
-    return side->sector_ref;
-}
-*/
 
 u16 last_joy = 0;
 
@@ -228,7 +155,6 @@ static int last_pressed_b = 0;
 
 void handle_input() {
     int strafe = joy_button_pressed(BUTTON_C);
-    //cur_player_pos.z = sector_floor_height(cur_player_pos.cur_sector, cur_portal_map);
 
     int pressed_b = joy_button_pressed(BUTTON_B);
     if(!last_pressed_b && pressed_b) {
@@ -277,8 +203,8 @@ void handle_input() {
             u16 rightAngle = (cur_player_pos.ang-ANGLE_90_DEGREES);
             fix32 rightDy = sinFix32(rightAngle);
             fix32 rightDx = cosFix32(rightAngle);
-            newy += rightDy*move_speed;
-            newx += rightDx*move_speed;
+            newy = cury + rightDy*move_speed;
+            newx = curx + rightDx*move_speed;
         } else {
             if(newang < 10) {
                 newang = 1024 - (10-newang);
@@ -298,25 +224,22 @@ void handle_input() {
     }
     
 
-    //cur_player_pos.cur_sector = find_sector(cur_player_pos);
     cur_player_pos.ang = newang;
+
     if(moved) {
-        //u16 new_sector = find_sector(cur_player_pos);
-        //cur_player_pos.cur_sector = new_sector;
-        Vect2D_f32 npos_vec = check_for_collision(curx, cury, newx, newy, cur_player_pos.cur_sector);
-        cur_player_pos.x = npos_vec.x;
-        cur_player_pos.y = npos_vec.y;
+
+        collision_result collision = check_for_collision(curx, cury, newx, newy, cur_player_pos.cur_sector);
+        cur_player_pos.x = collision.pos.x;
+        cur_player_pos.y = collision.pos.y;
+        cur_player_pos.cur_sector = collision.new_sector;
+
+
     }
 
     char buf[32];
     sprintf(buf, "cur sector: %i  ", cur_player_pos.cur_sector);
-    BMP_drawText(buf, 1, 3);
-    sprintf(buf, "moved: %i", moved);
-    BMP_drawText(buf, 1, 4);
-    
+    BMP_drawText(buf, 1, 2);
 
-
-    //find_
 
     pause_game = joy_button_pressed(BUTTON_START);
 
@@ -329,6 +252,7 @@ void handle_input() {
     // SOLID
     // x -> goes to automap mode, y goes to wireframe mode, z turns on debug
 
+    /*
     const int render_mode_table[3][3] = {
         // automap
         {GAME_WIREFRAME, 0,              0},
@@ -352,6 +276,7 @@ void handle_input() {
             debug_draw = !debug_draw;
         }
     }
+    */
 
 
     last_joy = joy;
@@ -434,7 +359,6 @@ void init_game() {
     //VDP_setScreenHeight224();
     SYS_enableInts();
 
-    set_level(&e1m1);
 
     set_portal_map(&portal_level_1);
 
@@ -468,9 +392,6 @@ void init_game() {
     BMP_clear();
     BMP_setBufferCopy(0);
     BMP_flip(0);
-    init_processed_linedef_bitmap(); 
-    init_vertex_cache();
-    init_span_buffer();
     init_2d_buffers();
 
     init_portal_renderer();
@@ -495,12 +416,7 @@ game_mode run_game() {
     angleSin32 = sinFix32(cur_player_pos.ang); 
     angleCos16 = cosFix16(cur_player_pos.ang);
     angleSin16 = sinFix16(cur_player_pos.ang); 
-    angleSinFrac12 = angleSin16<<6;
-    angleCosFrac12 = angleCos16<<6;
 
-    
-    playerXFrac4 = ((cur_player_pos.x/ZOOM)>>(FIX32_FRAC_BITS-4)); // scaling factor is now 16 (2^4) instead of 1024 (2^10)
-    playerYFrac4 = ((cur_player_pos.y/ZOOM)>>(FIX32_FRAC_BITS-4));
 
     handle_input();
 
@@ -519,10 +435,6 @@ game_mode run_game() {
        BMP_setBufferCopy(0);
    }
    switch(render_mode) {
-       case AUTOMAP:
-            draw_automap(cur_frame);
-            maybe_set_palette(mapPalette);
-        break;
         case GAME_WIREFRAME:
         case GAME_SOLID:
             draw_3d_view(cur_frame);
@@ -536,11 +448,8 @@ game_mode run_game() {
 
 void cleanup_game() {
     BMP_end();
-    cleanup_automap();
     cleanup_span_buffer();
     MEM_free(sector_jump_positions);
-    MEM_free(vertex_cache_frames);
-    MEM_free(cached_vertexes);
     release_2d_buffers();
     MEM_pack();
 }

@@ -21,12 +21,19 @@ typedef enum {
 } normal_quadrant;
 
 typedef struct {
+    u8 upper_col;
+    u8 mid_col;
+    u8 lower_col;
+} wall_col;
+
+typedef struct {
     const int num_sectors;
     const int num_walls;
     const int num_verts;
     const s16* sectors;
     const u16* walls;
     const s16* portals;
+    const wall_col* wall_colors;
     const vertex* vertexes;
     const vis_range* wall_vis_ranges;
     const u8* wall_norm_quadrants;
