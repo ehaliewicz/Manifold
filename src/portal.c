@@ -1,4 +1,5 @@
 #include <genesis.h>
+#include <kdebug.h>
 #include "common.h"
 #include "draw.h"
 #include "game.h"
@@ -47,8 +48,17 @@ void init_portal_renderer() {
 }
 
 void clear_portal_cache() {
-    memset(sector_visited_cache, 0, sizeof(u32) * cur_portal_map->num_sectors);
+    //memset(sector_visited_cache, 0, sizeof(u32) * cur_portal_map->num_sectors);
 }
+
+typedef enum {
+    PORTAL_TOP_VISIBLE,
+    PORTAL_BOT_VISIBLE,
+    PORTAL_TOP_AND_BOT_VISIBLE,
+    PORTAL_NO_STEP_VISIBLE,
+    WALL_VISIBLE,
+} draw_types;
+
 
 void portal_rend(u16 src_sector, u32 cur_frame) {
     static const portal_map* map = &portal_level_1;
@@ -70,11 +80,11 @@ void portal_rend(u16 src_sector, u32 cur_frame) {
         s16 sector = cur_item.sector;
 
         // if this sector has been visited 32 times, or is already being currently rendered, skip it
-        if(sector_visited_cache[sector] >= 1) { //} & 0b101) { //0x21) {
+        if(sector_visited_cache[sector] == cur_frame) { //} & 0b101) { //0x21) {
              continue; // Odd = still rendering, 0x20 = give up
         }
 
-        sector_visited_cache[sector]++;
+        sector_visited_cache[sector] = cur_frame;
 
         u16 window_min = cur_item.x1;
         u16 window_max = cur_item.x2;
@@ -85,6 +95,9 @@ void portal_rend(u16 src_sector, u32 cur_frame) {
 
         s16 floor_height = sector_floor_height(sector, map); 
         s16 ceil_height = sector_ceil_height(sector, map);
+
+        u8 floor_color = sector_floor_color(sector, map);
+        u8 ceil_color = sector_ceil_color(sector, map);
         
         
         u16 init_v1_idx = map->walls[wall_offset];
@@ -122,7 +135,7 @@ void portal_rend(u16 src_sector, u32 cur_frame) {
 
             prev_v2_idx = v2_idx;
             
-            
+            u8 wall_color = map->wall_colors[portal_idx].mid_col;
             normal_quadrant normal_dir = map->wall_norm_quadrants[portal_idx];
             
             u8 backfacing;
@@ -154,88 +167,152 @@ void portal_rend(u16 src_sector, u32 cur_frame) {
                     backfacing = (intPx < v1.x);
                     break;
             }
+            
             if(backfacing) {
                 pre_transform_backfacing_walls++;
                 continue;
             }
-            
             
             last_frontfacing_wall = i;
             volatile Vect2D_f32 trans_v2 = transform_map_vert(v2.x, v2.y);
             prev_transformed_vert = trans_v2;
             
             clip_result clipped = clip_map_vertex(&trans_v1, &trans_v2);    
-    
-            if(clipped == OFFSCREEN) {
+            s16 neighbor_floor_height;
+            s16 neighbor_ceil_height;
+            if(clipped == OFFSCREEN) {    
+                /*
+                if(is_portal) {
+                    //if(portal_sector == 6) {
+                    //    BMP_drawText("fully clipped   ", 2, 10);
+                    //}
+                
+                    s16 x1 = project_and_adjust_x(trans_v1);
+                    s16 x2 = project_and_adjust_x(trans_v2);
+                    s16 beginx = max(x1, window_min);
+                    s16 endx = min(x2, window_max);
+
+                    if(x1 > window_max) { walls_frustum_culled++; continue; }
+                    if(x2 <= window_min) { walls_frustum_culled++; continue; }
+                    if(x1 >= x2) { post_project_backfacing_walls++; continue; }
+                    neighbor_floor_height = sector_floor_height(portal_sector, cur_portal_map);
+                    neighbor_ceil_height = sector_ceil_height(portal_sector, cur_portal_map);
+                    if (neighbor_ceil_height > floor_height && neighbor_floor_height < ceil_height && !queue_full()) {
+
+                        queue_item.x1 = window_min;
+                        queue_item.x2 = window_max;
+
+                        queue_item.sector = portal_sector;
+                        queue_push(queue_item);
+                    }
+                    
+                }
+                */
                 continue;
             }
-            
+
             s16 x1 = project_and_adjust_x(trans_v1);
             s16 x2 = project_and_adjust_x(trans_v2);
-            if(x1 >= x2) { post_project_backfacing_walls++; continue; }
-            if(x1 > window_max) { walls_frustum_culled++; continue; }
-            if(x2 <= window_min) { walls_frustum_culled++; continue; }
-
             s16 beginx = max(x1, window_min);
             s16 endx = min(x2, window_max);
 
-            s16 x1_ytop = project_and_adjust_y(trans_v1, ceil_height);
-            s16 x1_ybot = project_and_adjust_y(trans_v1, floor_height);
-            s16 x2_ytop = project_and_adjust_y(trans_v2, ceil_height);
-            s16 x2_ybot = project_and_adjust_y(trans_v2, floor_height);
+            if(x1 > window_max) { walls_frustum_culled++; continue; }
+            if(x2 <= window_min) { walls_frustum_culled++; continue; }
+            if(x1 >= x2) { post_project_backfacing_walls++; continue; }
 
-            if (is_portal) {
 
-                // TODO: draw step up from floor
-                // draw step down from ceiling
-                s16 neighbor_floor_height = sector_floor_height(portal_sector, cur_portal_map);
-                s16 neighbor_ceil_height = sector_ceil_height(portal_sector, cur_portal_map);
-
-                if(neighbor_ceil_height < ceil_height && neighbor_ceil_height > floor_height) {
-                    // draw step from ceiling
-                   s16 nx1_ytop = project_and_adjust_y(trans_v1, neighbor_ceil_height);
-                   s16 nx2_ytop = project_and_adjust_y(trans_v2, neighbor_ceil_height);
-                   draw_top_step(x1, x1_ytop, nx1_ytop, x2, x2_ytop, nx2_ytop, window_min, window_max, 0xFF);
-                   if(debug_draw) {
-                       BMP_flip(1);
-                       waitMs(500);
-                   }
-                }
+            if(is_portal) {
                 
-                if(neighbor_floor_height > floor_height && neighbor_floor_height < ceil_height) {
-                    // draw step from floor
-                   s16 nx1_ybot = project_and_adjust_y(trans_v1, neighbor_floor_height);
-                   s16 nx2_ybot = project_and_adjust_y(trans_v2, neighbor_floor_height);
-                   draw_bot_step(x1, nx1_ybot, x1_ybot, x2, nx2_ybot, x2_ybot, window_min, window_max, 0xFF);
-                   if(debug_draw) {
-                       BMP_flip(1);
-                       waitMs(500);
-                   }
-                }
-
+                neighbor_floor_height = sector_floor_height(portal_sector, cur_portal_map);
+                neighbor_ceil_height = sector_ceil_height(portal_sector, cur_portal_map);
                 if (neighbor_ceil_height > floor_height && neighbor_floor_height < ceil_height && !queue_full()) {
 
+                    //if(portal_sector == 6 && (clipped == LEFT_CLIPPED || clipped == RIGHT_CLIPPED)) {
+                    //    BMP_drawText("partially clipped", 2, 10);
+                    //} else if (portal_sector == 6) {
+                    //    BMP_drawText("not clipped      ", 2, 10);
+                    //}
                     queue_item.x1 = (clipped == LEFT_CLIPPED) ? window_min : beginx;
                     queue_item.x2 = (clipped == RIGHT_CLIPPED) ? window_max : endx;
 
                     queue_item.sector = portal_sector;
                     queue_push(queue_item);
                 }
-            } else {
-                draw_wall(x1, x1_ytop, x1_ybot, x2, x2_ytop, x2_ybot, window_min, window_max, 0xFF);
-                   if(debug_draw) {
-                       BMP_flip(1);
-                       waitMs(500);
-                   }
+                
+            }
+
+            
+            s16 x1_ytop = project_and_adjust_y(trans_v1, ceil_height);
+            s16 x1_ybot = project_and_adjust_y(trans_v1, floor_height);
+            s16 x2_ytop = project_and_adjust_y(trans_v2, ceil_height);
+            s16 x2_ybot = project_and_adjust_y(trans_v2, floor_height);
+
+
+
+
+            //break;
+            // draw floor and ceiling
+            // check if floor and ceiling are on-screen
+            
+
+            if (is_portal) {
+                // draw step down from ceiling
+                //if(portal_sector == 6) {
+                //char buf[32];
+                //    sprintf(buf, "x span %i-%i     ", x1, x2);
+                //    BMP_drawText(buf, 1, 5);
+                //    sprintf(buf, "top ys %i %i     ", x1_ytop, x2_ytop);
+                //    BMP_drawText(buf, 1, 6);
+                //    sprintf(buf, "bot ys %i %i     ", x1_ybot, x2_ybot);
+                //    BMP_drawText(buf, 1, 7);
+                //}
+                if(neighbor_ceil_height < ceil_height && neighbor_ceil_height > floor_height) {
+                    // draw step from ceiling
+                s16 nx1_ytop = project_and_adjust_y(trans_v1, neighbor_ceil_height);
+                s16 nx2_ytop = project_and_adjust_y(trans_v2, neighbor_ceil_height);
+                
+                draw_wall(x1,       0,      x1_ytop, x2,       0,      x2_ytop, window_min, window_max, ceil_color);
+                draw_top_step(x1, x1_ytop, nx1_ytop-1, x2, x2_ytop, nx2_ytop-1, window_min, window_max, wall_color);
+                //bresenham_wall(x1, x1_ytop, x2, x2_ytop, window_min, window_max, raster_buffer_0);
+                //bresenham_wall(x1, nx1_ytop, x2, nx2_ytop, window_min, window_max, raster_buffer_1);
+                //draw_line_between_raster_spans(raster_buffer_0, raster_buffer_1, max(x1, window_min), min(x2, window_max), wall_color, 0, 1);
+
+                } else {
+                    draw_top_step(x1,       0,      x1_ytop, x2,       0,      x2_ytop, window_min, window_max, ceil_color);
+                }
+                
+                if(neighbor_floor_height > floor_height && neighbor_floor_height < ceil_height) {
+                    // draw step from floor
+                    s16 nx1_ybot = project_and_adjust_y(trans_v1, neighbor_floor_height);
+                    s16 nx2_ybot = project_and_adjust_y(trans_v2, neighbor_floor_height);
+                    draw_wall(x1, x1_ybot, BMP_HEIGHT-1, x2, x2_ybot, BMP_HEIGHT-1, window_min, window_max, floor_color);
+                    draw_bot_step(x1, nx1_ybot+1, x1_ybot, x2, nx2_ybot+1, x2_ybot, window_min, window_max, wall_color);
+
+                } else {
+                draw_bot_step(x1, x1_ybot, BMP_HEIGHT-1, x2, x2_ybot, BMP_HEIGHT-1, window_min, window_max, floor_color);
+
+                }
+
+            } else { 
+                //bresenham_wall(x1, x1_ytop, x2, x2_ytop, window_min, window_max, raster_buffer_0);
+                //bresenham_wall(x1, x1_ybot, x2, x2_ybot, window_min, window_max, raster_buffer_1);
+                //draw_line_between_raster_spans(raster_buffer_0, raster_buffer_1, max(x1, window_min), min(x2, window_max), wall_color, 0, 0);
+
+                draw_wall(x1,       0,      x1_ytop, x2,       0,      x2_ytop, window_min, window_max, ceil_color);
+                draw_wall(x1, x1_ytop, x1_ybot, x2, x2_ytop, x2_ybot, window_min, window_max, wall_color);
+                draw_wall(x1, x1_ybot, BMP_HEIGHT-1, x2, x2_ybot, BMP_HEIGHT-1, window_min, window_max, floor_color);
+
 
             }
+            
         }
-        sector_visited_cache[sector]++;
+        //sector_visited_cache[sector]++;
     }
 
-    char buf[32];
-    sprintf(buf, "sectors visited: %i  ", visited);
-    BMP_drawText(buf, 1, 3);
+    //KLog_U1("sectors visited: ", visited);
+    //char buf[32];
+    //sprintf(buf, "sectors visited: %i  ", visited);
+    //BMP_drawText(buf, 1, 3);
     //sprintf(buf, "walls pre-culled %i  ", pre_transform_backfacing_walls);
     //BMP_drawText(buf, 0, 5);
     //sprintf(buf, "walls post-culled %i  ", post_project_backfacing_walls);

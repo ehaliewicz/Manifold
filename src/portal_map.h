@@ -6,7 +6,7 @@
 #include "vertex.h"
 #include "vis_range.h"
 
-#define SECTOR_SIZE 5
+#define SECTOR_SIZE 7
 #define VERT_SIZE 2
 
 typedef enum {
@@ -50,4 +50,7 @@ s16 sector_floor_height(s16 sector_idx, portal_map* mp);
 
 s16 sector_ceil_height(s16 sector_idx, portal_map* mp);
 
+s16 sector_floor_color(s16 sector_idx, portal_map* mp);
+
+s16 sector_ceil_color(s16 sector_idx, portal_map* mp);
 #endif

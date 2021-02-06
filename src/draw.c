@@ -1,3 +1,5 @@
+#include <genesis.h>
+#include <kdebug.h>
 #include "draw.h"
 #include "game.h"
 #include "level.h"
@@ -27,18 +29,6 @@ void draw_horizontal_line(u8 x0, u8 x1, u8 y, u8 col) {
 
 
 void bresenham_line(u8 x0, u8 x1, u8 y0, u8 y1, u16 win_min, u16 win_max, u8 col) {
-    //col = col<<4 |
-    
-    if(x0 == x1) {
-        if(x0 >= win_min && x0 <= win_max) {
-            return draw_vertical_line_no_clip(x0, y0, y1, col); 
-        }   
-    } else if (y0 == y1) {
-        x0 = max(x0, win_min);
-        x1 = min(x1, win_max);
-        return draw_horizontal_line(x0, x1, y0, col) ;
-    }
-    
 
     int dx =  abs (x1 - x0);
     int dy = -abs (y1 - y0);
@@ -67,100 +57,233 @@ void bresenham_line(u8 x0, u8 x1, u8 y0, u8 y1, u16 win_min, u16 win_max, u8 col
         e2 = err2; //2 * err;
         if (e2 >= dy) { err2 += dy2; x0++; ptr++; } // e_xy+e_x > 0 
         if (e2 <= dx) { err2 += dx2; y0 += sy; ptr += dptr_y; } // e_xy+e_y < 0 
-        
     }
+}
+
+void bresenham_wall(s16 x1, s16 x1y, s16 x2, s16 x2y, u16 window_min, u8 window_max, s16* output) {
+    /*
+    const int32_t deltaX2 = deltaX * 2;
+    const int32_t deltaY2 = deltaY * 2;
+    int32_t error = deltaY2 - deltaX; 
+
+    plot(x, y);
+
+    // Step along the major x axis
+    while(deltaX--)
+    {
+        if(error >= 0)
+        {
+            // Step along the minor y axis
+            y++;
+            error -= deltaX2;
+        }
+        
+        error += deltaY2;
+        x += dir;
+
+        plot(x, y);
+    }
+    */
     
+
+    int dx =  abs (x2 - x1);
+    int dy = abs (x2y - x1y);
+    int dy2 = dy<<1;
+    int dx2 = dx<<1;
+    int sy = (dy > 0) ? 1 : -1;
+
+    // todo optimize perfectly horizontal lines
+
+    //int err = dx + dy,
+    int e2;  // error value e_xy 
+    int err2 = dx2+dy2;
+    int x = x1;
+    int y = x1y;
+
+    int beginx = max(x1, window_min);
+    int endx = min(x2, window_max);
+    while(x < beginx) {
+        if (x == x2 && y == x2y) { break; }
+        e2 = err2; //2 * err;
+        if (e2 >= dy) { err2 += dy2; x++; } // e_xy+e_x > 0 
+        if (e2 <= dx) { err2 += dx2; y += sy; } // e_xy+e_y < 0 
+    }
+
+    //s16* ptr = output+x;
+    
+    output[x] = y;
+    while(x <= endx) {
+        //if (x == endx) { break; }
+        //*ptr = y;
+        e2 = err2; //2 * err;
+        if (e2 >= dy) { err2 += dy2; x++; output[x] = y; } // e_xy+e_x > 0 
+        if (e2 <= dx) { err2 += dx2; y += sy; } // e_xy+e_y < 0 
+    }
 }
 
 
-// TODO: optimize backface culling!
-// 
 
-s16 *ytop; //[W];
-s16 *ybot; //[W];
+u8* yclip;
+s16* raster_buffer_0;
+s16* raster_buffer_1;
 
 void init_2d_buffers() {
-    ytop = MEM_alloc(W*sizeof(s16));
-    ybot = MEM_alloc(W*sizeof(s16));
+    yclip = MEM_alloc(W*2*sizeof(u8));
+    raster_buffer_0 = MEM_alloc(W*2*sizeof(s16));
+    raster_buffer_1 = raster_buffer_0+W;
 }
 
 void clear_2d_buffers() {
     for(int i = 0; i < W; i++) {
-        ytop[i] = 1<<7;
-        ybot[i] = 127<<7;
+        yclip[i*2] = 0;
+        yclip[i*2+1] = BMP_HEIGHT-1;
     }
 }
 
 void release_2d_buffers() {
-    MEM_free(ytop);
-    MEM_free(ybot);
+    MEM_free(yclip);
+    MEM_free(raster_buffer_0);
 }
 
-    #define LOOP_GET_DRAW_PARAMS    do {                \
-        top_y_int = top_y_fix&0b1111111110000000;       \
-        bot_y_int = bot_y_fix&0b1111111110000000;       \
-        min_drawable_y = ytop[x];                        \
-        max_drawable_y = ybot[x];                        \
-        top_draw_y = max(min_drawable_y, top_y_int);    \
-        bot_draw_y = min(max_drawable_y, bot_y_int);    \
+#define SUBPIXEL_SHIFT 8
+
+
+
+    #define LOOP_GET_DRAW_PARAMS    do {                    \
+        top_y_int = top_y_fix >> SUBPIXEL_SHIFT;                        \
+        bot_y_int = bot_y_fix >> SUBPIXEL_SHIFT;                        \
+        min_drawable_y = *yclip_ptr;                        \
+        max_drawable_y = *(yclip_ptr+1);                    \
+        top_draw_y = clamp(top_y_int, min_drawable_y, max_drawable_y);    \
+        bot_draw_y = clamp(bot_y_int, min_drawable_y, max_drawable_y);    \
     } while(0)
 
     #define LOOP_PREDRAW_NEXT_COLUMN do {    \
         top_y_fix += top_dy_per_dx;  \
-        bot_y_fix += bot_dy_per_dx;  \     
+        bot_y_fix += bot_dy_per_dx;  \
         x++;                         \
     } while(0) 
+
 
     #define LOOP_NEXT_COLUMN do {   \
         LOOP_PREDRAW_NEXT_COLUMN;   \
         col_ptr++;                  \
+        yclip_ptr+=2;               \
     } while(0)
 
 
-void draw_scaled_vertical_line(s16 x, s16 scaled_y0, s16 scaled_y1, u8 col, u8* col_ptr) {
-    u8* cur_ptr = col_ptr + scaled_y0;
-    u8* end_ptr = col_ptr + scaled_y1;
+void draw_vertical_line(s16 y0, s16 y1, u8 col, u8* col_ptr) {
+    u8* cur_ptr = col_ptr + y0*128;
+    u8* end_ptr = col_ptr + y1*128;
+    //u8 cnt = 1+y1-y0;
     while(cur_ptr <= end_ptr) {
         *cur_ptr = col;
         cur_ptr += 128;
     }
 }
 
+
+void draw_native_vertical_line(s16 y0, s16 y1, u8 col, u8* col_ptr);
+
+//void draw_native_vertical_line_unrolled(s16 y0, s16 y1, u8 col, u8* col_ptr);
+void draw_native_vertical_line_unrolled_inner(u16 jump_table_offset, u8 col, u8* col_ptr);
+
+void draw_native_vertical_line_unrolled(s16 y0, s16 y1, u8 col, u8* col_ptr) {
+    if(y0 >= y1) { return ;}
+    col_ptr += (128 * y0);
+
+
+    u8 dy = y1-y0;
+    u16 jump_table_offset = (160-dy)*4;
+    //KDebug_StartTimer();
+    draw_native_vertical_line_unrolled_inner(jump_table_offset, col, col_ptr);
+    //KDebug_StopTimer();
+}
+
+
+void draw_line_between_raster_spans(s16* top, s16* bot, u16 startx, u16 endx, u8 col,
+                                    uint8_t update_top_clip, uint8_t update_bot_clip) {
+    s16* top_ptr = top+startx;
+    s16* bot_ptr = bot+startx;
+    u8* yclip_ptr = &(yclip[startx<<1]);
+    u8* col_ptr = BMP_getWritePointer(startx<<1, 0);
+    for(u16 x = startx; x <= endx; x++) {
+        u8 min_drawable_y = *yclip_ptr;
+        u8 max_drawable_y = *yclip_ptr;
+        u16 top_y = *top_ptr++;
+        u16 bot_y = *bot_ptr++;
+        u8 top_draw_y = clamp(top_y, min_drawable_y, max_drawable_y);
+        u8 bot_draw_y = clamp(bot_y, min_drawable_y, max_drawable_y);
+
+        if(top_draw_y < bot_draw_y) {
+            draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, col, col_ptr);
+        }
+
+        col_ptr++;
+        if(update_top_clip) {
+            *yclip_ptr++ = bot_draw_y;
+            yclip_ptr++;
+        } else if (update_bot_clip) {
+            yclip_ptr++;
+            *yclip_ptr++ = top_draw_y;
+        } else {
+            yclip_ptr += 2;
+        }
+    }
+}
+
+
+#define FLAT_COLOR
+
+void flip() {
+    /*
+    if(JOY_readJoypad(JOY_1) & BUTTON_A) {
+        
+        BMP_flip(0);
+        waitMs(200);
+        BMP_clear();
+    }
+    */
+}
+
 void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
               s16 x2, s16 x2_ytop, s16 x2_ybot,
               u16 window_min, u16 window_max,
-              u8 wall_col) {
+              u8 col) {
     
-    u8 col = 0x11;
-
     s16 top_dy = x2_ytop - x1_ytop;
     s16 bot_dy = x2_ybot - x1_ybot;
     s16 dx = x2-x1;
 
-    s16 top_dy_per_dx = (top_dy<<7) / dx; // 12.8
-    s16 bot_dy_per_dx = (bot_dy<<7) / dx; // 12.8
+    s32 top_dy_per_dx = (s16)(((s32)(top_dy<<SUBPIXEL_SHIFT)) / (s16)dx); // 12.8
+    s32 bot_dy_per_dx = (s16)(((s32)(bot_dy<<SUBPIXEL_SHIFT)) / (s16)dx); // 12.8
 
-    s16 top_y_fix = x1_ytop<<7;
-    s16 bot_y_fix = x1_ybot<<7; // 9.7
+    s32 top_y_fix = x1_ytop<<SUBPIXEL_SHIFT;
+    s32 bot_y_fix = x1_ybot<<SUBPIXEL_SHIFT; // 9.7
 
     s16 top_y_int, bot_y_int;
-    s16 min_drawable_y, max_drawable_y;
-    s16 top_draw_y, bot_draw_y;
+    u8 min_drawable_y, max_drawable_y;
+    
+    u8 top_draw_y, bot_draw_y;
 
-    s16 x = x1;
     s16 beginx = max(x1, window_min);
+    s16 x = x1;
 
-    while(x < beginx) {
-        LOOP_PREDRAW_NEXT_COLUMN;
+    s16 skip_x = beginx - x1;
+    if(skip_x) {
+        top_y_fix += (skip_x * top_dy_per_dx);
+        bot_y_fix += (skip_x * bot_dy_per_dx);
+        x = beginx;
     }
 
-
     u8* col_ptr = BMP_getWritePointer(x<<1, 0);
-
+    u8* yclip_ptr = &(yclip[x*2]);
+    
     LOOP_GET_DRAW_PARAMS;
     
-    if(top_draw_y < bot_draw_y) {
-        draw_scaled_vertical_line(x, top_draw_y, bot_draw_y, col, col_ptr);
+    if(top_draw_y <= bot_draw_y) {
+        draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, col, col_ptr);
+        //draw_vertical_line(top_draw_y, bot_draw_y, col, col_ptr);
     }
 
     LOOP_NEXT_COLUMN;
@@ -170,10 +293,14 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
 
         LOOP_GET_DRAW_PARAMS;
 
-        if(top_draw_y < bot_draw_y) { 
-            *(col_ptr+(top_draw_y)) = col;
-            *(col_ptr+(bot_draw_y)) = col;
-            //draw_scaled_vertical_line(x, top_draw_y, bot_draw_y, col, col_ptr);
+        if(top_draw_y <= bot_draw_y) { 
+            #ifdef FLAT_COLOR
+            draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, col, col_ptr);
+            //draw_vertical_line(top_draw_y, bot_draw_y, col, col_ptr);
+            #else
+            *(col_ptr+(top_draw_y*128)) = col;
+            *(col_ptr+(bot_draw_y*128)) = col; 
+            #endif
          }
         
         LOOP_NEXT_COLUMN;
@@ -181,53 +308,56 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
     }
 
     LOOP_GET_DRAW_PARAMS;
-    if(top_draw_y < bot_draw_y) {
-        draw_scaled_vertical_line(x, top_draw_y, bot_draw_y, col, col_ptr);
+    if(top_draw_y <= bot_draw_y) {
+        draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, col, col_ptr);
+        //draw_vertical_line(top_draw_y, bot_draw_y, col, col_ptr);
     }
+
+    flip(0);
 
     return; 
 }
 
 
-
 void draw_top_step(s16 x1, s16 x1_ytop, s16 x1_ybot,
               s16 x2, s16 x2_ytop, s16 x2_ybot,
               u16 window_min, u16 window_max,
-              u8 wall_col) {
+              u8 col) {
     
-    u8 col = 0x11;
-
     s16 top_dy = x2_ytop - x1_ytop;
     s16 bot_dy = x2_ybot - x1_ybot;
     s16 dx = x2-x1;
 
-    s16 top_dy_per_dx = (top_dy<<7) / dx; // 12.8
-    s16 bot_dy_per_dx = (bot_dy<<7) / dx; // 12.8
+    s32 top_dy_per_dx = (top_dy<<SUBPIXEL_SHIFT) / dx; // 12.8
+    s32 bot_dy_per_dx = (bot_dy<<SUBPIXEL_SHIFT) / dx; // 12.8
 
-    s16 top_y_fix = x1_ytop<<7;
-    s16 bot_y_fix = x1_ybot<<7; // 9.7
+    s32 top_y_fix = x1_ytop<<SUBPIXEL_SHIFT;
+    s32 bot_y_fix = x1_ybot<<SUBPIXEL_SHIFT; // 9.7
 
     s16 top_y_int, bot_y_int;
-    s16 min_drawable_y, max_drawable_y;
-    s16 top_draw_y, bot_draw_y;
+    u8 min_drawable_y, max_drawable_y;
+    u8 top_draw_y, bot_draw_y;
 
+    u16 beginx = max(x1, window_min);
+    u16 x = beginx;
 
-    s16 x = x1;
-    s16 beginx = max(x1, window_min);
-
-    while(x < beginx) {
-        LOOP_PREDRAW_NEXT_COLUMN;
+    s16 skip_x = beginx - x1;
+    if(skip_x) {
+        top_y_fix += (skip_x * top_dy_per_dx);
+        bot_y_fix += (skip_x * bot_dy_per_dx);
+        x = beginx;
     }
 
 
-
-
     u8* col_ptr = BMP_getWritePointer(x<<1, 0);
+    u8* yclip_ptr = &(yclip[x<<1]);
 
     LOOP_GET_DRAW_PARAMS;
     
-    if(top_draw_y < bot_draw_y) {
-        draw_scaled_vertical_line(x, top_draw_y, bot_draw_y, col, col_ptr);
+    if(top_draw_y <= bot_draw_y) {
+        draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, col, col_ptr);
+        //draw_vertical_line(top_draw_y, bot_draw_y, col, col_ptr);
+        *yclip_ptr = bot_draw_y;
     }
 
     LOOP_NEXT_COLUMN;
@@ -238,61 +368,75 @@ void draw_top_step(s16 x1, s16 x1_ytop, s16 x1_ybot,
         LOOP_GET_DRAW_PARAMS;
 
         if(top_draw_y < bot_draw_y) { 
-            *(col_ptr+(top_draw_y)) = col;
-            *(col_ptr+(bot_draw_y)) = col; 
-            //draw_scaled_vertical_line(x, top_draw_y, bot_draw_y, col, col_ptr);
+            #ifdef FLAT_COLOR
+            draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, col, col_ptr);
+            //draw_vertical_line(top_draw_y, bot_draw_y, col, col_ptr);
+            #else
+            *(col_ptr+(top_draw_y*128)) = col;
+            *(col_ptr+(bot_draw_y*128)) = col; 
+            #endif
+            *yclip_ptr = bot_draw_y;
          }
-        if(top_draw_y > min_drawable_y) { ytop[x] = top_draw_y+128; }
-
-        
         LOOP_NEXT_COLUMN;
 
     }
 
     LOOP_GET_DRAW_PARAMS;
-    if(top_draw_y < bot_draw_y) {
-        draw_scaled_vertical_line(x, top_draw_y, bot_draw_y, col, col_ptr);
+    if(top_draw_y <= bot_draw_y) {
+        draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, col, col_ptr);
+        //draw_vertical_line(top_draw_y, bot_draw_y, col, col_ptr);
+        *yclip_ptr = bot_draw_y;
+        //*yclip_ptr = clamp(bot_draw_y, min_drawable_y, max_drawable_y);
+        //ytop[x] = bot_draw_y;
+        //ytop[x] =  clamp(bot_draw_y, min_drawable_y, max_drawable_y);
     }
 
+    flip();
     return; 
 }
 
 void draw_bot_step(s16 x1, s16 x1_ytop, s16 x1_ybot,
               s16 x2, s16 x2_ytop, s16 x2_ybot,
               u16 window_min, u16 window_max,
-              u8 wall_col) {
+              u8 col) {
     
-    u8 col = 0x11;
+    //u8 col = 0x11;
 
     s16 top_dy = x2_ytop - x1_ytop;
     s16 bot_dy = x2_ybot - x1_ybot;
     s16 dx = x2-x1;
 
-    s16 top_dy_per_dx = (top_dy<<7) / dx; // 12.8
-    s16 bot_dy_per_dx = (bot_dy<<7) / dx; // 12.8
+    s32 top_dy_per_dx = (top_dy<<SUBPIXEL_SHIFT) / dx; // 12.8
+    s32 bot_dy_per_dx = (bot_dy<<SUBPIXEL_SHIFT) / dx; // 12.8
 
-    s16 top_y_fix = x1_ytop<<7;
-    s16 bot_y_fix = x1_ybot<<7; // 9.7
+    s32 top_y_fix = x1_ytop<<SUBPIXEL_SHIFT;
+    s32 bot_y_fix = x1_ybot<<SUBPIXEL_SHIFT; // 9.7
 
     s16 top_y_int, bot_y_int;
-    s16 min_drawable_y, max_drawable_y;
-    s16 top_draw_y, bot_draw_y;
+    u8 min_drawable_y, max_drawable_y;
+    u8 top_draw_y, bot_draw_y;
 
-    s16 x = x1;
     s16 beginx = max(x1, window_min);
+    s16 x = beginx;
 
-    while(x < beginx) {
-        LOOP_PREDRAW_NEXT_COLUMN;
+    s16 skip_x = beginx - x1;
+    if(skip_x) {
+        top_y_fix += (skip_x * top_dy_per_dx);
+        bot_y_fix += (skip_x * bot_dy_per_dx);
+        x = beginx;
     }
 
-
     u8* col_ptr = BMP_getWritePointer(x<<1, 0);
+    u8* yclip_ptr = &(yclip[x<<1]);
 
     LOOP_GET_DRAW_PARAMS;
     
-    if(top_draw_y < bot_draw_y) {
-        draw_scaled_vertical_line(x, top_draw_y, bot_draw_y, col, col_ptr);
+    if(top_draw_y <= bot_draw_y) {
+        draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, col, col_ptr);
+        //draw_vertical_line(top_draw_y, bot_draw_y, col, col_ptr);
+
     }
+    *(yclip_ptr+1) = top_draw_y;
 
     LOOP_NEXT_COLUMN;
 
@@ -301,22 +445,27 @@ void draw_bot_step(s16 x1, s16 x1_ytop, s16 x1_ybot,
 
         LOOP_GET_DRAW_PARAMS;
 
-        if(top_draw_y < bot_draw_y) { 
-            *(col_ptr+(top_draw_y)) = col;
-            *(col_ptr+(bot_draw_y)) = col; 
-            //draw_scaled_vertical_line(x, top_draw_y, bot_draw_y, col, col_ptr);
+        if(top_draw_y <= bot_draw_y) { 
+            #ifdef FLAT_COLOR
+            draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, col, col_ptr);
+            //draw_vertical_line(top_draw_y, bot_draw_y, col, col_ptr);
+            #else
+            *(col_ptr+(top_draw_y*128)) = col;
+            *(col_ptr+(bot_draw_y*128)) = col; 
+            #endif
+            *(yclip_ptr+1) = top_draw_y;
          }
-
-        if(bot_draw_y < max_drawable_y) { ybot[x] = bot_draw_y-128; }
-        
         LOOP_NEXT_COLUMN;
 
     }
 
     LOOP_GET_DRAW_PARAMS;
-    if(top_draw_y < bot_draw_y) {
-        draw_scaled_vertical_line(x, top_draw_y, bot_draw_y, col, col_ptr);
+    if(top_draw_y <= bot_draw_y) {
+        draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, col, col_ptr);
+        //draw_vertical_line(top_draw_y, bot_draw_y, col, col_ptr);
+        *(yclip_ptr+1) = top_draw_y;
     }
 
+    flip();
     return; 
 }

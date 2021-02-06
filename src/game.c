@@ -1,5 +1,6 @@
 #include <genesis.h>
 #include "collision.h"
+#include "colors.h"
 #include "game.h"
 #include "game_mode.h"
 #include "graphics_res.h"
@@ -22,24 +23,6 @@ fix32 angleCos32, angleSin32;
 fix16 angleCos16, angleSin16;
 fix16 angleSinFrac12, angleCosFrac12;
 
-u16 threeDPalette[16] = {
-    RGB24_TO_VDPCOLOR(0xFFFFFF),
-    RGB24_TO_VDPCOLOR(0xFFFFFF),
-    RGB24_TO_VDPCOLOR(0xFFFFFF),
-    RGB24_TO_VDPCOLOR(0xFFFFFF),
-    RGB24_TO_VDPCOLOR(0xFFFFFF),
-    RGB24_TO_VDPCOLOR(0xFFFFFF),
-    RGB24_TO_VDPCOLOR(0xFFFFFF),
-    RGB24_TO_VDPCOLOR(0xFFFFFF),
-    RGB24_TO_VDPCOLOR(0xFFFFFF),
-    RGB24_TO_VDPCOLOR(0xFFFFFF),
-    RGB24_TO_VDPCOLOR(0xFFFFFF),
-    RGB24_TO_VDPCOLOR(0xFFFFFF),
-    RGB24_TO_VDPCOLOR(0xFFFFFF),
-    RGB24_TO_VDPCOLOR(0xFFFFFF),
-    RGB24_TO_VDPCOLOR(0xFFFFFF),
-    RGB24_TO_VDPCOLOR(0xFFFFFF)
-};
 
 void init_3d_palette() {
     for(int i = 0; i < 16; i++) {
@@ -133,7 +116,7 @@ void draw_wall(u16 v1_idx, u16 v2_idx, s16 ceil_height, s16 floor_height) {
 void draw_3d_view(u32 cur_frame) {
 
     BMP_waitWhileFlipRequestPending();
-    BMP_clear();
+    //BMP_clear();
 
     clear_2d_buffers();
     clear_portal_cache();
@@ -141,7 +124,14 @@ void draw_3d_view(u32 cur_frame) {
 
 
     BMP_showFPS(1);
+
+    int framebuffer_num_bytes = 128*144;
+    int framebuffer_num_words = framebuffer_num_bytes/2;
     BMP_flip(1);
+    //DMA_queueDma(DMA_VRAM, bmp_buffer_write, BMP_FB0TILE, framebuffer_num_words/2, 4);
+    //VDP_waitVInt();
+    //DMA_queueDma(DMA_VRAM, bmp_buffer_write+(framebuffer_num_bytes/2), BMP_FB0TILE+2, framebuffer_num_words/2, 4);
+    
     return;
 }
 
@@ -236,9 +226,9 @@ void handle_input() {
 
     }
 
-    char buf[32];
-    sprintf(buf, "cur sector: %i  ", cur_player_pos.cur_sector);
-    BMP_drawText(buf, 1, 2);
+    //char buf[32];
+    //sprintf(buf, "cur sector: %i  ", cur_player_pos.cur_sector);
+    //BMP_drawText(buf, 1, 2);
 
 
     pause_game = joy_button_pressed(BUTTON_START);
@@ -390,8 +380,10 @@ void init_game() {
 
     BMP_init(0, BG_B, PAL1, 0);
     BMP_clear();
-    BMP_setBufferCopy(0);
+    //BMP_setBufferCopy(1);
+    
     BMP_flip(0);
+
     init_2d_buffers();
 
     init_portal_renderer();
@@ -429,11 +421,11 @@ game_mode run_game() {
         return MAIN_MENU;
     }
     */
-   if(debug_draw) {
-        BMP_setBufferCopy(1);
-   } else {
-       BMP_setBufferCopy(0);
-   }
+   //if(debug_draw) {
+   //     BMP_setBufferCopy(1);
+   //} else {
+   //    BMP_setBufferCopy(0);
+   //}
    switch(render_mode) {
         case GAME_WIREFRAME:
         case GAME_SOLID:
@@ -446,7 +438,7 @@ game_mode run_game() {
 }
 
 
-void cleanup_game() {
+void cleanup_game() { 
     BMP_end();
     cleanup_span_buffer();
     MEM_free(sector_jump_positions);

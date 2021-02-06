@@ -1,4 +1,5 @@
 #include <genesis.h>
+#include "colors.h"
 #include "portal_map.h"
 #include "vertex.h"
 
@@ -10,25 +11,25 @@
 
 const s16 sectors[SECTOR_SIZE*NUM_SECTORS] = {
     // sector 0   wall_offset, portal_offset, num_walls, floor_height, ceil_height
-    0,  0, 6, -80, 216,
+    0,  0, 6, -80, 216, BLUE_BLACK_IDX, LIGHT_BLUE_IDX,
     // sector 1
-    7,  6, 6, -80, 216,
+    7,  6, 6, -80, 216, DARK_BLUE_IDX, LIGHT_BLUE_IDX,
     // sector 2
-    14, 12, 6, -80, 216,
+    14, 12, 6, -80, 216, DARK_BLUE_IDX, LIGHT_BLUE_IDX,
     // sector 3
-    21, 18, 6, -80, 216,
+    21, 18, 6, -80, 216, DARK_BLUE_IDX, LIGHT_BLUE_IDX,
     // sector 4
-    28, 24, 6, -80, 216,
+    28, 24, 6, -80, 216, DARK_BLUE_IDX, LIGHT_BLUE_IDX,
     // sector 5
-    35, 30, 6, -80, 216,
+    35, 30, 6, -80, 216, DARK_BLUE_IDX, LIGHT_BLUE_IDX,
     // sector 6
-    42, 36, 4, -80, 216,
+    42, 36, 4, -80, 216, DARK_BLUE_IDX, LIGHT_BLUE_IDX,
     // sector 7
-    47, 40, 4, -40, 156,
+    47, 40, 4, -40, 156, DARK_RED_IDX, LIGHT_RED_IDX,
     // sector 8
-    52, 44, 4, -40, 156,
+    52, 44, 4, -40, 156, DARK_RED_IDX, LIGHT_RED_IDX,
     // sector 9
-    57, 48, 4, -80, 216
+    57, 48, 4, -80, 216, DARK_BLUE_IDX, LIGHT_BLUE_IDX
 };
 
 
@@ -77,6 +78,61 @@ const s16 portals[NUM_WALLS] = {
     -1, -1, -1, 5,
     // sector 9 portals
     1, -1, 4, -1
+};
+
+const wall_col wall_colors[NUM_WALLS] = {
+    {.mid_col = DARK_GREEN_IDX},
+    {.mid_col = DARK_GREEN_IDX},
+    {.mid_col = DARK_GREEN_IDX},
+    {.mid_col = DARK_GREEN_IDX},
+    {.mid_col = DARK_GREEN_IDX},
+    {.mid_col = DARK_GREEN_IDX},
+    {.mid_col = DARK_GREEN_IDX},
+    {.mid_col = DARK_GREEN_IDX},
+    {.mid_col = DARK_GREEN_IDX},
+    {.mid_col = DARK_GREEN_IDX},
+    {.mid_col = DARK_GREEN_IDX},
+    {.mid_col = DARK_GREEN_IDX},
+    {.mid_col = DARK_GREEN_IDX},
+    {.mid_col = DARK_GREEN_IDX},
+    {.mid_col = DARK_GREEN_IDX},
+    {.mid_col = DARK_GREEN_IDX},
+    {.mid_col = DARK_GREEN_IDX},
+    {.mid_col = DARK_GREEN_IDX},
+    {.mid_col = DARK_GREEN_IDX},
+    {.mid_col = DARK_GREEN_IDX},
+    {.mid_col = DARK_GREEN_IDX},
+    {.mid_col = DARK_GREEN_IDX},
+    {.mid_col = DARK_GREEN_IDX},
+    {.mid_col = DARK_GREEN_IDX},
+    {.mid_col = DARK_GREEN_IDX},
+    {.mid_col = DARK_GREEN_IDX},
+    {.mid_col = DARK_GREEN_IDX},
+    {.mid_col = DARK_GREEN_IDX},
+    {.mid_col = DARK_GREEN_IDX},
+    {.mid_col = DARK_GREEN_IDX},
+    {.mid_col = DARK_GREEN_IDX},
+    {.mid_col = DARK_GREEN_IDX},
+    {.mid_col = DARK_GREEN_IDX},
+    {.mid_col = DARK_GREEN_IDX},
+    {.mid_col = DARK_GREEN_IDX},
+    {.mid_col = DARK_GREEN_IDX},
+    {.mid_col = DARK_GREEN_IDX},
+    {.mid_col = DARK_GREEN_IDX},
+    {.mid_col = DARK_GREEN_IDX},
+    {.mid_col = DARK_GREEN_IDX},
+    {.mid_col = DARK_GREEN_IDX},
+    {.mid_col = DARK_GREEN_IDX},
+    {.mid_col = DARK_GREEN_IDX},
+    {.mid_col = DARK_GREEN_IDX},
+    {.mid_col = DARK_GREEN_IDX},
+    {.mid_col = DARK_GREEN_IDX},
+    {.mid_col = DARK_GREEN_IDX},
+    {.mid_col = DARK_GREEN_IDX},
+    {.mid_col = DARK_GREEN_IDX},
+    {.mid_col = DARK_GREEN_IDX},
+    {.mid_col = DARK_GREEN_IDX},
+    {.mid_col = DARK_GREEN_IDX},
 };
 
 const u8 wall_normal_quadrants[NUM_WALLS] = {
@@ -196,5 +252,6 @@ const portal_map portal_level_1 = {
     .walls = walls,
     .portals = portals,
     .vertexes = vertexes,
-    .wall_norm_quadrants = wall_normal_quadrants
+    .wall_norm_quadrants = wall_normal_quadrants,
+    .wall_colors = wall_colors
 };

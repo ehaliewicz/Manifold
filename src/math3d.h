@@ -27,6 +27,7 @@ typedef enum {
 
 // translate and rotate map vertex according to player position
 Vect2D_f32 transform_map_vert(s16 x, s16 y);
+Vect2D_f32 transform_map_vert2(s16 x, s16 y);
 
 // clip pair of map vertexes against near z plane, modifies input pointers if necessary
 clip_result clip_map_vertex(Vect2D_f32* trans_v1, Vect2D_f32* trans_v2);

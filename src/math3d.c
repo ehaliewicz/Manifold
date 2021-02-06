@@ -2,41 +2,16 @@
 #include "math3d.h"
 #include "game.h"
 
-//Vect2D_s32
 Vect2D_f32 transform_map_vert(s16 x, s16 y) {
     
-    //s16 x_shifted = ((x<<4)/ZOOM); //>>ZOOM_SHIFT);
-    //s16 y_shifted = ((y<<4)/ZOOM); //ZOOM_SHIFT);
-    //s16 x_shifted = x;
-    //s16 y_shifted = y;
-    
-    //s16 tlx = x_shifted - playerXFrac4;
-    //s16 tly = y_shifted - playerYFrac4; // scaling factor of 64 (2^6)
-    
-    //fix32 rx = ((tlx)*(angleCosFrac12)) - ((tly)*(angleSinFrac12)); // 12.4 * 1.12 = 13.16? result I know it's 16 bits of fractional precision
-    //fix32 ry = ((tlx)*(angleSinFrac12)) + ((tly)*(angleCosFrac12));
-
-    //return transform_vert_native(x, y);
-    
-    //s16 tlx = fix32ToInt(intToFix32(x) - cur_player_pos.x);
-    //s16 tly = fix32ToInt(intToFix32(y) - cur_player_pos.y);
-
     fix32 tlx = intToFix32(x) - cur_player_pos.x;
     fix32 tly = intToFix32(y) - cur_player_pos.y;
-
-    // 10 fractional bits
-
-    //s32 rx = ((tlx)*(angleCos32)) - ((tly)*(angleSin32)); // 22 * 22.10 = 22.10
-    //s32 ry = ((tlx)*(angleSin32)) + ((tly)*(angleCos32));
     
     fix32 rx = fix32Mul((tlx),(angleSin32)) - fix32Mul((tly),(angleCos32));
     fix32 ry = fix32Mul((tlx),(angleCos32)) + fix32Mul((tly),(angleSin32));
 
     return (Vect2D_f32){.x = rx, .y = ry};
 }
-
-
-
 
 s16 project_and_adjust_x(Vect2D_f32 trans_map_vert) {
     fix32 rx = trans_map_vert.x;

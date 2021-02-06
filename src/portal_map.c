@@ -22,3 +22,10 @@ s16 sector_ceil_height(s16 sector_idx, portal_map* mp) {
     return mp->sectors[sector_idx*SECTOR_SIZE+4];
 }
 
+s16 sector_floor_color(s16 sector_idx, portal_map* mp) {
+    return mp->sectors[sector_idx*SECTOR_SIZE+5];
+}
+
+s16 sector_ceil_color(s16 sector_idx, portal_map* mp) {
+    return mp->sectors[sector_idx*SECTOR_SIZE+6];
+}
