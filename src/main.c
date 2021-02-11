@@ -7,7 +7,6 @@
 int main() {
 
 	set_game_mode(INTRO);
-
 	while(1) {        
 
 		update_joy();

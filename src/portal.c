@@ -169,7 +169,7 @@ void portal_rend(u16 src_sector, u32 cur_frame) {
             }
             
             if(backfacing) {
-                pre_transform_backfacing_walls++;
+                //pre_transform_backfacing_walls++;
                 continue;
             }
             
@@ -241,68 +241,52 @@ void portal_rend(u16 src_sector, u32 cur_frame) {
                 
             }
 
+
+            fix32 x1_ytop = project_and_adjust_y_fix(trans_v1, ceil_height);
+            fix32 x1_ybot = project_and_adjust_y_fix(trans_v1, floor_height);
+            fix32 x2_ytop = project_and_adjust_y_fix(trans_v2, ceil_height);
+            fix32 x2_ybot = project_and_adjust_y_fix(trans_v2, floor_height);
             
-            s16 x1_ytop = project_and_adjust_y(trans_v1, ceil_height);
-            s16 x1_ybot = project_and_adjust_y(trans_v1, floor_height);
-            s16 x2_ytop = project_and_adjust_y(trans_v2, ceil_height);
-            s16 x2_ybot = project_and_adjust_y(trans_v2, floor_height);
 
-
-
-
-            //break;
             // draw floor and ceiling
             // check if floor and ceiling are on-screen
             
 
+
             if (is_portal) {
                 // draw step down from ceiling
-
-
-                draw_line_to_buffer(x1, x1_ytop, x2, x2_ytop, window_min, window_max, raster_buffer_0);
-                
+                draw_fix_line_to_buffer(x1, x1_ytop, x2, x2_ytop, window_min, window_max, raster_buffer_0);
 
                 if(neighbor_ceil_height < ceil_height && neighbor_ceil_height > floor_height) {
                     // draw step from ceiling
-                    s16 nx1_ytop = project_and_adjust_y(trans_v1, neighbor_ceil_height);
-                    s16 nx2_ytop = project_and_adjust_y(trans_v2, neighbor_ceil_height);
-                    
+                    fix32 nx1_ytop = project_and_adjust_y_fix(trans_v1, neighbor_ceil_height);
+                    fix32 nx2_ytop = project_and_adjust_y_fix(trans_v2, neighbor_ceil_height);
+
                     // ceiling
                     draw_from_top_to_raster_span(raster_buffer_0, beginx, endx, ceil_color, 0);
-                    draw_line_to_buffer(x1, nx1_ytop, x2, nx2_ytop, window_min, window_max, raster_buffer_1);
+                    draw_fix_line_to_buffer(x1, nx1_ytop, x2, nx2_ytop, window_min, window_max, raster_buffer_1);
                     draw_between_raster_spans(raster_buffer_0, raster_buffer_1, beginx, endx, wall_color, 1, 0);
                 } else {
                     draw_from_top_to_raster_span(raster_buffer_0, beginx, endx, ceil_color, 1);
                 }
 
-                draw_line_to_buffer(x1, x1_ybot, x2, x2_ybot, window_min, window_max, raster_buffer_0);
+                draw_fix_line_to_buffer(x1, x1_ybot, x2, x2_ybot, window_min, window_max, raster_buffer_0);
 
                 if(neighbor_floor_height > floor_height && neighbor_floor_height < ceil_height) {
                     // draw step from floor
-                    s16 nx1_ybot = project_and_adjust_y(trans_v1, neighbor_floor_height);
-                    s16 nx2_ybot = project_and_adjust_y(trans_v2, neighbor_floor_height);
-                    
+                    fix32 nx1_ybot = project_and_adjust_y_fix(trans_v1, neighbor_floor_height);
+                    fix32 nx2_ybot = project_and_adjust_y_fix(trans_v2, neighbor_floor_height);
+
+
                     draw_from_raster_span_to_bot(raster_buffer_0, beginx, endx, floor_color, 0);
-                    draw_line_to_buffer(x1, nx1_ybot, x2, nx2_ybot, window_min, window_max, raster_buffer_1);
+                    draw_fix_line_to_buffer(x1, nx1_ybot, x2, nx2_ybot, window_min, window_max, raster_buffer_1);
                     draw_between_raster_spans(raster_buffer_1, raster_buffer_0, beginx, endx, wall_color, 0, 1);
                 } else {
                     draw_from_raster_span_to_bot(raster_buffer_0, beginx, endx, floor_color, 1);
                 }
 
             } else { 
-
-                // TODO: optimize into a single function
-                draw_line_to_buffer(x1, x1_ytop, x2, x2_ytop, window_min, window_max, raster_buffer_0);
-                draw_line_to_buffer(x1, x1_ybot, x2, x2_ybot, window_min, window_max, raster_buffer_1);
-                draw_between_raster_spans(raster_buffer_0, raster_buffer_1, beginx, endx, wall_color, 0, 0);
-                draw_from_top_to_raster_span(raster_buffer_0, beginx, endx, ceil_color, 0);
-                draw_from_raster_span_to_bot(raster_buffer_1, beginx, endx, floor_color, 0);
-
-                //draw_wall(x1,       0,      x1_ytop, x2,       0,      x2_ytop, window_min, window_max, ceil_color);
-                //draw_wall(x1, x1_ytop, x1_ybot, x2, x2_ytop, x2_ybot, window_min, window_max, wall_color);
-                //draw_wall(x1, x1_ybot, BMP_HEIGHT-1, x2, x2_ybot, BMP_HEIGHT-1, window_min, window_max, floor_color);
-
-
+                draw_wall(x1, x1_ytop, x1_ybot, x2, x2_ytop, x2_ybot, window_min, window_max, ceil_color, wall_color, floor_color);
             }
             
         }

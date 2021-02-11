@@ -36,6 +36,8 @@ clip_result clip_map_vertex(Vect2D_f32* trans_v1, Vect2D_f32* trans_v2);
 s16 project_and_adjust_x(Vect2D_f32 trans_map_vert);
 s16 project_and_adjust_y(Vect2D_f32 trans_map_vert, s16 y);
 
+fix32 project_and_adjust_y_fix(Vect2D_f32 trans_map_vert, s16 y);
+
 int is_behind_near_plane(Vect2D_f32 transformed_map_vert);
 
 

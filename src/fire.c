@@ -369,7 +369,7 @@ void init_fire() {
 
     
 
-	BMP_init(0, BG_A, PAL1, 0);
+	BMP_init(0, BG_A, PAL1, 0, 0);
 	SPR_init();
 
 	fire_spr = SPR_addSpriteExSafe(&fire_fixup,       256-32, 183, TILE_ATTR(1, 1, 0, 0), 0, (SPR_FLAG_FAST_AUTO_VISIBILITY | SPR_FLAG_AUTO_SPRITE_ALLOC));
@@ -413,7 +413,7 @@ game_mode run_fire() {
         BMP_waitWhileFlipRequestPending();
 
         spread_and_draw_fire_byte();
-        BMP_flipPartial(1, 12);
+        BMP_flipPartial(1, 12, 0);
         copy_fire_buffer_portion();
     }
 
@@ -446,7 +446,7 @@ game_mode run_fire() {
     if(fire_frame == 290) {
         fire_running = 0;
         BMP_clear();
-        BMP_flipPartial(0, 12);
+        BMP_flipPartial(0, 12, 0);
     } else if (fire_frame == 291) {
         return MAIN_MENU;
     }
@@ -458,6 +458,7 @@ void cleanup_fire() {
     SPR_releaseSprite(fire_spr);
     SPR_releaseSprite(spr2);
     SPR_releaseSprite(spr3);
+    SPR_clear();
     SPR_end();
     MEM_free(lookup_table_base);
     BMP_end();

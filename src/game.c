@@ -93,7 +93,10 @@ const fix32 move_speed = 24;
 
 int cur_frame;
 draw_mode render_mode;
-int debug_draw = 0;
+int debug_draw;
+int subpixel;
+int bob_idx;
+
 
 //u8 column_buffer[W];
 //u8 columns_remaining;
@@ -112,26 +115,181 @@ void draw_wall(u16 v1_idx, u16 v2_idx, s16 ceil_height, s16 floor_height) {
 }
 */
 
+// 00 -> draw 0, flip 1
+// 01 -> draw 0, flip 1
+
+
+
+void showFPS(u16 float_display)
+{
+    char str[16];
+    const u16 y = 5;
+
+    if (float_display)
+    {
+        fix32ToStr(SYS_getFPSAsFloat(), str, 1);
+        VDP_clearTextBG(BG_A, 2, y, 5);
+    }
+    else
+    {
+        uintToStr(SYS_getFPS(), str, 1);
+        VDP_clearTextBG(BG_A, 2, y, 2);
+    }
+
+    // display FPS
+    VDP_drawTextBG(BG_A, str, 1, y);
+}
+
+
+
+volatile u32 vram_copy_dst;
+volatile u8* vram_copy_src;
+
+vu8 vint_flipping;
+vu8 vint_flip_requested;
+
+volatile u32 in_use_vram_copy_dst;
+volatile u8* in_use_vram_copy_src;
+
+#define FULL_BYTES (128*160)
+#define FULL_WORDS (FULL_BYTES/2)
+#define HALF_WORDS (FULL_WORDS/2)
+#define HALF_BYTES (FULL_BYTES/2)
+#define QUARTER_WORDS (HALF_WORDS/2)
+#define QUARTER_BYTES (HALF_BYTES/2)
+
+
+void do_vint_flip() {
+    
+    if(vint_flipping == 1) {
+
+        
+
+        // not finished
+        // complete second half here
+
+        // second half for framebuffer 0
+        // first half for framebuffer 1
+
+    #ifdef FAST_DMA
+        DMA_doDma(DMA_VRAM, 
+            in_use_vram_copy_src, 
+            in_use_vram_copy_dst,
+            HALF_WORDS, 4);
+    #else 
+        if(in_use_vram_copy_src == bmp_buffer_0) {
+            DMA_doDma(DMA_VRAM, 
+                in_use_vram_copy_src+QUARTER_BYTES, 
+                in_use_vram_copy_dst+HALF_BYTES,
+                QUARTER_WORDS, 4);
+            DMA_doDma(DMA_VRAM, 
+                in_use_vram_copy_src+HALF_BYTES+QUARTER_BYTES, 
+                in_use_vram_copy_dst+2+HALF_BYTES,
+                QUARTER_WORDS, 4);
+
+        } else {
+            DMA_doDma(DMA_VRAM, 
+                in_use_vram_copy_src, 
+                in_use_vram_copy_dst,
+                QUARTER_WORDS, 4);
+            DMA_doDma(DMA_VRAM,
+                in_use_vram_copy_src+HALF_BYTES,
+                in_use_vram_copy_dst+2,
+                QUARTER_WORDS, 4);
+        }
+    #endif
+
+        u16 vscr;
+        if(vram_copy_src == bmp_buffer_1) {
+            vscr = (BMP_PLANHEIGHT * 8) / 2;
+        } else {
+            vscr = 0;
+        }
+        VDP_setVerticalScroll(BG_B, vscr);
+
+        vint_flipping = 0;
+    } else if(vint_flip_requested) {
+        vint_flipping = 1;
+        vint_flip_requested = 0;
+        in_use_vram_copy_dst = vram_copy_dst;
+        in_use_vram_copy_src = vram_copy_src;
+
+     #ifdef FAST_DMA
+        
+        DMA_doDma(DMA_VRAM,
+			  in_use_vram_copy_src+HALF_BYTES,
+			  in_use_vram_copy_dst+2,
+			  HALF_WORDS, 4);
+    #else
+        // first half for framebuffer 1
+        // second half for framebuffer 0
+        if(in_use_vram_copy_src == bmp_buffer_0) {
+            DMA_doDma(DMA_VRAM, 
+                in_use_vram_copy_src, 
+                in_use_vram_copy_dst,
+                QUARTER_WORDS, 4);
+            DMA_doDma(DMA_VRAM,
+                in_use_vram_copy_src+HALF_BYTES,
+                in_use_vram_copy_dst+2,
+                QUARTER_WORDS, 4);
+        } else { 
+            DMA_doDma(DMA_VRAM, 
+                in_use_vram_copy_src+QUARTER_BYTES, 
+                in_use_vram_copy_dst+HALF_BYTES,
+                QUARTER_WORDS, 4);
+            DMA_doDma(DMA_VRAM, 
+                in_use_vram_copy_src+HALF_BYTES+QUARTER_BYTES, 
+                in_use_vram_copy_dst+2+HALF_BYTES,
+                QUARTER_WORDS, 4);
+        }
+    #endif
+    }
+
+
+}
+
+
+
+#define FB0MIDDLEINDEX (BMP_BASETILEINDEX + (BMP_CELLWIDTH/2 * BMP_CELLHEIGHT))
+#define FB0MIDDLE (FB0MIDDLEINDEX*32)
 
 void draw_3d_view(u32 cur_frame) {
 
-    BMP_waitWhileFlipRequestPending();
-    //BMP_clear();
 
     clear_2d_buffers();
     clear_portal_cache();
+
     portal_rend(cur_player_pos.cur_sector, cur_frame);
 
+    showFPS(1);
+    if(subpixel) {
+        VDP_drawTextBG(BG_A, "4-bit subpixel raster", 1, 0);
+    } else {
+        VDP_drawTextBG(BG_A, "no subpixel raster  ", 1, 0);
+    }
 
-    BMP_showFPS(1);
 
-    int framebuffer_num_bytes = 128*144;
-    int framebuffer_num_words = framebuffer_num_bytes/2;
-    BMP_flip(1);
-    //DMA_queueDma(DMA_VRAM, bmp_buffer_write, BMP_FB0TILE, framebuffer_num_words/2, 4);
-    //VDP_waitVInt();
-    //DMA_queueDma(DMA_VRAM, bmp_buffer_write+(framebuffer_num_bytes/2), BMP_FB0TILE+2, framebuffer_num_words/2, 4);
-    
+
+    while(vint_flip_requested || vint_flipping) {
+        // vblank is behind one request
+        // wait until it has started, and then we can safely flip to the next framebuffer
+    }
+
+
+    if(bmp_buffer_write == bmp_buffer_0) {
+        vram_copy_src = bmp_buffer_0;
+        vram_copy_dst = BMP_FB0TILE;
+        bmp_buffer_write = bmp_buffer_1;
+        bmp_buffer_read = bmp_buffer_0;
+    } else {
+        vram_copy_src = bmp_buffer_1;
+        vram_copy_dst = FB0MIDDLE; //BMP_FB1TILE;
+        bmp_buffer_write = bmp_buffer_0;
+        bmp_buffer_read = bmp_buffer_0;
+    }
+    vint_flip_requested = 1;
+
+
     return;
 }
 
@@ -234,42 +392,14 @@ void handle_input() {
     pause_game = joy_button_pressed(BUTTON_START);
 
     u16 joy = JOY_readJoypad(JOY_1);
-    // state table
-    // AUTOMAP_MODE
-    // x -> goes back to game mode, y nothing, z nothing
-    // WIREFRAME
-    // x -> goes to automap mode, y goes to solid mode, z turns on debug
-    // SOLID
-    // x -> goes to automap mode, y goes to wireframe mode, z turns on debug
 
-    /*
-    const int render_mode_table[3][3] = {
-        // automap
-        {GAME_WIREFRAME, 0,              0},
-        // wireframe
-        {AUTOMAP,        GAME_SOLID,     1},
-        // solid
-        {AUTOMAP,        GAME_WIREFRAME, 1}
-    };
-
-
-    int* transition_table = render_mode_table[render_mode];
-
-    #define NEW_BTN(btn) ((joy & btn) && (last_joy & btn) == 0)
-
-    if(NEW_BTN(BUTTON_X)) {
-        render_mode = transition_table[0];
-    } else if (NEW_BTN(BUTTON_Y)) {
-        render_mode = transition_table[1];
-    } else if (NEW_BTN(BUTTON_Z)) {
-        if(transition_table[2]) {
-            debug_draw = !debug_draw;
-        }
-    }
-    */
 
 
     last_joy = joy;
+
+    if(joy & BUTTON_X) {
+        subpixel = !subpixel;
+    }
 
     /*
     if(joy & BUTTON_Y) {
@@ -326,7 +456,7 @@ void init_sector_jump_positions() {
         int avg_sect_x = 0; //erts[0].x + verts[1].x + 
         int avg_sect_y = 0;
         int num_walls = sector_num_walls(i, cur_portal_map);
-        int wall_offset = sector_wall_offset(i, cur_portal_map);
+        int wall_offset = sector_wall_offset(i, (portal_map*)cur_portal_map);
 
         for(int j = 0; j < num_walls; j++) {
             int vidx = cur_portal_map->walls[wall_offset+j];
@@ -340,10 +470,19 @@ void init_sector_jump_positions() {
     }
 }
 
+void do_vint_flip();
 
 void init_game() {
+    vint_flip_requested = 0;
+    vint_flipping = 0;
+
+    XGM_stopPlay();
+    SYS_setVIntCallback(do_vint_flip);
     render_mode = GAME_WIREFRAME;
-    cur_frame = 0;
+    bob_idx = 0;
+    subpixel = 1;
+
+    cur_frame = 1;
     debug_draw = 0;
     SYS_disableInts();
     //VDP_setScreenHeight224();
@@ -378,17 +517,13 @@ void init_game() {
 
     clear_menu();
 
-    BMP_init(0, BG_B, PAL1, 0);
-    BMP_clear();
-    //BMP_setBufferCopy(1);
-    
-    BMP_flip(0);
 
+    BMP_init(1, BG_B, PAL1, 0, 1);
+    
     init_2d_buffers();
 
     init_portal_renderer();
 
-    XGM_stopPlay();
     if(music_on) {
         XGM_startPlay(xgm_e1m4);
     }
@@ -402,7 +537,9 @@ void maybe_set_palette(u16* new_palette) {
 }
 
 
+
 game_mode run_game() {
+    
     
     angleCos32 = cosFix32(cur_player_pos.ang);
     angleSin32 = sinFix32(cur_player_pos.ang); 
@@ -433,6 +570,15 @@ game_mode run_game() {
             maybe_set_palette(threeDPalette);
    }
     cur_frame++;
+    const fix32 bobs[32] = {FIX32(0.2), FIX32(0.2), FIX32(0.2), FIX32(0.2), FIX32(0.2), FIX32(0.2), FIX32(0.2), FIX32(0.2), 
+                            FIX32(0.2), FIX32(0.2), FIX32(0.2), FIX32(0.2), FIX32(0.2), FIX32(0.2), FIX32(0.2), FIX32(0.2), 
+                            FIX32(-0.2), FIX32(-0.2), FIX32(-0.2), FIX32(-0.2), FIX32(-0.2), FIX32(-0.2), FIX32(-0.2), FIX32(-0.2),
+                            FIX32(-0.2), FIX32(-0.2), FIX32(-0.2), FIX32(-0.2), FIX32(-0.2), FIX32(-0.2), FIX32(-0.2), FIX32(-0.2)};
+    cur_player_pos.z += bobs[bob_idx>>1]*1;
+    bob_idx++;
+    if(bob_idx >= 64) {
+        bob_idx = 0;
+    }
 
     return SAME_MODE;
 }

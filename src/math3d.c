@@ -46,7 +46,6 @@ transformed_vert project_and_adjust_3d(Vect2D_f32 trans_map_vert, s16 floor, s16
     return ret;
 }
 
-
 s16 project_and_adjust_y(Vect2D_f32 trans_map_vert, s16 y) {    
     fix32 rz = trans_map_vert.y;
 
@@ -57,6 +56,20 @@ s16 project_and_adjust_y(Vect2D_f32 trans_map_vert, s16 y) {
 
     return (BMP_HEIGHT-1)-yproj;
 }
+
+fix32 project_and_adjust_y_fix(Vect2D_f32 trans_map_vert, s16 y) {    
+    fix32 rz = trans_map_vert.y>>FIX32_FRAC_BITS; // 22.10
+
+    fix32 playPosZFrac4 = cur_player_pos.z>>(10-4); //
+    // y = 10.8
+    fix32 const4Ry = (CONST4 * ((y<<4) - (cur_player_pos.z>>6))); // 28.4
+    fix32 const4RyDivZ = const4Ry / rz;  // 28.4
+
+    fix32 yproj = (CONST3<<4) + (const4RyDivZ);
+
+    return ((BMP_HEIGHT-1)<<4)-yproj;
+}
+
 
 //const s32 near_z = 160 << FIX32_FRAC_BITS;
 const s32 near_z = 20 << FIX32_FRAC_BITS; //40 << FIX32_FRAC_BITS;
