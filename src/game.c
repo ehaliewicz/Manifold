@@ -258,6 +258,7 @@ void draw_3d_view(u32 cur_frame) {
 
     clear_2d_buffers();
     clear_portal_cache();
+    //BMP_clear();
 
     portal_rend(cur_player_pos.cur_sector, cur_frame);
 

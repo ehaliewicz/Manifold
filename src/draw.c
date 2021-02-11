@@ -99,7 +99,7 @@ void draw_native_vertical_line(s16 y0, s16 y1, u8 col, u8* col_ptr);
 void draw_native_vertical_line_unrolled_inner(u16 jump_table_offset, u8 col, u8* col_ptr);
 //void draw_native_vertical_line_unrolled_inner_movep(u16 jump_table_offset, u32 col, u8* col_ptr);
 
-void vline_native_dither_movep(u8* buf, s16 dy, u32 col1_col2);
+void vline_native_dither_movep(u8* buf, u8 extra_pix, s16 jump_table_offset, u32 col1_col2);
 
 /*
 void draw_native_vertical_line_unrolled(s16 x, s16 y0, s16 y1, u8 col) { //u8* col_ptr) {
@@ -120,7 +120,34 @@ void draw_native_vertical_line_unrolled(s16 x, s16 y0, s16 y1, u8 col) {
     u8* col_ptr = bmp_buffer_write + column_table[x] + (y0<<1);
     u32 full_col = (col << 24) | (col << 16) | (col<<8) | col;
 
-    vline_native_dither_movep(col_ptr, (y1-y0), full_col);
+    u16 dy = (y1-y0);
+    u16 dy_movep = dy>>2;
+    
+    if(dy_movep > 0) {
+        u16 extra_pix = dy&0b11;
+        u16 jump_table_offset = (40-dy_movep)<<2;
+        
+        vline_native_dither_movep(col_ptr, extra_pix, jump_table_offset, full_col);
+
+    } else {
+        u16 jump_table_offset = (H-dy)<<2;
+        draw_native_vertical_line_unrolled_inner(jump_table_offset, col, col_ptr);
+    }
+    /*
+    if(extra_bits) {
+        col_ptr += (dy<<1);
+        col_ptr -= (extra_bits<<1);
+        switch(dy & 0b11) {
+            case 3:
+                col_ptr[4] = col;
+            case 2:
+                col_ptr[2] = col;
+            case 1:
+                col_ptr[0] = col;
+                break;
+        }
+    }
+    */
 }
 
 #define FLAT_COLOR

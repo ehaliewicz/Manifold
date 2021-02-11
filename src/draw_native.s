@@ -34,40 +34,33 @@ draw_native_vertical_line_lp:
 
 
 vline_native_dither_movep:
-	| vline_native_dither_movep(u8* buf, s16 dy, u32 col1_col2) 
+	| vline_native_dither_movep(u8* buf, u8 extra_pix, s16 jump_table_offset, u32 col1_col2) 
 	move.l 4(%sp), %a0		| load pointer
     moveq.l #0, %d0
-    move.w 10(%sp), %d0
-    move.l 12(%sp), %d1
+    move.l 16(%sp), %d1     | load color
 
-    andi.w #3, %d0
-    beq after_edge_loop
+    move.b 11(%sp), %d0
+    beq.b after_edge_loop
     subq.b #1, %d0
 edge_loop:
     move.b %d1, (%a0)
     addq.l #2, %a0
     ror.l #8, %d1
     dbeq %d0, edge_loop
-
 after_edge_loop:
-    
-    moveq.l #0, %d0
-    move.w 10(%sp), %d0
-    andi.w #65532, %d0
-    beq exit
 
-    lsr.l #2, %d0
-    neg.w %d0
-    add.w #36, %d0
-    lsl.w #2, %d0
+
+    move.w 14(%sp), %d0      | load jump table offset
+    | beq exit
+
     jmp dither_draw_table_movep(%pc, %d0.W)
 
 
 dither_draw_table_movep:
-    | movep.l %d1, 312(%a0)
-    | movep.l %d1, 304(%a0)
-    | movep.l %d1, 296(%a0)
-    | movep.l %d1, 288(%a0)
+    movep.l %d1, 312(%a0)
+    movep.l %d1, 304(%a0)
+    movep.l %d1, 296(%a0)
+    movep.l %d1, 288(%a0)
     movep.l %d1, 280(%a0)
     movep.l %d1, 272(%a0)
     movep.l %d1, 264(%a0)
@@ -104,6 +97,8 @@ dither_draw_table_movep:
     movep.l %d1, 16(%a0)
     movep.l %d1, 8(%a0)
     movep.l %d1, 0(%a0)
+
+    
 exit:
 	rts
     

@@ -4,6 +4,7 @@
         "portal.h": "c",
         "game_mode.h": "c",
         "joy_helper.h": "c",
-        "portal_small_map.h": "c"
+        "portal_small_map.h": "c",
+        "genesis.h": "c"
     }
 }
