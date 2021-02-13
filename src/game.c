@@ -249,9 +249,29 @@ void do_vint_flip() {
 }
 
 
-
 #define FB0MIDDLEINDEX (BMP_BASETILEINDEX + (BMP_CELLWIDTH/2 * BMP_CELLHEIGHT))
 #define FB0MIDDLE (FB0MIDDLEINDEX*32)
+
+void request_flip() {
+    while(vint_flip_requested || vint_flipping) {
+        // vblank is behind one request
+        // wait until it has started, and then we can safely flip to the next framebuffer
+    }
+
+
+    if(bmp_buffer_write == bmp_buffer_0) {
+        vram_copy_src = bmp_buffer_0;
+        vram_copy_dst = BMP_FB0TILE;
+        bmp_buffer_write = bmp_buffer_1;
+        bmp_buffer_read = bmp_buffer_0;
+    } else {
+        vram_copy_src = bmp_buffer_1;
+        vram_copy_dst = FB0MIDDLE; //BMP_FB1TILE;
+        bmp_buffer_write = bmp_buffer_0;
+        bmp_buffer_read = bmp_buffer_0;
+    }
+    vint_flip_requested = 1;
+}
 
 void draw_3d_view(u32 cur_frame) {
 
@@ -271,24 +291,7 @@ void draw_3d_view(u32 cur_frame) {
 
 
 
-    while(vint_flip_requested || vint_flipping) {
-        // vblank is behind one request
-        // wait until it has started, and then we can safely flip to the next framebuffer
-    }
-
-
-    if(bmp_buffer_write == bmp_buffer_0) {
-        vram_copy_src = bmp_buffer_0;
-        vram_copy_dst = BMP_FB0TILE;
-        bmp_buffer_write = bmp_buffer_1;
-        bmp_buffer_read = bmp_buffer_0;
-    } else {
-        vram_copy_src = bmp_buffer_1;
-        vram_copy_dst = FB0MIDDLE; //BMP_FB1TILE;
-        bmp_buffer_write = bmp_buffer_0;
-        bmp_buffer_read = bmp_buffer_0;
-    }
-    vint_flip_requested = 1;
+    request_flip();
 
 
     return;
@@ -477,7 +480,7 @@ void init_game() {
     vint_flip_requested = 0;
     vint_flipping = 0;
 
-    XGM_stopPlay();
+    //XGM_stopPlay();
     SYS_setVIntCallback(do_vint_flip);
     render_mode = GAME_WIREFRAME;
     bob_idx = 0;
@@ -526,7 +529,7 @@ void init_game() {
     init_portal_renderer();
 
     if(music_on) {
-        XGM_startPlay(xgm_e1m4);
+        //XGM_startPlay(xgm_e1m4);
     }
 }
 

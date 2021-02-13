@@ -356,7 +356,7 @@ static Sprite* spr2;
 static Sprite* spr3;
 
 void init_fire() {
-    XGM_startPlay(xgm_e2m2);
+    //XGM_startPlay(xgm_e2m2);
 
 	SYS_disableInts();
 	VDP_setBackgroundColor(3);

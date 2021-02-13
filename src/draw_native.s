@@ -1,44 +1,15 @@
-.globl draw_native_vertical_line, draw_native_vertical_line_unrolled_inner, vline_native_dither_movep
-
- .macro STACK_REF_ARG_LONG num
-    4+(4*num)(sp)
- .endm
-
- .macro STACK_REF_ARG_WORD num 
-    4+2+(4*num)(sp)
- .endm
-
- .macro STACK_REF_ARG_BYTE num 
-    4+3+(4*num)(sp)
- .endm
+.globl draw_native_vertical_line_unrolled_inner, vline_native_dither_movep
 
 
-| args y0, y1, col, col_ptr
 
-draw_native_vertical_line:
-    move.b  4+3(%sp), %d0    | d0 = y0
-    move.b  8+3(%sp), %d1    | d1 = y1
-    sub.b %d0, %d1           | d1 = y1-y0 = cnt
-
-    asl.w #7, %d0            | d0 = y0*2
-    move.l 16(%sp), %a0      | a0 = col_ptr
-    add.l %d0, %a0           | a0 = col_ptr + y0*2
-
-    move.b 12+3(%sp), %d0
-    subq #1, %d1
-draw_native_vertical_line_lp:
-    move.b %d0, (%a0)
-    add.l #128, %a0
-    dbeq %d1, draw_native_vertical_line_lp
-    rts
 
 
 vline_native_dither_movep:
 	| vline_native_dither_movep(u8* buf, u8 extra_pix, s16 jump_table_offset, u32 col1_col2) 
 	move.l 4(%sp), %a0		| load pointer
-    moveq.l #0, %d0
     move.l 16(%sp), %d1     | load color
 
+    moveq.l #0, %d0
     move.b 11(%sp), %d0
     beq.b after_edge_loop
     subq.b #1, %d0

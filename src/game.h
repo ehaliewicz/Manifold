@@ -44,5 +44,6 @@ void init_game();
 game_mode run_game();
 void cleanup_game();
 
+void request_flip();
 
 #endif

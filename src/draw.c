@@ -94,28 +94,12 @@ void draw_vertical_line(s16 y0, s16 y1, u8 col, u8* col_ptr) {
 
 
 
-void draw_native_vertical_line(s16 y0, s16 y1, u8 col, u8* col_ptr);
-//void draw_native_vertical_line_unrolled(s16 y0, s16 y1, u8 col, u8* col_ptr);
 void draw_native_vertical_line_unrolled_inner(u16 jump_table_offset, u8 col, u8* col_ptr);
-//void draw_native_vertical_line_unrolled_inner_movep(u16 jump_table_offset, u32 col, u8* col_ptr);
-
 void vline_native_dither_movep(u8* buf, u8 extra_pix, s16 jump_table_offset, u32 col1_col2);
 
-/*
-void draw_native_vertical_line_unrolled(s16 x, s16 y0, s16 y1, u8 col) { //u8* col_ptr) {
-
-    u8* col_ptr = bmp_buffer_write + column_table[x] + (y0<<1);
-
-    u8 dy = (y1-y0);
-    u16 jump_table_offset = (H-dy)<<2;
-    //KDebug_StartTimer();
-
-    draw_native_vertical_line_unrolled_inner(jump_table_offset, col, col_ptr);
-    //KDebug_StopTimer();
-}
-*/
 
 void draw_native_vertical_line_unrolled(s16 x, s16 y0, s16 y1, u8 col) {
+
 
     u8* col_ptr = bmp_buffer_write + column_table[x] + (y0<<1);
     u32 full_col = (col << 24) | (col << 16) | (col<<8) | col;
@@ -123,31 +107,82 @@ void draw_native_vertical_line_unrolled(s16 x, s16 y0, s16 y1, u8 col) {
     u16 dy = (y1-y0);
     u16 dy_movep = dy>>2;
     
-    if(dy_movep > 0) {
+    if(dy_movep > 0) { 
         u16 extra_pix = dy&0b11;
+        if(extra_pix) {
+            __asm volatile(
+                "subq #1, %2\t\n\
+                extra_pix_lp:\t\n\
+                move.b %0, (%1)\t\n\
+                addq.l #2, %1\t\n\
+                dbeq %2, extra_pix_lp"
+                : 
+                : "d" (col), "a" (col_ptr), "d" (extra_pix)
+                );
+        }
+
         u16 jump_table_offset = (40-dy_movep)<<2;
-        
-        vline_native_dither_movep(col_ptr, extra_pix, jump_table_offset, full_col);
+        __asm volatile(
+           "jmp mvp_tbl_%=(%%pc, %0)\t\n\
+           mvp_tbl_%=:\t\n\
+            movep.l %1, 312(%2) \t\n\
+            movep.l %1, 304(%2) \t\n\
+            movep.l %1, 296(%2) \t\n\
+            movep.l %1, 288(%2) \t\n\
+            movep.l %1, 280(%2) \t\n\
+            movep.l %1, 272(%2) \t\n\
+            movep.l %1, 264(%2) \t\n\
+            movep.l %1, 256(%2) \t\n\
+            movep.l %1, 248(%2) \t\n\
+            movep.l %1, 240(%2) \t\n\
+            movep.l %1, 232(%2) \t\n\
+            movep.l %1, 224(%2) \t\n\
+            movep.l %1, 216(%2) \t\n\
+            movep.l %1, 208(%2) \t\n\
+            movep.l %1, 200(%2) \t\n\
+            movep.l %1, 192(%2) \t\n\
+            movep.l %1, 184(%2) \t\n\
+            movep.l %1, 176(%2) \t\n\
+            movep.l %1, 168(%2) \t\n\
+            movep.l %1, 160(%2) \t\n\
+            movep.l %1, 152(%2) \t\n\
+            movep.l %1, 144(%2) \t\n\
+            movep.l %1, 136(%2) \t\n\
+            movep.l %1, 128(%2) \t\n\
+            movep.l %1, 120(%2) \t\n\
+            movep.l %1, 112(%2) \t\n\
+            movep.l %1, 104(%2) \t\n\
+            movep.l %1, 96(%2) \t\n\
+            movep.l %1, 88(%2) \t\n\
+            movep.l %1, 80(%2) \t\n\
+            movep.l %1, 72(%2) \t\n\
+            movep.l %1, 64(%2) \t\n\
+            movep.l %1, 56(%2) \t\n\
+            movep.l %1, 48(%2) \t\n\
+            movep.l %1, 40(%2) \t\n\
+            movep.l %1, 32(%2) \t\n\
+            movep.l %1, 24(%2) \t\n\
+            movep.l %1, 16(%2) \t\n\
+            movep.l %1, 8(%2) \t\n\
+            movep.l %1, 0(%2)"
+            : 
+            : "d"(jump_table_offset), "d" (full_col), "a" (col_ptr)
+        );
 
     } else {
-        u16 jump_table_offset = (H-dy)<<2;
-        draw_native_vertical_line_unrolled_inner(jump_table_offset, col, col_ptr);
+        __asm volatile(
+            "subq #1, %2\t\n\
+            small_col_lp_%=:\t\n\
+            move.b %0, (%1)\t\n\
+            addq.l #2, %1\t\n\
+            dbeq %2, small_col_lp_%="
+            : 
+            : "d" (col), "a" (col_ptr), "d" (dy)
+            );
+
+        
     }
-    /*
-    if(extra_bits) {
-        col_ptr += (dy<<1);
-        col_ptr -= (extra_bits<<1);
-        switch(dy & 0b11) {
-            case 3:
-                col_ptr[4] = col;
-            case 2:
-                col_ptr[2] = col;
-            case 1:
-                col_ptr[0] = col;
-                break;
-        }
-    }
-    */
+   
 }
 
 #define FLAT_COLOR
@@ -155,9 +190,9 @@ void draw_native_vertical_line_unrolled(s16 x, s16 y0, s16 y1, u8 col) {
 void flip() {
     /*
     if(JOY_readJoypad(JOY_1) & BUTTON_A) {
-        
-        BMP_flip(0, 1);
-        waitMs(200);
+        request_flip();
+        //BMP_flip(0, 1);
+        //waitMs(200);
         BMP_clear();
     }
     */
@@ -195,6 +230,7 @@ void draw_between_raster_spans(s16* top, s16* bot, u16 startx, u16 endx, u8 col,
         }
         
     }
+    flip();
 }
 
 
@@ -222,6 +258,7 @@ void draw_from_top_to_raster_span(s16* top, u16 startx, u16 endx, u8 col, u8 upd
             yclip_ptr += 2;
         }
     }
+    flip();
 }
 
 void draw_from_raster_span_to_bot(s16* bot, u16 startx, u16 endx, u8 col, u8 update_bot_clip) {
@@ -249,20 +286,20 @@ void draw_from_raster_span_to_bot(s16* bot, u16 startx, u16 endx, u8 col, u8 upd
             yclip_ptr += 2;
         }
     }
+    flip();
 }
 
 void draw_fix_line_to_buffer(s16 x1, fix32 x1_y, s16 x2, fix32 x2_y, 
                              u16 window_min, u16 window_max,
                              s16* out_buffer) {
     s16 dy_fix = x2_y - x1_y; // we have 4 subpixel bits
-
-    s16 dx = x2-x1;
+    s16 dx = (x2-x1)+1;
 
     fix32 dy_per_dx = (dy_fix<<12) / dx; // (dy_fix<<4) / dx; // 22.10
 
     fix32 y_fix = x1_y<<12; //4;   // 10 subpixel bits
     
-    s16 y_int;
+    //s16 y_int;
 
     s16 beginx = max(x1, window_min);
 
@@ -274,10 +311,37 @@ void draw_fix_line_to_buffer(s16 x1, fix32 x1_y, s16 x2, fix32 x2_y,
     s16* col_ptr = &out_buffer[beginx];
 
     s16 endx = min(window_max, x2);
-    for(s16 x = beginx; x <= endx; x++) {
-        y_int = y_fix >> 16;
-        *col_ptr++ = y_int;
-        y_fix += dy_per_dx;
+    s16 loop_dx = (endx+1)-beginx;
+
+
+    if(dy_per_dx >= 0) {
+        __asm volatile(
+            "  subq #1, %0\t\n\
+                add.w %1, %2\t\n\
+                swap %1\t\n\
+                swap %2\t\n\
+            addx_fast_%=:\t\n\
+                move.w %2, (%3)+\t\n\
+                addx.l %1, %2\t\n\
+                dbeq %0,  addx_fast_%="
+            :
+            : "d" (loop_dx), "d" (dy_per_dx), "d" (y_fix), "a" (col_ptr)
+        );
+    } else {
+
+        __asm volatile(
+        "  subq #1, %0\t\n\
+            blah_%=:\t\n\
+            swap %2\t\n\
+            move.w %2, (%3)+\t\n\
+            swap %2\t\n\
+            add.l %1, %2\t\n\
+            dbeq %0,  blah_%="
+            :
+            : "d" (loop_dx), "d" (dy_per_dx), "d" (y_fix), "a" (col_ptr)
+        );
+        
+
     }
 }
 
