@@ -120,7 +120,7 @@ class Map():
         
 
         # we can have up to 65536 vertexes
-        res += "static const u16 wall_vertexes[{}] =".format(num_walls+num_sectors) + "{\n"
+        res += "static const u16 walls[{}] =".format(num_walls+num_sectors) + "{\n"
         for sect in self.sectors:
             prev_v2 = None
             first_v1 = sect.walls[0].v1
@@ -137,7 +137,7 @@ class Map():
 
         res += "};\n"
 
-        res += "static const s16 walls[{}] =".format(num_walls*NUM_WALL_ATTRIBUTES) + "{\n"
+        res += "static const s16 portals[{}] =".format(num_walls) + "{\n"
         for sect in self.sectors:
             res += "    "
             for wall in sect.walls:
@@ -147,6 +147,16 @@ class Map():
         res += "};\n\n"
 
 
+        res += "static const wall_col wall_colors[{}] =".format(num_walls) + "{\n"
+        for sect in self.sectors:
+            for wall in sect.walls:
+                if wall.adj_sector_idx == -1:
+                    res += "    {" + ".mid_col = {}".format(wall.mid_color) + "},\n"
+                else:
+                    res += "    {" + ".upper_col = {}, lower_col = {}".format(wall.up_color, wall.low_color) + "},\n"
+                    
+        res += "};\n\n"
+                    
         res += "static const vertex vertexes[{}] =".format(num_vertexes) + "{\n"
         for vert in self.vertexes:
             res += "    VERT({},{}),\n".format(vert.x, vert.y)
@@ -187,7 +197,10 @@ class Wall():
         self.sector_idx = sector_idx
         self.adj_sector_idx = adj_sector_idx
         #self.index = index
-
+        self.up_color = 1
+        self.low_color = 1
+        self.mid_color = 1
+        
     def __str__(self):
         return "v1: {} v2: {}".format(self.v1.index, self.v2.index)
 
@@ -435,7 +448,8 @@ def draw_line_mode():
         #vert_opts = ["{}".format(idx) for idx in range(len(cur_state.map_data.vertexes))]
         vert_opts = ["{}".format(idx) for idx in range(len(cur_state.map_data.vertexes))]
                      
-
+        color_opts = ["{}".format(idx) for idx in range(16)]
+        
         v1_changed,new_v1_idx = imgui.core.combo("v1", cur_wall.v1.index, vert_opts)
         
         v2_changed,new_v2_idx = imgui.core.combo("v2", cur_wall.v2.index, vert_opts)
@@ -443,6 +457,10 @@ def draw_line_mode():
         sector_opts = ["-1"] + ["{}".format(idx) for idx in range(len(cur_state.map_data.sectors))]
         
         adj_changed,new_adj_sector_idx = imgui.core.combo("adj sector", cur_wall.adj_sector_idx+1, sector_opts)
+
+        up_col_changed, new_up_col = imgui.core.combo("upper color", cur_wall.up_color, color_opts)
+        mid_col_changed, new_mid_col = imgui.core.combo("middle color", cur_wall.mid_color, color_opts)
+        low_col_changed, new_low_col = imgui.core.combo("lower color", cur_wall.low_color, color_opts)
         
         if v1_changed:
             cur_wall.v1 = cur_state.map_data.vertexes[new_v1_idx]
@@ -451,8 +469,14 @@ def draw_line_mode():
             cur_wall.v2 = cur_state.map_data.vertexes[new_v2_idx]
             
         if adj_changed:
-            print("new adj sector {}".format(new_adj_sector_idx))
             cur_wall.adj_sector_idx = new_adj_sector_idx-1
+
+        if up_col_changed:
+            cur_wall.up_color = new_up_col
+        if mid_col_changed:
+            cur_wall.mid_color = new_mid_col
+        if low_col_changed:
+            cur_wall.low_color = new_low_col
             
         
     def set_cur_wall(idx):
@@ -626,15 +650,13 @@ def interpret_click(x,y,button):
 
         
     if not cur_state.cur_sector:
-        print("no cur sector")
         return
 
-    print("continuing")
+
     # add a new vertex and line to the sector
     
 
     if clicked_vertex is None:
-        print("adding new vertex")
         ix -= ix%10
         iy -= iy%10
         cur_state.cur_vertex = add_new_vertex(ix, iy)
@@ -703,8 +725,7 @@ def on_frame():
     if map_hovered and not tools_hovered and mouse_button_released:
         x,y = imgui.get_mouse_pos()
         interpret_click(x,y, LEFT_BUTTON if left_button_released else RIGHT_BUTTON)
-        print("Click at pos {},{}".format(x,y))
-    
+            
     
     imgui.end()
 
