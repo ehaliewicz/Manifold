@@ -167,9 +167,12 @@ class Map():
         for sect in self.sectors:
             for wall in sect.walls:
                 if wall.adj_sector_idx == -1:
-                    res += "    {" + ".mid_col = {}".format(wall.mid_color) + "},\n"
+                    mcol = "0x{}{}".format(wall.mid_color, wall.mid_color)
+                    ucol = "0x{}{}".format(wall.up_color, wall.up_color)
+                    dcol = "0x{}{}".format(wall.low_color, wall.low_color)
+                    res += "    {" + ".mid_col = {}".format(mcol) + "},\n"
                 else:
-                    res += "    {" + ".upper_col = {}, .lower_col = {}".format(wall.up_color, wall.low_color) + "},\n"
+                    res += "    {" + ".upper_col = {}, .lower_col = {}".format(ucol, dcol) + "},\n"
                     
         res += "};\n\n"
 
