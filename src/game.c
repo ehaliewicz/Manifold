@@ -275,7 +275,7 @@ void request_flip() {
 
 void draw_3d_view(u32 cur_frame) {
 
-    BMP_clear();
+    //BMP_clear();
     clear_2d_buffers();
     clear_portal_cache();
 
@@ -497,7 +497,8 @@ void init_game() {
 
 
     //set_portal_map(&portal_level_1);
-    set_portal_map(&editor_test_map);
+    //set_portal_map(&editor_test_map);
+    set_portal_map(&editor_test_map_v2);
 
 
 
