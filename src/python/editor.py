@@ -101,16 +101,25 @@ class Map():
         num_vertexes = len(self.vertexes)
         num_walls = sum(len(sect.walls) for sect in self.sectors)
 
-        NUM_SECTOR_ATTRIBUTES = 5
+        NUM_SECTOR_ATTRIBUTES = 7
+
+        res = """#include <genesis.h>
+#include "colors.h"
+#include "portal_map.h"
+#include "vertex.h"
+
+"""
         
-        res = "static const s16 sectors[{}] =".format(num_sectors * NUM_SECTOR_ATTRIBUTES) + "{\n"
+                
+        res += "static const s16 sectors[{}] =".format(num_sectors * NUM_SECTOR_ATTRIBUTES) + "{\n"
 
         wall_offset = 0
         portal_offset = 0
         for sect in self.sectors:
             sect_num_walls = len(sect.walls)
-            res += "    {}, {}, {}, {}, {},\n".format(wall_offset, portal_offset, sect_num_walls,
-                                                      sect.floor_height, sect.ceil_height)
+            res += "    {}, {}, {}, {}, {}, {}, {}\n".format(wall_offset, portal_offset, sect_num_walls,
+                                                             sect.floor_height, sect.ceil_height,
+                                                             sect.floor_color, sect.ceil_color)
             
             wall_offset += sect_num_walls+1
             portal_offset += sect_num_walls
@@ -156,14 +165,16 @@ class Map():
                     res += "    {" + ".upper_col = {}, lower_col = {}".format(wall.up_color, wall.low_color) + "},\n"
                     
         res += "};\n\n"
-                    
+
+        res += "VERT(x1,y1) { .x = (x1 * 6), .y = (y1 * 6) } \n"
+        
         res += "static const vertex vertexes[{}] =".format(num_vertexes) + "{\n"
         for vert in self.vertexes:
             res += "    VERT({},{}),\n".format(vert.x, vert.y)
         res += "};\n"
         
         
-        res += "const portal_map {} ".format(self.name) + "{\n"
+        res += "const portal_map {} ".format(self.name.replace(" ", "_")) + "{\n"
         res += "    .num_sectors = {},\n".format(num_sectors)
         res += "    .num_walls = {},\n".format(num_walls)
         res += "    .num_verts = {},\n".format(num_vertexes)
@@ -171,6 +182,7 @@ class Map():
         res += "    .walls = walls,\n"
         res += "    .portals = portals,\n"
         res += "    .vertexes = vertexes,\n"
+        res += "    .wall_colors = wall_colors,\n"
         res += "    .wall_normal_quadrants = NULL\n"
         res += "};"
                 
@@ -178,12 +190,17 @@ class Map():
         return res
 
 class Sector():
-    def __init__(self, index):
-        self.floor_height = 0
-        self.ceil_height = 100
+    def __init__(self, index, walls=None, floor_height=0, ceil_height=100, floor_color=1, ceil_color=1):
+        self.floor_height = floor_height
+        self.ceil_height = ceil_height
+        self.floor_color = floor_color
+        self.ceil_color = ceil_color
+
+        if walls is not None:
+            self.walls = walls
+        else:
+            self.walls = []
         
-        self.walls = []
-        #self.wall_idxs = []
         self.index = index
 
     def __str__(self):
@@ -409,9 +426,11 @@ def draw_sector_mode():
         imgui.same_line()
         imgui.text("Sector {}".format(cur_sect.index))
 
-        input_int("Floor:   ", "##sector{}_floor".format(cur_sect.index), cur_sect.floor_height, lambda v: setattr(cur_sect, 'floor_height', v))
-        input_int("Ceiling: ", "##sector{}_ceil".format(cur_sect.index), cur_sect.ceil_height, lambda v: setattr(cur_sect, 'ceil_height', v))
-
+        input_int("Floor height:   ", "##sector{}_floor_height".format(cur_sect.index), cur_sect.floor_height, lambda v: setattr(cur_sect, 'floor_height', v))
+        input_int("Floor color:    ", "##sector{}_floor_color".format(cur_sect.index), cur_sect.floor_color, lambda v: setattr(cur_sect, 'floor_color', v))
+        
+        input_int("Ceiling height: ", "##sector{}_ceil".format(cur_sect.index), cur_sect.ceil_height, lambda v: setattr(cur_sect, 'ceil_height', v))
+        input_int("Ceiling color:  ", "##sector{}_ceil_color".format(cur_sect.index), cur_sect.ceil_color, lambda v: setattr(cur_sect, 'ceil_color', v))
 
     def set_cur_sector(idx):
         cur_state.cur_sector = cur_state.map_data.sectors[idx]
@@ -741,8 +760,22 @@ def load_map_from_file(f):
     old_state = pickle.load(f)
     #cur_state = old_state
     old_map = old_state.map_data
-    
+
+    new_sectors = [Sector(index=s.index, walls=s.walls,
+                          floor_height=s.floor_height, ceil_height=s.ceil_height)
+                   for s in old_map.sectors]
+
+    new_map = Map(name=old_map.name,
+                  sectors=new_sectors,
+                  vertexes=old_map.vertexes)                          
+
     cur_state = old_state
+    cur_state.map_data = new_map
+
+    cur_state.cur_sector = None
+    cur_state.cur_vertex = None
+    cur_state.cur_wall = None
+    
     #print("loaded old map with name {}".format(old_map.name))
     #cur_state.map_data = Map(sectors = old_map.sectors, vertexes = old_map.vertexes, name=old_map.name)
     #print("cur_state.map_data.name {}".format(cur_state.map_data.name))
