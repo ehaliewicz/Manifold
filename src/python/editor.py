@@ -117,7 +117,7 @@ class Map():
         portal_offset = 0
         for sect in self.sectors:
             sect_num_walls = len(sect.walls)
-            res += "    {}, {}, {}, {}, {}, {}, {}\n".format(wall_offset, portal_offset, sect_num_walls,
+            res += "    {}, {}, {}, {}, {}, {}, {},\n".format(wall_offset, portal_offset, sect_num_walls,
                                                              sect.floor_height, sect.ceil_height,
                                                              sect.floor_color, sect.ceil_color)
             
@@ -162,13 +162,13 @@ class Map():
                 if wall.adj_sector_idx == -1:
                     res += "    {" + ".mid_col = {}".format(wall.mid_color) + "},\n"
                 else:
-                    res += "    {" + ".upper_col = {}, lower_col = {}".format(wall.up_color, wall.low_color) + "},\n"
+                    res += "    {" + ".upper_col = {}, .lower_col = {}".format(wall.up_color, wall.low_color) + "},\n"
                     
         res += "};\n\n"
 
-        res += "VERT(x1,y1) { .x = (x1 * 6), .y = (y1 * 6) } \n"
+        res += "#define VERT(x1,y1) { .x = (x1 * 6), .y = (y1 * 6) } \n"
         
-        res += "static const vertex vertexes[{}] =".format(num_vertexes) + "{\n"
+        res += "static const vertex vertexes[{}] =".format(num_vertexes) + " = {\n"
         for vert in self.vertexes:
             res += "    VERT({},{}),\n".format(vert.x, vert.y)
         res += "};\n"
@@ -183,7 +183,7 @@ class Map():
         res += "    .portals = portals,\n"
         res += "    .vertexes = vertexes,\n"
         res += "    .wall_colors = wall_colors,\n"
-        res += "    .wall_normal_quadrants = NULL\n"
+        res += "    .wall_norm_quadrants = NULL\n"
         res += "};"
                 
         
