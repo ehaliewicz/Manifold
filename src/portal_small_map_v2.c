@@ -81,56 +81,66 @@ const s16 portals[NUM_WALLS] = {
 };
 
 const wall_col wall_colors[NUM_WALLS] = {
+    // sector 0 colors
     {.mid_col = DARK_GREEN_IDX},
     {.mid_col = DARK_GREEN_IDX},
     {.mid_col = MED_GREEN_IDX},
     {.mid_col = DARK_GREEN_IDX},
     {.mid_col = MED_GREEN_IDX},
     {.mid_col = DARK_GREEN_IDX},
+    // sector 1 colors
     {.mid_col = MED_GREEN_IDX},
-    {.mid_col = DARK_GREEN_IDX},
-    {.mid_col = MED_GREEN_IDX},
-    {.mid_col = DARK_GREEN_IDX},
-    {.mid_col = MED_GREEN_IDX},
-    {.mid_col = DARK_GREEN_IDX},
-    {.mid_col = MED_GREEN_IDX},
-    {.mid_col = MED_GREEN_IDX},
-    {.mid_col = MED_GREEN_IDX},
-    {.mid_col = MED_GREEN_IDX},
-    {.mid_col = MED_GREEN_IDX},
-    {.mid_col = MED_GREEN_IDX},
-    {.mid_col = MED_GREEN_IDX},
-    {.mid_col = DARK_GREEN_IDX},
-    {.mid_col = DARK_GREEN_IDX},
-    {.mid_col = DARK_GREEN_IDX},
-    {.mid_col = DARK_GREEN_IDX},
-    {.mid_col = DARK_GREEN_IDX},
     {.mid_col = DARK_GREEN_IDX},
     {.mid_col = DARK_GREEN_IDX},
     {.mid_col = MED_GREEN_IDX},
     {.mid_col = DARK_GREEN_IDX},
+    {.mid_col = MED_GREEN_IDX},
+    // sector 2 colors
+    {.mid_col = MED_GREEN_IDX},
+    {.mid_col = MED_GREEN_IDX},
+    {.mid_col = MED_GREEN_IDX},
+    {.upper_col = MED_RED_IDX, .lower_col = MED_RED_IDX},
+    {.mid_col = MED_GREEN_IDX},
+    {.mid_col = MED_GREEN_IDX},
+    // sector 3 colors
     {.mid_col = MED_GREEN_IDX},
     {.mid_col = DARK_GREEN_IDX},
     {.mid_col = DARK_GREEN_IDX},
     {.mid_col = DARK_GREEN_IDX},
     {.mid_col = DARK_GREEN_IDX},
     {.mid_col = DARK_GREEN_IDX},
+    // sector 4 colors
     {.mid_col = DARK_GREEN_IDX},
     {.mid_col = DARK_GREEN_IDX},
+    {.mid_col = MED_GREEN_IDX},
+    {.mid_col = DARK_GREEN_IDX},
+    {.mid_col = MED_GREEN_IDX},
+    {.mid_col = DARK_GREEN_IDX},
+    // sector 5 colors
+    {.mid_col = DARK_GREEN_IDX},
+    {.mid_col = DARK_GREEN_IDX},
+    {.mid_col = DARK_GREEN_IDX},
+    {.upper_col = DARK_BROWN_IDX, .lower_col = DARK_BROWN_IDX},
+    {.mid_col = DARK_GREEN_IDX},
+    {.mid_col = DARK_GREEN_IDX},
+    // sector 6 colors
     {.mid_col = LIGHT_GREEN_IDX},
     {.mid_col = LIGHT_GREEN_IDX},
     {.mid_col = LIGHT_GREEN_IDX},
     {.mid_col = LIGHT_GREEN_IDX},
+    // sector 7 colors
     {.mid_col = LIGHT_GREEN_IDX},
     {.mid_col = LIGHT_GREEN_IDX},
     {.mid_col = DARK_GREEN_IDX},
+    {.mid_col = MED_GREEN_IDX},
+    // sector 8 colors
     {.mid_col = DARK_GREEN_IDX},
     {.mid_col = DARK_GREEN_IDX},
     {.mid_col = DARK_GREEN_IDX},
     {.mid_col = DARK_GREEN_IDX},
+    // sector 9 colors
     {.mid_col = DARK_GREEN_IDX},
-    {.mid_col = DARK_GREEN_IDX},
-    {.mid_col = DARK_GREEN_IDX},
+    {.mid_col = MED_GREEN_IDX},
     {.mid_col = DARK_GREEN_IDX},
     {.mid_col = DARK_GREEN_IDX},
 };
@@ -213,8 +223,8 @@ const u8 wall_normal_quadrants[NUM_WALLS] = {
 #define VERT(y1,x1) { .x = (x1 * 30), .y = ((110-y1)*40) }
 
 const vertex vertexes[NUM_VERTS] = {
-    VERT(14,46),			      
-    VERT(13,90),
+    VERT(14,46),  // y = 3840      
+    VERT(13,90),  // y = 3880
     VERT(29,110),
     VERT(46,96),
     VERT(46,48),

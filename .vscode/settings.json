@@ -4,9 +4,10 @@
         "portal.h": "c",
         "game_mode.h": "c",
         "joy_helper.h": "c",
-        "portal_small_map.h": "c",
         "genesis.h": "c",
         "limits": "c",
-        "kdebug.h": "c"
+        "kdebug.h": "c",
+        "math3d.h": "c",
+        "portal_maps.h": "c"
     }
 }

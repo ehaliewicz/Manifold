@@ -5,7 +5,6 @@
 #include "common.h"
 #include "game.h"
 #include "portal_map.h"
-#include "portal_small_map.h"
 #include "vertex.h"
 
 void init_portal_renderer();

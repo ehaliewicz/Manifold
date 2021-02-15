@@ -68,8 +68,8 @@ void init_2d_buffers() {
 
 void clear_2d_buffers() {
     for(int i = 0; i < W; i++) {
-        yclip[i*2] = 8;
-        yclip[i*2+1] = 151; //(H-8)-1;
+        yclip[i*2] = 0;
+        yclip[i*2+1] = 159-16; //(H-8)-1;
     }
 }
 
@@ -188,14 +188,11 @@ void draw_native_vertical_line_unrolled(s16 x, s16 y0, s16 y1, u8 col) {
 #define FLAT_COLOR
 
 void flip() {
-    /*
-    if(JOY_readJoypad(JOY_1) & BUTTON_A) {
-        request_flip();
-        //BMP_flip(0, 1);
-        //waitMs(200);
-        BMP_clear();
-    }
-    */
+    //if(JOY_readJoypad(JOY_1) & BUTTON_A) {
+    //    request_flip();
+    //    waitMs(500);
+    //    BMP_clear();
+    //}
 }
 
 void draw_between_raster_spans(s16* top, s16* bot, u16 startx, u16 endx, u8 col,

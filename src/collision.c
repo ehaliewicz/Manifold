@@ -92,9 +92,11 @@ collision_result check_for_collision(fix32 curx, fix32 cury, fix32 newx, fix32 n
         int new_side_backfacing = on_backfacing_side_of_wall(newx, cury, wall_idx);
         
         if(new_side_backfacing) {
+            
             if(neighbor_sector != -1) {
                 new_sector = neighbor_sector;
             } else {
+                
                 got_x_collision = 1;
             }
             break;

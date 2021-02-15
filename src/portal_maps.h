@@ -4,5 +4,6 @@
 #include "portal_map.h"
 
 const portal_map portal_level_1;
+const portal_map editor_test_map;
 
 #endif

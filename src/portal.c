@@ -6,7 +6,7 @@
 #include "level.h"
 #include "math3D.h"
 #include "portal_map.h"
-#include "portal_small_map.h"
+#include "portal_maps.h"
 #include "vertex.h"
 
 
@@ -61,7 +61,8 @@ typedef enum {
 
 
 void portal_rend(u16 src_sector, u32 cur_frame) {
-    static const portal_map* map = &portal_level_1;
+    portal_map* map = cur_portal_map;
+    //static const portal_map* map = &portal_level_1;
 
 
     render_sector_item queue_item = { .x1 = 0, .x2 = W-1, .sector = src_sector };
@@ -85,6 +86,7 @@ void portal_rend(u16 src_sector, u32 cur_frame) {
         }
 
         sector_visited_cache[sector] = cur_frame;
+        
 
         u16 window_min = cur_item.x1;
         u16 window_max = cur_item.x2;
@@ -136,8 +138,10 @@ void portal_rend(u16 src_sector, u32 cur_frame) {
             prev_v2_idx = v2_idx;
             
             u8 wall_color = map->wall_colors[portal_idx].mid_col;
-            normal_quadrant normal_dir = map->wall_norm_quadrants[portal_idx];
             
+            normal_quadrant normal_dir = map->wall_norm_quadrants[portal_idx];
+
+            /*
             u8 backfacing;
 
             switch(normal_dir) {
@@ -173,6 +177,8 @@ void portal_rend(u16 src_sector, u32 cur_frame) {
                 continue;
             }
             
+            */
+           
             last_frontfacing_wall = i;
             volatile Vect2D_f32 trans_v2 = transform_map_vert(v2.x, v2.y);
             prev_transformed_vert = trans_v2;
@@ -258,6 +264,7 @@ void portal_rend(u16 src_sector, u32 cur_frame) {
                 draw_fix_line_to_buffer(x1, x1_ytop, x2, x2_ytop, window_min, window_max, raster_buffer_0);
 
                 if(neighbor_ceil_height < ceil_height && neighbor_ceil_height > floor_height) {
+                    u8 upper_color = map->wall_colors[portal_idx].upper_col;
                     // draw step from ceiling
                     fix32 nx1_ytop = project_and_adjust_y_fix(trans_v1, neighbor_ceil_height);
                     fix32 nx2_ytop = project_and_adjust_y_fix(trans_v2, neighbor_ceil_height);
@@ -265,7 +272,7 @@ void portal_rend(u16 src_sector, u32 cur_frame) {
                     // ceiling
                     draw_from_top_to_raster_span(raster_buffer_0, beginx, endx, ceil_color, 0);
                     draw_fix_line_to_buffer(x1, nx1_ytop, x2, nx2_ytop, window_min, window_max, raster_buffer_1);
-                    draw_between_raster_spans(raster_buffer_0, raster_buffer_1, beginx, endx, wall_color, 1, 0);
+                    draw_between_raster_spans(raster_buffer_0, raster_buffer_1, beginx, endx, upper_color, 1, 0);
                 } else {
                     draw_from_top_to_raster_span(raster_buffer_0, beginx, endx, ceil_color, 1);
                 }
@@ -273,6 +280,7 @@ void portal_rend(u16 src_sector, u32 cur_frame) {
                 draw_fix_line_to_buffer(x1, x1_ybot, x2, x2_ybot, window_min, window_max, raster_buffer_0);
 
                 if(neighbor_floor_height > floor_height && neighbor_floor_height < ceil_height) {
+                    u8 lower_color = map->wall_colors[portal_idx].lower_col;
                     // draw step from floor
                     fix32 nx1_ybot = project_and_adjust_y_fix(trans_v1, neighbor_floor_height);
                     fix32 nx2_ybot = project_and_adjust_y_fix(trans_v2, neighbor_floor_height);
@@ -280,7 +288,7 @@ void portal_rend(u16 src_sector, u32 cur_frame) {
 
                     draw_from_raster_span_to_bot(raster_buffer_0, beginx, endx, floor_color, 0);
                     draw_fix_line_to_buffer(x1, nx1_ybot, x2, nx2_ybot, window_min, window_max, raster_buffer_1);
-                    draw_between_raster_spans(raster_buffer_1, raster_buffer_0, beginx, endx, wall_color, 0, 1);
+                    draw_between_raster_spans(raster_buffer_1, raster_buffer_0, beginx, endx, lower_color, 0, 1);
                 } else {
                     draw_from_raster_span_to_bot(raster_buffer_0, beginx, endx, floor_color, 1);
                 }
