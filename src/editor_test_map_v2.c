@@ -4,11 +4,11 @@
 #include "vertex.h"
 
 static const s16 sectors[35] ={
-    0, 0, 12, -80, 216, 1, 1
-    13, 12, 4, -40, 175, 1, 1
-    18, 16, 4, -40, 175, 1, 1
-    23, 20, 4, -40, 175, 1, 1
-    28, 24, 4, -40, 175, 1, 1
+    0, 0, 12, -80, 216, 1, 1,
+    13, 12, 4, -40, 175, 1, 1,
+    18, 16, 4, -40, 175, 1, 1,
+    23, 20, 4, -40, 175, 1, 1,
+    28, 24, 4, -40, 175, 1, 1,
 };
 
 static const u16 walls[33] ={
@@ -26,39 +26,70 @@ static const s16 portals[28] ={
     -1, -1, -1, 0, 
 };
 
-static const wall_col wall_colors[28] ={
-    {.mid_col = 1},
-    {.upper_col = 1, lower_col = 1},
-    {.mid_col = 1},
-    {.mid_col = 1},
-    {.upper_col = 1, lower_col = 1},
-    {.mid_col = 1},
-    {.mid_col = 1},
-    {.upper_col = 1, lower_col = 1},
-    {.mid_col = 1},
-    {.mid_col = 1},
-    {.upper_col = 1, lower_col = 1},
-    {.mid_col = 1},
-    {.mid_col = 1},
-    {.mid_col = 1},
-    {.mid_col = 1},
-    {.upper_col = 1, lower_col = 1},
-    {.mid_col = 1},
-    {.mid_col = 1},
-    {.mid_col = 1},
-    {.upper_col = 1, lower_col = 1},
-    {.mid_col = 1},
-    {.mid_col = 1},
-    {.mid_col = 1},
-    {.upper_col = 1, lower_col = 1},
-    {.mid_col = 1},
-    {.mid_col = 1},
-    {.mid_col = 1},
-    {.upper_col = 1, lower_col = 1},
+static const u8 wall_normal_quadrants[28] ={
+    FACING_LEFT,
+    FACING_LEFT,
+    FACING_LEFT,
+    FACING_UP,
+    FACING_UP,
+    FACING_UP,
+    FACING_RIGHT,
+    FACING_RIGHT,
+    FACING_RIGHT,
+    FACING_DOWN,
+    FACING_DOWN,
+    FACING_DOWN,
+    QUADRANT_0,
+    FACING_DOWN,
+    QUADRANT_1,
+    FACING_UP,
+    QUADRANT_3,
+    FACING_LEFT,
+    QUADRANT_0,
+    FACING_RIGHT,
+    QUADRANT_2,
+    FACING_UP,
+    QUADRANT_3,
+    FACING_DOWN,
+    QUADRANT_1,
+    FACING_RIGHT,
+    QUADRANT_2,
+    FACING_LEFT,
 };
 
-VERT(x1,y1) { .x = (x1 * 6), .y = (y1 * 6) } 
-static const vertex vertexes[22] ={
+static const wall_col wall_colors[28] ={
+    {.mid_col = 1},
+    {.upper_col = 1, .lower_col = 1},
+    {.mid_col = 1},
+    {.mid_col = 1},
+    {.upper_col = 1, .lower_col = 1},
+    {.mid_col = 1},
+    {.mid_col = 1},
+    {.upper_col = 1, .lower_col = 1},
+    {.mid_col = 1},
+    {.mid_col = 1},
+    {.upper_col = 1, .lower_col = 1},
+    {.mid_col = 1},
+    {.mid_col = 1},
+    {.mid_col = 1},
+    {.mid_col = 1},
+    {.upper_col = 1, .lower_col = 1},
+    {.mid_col = 1},
+    {.mid_col = 1},
+    {.mid_col = 1},
+    {.upper_col = 1, .lower_col = 1},
+    {.mid_col = 1},
+    {.mid_col = 1},
+    {.mid_col = 1},
+    {.upper_col = 1, .lower_col = 1},
+    {.mid_col = 1},
+    {.mid_col = 1},
+    {.mid_col = 1},
+    {.upper_col = 1, .lower_col = 1},
+};
+
+#define VERT(x1,y1) { .x = (x1 * 6), .y = (y1 * 6) } 
+static const vertex vertexes[22] = = {
     VERT(270,140),
     VERT(430,140),
     VERT(430,190),
@@ -91,5 +122,5 @@ const portal_map placeholder_name {
     .portals = portals,
     .vertexes = vertexes,
     .wall_colors = wall_colors,
-    .wall_normal_quadrants = NULL
+    .wall_norm_quadrants = wall_normal_quadrants
 };

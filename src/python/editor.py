@@ -156,6 +156,13 @@ class Map():
         res += "};\n\n"
 
 
+        res += "static const u8 wall_normal_quadrants[{}] =".format(num_walls) + "{\n"
+        for sect in self.sectors:
+            for wall in sect.walls:
+                res += "    {},\n".format(wall.normal_quadrant())
+        res += "};\n\n"
+        
+
         res += "static const wall_col wall_colors[{}] =".format(num_walls) + "{\n"
         for sect in self.sectors:
             for wall in sect.walls:
@@ -183,7 +190,7 @@ class Map():
         res += "    .portals = portals,\n"
         res += "    .vertexes = vertexes,\n"
         res += "    .wall_colors = wall_colors,\n"
-        res += "    .wall_norm_quadrants = NULL\n"
+        res += "    .wall_norm_quadrants = wall_normal_quadrants\n"
         res += "};"
                 
         
@@ -240,6 +247,31 @@ class Wall():
         scale = 10/mag
         return int(-dy*scale),int(dx*scale)
 
+    def normal_quadrant(self):
+        nx,ny = self.normal()
+        rads = math.atan2(-ny, nx)
+        ang = rads * 180/math.pi
+        if ang < 0:
+            ang += 360
+
+        if ang == 0:
+            return "FACING_RIGHT"
+        elif ang < 90:
+            return "QUADRANT_0"
+        elif ang == 90:
+            return "FACING_UP"
+        elif ang < 180:
+            return "QUADRANT_1"
+        elif ang == 180:
+            return "FACING_LEFT"
+        elif ang < 270:
+            return "QUADRANT_2"
+        elif ang == 270:
+            return "FACING_DOWN"
+        else:
+            return "QUADRANT_3"
+
+        
     def centered_normal(self):
         (mx,my) = self.rough_mid_point()
         (nx,ny) = self.normal()
@@ -776,9 +808,6 @@ def load_map_from_file(f):
     cur_state.cur_vertex = None
     cur_state.cur_wall = None
     
-    #print("loaded old map with name {}".format(old_map.name))
-    #cur_state.map_data = Map(sectors = old_map.sectors, vertexes = old_map.vertexes, name=old_map.name)
-    #print("cur_state.map_data.name {}".format(cur_state.map_data.name))
     
     
 
