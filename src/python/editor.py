@@ -129,7 +129,7 @@ class Map():
         
 
         # we can have up to 65536 vertexes
-        res += "static const u16 walls[{}] =".format(num_walls+num_sectors) + "{\n"
+        res += "static const u16 walls[{}]".format(num_walls+num_sectors) + " = {\n"
         for sect in self.sectors:
             prev_v2 = None
             first_v1 = sect.walls[0].v1
@@ -173,15 +173,15 @@ class Map():
                     
         res += "};\n\n"
 
-        res += "#define VERT(x1,y1) { .x = (x1 * 6), .y = (y1 * 6) } \n"
+        res += "#define VERT(x1,y1) { .x = (x1 * 6), .y = ((-y1) * 6) } \n"
         
-        res += "static const vertex vertexes[{}] =".format(num_vertexes) + " = {\n"
+        res += "static const vertex vertexes[{}]".format(num_vertexes) + " = {\n"
         for vert in self.vertexes:
             res += "    VERT({},{}),\n".format(vert.x, vert.y)
         res += "};\n"
         
         
-        res += "const portal_map {} ".format(self.name.replace(" ", "_")) + "{\n"
+        res += "const portal_map {} ".format(self.name.replace(" ", "_")) + " = {\n"
         res += "    .num_sectors = {},\n".format(num_sectors)
         res += "    .num_walls = {},\n".format(num_walls)
         res += "    .num_verts = {},\n".format(num_vertexes)
