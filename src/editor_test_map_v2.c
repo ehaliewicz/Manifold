@@ -4,14 +4,14 @@
 #include "vertex.h"
 
 static const s16 sectors[35] ={
-    0, 0, 12, -80, 216, 1, 1,
-    13, 12, 4, -40, 175, 1, 1,
-    18, 16, 4, -40, 175, 1, 1,
-    23, 20, 4, -40, 175, 1, 1,
-    28, 24, 4, -40, 175, 1, 1,
+    0, 0, 12, -80<<4, 216<<4, BLUE_BLACK_IDX, LIGHT_BLUE_IDX,
+    13, 12, 4, -40<<4, 175<<4, BLUE_BLACK_IDX, LIGHT_BLUE_IDX,
+    18, 16, 4, -40<<4, 175<<4, BLUE_BLACK_IDX, LIGHT_BLUE_IDX,
+    23, 20, 4, -40<<4, 175<<4, BLUE_BLACK_IDX, LIGHT_BLUE_IDX,
+    28, 24, 4, -40<<4, 175<<4, BLUE_BLACK_IDX, LIGHT_BLUE_IDX,
 };
 
-static const u16 walls[33] ={
+static const u16 walls[33] = {
     1, 2, 3, 4, 7, 8, 9, 10, 11, 0, 5, 6, 1, 
     5, 12, 13, 6, 5, 
     2, 15, 16, 3, 2, 
@@ -88,8 +88,8 @@ static const wall_col wall_colors[28] ={
     {.upper_col = 1, .lower_col = 1},
 };
 
-#define VERT(x1,y1) { .x = (x1 * 6), .y = (y1 * 6) } 
-static const vertex vertexes[22] = = {
+#define VERT(x1,y1) { .x = (x1 * 6), .y = ((-y1) * 6) } 
+static const vertex vertexes[22] = {
     VERT(270,140),
     VERT(430,140),
     VERT(430,190),
@@ -113,7 +113,7 @@ static const vertex vertexes[22] = = {
     VERT(230,180),
     VERT(0,0),
 };
-const portal_map placeholder_name {
+const portal_map editor_test_map_v2 = {
     .num_sectors = 5,
     .num_walls = 28,
     .num_verts = 22,

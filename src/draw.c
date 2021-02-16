@@ -68,8 +68,8 @@ void init_2d_buffers() {
 
 void clear_2d_buffers() {
     for(int i = 0; i < W; i++) {
-        yclip[i*2] = 0;
-        yclip[i*2+1] = 159-16; //(H-8)-1;
+        yclip[i*2] = 8;
+        yclip[i*2+1] = 159-8; //(H-8)-1;
     }
 }
 

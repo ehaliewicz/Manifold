@@ -26,22 +26,25 @@ typedef enum {
 
 
 // translate and rotate map vertex according to player position
-Vect2D_f32 transform_map_vert(s16 x, s16 y);
-Vect2D_f32 transform_map_vert2(s16 x, s16 y);
+//Vect2D_f32 transform_map_vert(s16 x, s16 y);
+Vect2D_s16 transform_map_vert_16(s16 x, s16 y);
 
 // clip pair of map vertexes against near z plane, modifies input pointers if necessary
-clip_result clip_map_vertex(Vect2D_f32* trans_v1, Vect2D_f32* trans_v2);
+//clip_result clip_map_vertex(Vect2D_f32* trans_v1, Vect2D_f32* trans_v2);
+clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2);
 
 // project map vertex without height attributes
-s16 project_and_adjust_x(Vect2D_f32 trans_map_vert);
-s16 project_and_adjust_y(Vect2D_f32 trans_map_vert, s16 y);
+//s16 project_and_adjust_x(Vect2D_f32 trans_map_vert);
 
-fix32 project_and_adjust_y_fix(Vect2D_f32 trans_map_vert, s16 y);
+s16 project_and_adjust_x(s16 x, s16 z); //Vect2D_s16 trans_map_vert);
 
-int is_behind_near_plane(Vect2D_f32 transformed_map_vert);
+//s16 project_and_adjust_y(Vect2D_f32 trans_map_vert, s16 y);
 
+//s16 project_and_adjust_y_fix(Vect2D_f32 trans_map_vert, s16 y);
 
-// project map vertex with height attributes
-transformed_vert project_and_adjust_3d(Vect2D_f32 trans_map_vert, s16 floor, s16 ceil);
+//s16 project_and_adjust_y_fix(Vect2D_s16 trans_map_vert, s16 y);
+
+s16 project_and_adjust_y_fix(s16 y, s16 z);
+
 
 #endif

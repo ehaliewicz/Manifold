@@ -38,6 +38,8 @@ extern fix16 angleCos16;
 extern fix16 angleSin16;
 extern s16 angleSinFrac12;
 extern s16 angleCosFrac12;
+extern s16 playerXInt;
+extern s16 playerYInt;
 extern int subpixel;
 
 void init_game();

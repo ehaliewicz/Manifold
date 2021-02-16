@@ -19,9 +19,12 @@ player_pos cur_player_pos;
 
 fix16 playerXFrac4, playerYFrac4;
 
+s16 playerXInt, playerYInt;
+
 fix32 angleCos32, angleSin32;
 fix16 angleCos16, angleSin16;
 fix16 angleSinFrac12, angleCosFrac12;
+s16 playerZ12Frac4;
 
 
 void init_3d_palette() {
@@ -282,8 +285,6 @@ void draw_3d_view(u32 cur_frame) {
     portal_rend(cur_player_pos.cur_sector, cur_frame);
 
     showFPS(1);
-
-
 
     request_flip();
 
@@ -551,13 +552,17 @@ void maybe_set_palette(u16* new_palette) {
 game_mode run_game() {
     
     
+
+
+    handle_input();
+
     angleCos32 = cosFix32(cur_player_pos.ang);
     angleSin32 = sinFix32(cur_player_pos.ang); 
     angleCos16 = cosFix16(cur_player_pos.ang);
     angleSin16 = sinFix16(cur_player_pos.ang); 
-
-
-    handle_input();
+    playerZ12Frac4 = cur_player_pos.z >> (FIX32_FRAC_BITS-4);
+    playerXInt = cur_player_pos.x>>FIX32_FRAC_BITS;
+    playerYInt = cur_player_pos.y>>FIX32_FRAC_BITS;
 
     //JOY_waitPress
     /*
@@ -568,11 +573,7 @@ game_mode run_game() {
         return MAIN_MENU;
     }
     */
-   //if(debug_draw) {
-   //     BMP_setBufferCopy(1);
-   //} else {
-   //    BMP_setBufferCopy(0);
-   //}
+
    switch(render_mode) {
         case GAME_WIREFRAME:
         case GAME_SOLID:
