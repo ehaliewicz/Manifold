@@ -13,7 +13,7 @@
 #include "portal.h"
 #include "portal_map.h"
 #include "portal_maps.h"
-#include "span_buf.h"
+
 
 player_pos cur_player_pos;
 
@@ -56,39 +56,8 @@ u16 mapPalette[16] = {
 
 
 
-
-
-typedef enum {
-    INSIDE = 0b00000,
-    LEFT   = 0b00010,
-    RIGHT  = 0b00100,
-    BOTTOM = 0b01000,
-    TOP    = 0b10000
-} outcode;
-
-
-const s16 int_max_x = BMP_WIDTH-1;
-const s16 int_max_y = BMP_HEIGHT-1;
-const s16 subpixel_max_x = (BMP_WIDTH-1)<<4;
-const s16 subpixel_max_y = (BMP_HEIGHT-1)<<4;
-
-s16 round_subpix(s16 subpix_coord) {
-    s16 shift_three = subpix_coord>>3;
-
-    //s16 subpix_bits = subpix_coord & 0b1100;
-
-    //s16 round = (subpix_coord & 0b1100) ? 1 : 0;
-    return (shift_three>>1) + (shift_three&0b1);
-
-}
-
-
-
-
 static int pause_game = 0;
 static int quit_game = 0;
-
-
 
 
 const fix32 move_speed = 24; 
@@ -154,7 +123,7 @@ vu8 vint_flip_requested;
 volatile u32 in_use_vram_copy_dst;
 volatile u8* in_use_vram_copy_src;
 
-#define FULL_BYTES (128*160)
+#define FULL_BYTES (SCREEN_WIDTH*SCREEN_HEIGHT)
 #define FULL_WORDS (FULL_BYTES/2)
 #define HALF_WORDS (FULL_WORDS/2)
 #define HALF_BYTES (FULL_BYTES/2)
@@ -278,7 +247,7 @@ void request_flip() {
 
 void draw_3d_view(u32 cur_frame) {
 
-    //BMP_clear();
+    //BMP_vertical_clear();
     clear_2d_buffers();
     clear_portal_cache();
 
@@ -492,14 +461,11 @@ void init_game() {
 
     cur_frame = 1;
     debug_draw = 0;
-    SYS_disableInts();
-    //VDP_setScreenHeight224();
-    SYS_enableInts();
 
 
-    //set_portal_map(&portal_level_1);
+    set_portal_map(&portal_level_1);
     //set_portal_map(&editor_test_map);
-    set_portal_map(&editor_test_map_v2);
+    //set_portal_map(&editor_test_map_v2);
 
 
 
@@ -587,7 +553,6 @@ game_mode run_game() {
 
 void cleanup_game() { 
     BMP_end();
-    cleanup_span_buffer();
     MEM_free(sector_jump_positions);
     release_2d_buffers();
     MEM_pack();

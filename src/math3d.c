@@ -25,15 +25,16 @@ Vect2D_s16 transform_map_vert_16(s16 x, s16 y) {
 }
 
 
-/*
-s16 project_and_adjust_x(Vect2D_f32 trans_map_vert) {
-    fix32 rx = trans_map_vert.x;
-    fix32 rz = trans_map_vert.y;
-    
-    
-    fix32 const2Rx = (CONST2 * rx);
 
-    s16 const2RxDivZ = const2Rx / rz;
+/*
+s16 project_and_adjust_x(s16 x, s16 z) {
+    //fix32 rx = trans_map_vert.x;
+    //fix32 rz = trans_map_vert.y;
+    
+    
+    s32 const2Rx = (CONST2 * x);
+
+    s16 const2RxDivZ = const2Rx / z;
     s16 transX = CONST1 + const2RxDivZ;
     return transX;
 }
@@ -48,7 +49,7 @@ s16 project_and_adjust_y(Vect2D_f32 trans_map_vert, s16 y) {
 
     s16 yproj = CONST3 + const4RyDivZ;
 
-    return (BMP_HEIGHT-1)-yproj;
+    return (H-1)-yproj;
 }*/
 
 
@@ -63,24 +64,22 @@ s16 project_and_adjust_y_fix(Vect2D_f32 trans_map_vert, s16 y) {
 
     fix32 yproj = (CONST3<<4) + (const4RyDivZ);
 
-    return ((BMP_HEIGHT-1)<<4)-yproj;
+    return ((H-1)<<4)-yproj;
 }
 */
 
 /*
-s16 project_and_adjust_y_fix(Vect2D_f32 trans_map_vert, s16 y) {    
-    s16 int_rz = trans_map_vert.y>>FIX32_FRAC_BITS; // integer
-
-    s16 playPosZFrac4 = cur_player_pos.z>>(10-4); // 12.4
-    s16 yMinusPosZ = (y<<4) - playPosZFrac4;      // 12.4
+s16 project_and_adjust_y_fix(s16 y, s16 z) {    
+    s16 yMinusPosZ = y - playerZ12Frac4;      // 12.4
     s32 const4Ry = CONST4 * yMinusPosZ;
 
-    s16 const4RyDivZ = const4Ry / int_rz;
+    s16 const4RyDivZ = const4Ry / z;
 
     s16 yproj = (CONST3<<4) + const4RyDivZ;
-    return ((BMP_HEIGHT-1)<<4)-yproj;
+    return ((SCREEN_HEIGHT-1)<<4)-yproj;
 }
 */
+
 
 //const s32 near_z = 160 << FIX32_FRAC_BITS;
 const s32 near_z_32 = 20 << FIX32_FRAC_BITS;

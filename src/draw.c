@@ -17,18 +17,18 @@ s16* raster_buffer_1;
 #define PIXEL_RIGHT_STEP 1
 #define PIXEL_DOWN_STEP 4
 //#define PIXEL_DOWN_STEP 2
-#define TILE_RIGHT_STEP 640
+#define TILE_RIGHT_STEP 4*SCREEN_HEIGHT //640
 
 u16 get_index(u16 x, u16 y) {
   u16 x_col_offset = x & 1;
   u16 base_offset = 0;
   if(x & 0b10) {
     // use right half of framebuffer
-    base_offset = (W/2)*H;
+    base_offset = (SCREEN_WIDTH/2)*SCREEN_HEIGHT;
   }
   u16 y_offset = y * 2;
   u16 x_num_pair_cols_offset = x >> 2;
-  u16 x_cols_offset = x_num_pair_cols_offset * H * 2;
+  u16 x_cols_offset = x_num_pair_cols_offset * SCREEN_HEIGHT * 2;
   return base_offset + y_offset + x_col_offset + x_cols_offset + 16;
 }
 
@@ -50,7 +50,7 @@ void init_column_offset_table() {
   //column_table[0] = 0;
   //u8* last_ptr = getDMAWritePointer(0, 0);
 
-  for(int x = 0; x < W; x++) {
+  for(int x = 0; x < SCREEN_WIDTH; x++) {
     u16 cur_off = getDMAWriteOffset(x, 0);    
     column_table[x] = cur_off; //cur_ptr-last_ptr;
     //last_ptr = cur_ptr;
@@ -59,17 +59,17 @@ void init_column_offset_table() {
 
 
 void init_2d_buffers() {
-    yclip = MEM_alloc(W*2*sizeof(u8));
-    raster_buffer_0 = MEM_alloc(W*2*sizeof(s16));
-    raster_buffer_1 = raster_buffer_0+W;
-    column_table = MEM_alloc(sizeof(u16) * W); //sizeof(16) * W);
+    yclip = MEM_alloc(SCREEN_WIDTH*2*sizeof(u8));
+    raster_buffer_0 = MEM_alloc(SCREEN_WIDTH*2*sizeof(s16));
+    raster_buffer_1 = raster_buffer_0+SCREEN_WIDTH;
+    column_table = MEM_alloc(sizeof(u16) * SCREEN_WIDTH); //sizeof(16) * W);
     init_column_offset_table();
 }
 
 void clear_2d_buffers() {
-    for(int i = 0; i < W; i++) {
-        yclip[i*2] = 8;
-        yclip[i*2+1] = 159-8; //(H-8)-1;
+    for(int i = 0; i < SCREEN_WIDTH; i++) {
+        yclip[i*2] = 0;
+        yclip[i*2+1] = SCREEN_HEIGHT-16-1; 
     }
 }
 
@@ -120,15 +120,17 @@ void draw_native_vertical_line_unrolled(s16 x, s16 y0, s16 y1, u8 col) {
                 : "d" (col), "a" (col_ptr), "d" (extra_pix)
                 );
         }
-
-        u16 jump_table_offset = (40-dy_movep)<<2;
-        __asm volatile(
-           "jmp mvp_tbl_%=(%%pc, %0)\t\n\
-           mvp_tbl_%=:\t\n\
+        /*
             movep.l %1, 312(%2) \t\n\
             movep.l %1, 304(%2) \t\n\
             movep.l %1, 296(%2) \t\n\
             movep.l %1, 288(%2) \t\n\
+        */
+
+        u16 jump_table_offset = ((SCREEN_HEIGHT/4)-dy_movep)<<2;
+        __asm volatile(
+           "jmp mvp_tbl_%=(%%pc, %0)\t\n\
+           mvp_tbl_%=:\t\n\
             movep.l %1, 280(%2) \t\n\
             movep.l %1, 272(%2) \t\n\
             movep.l %1, 264(%2) \t\n\
@@ -178,7 +180,7 @@ void draw_native_vertical_line_unrolled(s16 x, s16 y0, s16 y1, u8 col) {
             dbeq %2, small_col_lp_%="
             : 
             : "d" (col), "a" (col_ptr), "d" (dy)
-            );
+        );
 
         
     }
@@ -195,8 +197,7 @@ void flip() {
     //}
 }
 
-void draw_between_raster_spans(s16* top, s16* bot, u16 startx, u16 endx, u8 col,
-                               uint8_t update_top_clip, uint8_t update_bot_clip) {
+void draw_between_raster_spans_update_top_clip(s16* top, s16* bot, u16 startx, u16 endx, u8 col) {
     s16* top_ptr = top+startx;
     s16* bot_ptr = bot+startx;
     u8* yclip_ptr = &(yclip[startx<<1]);
@@ -215,23 +216,40 @@ void draw_between_raster_spans(s16* top, s16* bot, u16 startx, u16 endx, u8 col,
 
         col_ptr++;
         
-        if(update_top_clip) {
-            *yclip_ptr++ = bot_draw_y;
-            yclip_ptr++;
-        } else if (update_bot_clip) {
-            yclip_ptr++;
-            *yclip_ptr++ = top_draw_y;
-        } else {
-            
-            yclip_ptr += 2;
-        }
+        *yclip_ptr++ = bot_draw_y;
+        yclip_ptr++;
         
     }
     flip();
 }
 
+void draw_between_raster_spans_update_bottom_clip(s16* top, s16* bot, u16 startx, u16 endx, u8 col) {
+    s16* top_ptr = top+startx;
+    s16* bot_ptr = bot+startx;
+    u8* yclip_ptr = &(yclip[startx<<1]);
+    u8* col_ptr = BMP_getWritePointer(startx<<1, 0);
+    for(u16 x = startx; x <= endx; x++) {
+        u8 min_drawable_y = *yclip_ptr;
+        u8 max_drawable_y = *(yclip_ptr+1);
+        s16 top_y = *top_ptr++;
+        s16 bot_y = *bot_ptr++;
+        u8 top_draw_y = clamp(top_y, min_drawable_y, max_drawable_y);
+        u8 bot_draw_y = clamp(bot_y, min_drawable_y, max_drawable_y);
 
-void draw_from_top_to_raster_span(s16* top, u16 startx, u16 endx, u8 col, u8 update_top_clip) {
+        if(top_draw_y < bot_draw_y) {
+            draw_native_vertical_line_unrolled(x, top_draw_y, bot_draw_y, col); //, col_ptr);
+        }
+
+        col_ptr++;
+        
+        yclip_ptr++;
+        *yclip_ptr++ = top_draw_y;
+        
+    }
+    flip();
+}
+
+void draw_from_top_to_raster_span_update_clip(s16* top, u16 startx, u16 endx, u8 col) {
     s16* top_ptr = top+startx;
     u8* yclip_ptr = &(yclip[startx<<1]);
     u8* col_ptr = BMP_getWritePointer(startx<<1, 0);
@@ -248,24 +266,41 @@ void draw_from_top_to_raster_span(s16* top, u16 startx, u16 endx, u8 col, u8 upd
         }
 
         col_ptr++;
-        if(update_top_clip) {
-            *yclip_ptr++ = wall_top_draw_y;
-            yclip_ptr++;
-        } else {
-            yclip_ptr += 2;
-        }
+        *yclip_ptr++ = wall_top_draw_y;
+        yclip_ptr++;
     }
     flip();
 }
 
-void draw_from_raster_span_to_bot(s16* bot, u16 startx, u16 endx, u8 col, u8 update_bot_clip) {
+void draw_from_top_to_raster_span_no_update_clip(s16* top, u16 startx, u16 endx, u8 col) {
+    s16* top_ptr = top+startx;
+    u8* yclip_ptr = &(yclip[startx<<1]);
+    u8* col_ptr = BMP_getWritePointer(startx<<1, 0);
+
+    for(u16 x = startx; x <= endx; x++) {
+        u8 min_drawable_y = *yclip_ptr++;
+        u8 max_drawable_y = *yclip_ptr++;
+        s16 wall_top_y = *top_ptr++;
+        u8 top_draw_y = min_drawable_y;
+        u8 wall_top_draw_y = clamp(wall_top_y, min_drawable_y, max_drawable_y);
+
+        if(top_draw_y < wall_top_draw_y) {
+            draw_native_vertical_line_unrolled(x, top_draw_y, wall_top_draw_y, col); //, col_ptr);
+        }
+
+        col_ptr++;
+    }
+    flip();
+}
+
+void draw_from_raster_span_to_bot_update_clip(s16* bot, u16 startx, u16 endx, u8 col) {
     s16* bot_ptr = bot+startx;
     u8* yclip_ptr = &(yclip[startx<<1]);
     u8* col_ptr = BMP_getWritePointer(startx<<1, 0);
 
     for(u16 x = startx; x <= endx; x++) {
-        u8 min_drawable_y = *yclip_ptr;
-        u8 max_drawable_y = *(yclip_ptr+1);
+        u8 min_drawable_y = *yclip_ptr++;
+        u8 max_drawable_y = *yclip_ptr;
         s16 wall_bot_y = *bot_ptr++;
         //u8 top_draw_y = clamp(top_y, min_drawable_y, max_drawable_y);
         u8 wall_bot_draw_y = clamp(wall_bot_y, min_drawable_y, max_drawable_y);
@@ -276,17 +311,34 @@ void draw_from_raster_span_to_bot(s16* bot, u16 startx, u16 endx, u8 col, u8 upd
         }
 
         col_ptr++;
-        if(update_bot_clip) {
-            yclip_ptr++;
-            *yclip_ptr++ = wall_bot_draw_y;
-        } else {
-            yclip_ptr += 2;
-        }
+        *yclip_ptr++ = wall_bot_draw_y;
     }
     flip();
 }
 
-void draw_fix_line_to_buffer(s16 x1, fix32 x1_y, s16 x2, fix32 x2_y, 
+void draw_from_raster_span_to_bot_no_update_clip(s16* bot, u16 startx, u16 endx, u8 col) {
+    s16* bot_ptr = bot+startx;
+    u8* yclip_ptr = &(yclip[startx<<1]);
+    u8* col_ptr = BMP_getWritePointer(startx<<1, 0);
+
+    for(u16 x = startx; x <= endx; x++) {
+        u8 min_drawable_y = *yclip_ptr++;
+        u8 max_drawable_y = *yclip_ptr++;
+        s16 wall_bot_y = *bot_ptr++;
+        //u8 top_draw_y = clamp(top_y, min_drawable_y, max_drawable_y);
+        u8 wall_bot_draw_y = clamp(wall_bot_y, min_drawable_y, max_drawable_y);
+        u8 bot_draw_y = max_drawable_y;
+
+        if(wall_bot_draw_y < bot_draw_y) {
+            draw_native_vertical_line_unrolled(x, wall_bot_draw_y, bot_draw_y, col); //, col_ptr);
+        }
+
+        col_ptr++;
+    }
+    flip();
+}
+
+void draw_fix_line_to_buffer(s16 x1, s16 x1_y, s16 x2, s16 x2_y, 
                              u16 window_min, u16 window_max,
                              s16* out_buffer) {
     s16 dy_fix = x2_y - x1_y; // we have 4 subpixel bits

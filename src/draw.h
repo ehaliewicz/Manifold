@@ -19,13 +19,15 @@ void bresenham_wall(s16 x1, s16 x1y, s16 x2, s16 x2y, u16 window_min, u8 window_
 //void draw_native_vertical_line_unrolled(s16 y0, s16 y1, u8 col, u8* col_ptr);
 void draw_native_vertical_line_unrolled(s16 x, s16 y0, s16 y1, u8 col);
 
-void draw_between_raster_spans(s16* top, s16* bot, u16 startx, u16 endx, u8 col,
-                               uint8_t update_top_clip, uint8_t update_bot_clip);
+void draw_between_raster_spans_update_top_clip(s16* top, s16* bot, u16 startx, u16 endx, u8 col);
+void draw_between_raster_spans_update_bottom_clip(s16* top, s16* bot, u16 startx, u16 endx, u8 col);
 
-void draw_from_top_to_raster_span(s16* top, u16 startx, u16 endx, u8 col, u8 update_top_clip);
-void draw_from_raster_span_to_bot(s16* bot, u16 startx, u16 endx, u8 col, u8 update_bot_clip);
+void draw_from_top_to_raster_span_no_update_clip(s16* top, u16 startx, u16 endx, u8 col);
+void draw_from_top_to_raster_span_update_clip(s16* top, u16 startx, u16 endx, u8 col);
+void draw_from_raster_span_to_bot_no_update_clip(s16* bot, u16 startx, u16 endx, u8 col);
+void draw_from_raster_span_to_bot_update_clip(s16* bot, u16 startx, u16 endx, u8 col);
 
-void draw_fix_line_to_buffer(s16 x1, fix32 x1_y, s16 x2, fix32 x2_y, 
+void draw_fix_line_to_buffer(s16 x1, s16 x1_y, s16 x2, s16 x2_y, 
                              u16 window_min, u16 window_max,
                              s16* out_buffer);
 

@@ -23,7 +23,7 @@ typedef struct {
 extern player_pos cur_player_pos;
 extern fix16 playerXFrac4;
 extern fix16 playerYFrac4;
-
+extern s16 playerZ12Frac4;
 
 #define ANGLE_360_DEGREES 1024
 #define ANGLE_180_DEGREES 512

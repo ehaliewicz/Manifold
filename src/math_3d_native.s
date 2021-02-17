@@ -1,5 +1,6 @@
 .globl project_and_adjust_x, project_and_adjust_y_fix
 
+
 transform_map_vert_blah:
 	move.l 4(%sp), %d0	| d0 is x (16-bit int)
 	move.l 8(%sp), %d1 	| d1 is y (16-bit int)
@@ -25,7 +26,7 @@ transform_map_vert_blah:
 project_and_adjust_x:
 	move.l 4(%sp), %d0  | d0 is rx (16.0)
 	move.l 8(%sp), %d1 	| d1 is rz (16.0)
-	muls.w #80,%d0      | d0 is rx*80, 32 bits
+	muls.w #60,%d0      | d0 is rx*80, 32 bits
     divs.w %d1, %d0     | d0 here is 16rem:16:quo of (rx*80)/rz
     add.w #64, %d0
     rts
@@ -34,9 +35,9 @@ project_and_adjust_y_fix:
 	move.l 4(%sp), %d0
 	move.l 8(%sp), %d1
 	sub.w playerZ12Frac4, %d0 
-	muls.w #80, %d0					| d0 = 80(wall_y-player_y) (12.4)
+	muls.w #72, %d0					| d0 = 80(wall_y-player_y) (12.4)
 	divs.w %d1, %d0					| d0 = 16.mod/16.quo y/z (12.4 in lower word)
-	move.w #1264, %d1
+	move.w #1136, %d1
 	sub.w %d0, %d1
 	move.w %d1, %d0
 	rts

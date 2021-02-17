@@ -65,7 +65,7 @@ void portal_rend(u16 src_sector, u32 cur_frame) {
     //static const portal_map* map = &portal_level_1;
 
 
-    render_sector_item queue_item = { .x1 = 0, .x2 = W-1, .sector = src_sector };
+    render_sector_item queue_item = { .x1 = 0, .x2 = SCREEN_WIDTH-1, .sector = src_sector };
 
     queue_push(queue_item);
 
@@ -282,11 +282,11 @@ void portal_rend(u16 src_sector, u32 cur_frame) {
                     s16 nx2_ytop = project_and_adjust_y_fix(neighbor_ceil_height, trans_v2_z);
 
                     // ceiling
-                    draw_from_top_to_raster_span(raster_buffer_0, beginx, endx, ceil_color, 0);
+                    draw_from_top_to_raster_span_no_update_clip(raster_buffer_0, beginx, endx, ceil_color);
                     draw_fix_line_to_buffer(x1, nx1_ytop, x2, nx2_ytop, window_min, window_max, raster_buffer_1);
-                    draw_between_raster_spans(raster_buffer_0, raster_buffer_1, beginx, endx, upper_color, 1, 0);
+                    draw_between_raster_spans_update_top_clip(raster_buffer_0, raster_buffer_1, beginx, endx, upper_color);
                 } else {
-                    draw_from_top_to_raster_span(raster_buffer_0, beginx, endx, ceil_color, 1);
+                    draw_from_top_to_raster_span_update_clip(raster_buffer_0, beginx, endx, ceil_color);
                 }
 
                 draw_fix_line_to_buffer(x1, x1_ybot, x2, x2_ybot, window_min, window_max, raster_buffer_0);
@@ -299,11 +299,11 @@ void portal_rend(u16 src_sector, u32 cur_frame) {
                     s16 nx1_ybot = project_and_adjust_y_fix(neighbor_floor_height, trans_v1_z);
                     s16 nx2_ybot = project_and_adjust_y_fix(neighbor_floor_height, trans_v2_z);
 
-                    draw_from_raster_span_to_bot(raster_buffer_0, beginx, endx, floor_color, 0);
+                    draw_from_raster_span_to_bot_no_update_clip(raster_buffer_0, beginx, endx, floor_color);
                     draw_fix_line_to_buffer(x1, nx1_ybot, x2, nx2_ybot, window_min, window_max, raster_buffer_1);
-                    draw_between_raster_spans(raster_buffer_1, raster_buffer_0, beginx, endx, lower_color, 0, 1);
+                    draw_between_raster_spans_update_bottom_clip(raster_buffer_1, raster_buffer_0, beginx, endx, lower_color);
                 } else {
-                    draw_from_raster_span_to_bot(raster_buffer_0, beginx, endx, floor_color, 1);
+                    draw_from_raster_span_to_bot_update_clip(raster_buffer_0, beginx, endx, floor_color);
                 }
 
             } else { 
