@@ -117,9 +117,9 @@ class Map():
         portal_offset = 0
         for sect in self.sectors:
             sect_num_walls = len(sect.walls)
-            res += "    {}, {}, {}, {}, {}, {}, {},\n".format(wall_offset, portal_offset, sect_num_walls,
-                                                             sect.floor_height, sect.ceil_height,
-                                                             sect.floor_color, sect.ceil_color)
+            res += "    {}, {}, {}, {}<<4, {}<<4, {}, {},\n".format(wall_offset, portal_offset, sect_num_walls,
+                                                                    sect.floor_height, sect.ceil_height,
+                                                                    sect.floor_color, sect.ceil_color)
             
             wall_offset += sect_num_walls+1
             portal_offset += sect_num_walls
@@ -370,6 +370,11 @@ class State(object):
         self.cur_wall = None
         self.cur_vertex = None
 
+        self.camera_x = 0
+        self.camera_y = 0
+        self.zoom = 0
+        
+
         self.hovered_item = None
 
         
@@ -518,8 +523,9 @@ def draw_line_mode():
         
         if v1_changed:
             cur_wall.v1 = cur_state.map_data.vertexes[new_v1_idx]
-        if v2_changed:
-            print(new_v2_idx)
+
+        if v2_changed and new_v2_idx != cur_wall.v1.index:
+            
             cur_wall.v2 = cur_state.map_data.vertexes[new_v2_idx]
             
         if adj_changed:
@@ -610,7 +616,9 @@ def draw_map_vert(draw_list, vert, highlight=False):
     else:
         color = vert_default
 
-    draw_list.add_circle_filled(vert.x, vert.y, 2, imgui.get_color_u32_rgba(*color), num_segments=12)
+    cam_x = cur_state.camera_x
+    cam_y = cur_state.camera_y
+    draw_list.add_circle_filled(vert.x-cam_x, vert.y-cam_y, 2, imgui.get_color_u32_rgba(*color), num_segments=12)
 
 def draw_map_wall(draw_list, wall, highlight=False):
     is_portal = wall.adj_sector_idx != -1
@@ -630,16 +638,19 @@ def draw_map_wall(draw_list, wall, highlight=False):
     v2 = wall.v2
 
     ((n1x,n1y),(n2x,n2y)) = wall.centered_normal()
+    
+    cam_x = cur_state.camera_x
+    cam_y = cur_state.camera_y
      
-    draw_list.add_line(v1.x, v1.y, v2.x, v2.y, imgui.get_color_u32_rgba(*color), 1.0)
-    draw_list.add_line(n1x, n1y, n2x, n2y, imgui.get_color_u32_rgba(*color), 1.0)
+    draw_list.add_line(v1.x-cam_x, v1.y-cam_y, v2.x-cam_x, v2.y-cam_y, imgui.get_color_u32_rgba(*color), 1.0)
+    draw_list.add_line(n1x-cam_x, n1y-cam_y, n2x-cam_x, n2y-cam_y, imgui.get_color_u32_rgba(*color), 1.0)
     
 
 def draw_sector(draw_list, sector, highlight=False):
     for wall in sector.walls:
         wall_selected = cur_state.mode == Mode.LINE and cur_state.cur_wall == wall
         wall_hovered = cur_state.hovered_item == wall
-            
+
         draw_map_wall(draw_list, wall, (highlight or wall_selected or wall_hovered))
         
 
@@ -720,8 +731,13 @@ def interpret_click(x,y,button):
         cur_state.cur_wall = add_new_wall(prev_cur, cur_state.cur_vertex)
         
 
+last_frame_x = None
+last_frame_y = None
+got_hold_last_frame = False
+
 
 def on_frame():
+    global cur_state, last_frame_x, last_frame_y, got_hold_last_frame
 
     imgui.set_next_window_position(0, 0)
     io = imgui.get_io()
@@ -760,6 +776,12 @@ def on_frame():
             )
             if selected_export:
                 export_map()
+
+            clicked_reset, selected_reset = imgui.menu_item(
+                "Reset", "", False, True
+            )
+            if selected_reset:
+                cur_state = State()
             
             
             imgui.end_menu()
@@ -771,15 +793,41 @@ def on_frame():
     draw_mode()
     
 
-    left_button_released = imgui.is_mouse_released(button=0)
-    right_button_released = imgui.is_mouse_released(button=1)
+    left_button_clicked = imgui.is_mouse_clicked(button=0)
+    right_button_clicked = imgui.is_mouse_clicked(button=1)
+
     
-    mouse_button_released = (left_button_released or right_button_released)
+
+    mouse_button_clicked = (left_button_clicked or right_button_clicked)
+    left_button_down = imgui.is_mouse_down(button=0)
+    if mouse_button_clicked:
+        print("clicked left {} right {}".format(left_button_clicked, right_button_clicked))
+
+    #else:
+    #    print("clearing down_x and down_y")
+    #    start_down_x = None
+    #    start_down_y = None
+        
+    if got_hold_last_frame:
+        cur_x,cur_y = imgui.get_mouse_pos()
+        moved_cam_x = last_frame_x - cur_x
+        moved_cam_y = last_frame_y - cur_y
+        cur_state.camera_x += moved_cam_x
+        cur_state.camera_y += moved_cam_y
+
+
     
-    if map_hovered and not tools_hovered and mouse_button_released:
+    if map_hovered and not tools_hovered and mouse_button_clicked:
         x,y = imgui.get_mouse_pos()
-        interpret_click(x,y, LEFT_BUTTON if left_button_released else RIGHT_BUTTON)
-            
+        print("interpreting click at {},{}".format(x,y))
+        interpret_click(x+cur_state.camera_x,y+cur_state.camera_y, LEFT_BUTTON if left_button_clicked else RIGHT_BUTTON)
+    elif map_hovered and left_button_down:
+        got_hold_last_frame = True
+        last_frame_x, last_frame_y = imgui.get_mouse_pos()
+    elif not left_button_down:
+        got_hold_last_frame = False
+
+        
     
     imgui.end()
 
