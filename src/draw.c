@@ -341,7 +341,33 @@ void draw_from_raster_span_to_bot_no_update_clip(s16* bot, u16 startx, u16 endx,
 void draw_fix_line_to_buffer(s16 x1, s16 x1_y, s16 x2, s16 x2_y, 
                              u16 window_min, u16 window_max,
                              s16* out_buffer) {
+
+
+    s16 beginx = max(x1, window_min);
+    s16 endx = min(window_max, x2);
+    s16* col_ptr = &out_buffer[beginx];
+
     s16 dy_fix = x2_y - x1_y; // we have 4 subpixel bits
+    
+    s16 loop_dx = (endx+1)-beginx;
+    if((dy_fix>>4) == 0) {
+        s16 y_int = x1_y>>4;
+        __asm volatile(
+            "subq #1, %0\t\n\
+            horiz_loop_%=:\t\n\
+             move.w %1, (%2)+\t\n\
+             dbeq %0, horiz_loop_%="
+            :
+            : "d" (loop_dx), "d" (y_int), "a" (col_ptr)
+        );
+        return;
+
+        //for(int x = beginx; x <= endx; x++) {
+        //    *col_ptr++ = y_int;
+        //}
+        //return;
+    }
+    
     s16 dx = (x2-x1)+1;
 
     fix32 dy_per_dx = (dy_fix<<12) / dx; // (dy_fix<<4) / dx; // 22.10
@@ -350,17 +376,13 @@ void draw_fix_line_to_buffer(s16 x1, s16 x1_y, s16 x2, s16 x2_y,
     
     //s16 y_int;
 
-    s16 beginx = max(x1, window_min);
 
     s16 skip_x = beginx - x1;
     if(skip_x > 0) {
         y_fix += (skip_x * dy_per_dx);
     }
 
-    s16* col_ptr = &out_buffer[beginx];
 
-    s16 endx = min(window_max, x2);
-    s16 loop_dx = (endx+1)-beginx;
 
 
     if(dy_per_dx >= 0) {
