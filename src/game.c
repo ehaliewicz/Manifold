@@ -100,16 +100,16 @@ void showFPS(u16 float_display)
     if (float_display)
     {
         fix32ToStr(SYS_getFPSAsFloat(), str, 1);
-        VDP_clearTextBG(BG_A, 2, y, 5);
+        VDP_clearTextBG(BG_B, 2, y, 5);
     }
     else
     {
         uintToStr(SYS_getFPS(), str, 1);
-        VDP_clearTextBG(BG_A, 2, y, 2);
+        VDP_clearTextBG(BG_B, 2, y, 2);
     }
 
     // display FPS
-    VDP_drawTextBG(BG_A, str, 1, y);
+    VDP_drawTextBG(BG_B, str, 1, y);
 }
 
 
@@ -177,7 +177,7 @@ void do_vint_flip() {
         } else {
             vscr = 0;
         }
-        VDP_setVerticalScroll(BG_B, vscr);
+        VDP_setVerticalScroll(BG_A, vscr);
 
         vint_flipping = 0;
     } else if(vint_flip_requested) {
@@ -253,6 +253,20 @@ void draw_3d_view(u32 cur_frame) {
 
     portal_rend(cur_player_pos.cur_sector, cur_frame);
 
+    char buf[32];
+    //sprintf(buf, "cur_sector: %i", cur_player_pos.cur_sector);
+    //VDP_drawTextBG(BG_A, buf, 1, 6);
+    //if(portal_1_clip_status == LEFT_CLIPPED) {
+    //    VDP_drawTextBG(BG_A, "left_clipped", 1, 7);
+    //} else if (portal_1_clip_status == RIGHT_CLIPPED) {
+    //    VDP_drawTextBG(BG_A, "right clipped", 1, 7);
+    //} else if (portal_1_clip_status == OFFSCREEN) {
+    //    VDP_drawTextBG(BG_A, "fully clipped", 1, 7);
+    //} else {
+    //    VDP_drawTextBG(BG_A, "unclipped   ", 1, 7);
+    //}
+    //sprintf(buf, "x1 %i, x2 %i", portal_1_x1, portal_1_x2);
+    //VDP_drawTextBG(BG_A, buf, 1, 8);
     showFPS(1);
 
     request_flip();
@@ -268,6 +282,7 @@ u16 last_joy = 0;
 Vect2D_f32 *sector_jump_positions = NULL;
 
 static int last_pressed_b = 0;
+u8 do_collision = 0;
 
 void handle_input() {
     int strafe = joy_button_pressed(BUTTON_C);
@@ -344,20 +359,21 @@ void handle_input() {
 
     if(moved) {
 
-        collision_result collision = check_for_collision(curx, cury, newx, newy, cur_player_pos.cur_sector);
+        collision_result collision = check_for_collision(curx, cury, newx, newy, cur_player_pos.cur_sector, do_collision);
         cur_player_pos.x = collision.pos.x;
         cur_player_pos.y = collision.pos.y;
         cur_player_pos.cur_sector = collision.new_sector;
-        cur_player_pos.z = sector_floor_height(cur_player_pos.cur_sector, cur_portal_map) + FIX32(40);
+
+        cur_player_pos.z = (sector_floor_height(cur_player_pos.cur_sector, cur_portal_map)<<(FIX32_FRAC_BITS-4)) + FIX32(40);
 
 
 
     }
 
-    const fix32 bobs[32] = {FIX32(0.2), FIX32(0.2), FIX32(0.2), FIX32(0.2), FIX32(0.2), FIX32(0.2), FIX32(0.2), FIX32(0.2), 
-                            FIX32(0.2), FIX32(0.2), FIX32(0.2), FIX32(0.2), FIX32(0.2), FIX32(0.2), FIX32(0.2), FIX32(0.2), 
-                            FIX32(-0.2), FIX32(-0.2), FIX32(-0.2), FIX32(-0.2), FIX32(-0.2), FIX32(-0.2), FIX32(-0.2), FIX32(-0.2),
-                            FIX32(-0.2), FIX32(-0.2), FIX32(-0.2), FIX32(-0.2), FIX32(-0.2), FIX32(-0.2), FIX32(-0.2), FIX32(-0.2)};
+    const fix32 bobs[32] = {FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), 
+                            FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), 
+                            FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1),
+                            FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1)};
     cur_player_pos.z += bobs[bob_idx>>1]*1;
     bob_idx++;
     if(bob_idx >= 64) {
@@ -455,17 +471,27 @@ void init_game() {
 
     //XGM_stopPlay();
     SYS_setVIntCallback(do_vint_flip);
+    VDP_setVerticalScroll(BG_B, 0);
+    //request_flip();
+
     render_mode = GAME_WIREFRAME;
     bob_idx = 0;
     subpixel = 1;
 
     cur_frame = 1;
     debug_draw = 0;
+    //PAL3
+    //VDP_setBackgroundColor(LIGHT_BLUE_IDX);
+    //VDP_setVerticalScroll(BG_B, 0);
+    //VDP_drawImageEx(BG_B, &bg_img,   TILE_ATTR_FULL(PAL3, 0, 0, 0, 0x0360), 8, 0, 1, 1);
+	//VDP_drawImageEx(BG_B, &doom_logo, 0x0360, 8, 0, 1, 1);
 
 
-    set_portal_map(&portal_level_1);
+    //set_portal_map(&portal_level_1);
     //set_portal_map(&editor_test_map);
     //set_portal_map(&editor_test_map_v2);
+    set_portal_map(&overlapping_map);
+
 
 
 
@@ -478,7 +504,8 @@ void init_game() {
         cur_player_pos.x = sector_jump_positions[0].x;
         cur_player_pos.y = sector_jump_positions[0].y; 
         cur_player_pos.cur_sector = 0;
-        cur_player_pos.z = sector_floor_height(cur_player_pos.cur_sector, cur_portal_map) + FIX32(40);
+        
+        cur_player_pos.z = (sector_floor_height(cur_player_pos.cur_sector, cur_portal_map)<<(FIX32_FRAC_BITS-4)) + FIX32(40);
 
         //cur_player_pos.x = intToFix32(cur_level->things[0].x);
         //cur_player_pos.y = intToFix32(cur_level->things[0].y);
@@ -495,7 +522,7 @@ void init_game() {
     clear_menu();
 
 
-    BMP_init(1, BG_B, PAL1, 0, 1);
+    BMP_init(1, BG_A, PAL1, 0, 1);
     
     init_2d_buffers();
 

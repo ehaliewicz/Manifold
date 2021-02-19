@@ -66,7 +66,7 @@ u8 on_backfacing_side_of_wall(fix32 x, fix32 y, u16 wall_idx) {
   }
 
 
-collision_result check_for_collision(fix32 curx, fix32 cury, fix32 newx, fix32 newy, u16 cur_sector) {
+collision_result check_for_collision(fix32 curx, fix32 cury, fix32 newx, fix32 newy, u16 cur_sector, u8 do_collision) {
     u16 wall_off = sector_wall_offset(cur_sector, cur_portal_map);
     u16 portal_off = sector_portal_offset(cur_sector, cur_portal_map);
     u16 num_walls = sector_num_walls(cur_sector, cur_portal_map);
@@ -95,11 +95,13 @@ collision_result check_for_collision(fix32 curx, fix32 cury, fix32 newx, fix32 n
             
             if(neighbor_sector != -1) {
                 new_sector = neighbor_sector;
+                break;
             } else {
-                
-                got_x_collision = 1;
+                if(do_collision) {
+                    got_x_collision = 1;
+                    break;
+                }
             }
-            break;
         }
     }
 
@@ -121,10 +123,13 @@ collision_result check_for_collision(fix32 curx, fix32 cury, fix32 newx, fix32 n
         if(new_side_backfacing) {
             if(neighbor_sector != -1) {
                 new_sector = neighbor_sector;
+                break;
             } else {
-                got_y_collision = 1;
+                if(do_collision) {
+                    got_y_collision = 1;
+                    break;
+                }
             }
-            break;
         }
     }
 

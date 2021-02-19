@@ -13,4 +13,7 @@ void clear_portal_cache();
 
 void portal_rend(u16 src_sector, u32 cur_frame);
 
+extern int portal_1_clip_status;
+extern int portal_1_x1;
+extern int portal_1_x2;
 #endif

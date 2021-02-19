@@ -83,7 +83,7 @@ s16 project_and_adjust_y_fix(s16 y, s16 z) {
 
 //const s32 near_z = 160 << FIX32_FRAC_BITS;
 const s32 near_z_32 = 20 << FIX32_FRAC_BITS;
-const s16 near_z_16 = 20;
+const s16 near_z_16 = 10; //20;
 
 
 clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2) {

@@ -11,25 +11,25 @@
 
 const s16 sectors[SECTOR_SIZE*NUM_SECTORS] = {
     // sector 0   wall_offset, portal_offset, num_walls, floor_height, ceil_height
-    0,  0, 6, -80<<4, 216<<4, BLUE_BLACK_IDX, LIGHT_BLUE_IDX,
+    0,  0, 6, -80<<4, 180<<4, BLUE_BLACK_IDX, LIGHT_BLUE_IDX,
     // sector 1
-    7,  6, 6, -80<<4, 216<<4, DARK_BLUE_IDX, LIGHT_BLUE_IDX,
+    7,  6, 6, -80<<4, 180<<4, DARK_BLUE_IDX, LIGHT_BLUE_IDX,
     // sector 2
-    14, 12, 6, -80<<4, 216<<4, DARK_BLUE_IDX, LIGHT_BLUE_IDX,
+    14, 12, 6, -80<<4, 180<<4, DARK_BLUE_IDX, LIGHT_BLUE_IDX,
     // sector 3
-    21, 18, 6, -80<<4, 216<<4, DARK_BLUE_IDX, LIGHT_BLUE_IDX,
+    21, 18, 6, -80<<4, 180<<4, DARK_BLUE_IDX, LIGHT_BLUE_IDX,
     // sector 4
-    28, 24, 6, -80<<4, 216<<4, DARK_BLUE_IDX, LIGHT_BLUE_IDX,
+    28, 24, 6, -80<<4, 180<<4, DARK_BLUE_IDX, LIGHT_BLUE_IDX,
     // sector 5
-    35, 30, 6, -80<<4, 216<<4, DARK_BLUE_IDX, LIGHT_BLUE_IDX,
+    35, 30, 6, -80<<4, 180<<4, DARK_BLUE_IDX, LIGHT_BLUE_IDX,
     // sector 6
-    42, 36, 4, -80<<4, 216<<4, DARK_BLUE_IDX, LIGHT_BLUE_IDX,
+    42, 36, 4, -80<<4, 180<<4, DARK_BLUE_IDX, LIGHT_BLUE_IDX,
     // sector 7
     47, 40, 4, -40<<4, 156<<4, DARK_RED_IDX, LIGHT_RED_IDX,
     // sector 8
     52, 44, 4, -40<<4, 156<<4, DARK_RED_IDX, LIGHT_RED_IDX,
     // sector 9
-    57, 48, 4, -80<<4, 216<<4, DARK_BLUE_IDX, LIGHT_BLUE_IDX
+    57, 48, 4, -80<<4, 180<<4, DARK_BLUE_IDX, LIGHT_BLUE_IDX
 };
 
 

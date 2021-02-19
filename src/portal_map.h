@@ -6,7 +6,7 @@
 #include "vertex.h"
 #include "vis_range.h"
 
-#define SECTOR_SIZE 7
+#define SECTOR_SIZE 8
 #define VERT_SIZE 2
 
 typedef enum {
@@ -39,6 +39,7 @@ typedef struct {
     const u8* wall_norm_quadrants;
 } portal_map;
 
+s16* sector_data_start(s16 sector_idx, portal_map* mp);
 
 s16 sector_wall_offset(s16 sector_idx, portal_map* mp);
 

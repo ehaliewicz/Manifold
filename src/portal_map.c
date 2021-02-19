@@ -1,6 +1,9 @@
 #include <genesis.h>
 #include "portal_map.h"
 
+s16* sector_data_start(s16 sector_idx, portal_map* mp) {
+    return &mp->sectors[sector_idx*SECTOR_SIZE];
+}
 
 s16 sector_wall_offset(s16 sector_idx, portal_map* mp) {
     return mp->sectors[sector_idx*SECTOR_SIZE];

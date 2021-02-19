@@ -187,16 +187,20 @@ void portal_rend(u16 src_sector, u32 cur_frame) {
             s16 neighbor_floor_height;
             s16 neighbor_ceil_height;
             if(clipped == OFFSCREEN) {    
-                /*
-                if(is_portal) {
+                
+                if(is_portal && sector == src_sector) {
                     //if(portal_sector == 6) {
                     //    BMP_drawText("fully clipped   ", 2, 10);
                     //}
                 
-                    s16 x1 = project_and_adjust_x(trans_v1);
-                    s16 x2 = project_and_adjust_x(trans_v2);
-                    s16 beginx = max(x1, window_min);
-                    s16 endx = min(x2, window_max);
+                    //s16 x1 = project_and_adjust_x(trans_v1);
+                    //s16 x2 = project_and_adjust_x(trans_v2);
+                    if(trans_v1.y == 0) { trans_v1.y = 1; }
+                    if(trans_v2.y == 0) { trans_v2.y = 1; }
+                    s16 x1 = project_and_adjust_x(trans_v1.x, trans_v1.y);
+                    s16 x2 = project_and_adjust_x(trans_v2.x, trans_v2.y);
+                    //s16 beginx = max(x1, window_min);
+                    //s16 endx = min(x2, window_max);
 
                     if(x1 > window_max) { walls_frustum_culled++; continue; }
                     if(x2 <= window_min) { walls_frustum_culled++; continue; }
@@ -213,7 +217,7 @@ void portal_rend(u16 src_sector, u32 cur_frame) {
                     }
                     
                 }
-                */
+                
                 continue;
             }
 
