@@ -176,7 +176,7 @@ class Map():
                     
         res += "};\n\n"
 
-        res += "#define VERT(x1,y1) { .x = (x1 * 6), .y = ((-y1) * 6) } \n"
+        res += "#define VERT(x1,y1) { .x = (x1 * 2), .y = ((-y1) * 2) } \n"
         
         res += "static const vertex vertexes[{}]".format(num_vertexes) + " = {\n"
         for vert in self.vertexes:
@@ -493,6 +493,24 @@ def delete_line(wall):
                 del sector.walls[idx]
                 break
 
+col_names = [
+    'TRANSPARENT',
+    'LIGHT_RED',
+    'MED_RED',
+    'DARK_RED',
+    'LIGHT_GREEN',
+    'MED_GREEN',
+    'DARK_GREEN',
+    'LIGHT_BLUE',
+    'MED_BLUE',
+    'DARK_BLUE',
+    'MED_BROWN',
+    'DARK_BROWN',
+    'UNSET',
+    'UNSET',
+    'UNSET',
+    'BLACK'
+]
 
 def draw_line_mode():
     
@@ -507,7 +525,7 @@ def draw_line_mode():
         #vert_opts = ["{}".format(idx) for idx in range(len(cur_state.map_data.vertexes))]
         vert_opts = ["{}".format(idx) for idx in range(len(cur_state.map_data.vertexes))]
                      
-        color_opts = ["{}".format(idx) for idx in range(16)]
+        color_opts = ["{}".format(col_names[idx]) for idx in range(16)]
         
         v1_changed,new_v1_idx = imgui.core.combo("v1", cur_wall.v1.index, vert_opts)
         
