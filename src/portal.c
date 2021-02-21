@@ -274,26 +274,18 @@ void portal_rend(u16 src_sector, u32 cur_frame) {
 
             if (is_portal) {
                 // draw step down from ceiling
-                draw_fix_line_to_buffer(x1, x1_ytop, x2, x2_ytop, window_min, window_max, raster_buffer_0);
-
                 if(neighbor_ceil_height < ceil_height && neighbor_ceil_height > floor_height) {
                     u8 upper_color = map->wall_colors[portal_idx].upper_col;
                     // draw step from ceiling
                     
-                    //s16 nx1_ytop = project_and_adjust_y_fix(trans_v1, neighbor_ceil_height);
-                    //s16 nx2_ytop = project_and_adjust_y_fix(trans_v2, neighbor_ceil_height);
                     s16 nx1_ytop = project_and_adjust_y_fix(neighbor_ceil_height, trans_v1_z);
                     s16 nx2_ytop = project_and_adjust_y_fix(neighbor_ceil_height, trans_v2_z);
 
-                    // ceiling
-                    draw_from_top_to_raster_span_no_update_clip(raster_buffer_0, beginx, endx, ceil_color);
-                    draw_fix_line_to_buffer(x1, nx1_ytop, x2, nx2_ytop, window_min, window_max, raster_buffer_1);
-                    draw_between_raster_spans_update_top_clip(raster_buffer_0, raster_buffer_1, beginx, endx, upper_color);
+                    draw_upper_step(x1, x1_ytop, nx1_ytop, x2, x2_ytop, nx2_ytop, window_min, window_max, upper_color, ceil_color);
                 } else {
-                    draw_from_top_to_raster_span_update_clip(raster_buffer_0, beginx, endx, ceil_color);
+                    draw_ceiling_update_clip(x1, x1_ytop, x2, x2_ytop, window_min, window_max, ceil_color);
                 }
 
-                draw_fix_line_to_buffer(x1, x1_ybot, x2, x2_ybot, window_min, window_max, raster_buffer_0);
 
                 if(neighbor_floor_height > floor_height && neighbor_floor_height < ceil_height) {
                     u8 lower_color = map->wall_colors[portal_idx].lower_col;
@@ -303,11 +295,9 @@ void portal_rend(u16 src_sector, u32 cur_frame) {
                     s16 nx1_ybot = project_and_adjust_y_fix(neighbor_floor_height, trans_v1_z);
                     s16 nx2_ybot = project_and_adjust_y_fix(neighbor_floor_height, trans_v2_z);
 
-                    draw_from_raster_span_to_bot_no_update_clip(raster_buffer_0, beginx, endx, floor_color);
-                    draw_fix_line_to_buffer(x1, nx1_ybot, x2, nx2_ybot, window_min, window_max, raster_buffer_1);
-                    draw_between_raster_spans_update_bottom_clip(raster_buffer_1, raster_buffer_0, beginx, endx, lower_color);
+                    draw_lower_step(x1, x1_ybot, nx1_ybot, x2, x2_ybot, nx2_ybot, window_min, window_max, lower_color, floor_color);
                 } else {
-                    draw_from_raster_span_to_bot_update_clip(raster_buffer_0, beginx, endx, floor_color);
+                    draw_floor_update_clip(x1, x1_ybot, x2, x2_ybot, window_min, window_max, floor_color);
                 }
 
             } else { 

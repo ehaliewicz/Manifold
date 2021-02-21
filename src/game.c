@@ -70,28 +70,6 @@ int subpixel;
 int bob_idx;
 
 
-//u8 column_buffer[W];
-//u8 columns_remaining;
-
-//void clear_column_buffer() {
-//    columns_remaining = 0;
-//    memset(column_buffer, 0, sizeof(column_buffer));
-//}
-
-
-/*
-void draw_wall(u16 v1_idx, u16 v2_idx, s16 ceil_height, s16 floor_height) {
-    vertex v1 = cur_level->vertexes[v1_idx];
-    vertex v2 = cur_level->vertexes[v2_idx];
-    //draw_wall_from_verts(v1, v2, ceil_height, floor_height);
-}
-*/
-
-// 00 -> draw 0, flip 1
-// 01 -> draw 0, flip 1
-
-
-
 void showFPS(u16 float_display)
 {
     char str[16];
@@ -247,7 +225,7 @@ void request_flip() {
 
 void draw_3d_view(u32 cur_frame) {
 
-    //BMP_vertical_clear();
+    BMP_vertical_clear();
     clear_2d_buffers();
     clear_portal_cache();
 
