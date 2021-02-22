@@ -129,21 +129,21 @@ void do_vint_flip() {
     #else 
         if(in_use_vram_copy_src == bmp_buffer_0) {
             DMA_doDma(DMA_VRAM, 
-                in_use_vram_copy_src+QUARTER_BYTES, 
+                (u8*)in_use_vram_copy_src+QUARTER_BYTES, 
                 in_use_vram_copy_dst+HALF_BYTES,
                 QUARTER_WORDS, 4);
             DMA_doDma(DMA_VRAM, 
-                in_use_vram_copy_src+HALF_BYTES+QUARTER_BYTES, 
+                (u8*)in_use_vram_copy_src+HALF_BYTES+QUARTER_BYTES, 
                 in_use_vram_copy_dst+2+HALF_BYTES,
                 QUARTER_WORDS, 4);
 
         } else {
             DMA_doDma(DMA_VRAM, 
-                in_use_vram_copy_src, 
+                (u8*)in_use_vram_copy_src, 
                 in_use_vram_copy_dst,
                 QUARTER_WORDS, 4);
             DMA_doDma(DMA_VRAM,
-                in_use_vram_copy_src+HALF_BYTES,
+                (u8*)in_use_vram_copy_src+HALF_BYTES,
                 in_use_vram_copy_dst+2,
                 QUARTER_WORDS, 4);
         }
@@ -175,20 +175,20 @@ void do_vint_flip() {
         // second half for framebuffer 0
         if(in_use_vram_copy_src == bmp_buffer_0) {
             DMA_doDma(DMA_VRAM, 
-                in_use_vram_copy_src, 
+                (u8*)in_use_vram_copy_src, 
                 in_use_vram_copy_dst,
                 QUARTER_WORDS, 4);
             DMA_doDma(DMA_VRAM,
-                in_use_vram_copy_src+HALF_BYTES,
+                (u8*)in_use_vram_copy_src+HALF_BYTES,
                 in_use_vram_copy_dst+2,
                 QUARTER_WORDS, 4);
         } else { 
             DMA_doDma(DMA_VRAM, 
-                in_use_vram_copy_src+QUARTER_BYTES, 
+                (u8*)in_use_vram_copy_src+QUARTER_BYTES, 
                 in_use_vram_copy_dst+HALF_BYTES,
                 QUARTER_WORDS, 4);
             DMA_doDma(DMA_VRAM, 
-                in_use_vram_copy_src+HALF_BYTES+QUARTER_BYTES, 
+                (u8*)in_use_vram_copy_src+HALF_BYTES+QUARTER_BYTES, 
                 in_use_vram_copy_dst+2+HALF_BYTES,
                 QUARTER_WORDS, 4);
         }
@@ -225,13 +225,13 @@ void request_flip() {
 
 void draw_3d_view(u32 cur_frame) {
 
-    BMP_vertical_clear();
+    //BMP_vertical_clear();
     clear_2d_buffers();
     clear_portal_cache();
 
     portal_rend(cur_player_pos.cur_sector, cur_frame);
 
-    char buf[32];
+    //char buf[32];
     //sprintf(buf, "cur_sector: %i", cur_player_pos.cur_sector);
     //VDP_drawTextBG(BG_A, buf, 1, 6);
     //if(portal_1_clip_status == LEFT_CLIPPED) {
@@ -342,7 +342,7 @@ void handle_input() {
         cur_player_pos.y = collision.pos.y;
         cur_player_pos.cur_sector = collision.new_sector;
 
-        cur_player_pos.z = (sector_floor_height(cur_player_pos.cur_sector, cur_portal_map)<<(FIX32_FRAC_BITS-4)) + FIX32(40);
+        cur_player_pos.z = (sector_floor_height(cur_player_pos.cur_sector, (portal_map*)cur_portal_map)<<(FIX32_FRAC_BITS-4)) + FIX32(40);
 
 
 
@@ -426,7 +426,7 @@ void init_sector_jump_positions() {
 
         int avg_sect_x = 0;
         int avg_sect_y = 0;
-        int num_walls = sector_num_walls(i, cur_portal_map);
+        int num_walls = sector_num_walls(i, (portal_map*)cur_portal_map);
         int wall_offset = sector_wall_offset(i, (portal_map*)cur_portal_map);
 
         for(int j = 0; j < num_walls; j++) {
@@ -465,10 +465,8 @@ void init_game() {
 	//VDP_drawImageEx(BG_B, &doom_logo, 0x0360, 8, 0, 1, 1);
 
 
-    //set_portal_map(&portal_level_1);
-    //set_portal_map(&editor_test_map);
-    //set_portal_map(&editor_test_map_v2);
-    set_portal_map(&overlapping_map);
+    //set_portal_map((portal_map*)&portal_level_1);
+    set_portal_map((portal_map*)&overlapping_map);
 
 
 
@@ -483,7 +481,7 @@ void init_game() {
         cur_player_pos.y = sector_jump_positions[0].y; 
         cur_player_pos.cur_sector = 0;
         
-        cur_player_pos.z = (sector_floor_height(cur_player_pos.cur_sector, cur_portal_map)<<(FIX32_FRAC_BITS-4)) + FIX32(40);
+        cur_player_pos.z = (sector_floor_height(cur_player_pos.cur_sector, (portal_map*)cur_portal_map)<<(FIX32_FRAC_BITS-4)) + FIX32(40);
 
         //cur_player_pos.x = intToFix32(cur_level->things[0].x);
         //cur_player_pos.y = intToFix32(cur_level->things[0].y);
@@ -493,8 +491,8 @@ void init_game() {
 
     init_3d_palette();
 
-    cur_palette = threeDPalette;
-    VDP_setPalette(PAL1, threeDPalette);
+    cur_palette = (u16*)threeDPalette;
+    VDP_setPalette(PAL1, cur_palette);
     
 
     clear_menu();
@@ -549,7 +547,7 @@ game_mode run_game() {
         case GAME_WIREFRAME:
         case GAME_SOLID:
             draw_3d_view(cur_frame);
-            maybe_set_palette(threeDPalette);
+            maybe_set_palette((u16*)threeDPalette);
    }
     cur_frame++;
     return SAME_MODE;
