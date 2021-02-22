@@ -108,11 +108,11 @@ void draw_native_vertical_line_unrolled(s16 x, s16 y0, s16 y1, u8 col) {
             __asm volatile(
                 "subq #1, %2\t\n\
                 extra_pix_lp:\t\n\
-                move.b %0, (%1)\t\n\
-                addq.l #2, %1\t\n\
+                move.b %1, (%0)\t\n\
+                addq.l #2, %0\t\n\
                 dbeq %2, extra_pix_lp"
-                : 
-                : "d" (col), "a" (col_ptr), "d" (extra_pix)
+                : "=a" (col_ptr)
+                : "d" (col), "d" (extra_pix)
                 );
         }
         /*
@@ -295,7 +295,7 @@ void draw_upper_step(s16 x1, s16 x1_ytop, s16 nx1_ytop, s16 x2, s16 x2_ytop, s16
         if(top_draw_y < bot_draw_y) {
             draw_native_vertical_line_unrolled(x, top_draw_y, bot_draw_y, upper_color);
             *yclip_ptr++ = bot_draw_y;
-            *yclip_ptr++;
+            yclip_ptr++;
         } else {
             yclip_ptr += 2;
         }
