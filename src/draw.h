@@ -11,9 +11,16 @@ typedef enum {
 
 
 
-void bresenham_line(u8 x0, u8 x1, u8 y0, u8 y1, u16 win_min, u16 win_max, u8 col);
+typedef struct {
+    u8 x;
+    u8 y0;
+    u8 y1;
+    u8 clip_y0;
+    u8 clip_y1;
+    Bitmap *bmp;
+} col_params;
 
-void bresenham_wall(s16 x1, s16 x1y, s16 x2, s16 x2y, u16 window_min, u8 window_max, s16* output);
+void draw_tex_column(col_params params);
 //void draw_native_vertical_line_unrolled(s16 y0, s16 y1, u8 col, u8* col_ptr);
 void draw_native_vertical_line_unrolled(s16 x, s16 y0, s16 y1, u8 col);
 

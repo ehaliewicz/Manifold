@@ -49,9 +49,9 @@ void init_column_offset_table() {
   //u8* last_ptr = getDMAWritePointer(0, 0);
 
   for(int x = 0; x < SCREEN_WIDTH; x++) {
-    u16 cur_off = getDMAWriteOffset(x, 0);    
-    column_table[x] = cur_off; //cur_ptr-last_ptr;
-    //last_ptr = cur_ptr;
+    //u16 cur_off = getDMAWriteOffset(x, 0);
+    u16 cur_off = getDMAWriteOffset(x, 0); // only get odd columns
+    column_table[x] = cur_off; 
   }
 }
 
@@ -65,7 +65,7 @@ void init_2d_buffers() {
 void clear_2d_buffers() {
     for(int i = 0; i < SCREEN_WIDTH; i++) {
         yclip[i*2] = 0;
-        yclip[i*2+1] = SCREEN_HEIGHT-8; 
+        yclip[i*2+1] = SCREEN_HEIGHT-10; // 8; idk why this is messed up 
     }
 }
 
@@ -74,7 +74,73 @@ void release_2d_buffers() {
     MEM_free(column_table);
 }
 
-#define SUBPIXEL_SHIFT 8
+
+// do texture map stuff :^)
+
+__attribute__((noinline)) void draw_tex_column(col_params params) {
+    u8 x0 = params.x;
+    //u8 x1 = params.x1;
+    u8 y0 = params.y0;
+    u8 y1 = params.y1;
+    u16 dy = y1 - y0;
+    //u16 dx = x1 - x0;
+
+    if(dy == 0) { return; } // || dx == 0) { return ;}
+    Bitmap *b = params.bmp;
+    s32 tex_size_fix = b->h/2 << 16;
+    s32 dv_dy = tex_size_fix / dy; // 8.16
+    u8* tex = params.bmp->image;
+    s32 swapped_dv_dy = (dv_dy << 16) | (dv_dy>>16);
+
+    #define TEX_SIZE 64
+    /*
+        roughly 100ms?
+    for(int x = params.x; x < params.x + TEX_SIZE; x++) {
+        u8* off = bmp_buffer_write + column_table[x] + (y0<<1);
+        s32 v_fix = 0;
+        for(int y = y0; y <= y1; y++) {
+            char c = (tex[v_fix>>16]);
+            *off = c;
+            off += 2;
+            v_fix += dv_dy;
+        }
+        // go to next row in texture (which is actually a column since it's rotated 90 degrees)
+        tex += 128;
+    }
+    //return;
+    */
+
+
+
+    //addx texture map experiment code 
+    // 5fps faster..
+    // 66ms to texture map 91% of the screen, pretty fast
+
+    for(int x = params.x; x < params.x + TEX_SIZE; x++) {
+        u8* off = bmp_buffer_write + column_table[x] + (y0<<1);
+        u32 v_fix = 0;
+
+        // reset dy because the inline asm below clobbers it
+        dy = (y1-y0);
+        
+        
+        __asm volatile(
+        " subq #1, %0\t\n\
+        lp_%=:\t\n\
+            move.b 0(%4, %2.w), (%1)\t\n\
+            addx.l %3, %2\t\n\
+            addq.l #2, %1\t\n\
+            dbeq %0, lp_%="
+            : "+d" (dy), "+a" (off),  "+d" (v_fix)
+            : "d" (swapped_dv_dy), "a" (tex)
+        );
+        tex += 128;
+
+        //tex += b->h;
+    }
+    
+
+}
 
 
 void draw_vertical_line(s16 y0, s16 y1, u8 col, u8* col_ptr) {
@@ -96,21 +162,39 @@ void vline_native_dither_movep(u8* buf, u8 extra_pix, s16 jump_table_offset, u32
 void draw_native_vertical_line_unrolled(s16 x, s16 y0, s16 y1, u8 col) {
 
 
-    u8* col_ptr = bmp_buffer_write + column_table[x] + (y0<<1);
+    u8* col_ptr = bmp_buffer_write + column_table[x<<1] + (y0<<1);
+    u16* word_col_ptr = (u16*)col_ptr;
     u32 full_col = (col << 24) | (col << 16) | (col<<8) | col;
 
+    u32 word_col = (col<<8) | col;
+
     u16 dy = (y1-y0);
+    if(dy& 0b1) {
+        *word_col_ptr++ = word_col;
+    }
+    u32* lw_col_ptr = word_col_ptr;
+
+    dy>>=1;
+    for(int y = 0; y < dy; y++) {
+        *lw_col_ptr++ = full_col;
+    }
+    //for(int y = y0; y <= y1; y++) {
+    //    *word_col_ptr++ = word_col;
+    //}
+
+    return;
+
     u16 dy_movep = dy>>2;
     
     if(dy_movep > 0) { 
-        u16 extra_pix = dy&0b11;
+        u16 extra_pix = dy&0b11;    
         if(extra_pix) {
             __asm volatile(
                 "subq #1, %2\t\n\
-                extra_pix_lp:\t\n\
+                extra_pix_lp_%=:\t\n\
                 move.b %1, (%0)\t\n\
                 addq.l #2, %0\t\n\
-                dbeq %2, extra_pix_lp"
+                dbeq %2, extra_pix_lp_%="
                 : "=a" (col_ptr)
                 : "d" (col), "d" (extra_pix)
                 );

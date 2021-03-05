@@ -7,13 +7,24 @@
 #define SCREEN_HEIGHT 144 // BMP_HEIGHT   // H
 
 // .888
-#define ASPECT_RATIO (SCREEN_WIDTH / SCREEN_HEIGHT)
+#define ASPECT_RATIO (SCREEN_WIDTH / SCREEN_HEIGHT) // 0.44
 
+// 3d->2d projection constants 
+
+/*
 #define SCALE 1
 #define CONST1 64 // (SCREEN_WIDTH/2)
-#define CONST2 60 // ((SCREEN_WIDTH/2) * SCALE / min(1, ASPECT_RATIO)) // SCREEN_WIDTH/2 * SCALE / MIN(1, ASPECT_RATIO)
+#define CONST2 60 // ((SCREEN_WIDTH/2) * SCALE / min(1, ASPECT_RATIO)) 
 #define CONST3 72 //(SCREEN_HEIGHT/2)
 #define CONST4 72 //(SCREEN_HEIGHT/2 * SCALE / max(1, ASPECT_RATIO))
+*/
+
+#define SCALE 1
+#define CONST1 32
+#define CONST2 32 //72
+#define CONST3 72
+#define CONST4 72 
+
 
 typedef struct {
     s16 x, yfloor, yceil;

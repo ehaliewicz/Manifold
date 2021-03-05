@@ -32,7 +32,7 @@ s16 project_and_adjust_x(s16 x, s16 z) {
     //fix32 rz = trans_map_vert.y;
     
     
-    s32 const2Rx = (CONST2 * x);
+    s32 const2Rx = (32 * x);
 
     s16 const2RxDivZ = const2Rx / z;
     s16 transX = CONST1 + const2RxDivZ;
@@ -50,8 +50,8 @@ s16 project_and_adjust_y(Vect2D_f32 trans_map_vert, s16 y) {
     s16 yproj = CONST3 + const4RyDivZ;
 
     return (H-1)-yproj;
-}*/
-
+}
+*/
 
 /*
 s16 project_and_adjust_y_fix(Vect2D_f32 trans_map_vert, s16 y) {    

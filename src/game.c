@@ -108,12 +108,26 @@ volatile u8* in_use_vram_copy_src;
 #define QUARTER_WORDS (HALF_WORDS/2)
 #define QUARTER_BYTES (HALF_BYTES/2)
 
+void after_flip_vscroll_adjustment() {
+    u16 vscr;
+    if(vram_copy_src == bmp_buffer_1) {
+        vscr = (BMP_PLANHEIGHT * 8) / 2;
+    } else {
+        vscr = 0;
+    }
+    VDP_setVerticalScroll(BG_A, vscr);
+}
+
+void copy_quarter_words(u8* src, u32 dst) {
+    DMA_doDma(DMA_VRAM,
+        src,
+        dst,
+        QUARTER_WORDS, 4);
+}
 
 void do_vint_flip() {
     
     if(vint_flipping == 1) {
-
-        
 
         // not finished
         // complete second half here
@@ -121,41 +135,33 @@ void do_vint_flip() {
         // second half for framebuffer 0
         // first half for framebuffer 1
 
-    #ifdef FAST_DMA
-        DMA_doDma(DMA_VRAM, 
-            in_use_vram_copy_src, 
-            in_use_vram_copy_dst,
-            HALF_WORDS, 4);
-    #else 
+        
         if(in_use_vram_copy_src == bmp_buffer_0) {
-            DMA_doDma(DMA_VRAM, 
+            // draw second quarter of framebuffer to third quarter of VRAM framebuffer
+
+            copy_quarter_words(
                 (u8*)in_use_vram_copy_src+QUARTER_BYTES, 
-                in_use_vram_copy_dst+HALF_BYTES,
-                QUARTER_WORDS, 4);
-            DMA_doDma(DMA_VRAM, 
-                (u8*)in_use_vram_copy_src+HALF_BYTES+QUARTER_BYTES, 
-                in_use_vram_copy_dst+2+HALF_BYTES,
-                QUARTER_WORDS, 4);
-
+                in_use_vram_copy_dst+HALF_BYTES);
+            copy_quarter_words(
+                (u8*)in_use_vram_copy_src+QUARTER_BYTES + HALF_BYTES,
+                in_use_vram_copy_dst+2+HALF_BYTES);
+            //copy_quarter_words(
+            //    (u8*)in_use_vram_copy_src+QUARTER_BYTES,
+            //    in_use_vram_copy_dst+2+HALF_BYTES);
         } else {
-            DMA_doDma(DMA_VRAM, 
+            copy_quarter_words( 
                 (u8*)in_use_vram_copy_src, 
-                in_use_vram_copy_dst,
-                QUARTER_WORDS, 4);
-            DMA_doDma(DMA_VRAM,
+                in_use_vram_copy_dst);
+            //copy_quarter_words(
+            //    (u8*)in_use_vram_copy_src,
+            //    in_use_vram_copy_dst+2);
+            copy_quarter_words(
                 (u8*)in_use_vram_copy_src+HALF_BYTES,
-                in_use_vram_copy_dst+2,
-                QUARTER_WORDS, 4);
+                in_use_vram_copy_dst+2);
         }
-    #endif
+        
 
-        u16 vscr;
-        if(vram_copy_src == bmp_buffer_1) {
-            vscr = (BMP_PLANHEIGHT * 8) / 2;
-        } else {
-            vscr = 0;
-        }
-        VDP_setVerticalScroll(BG_A, vscr);
+        after_flip_vscroll_adjustment();
 
         vint_flipping = 0;
     } else if(vint_flip_requested) {
@@ -164,35 +170,30 @@ void do_vint_flip() {
         in_use_vram_copy_dst = vram_copy_dst;
         in_use_vram_copy_src = vram_copy_src;
 
-     #ifdef FAST_DMA
-        
-        DMA_doDma(DMA_VRAM,
-			  in_use_vram_copy_src+HALF_BYTES,
-			  in_use_vram_copy_dst+2,
-			  HALF_WORDS, 4);
-    #else
+
         // first half for framebuffer 1
         // second half for framebuffer 0
         if(in_use_vram_copy_src == bmp_buffer_0) {
-            DMA_doDma(DMA_VRAM, 
+            copy_quarter_words(
                 (u8*)in_use_vram_copy_src, 
-                in_use_vram_copy_dst,
-                QUARTER_WORDS, 4);
-            DMA_doDma(DMA_VRAM,
+                in_use_vram_copy_dst);
+            //copy_quarter_words(
+            //    (u8*)in_use_vram_copy_src,
+            //    in_use_vram_copy_dst+2);
+            copy_quarter_words(
                 (u8*)in_use_vram_copy_src+HALF_BYTES,
-                in_use_vram_copy_dst+2,
-                QUARTER_WORDS, 4);
+                in_use_vram_copy_dst+2);
         } else { 
-            DMA_doDma(DMA_VRAM, 
+            copy_quarter_words(
                 (u8*)in_use_vram_copy_src+QUARTER_BYTES, 
-                in_use_vram_copy_dst+HALF_BYTES,
-                QUARTER_WORDS, 4);
-            DMA_doDma(DMA_VRAM, 
-                (u8*)in_use_vram_copy_src+HALF_BYTES+QUARTER_BYTES, 
-                in_use_vram_copy_dst+2+HALF_BYTES,
-                QUARTER_WORDS, 4);
+                in_use_vram_copy_dst+HALF_BYTES);
+            //copy_quarter_words(
+            //    (u8*)in_use_vram_copy_src+QUARTER_BYTES, 
+            //    in_use_vram_copy_dst+2+HALF_BYTES);
+            copy_quarter_words(
+                (u8*)in_use_vram_copy_src+QUARTER_BYTES+HALF_BYTES,
+                in_use_vram_copy_dst+2+HALF_BYTES);
         }
-    #endif
     }
 
 
@@ -206,6 +207,7 @@ void request_flip() {
     while(vint_flip_requested || vint_flipping) {
         // vblank is behind one request
         // wait until it has started, and then we can safely flip to the next framebuffer
+        //return;
     }
 
 
@@ -225,28 +227,18 @@ void request_flip() {
 
 void draw_3d_view(u32 cur_frame) {
 
+    // clear screen for half-wide framebuffer test
     //BMP_vertical_clear();
+
+    // clear clipping buffers
     clear_2d_buffers();
+    // clear portal graph visited cache
     clear_portal_cache();
-
+    // recursively render portal graph
     portal_rend(cur_player_pos.cur_sector, cur_frame);
-
-    //char buf[32];
-    //sprintf(buf, "cur_sector: %i", cur_player_pos.cur_sector);
-    //VDP_drawTextBG(BG_A, buf, 1, 6);
-    //if(portal_1_clip_status == LEFT_CLIPPED) {
-    //    VDP_drawTextBG(BG_A, "left_clipped", 1, 7);
-    //} else if (portal_1_clip_status == RIGHT_CLIPPED) {
-    //    VDP_drawTextBG(BG_A, "right clipped", 1, 7);
-    //} else if (portal_1_clip_status == OFFSCREEN) {
-    //    VDP_drawTextBG(BG_A, "fully clipped", 1, 7);
-    //} else {
-    //    VDP_drawTextBG(BG_A, "unclipped   ", 1, 7);
-    //}
-    //sprintf(buf, "x1 %i, x2 %i", portal_1_x1, portal_1_x2);
-    //VDP_drawTextBG(BG_A, buf, 1, 8);
+    // display fps
     showFPS(1);
-
+    // request a flip when vsync process is idle (almost always, as the software renderer is much slower than the framebuffer DMA process)
     request_flip();
 
 
@@ -301,7 +293,7 @@ void handle_input() {
             newy = cury + leftDy*move_speed;
             newx = curx + leftDx*move_speed;
         } else {
-            newang += 10;
+            newang += 15;
             if(newang > 1023) {
                 newang -= 1024;
             }
@@ -315,10 +307,10 @@ void handle_input() {
             newy = cury + rightDy*move_speed;
             newx = curx + rightDx*move_speed;
         } else {
-            if(newang < 10) {
-                newang = 1024 - (10-newang);
+            if(newang < 15) {
+                newang = 1024 - (15-newang);
             } else {
-                newang -= 10;
+                newang -= 15;
             }
         }
     }    
@@ -348,11 +340,11 @@ void handle_input() {
 
     }
 
-    const fix32 bobs[32] = {FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), 
+    const fix32 bobs[32] = {FIX32(0.), FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), 
                             FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), 
                             FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1),
                             FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1)};
-    cur_player_pos.z += bobs[bob_idx>>1]*1;
+    cur_player_pos.z += bobs[bob_idx>>1]>>1;
     bob_idx++;
     if(bob_idx >= 64) {
         bob_idx = 0;
@@ -518,6 +510,26 @@ void maybe_set_palette(u16* new_palette) {
 
 
 
+
+const char tex[16] = {
+    LIGHT_BLUE_IDX,
+    MED_BLUE_IDX,
+    DARK_BLUE_IDX,
+    LIGHT_GREEN_IDX,
+    MED_GREEN_IDX,
+    DARK_GREEN_IDX,
+    LIGHT_RED_IDX,
+    MED_RED_IDX,
+    DARK_RED_IDX,
+    MED_BROWN_IDX,
+    DARK_BROWN_IDX,
+    BLACK_IDX,
+    DARK_BROWN_IDX,
+    MED_BROWN_IDX,
+    DARK_RED_IDX,
+    MED_RED_IDX
+};
+
 game_mode run_game() {
     
     
@@ -542,12 +554,88 @@ game_mode run_game() {
         return MAIN_MENU;
     }
     */
+   static u8 cur_x = 0;
+   static u8 cur_y0 = 0;
+   static u8 cur_y1 = 128;
+   static u8 cur_clip_y0 = 0;
+   static u8 cur_clip_y1 = 0;
+   
+    u16 joy = JOY_readJoypad(JOY_1);
+    if(joy & BUTTON_A) {
+        if(joy & BUTTON_UP) {
+            if(cur_y0 > 0) {
+                cur_y0--;
+            }
+        } else if (joy & BUTTON_A && joy & BUTTON_DOWN) {
+            if(cur_y0 < cur_y1) {
+                cur_y0++;
+            }
+        }
+    } else if (joy & BUTTON_B) {
+      if(joy & BUTTON_UP) {
+          if(cur_y1 > cur_y0) {
+              cur_y1--;
+          }
+      }  else if (joy & BUTTON_DOWN) {
+          if(cur_y1 < SCREEN_HEIGHT-1) {
+              cur_y1++;
+          }
+      }
+    } else if(joy & BUTTON_UP) {
+        if(cur_y0 > 0) {
+            cur_y0--;
+            cur_y1--;
+        }        
+    } else if (joy & BUTTON_DOWN) {
+        if(cur_y1 < SCREEN_HEIGHT-1) {
+            cur_y1++;
+            cur_y0++;
+        }
+    } else if (joy & BUTTON_LEFT) {
+        if(cur_x > 0) {
+            cur_x--;
+        }
+    } else if (joy & BUTTON_RIGHT) {
+        if(cur_x < SCREEN_WIDTH-1) {
+            cur_x++;
+        }
+    }
+
+   col_params params = {
+       .x = cur_x,
+       .y0 = cur_y0,
+       .y1 = cur_y1,
+       .clip_y0 = cur_clip_y0,
+       .clip_y1 = cur_clip_y1,
+       .bmp = &door
+   };
+
+   char buf[32];
 
    switch(render_mode) {
         case GAME_WIREFRAME:
         case GAME_SOLID:
-            draw_3d_view(cur_frame);
             maybe_set_palette((u16*)threeDPalette);
+            // probably not necessary
+            //VDP_waitVInt();
+            
+            /* 3d render code */
+
+            draw_3d_view(cur_frame);
+
+
+            /* texture map code */
+            
+            //BMP_vertical_clear();
+            //showFPS(1);
+            //draw_tex_column(params);
+            //sprintf(buf, "w: %i, h: %i", door.w, door.h);
+            //VDP_drawTextBG(BG_B, buf, 7, 5);
+            //request_flip();
+            //maybe_set_palette(door.palette->data);
+            
+
+
    }
     cur_frame++;
     return SAME_MODE;

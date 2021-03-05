@@ -62,10 +62,9 @@ typedef enum {
 
 void portal_rend(u16 src_sector, u32 cur_frame) {
     portal_map* map = cur_portal_map;
-    //static const portal_map* map = &portal_level_1;
 
-
-    render_sector_item queue_item = { .x1 = 0, .x2 = SCREEN_WIDTH-1, .sector = src_sector };
+    //render_sector_item queue_item = { .x1 = 0, .x2 = SCREEN_WIDTH-1, .sector = src_sector };
+    render_sector_item queue_item = { .x1 = 0, .x2 = 64-1, .sector = src_sector };
 
     queue_push(queue_item);
 
