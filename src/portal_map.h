@@ -26,11 +26,24 @@ typedef struct {
     u8 lower_col;
 } wall_col;
 
+typedef enum {
+    NO_TYPE = 0,
+    FLASHING = 1,
+} sector_type;
+
+typedef struct {
+    s8 light;
+    s16 par2;
+    s8 stash;
+} sector_param;
+
 typedef struct {
     const int num_sectors;
     const int num_walls;
     const int num_verts;
     const s16* sectors;
+    const sector_type* sector_types;
+    sector_param* sector_params;
     const u16* walls;
     const s16* portals;
     const wall_col* wall_colors;

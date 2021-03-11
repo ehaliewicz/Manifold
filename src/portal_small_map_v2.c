@@ -11,7 +11,7 @@
 
 const s16 sectors[SECTOR_SIZE*NUM_SECTORS] = {
     // sector 0   wall_offset, portal_offset, num_walls, floor_height, ceil_height
-    0,  0, 6, -80<<4, 180<<4, BLUE_BLACK_IDX, LIGHT_BLUE_IDX,
+    0,  0, 6, -80<<4, 180<<4, BLUE_IDX, LIGHT_BLUE_IDX,
     // sector 1
     7,  6, 6, -80<<4, 180<<4, DARK_BLUE_IDX, LIGHT_BLUE_IDX,
     // sector 2
@@ -84,26 +84,26 @@ const wall_col wall_colors[NUM_WALLS] = {
     // sector 0 colors
     {.mid_col = DARK_GREEN_IDX},
     {.mid_col = DARK_GREEN_IDX},
-    {.mid_col = MED_GREEN_IDX},
+    {.mid_col = GREEN_IDX},
     {.mid_col = DARK_GREEN_IDX},
-    {.mid_col = MED_GREEN_IDX},
+    {.mid_col = GREEN_IDX},
     {.mid_col = DARK_GREEN_IDX},
     // sector 1 colors
-    {.mid_col = MED_GREEN_IDX},
+    {.mid_col = GREEN_IDX},
     {.mid_col = DARK_GREEN_IDX},
     {.mid_col = DARK_GREEN_IDX},
-    {.mid_col = MED_GREEN_IDX},
+    {.mid_col = GREEN_IDX},
     {.mid_col = DARK_GREEN_IDX},
-    {.mid_col = MED_GREEN_IDX},
+    {.mid_col = GREEN_IDX},
     // sector 2 colors
-    {.mid_col = MED_GREEN_IDX},
-    {.mid_col = MED_GREEN_IDX},
-    {.mid_col = MED_GREEN_IDX},
-    {.upper_col = MED_RED_IDX, .lower_col = MED_RED_IDX},
-    {.mid_col = MED_GREEN_IDX},
-    {.mid_col = MED_GREEN_IDX},
+    {.mid_col = GREEN_IDX},
+    {.mid_col = GREEN_IDX},
+    {.mid_col = GREEN_IDX},
+    {.upper_col = RED_IDX, .lower_col = RED_IDX},
+    {.mid_col = GREEN_IDX},
+    {.mid_col = GREEN_IDX},
     // sector 3 colors
-    {.mid_col = MED_GREEN_IDX},
+    {.mid_col = GREEN_IDX},
     {.mid_col = DARK_GREEN_IDX},
     {.mid_col = DARK_GREEN_IDX},
     {.mid_col = DARK_GREEN_IDX},
@@ -112,9 +112,9 @@ const wall_col wall_colors[NUM_WALLS] = {
     // sector 4 colors
     {.mid_col = DARK_GREEN_IDX},
     {.mid_col = DARK_GREEN_IDX},
-    {.mid_col = MED_GREEN_IDX},
+    {.mid_col = GREEN_IDX},
     {.mid_col = DARK_GREEN_IDX},
-    {.mid_col = MED_GREEN_IDX},
+    {.mid_col = GREEN_IDX},
     {.mid_col = DARK_GREEN_IDX},
     // sector 5 colors
     {.mid_col = DARK_GREEN_IDX},
@@ -132,7 +132,7 @@ const wall_col wall_colors[NUM_WALLS] = {
     {.mid_col = LIGHT_GREEN_IDX},
     {.mid_col = LIGHT_GREEN_IDX},
     {.mid_col = DARK_GREEN_IDX},
-    {.mid_col = MED_GREEN_IDX},
+    {.mid_col = GREEN_IDX},
     // sector 8 colors
     {.mid_col = DARK_GREEN_IDX},
     {.mid_col = DARK_GREEN_IDX},
@@ -140,7 +140,7 @@ const wall_col wall_colors[NUM_WALLS] = {
     {.mid_col = DARK_GREEN_IDX},
     // sector 9 colors
     {.mid_col = DARK_GREEN_IDX},
-    {.mid_col = MED_GREEN_IDX},
+    {.mid_col = GREEN_IDX},
     {.mid_col = DARK_GREEN_IDX},
     {.mid_col = DARK_GREEN_IDX},
 };

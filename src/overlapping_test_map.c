@@ -4,23 +4,23 @@
 #include "vertex.h"
 
 static const s16 sectors[136] = {
-    0, 0, 6, 100<<4, 200<<4, BLUE_BLACK_IDX, MED_BLUE_IDX,   0,
-    7, 6, 5, 100<<4, 200<<4, BLUE_BLACK_IDX, MED_BLUE_IDX,   0,
-    13, 11, 4, 100<<4, 200<<4, BLUE_BLACK_IDX, MED_BLUE_IDX, 0,
-    18, 15, 4, 120<<4, 220<<4, MED_BLUE_IDX, LIGHT_BLUE_IDX, 0,
-    23, 19, 4, 140<<4, 240<<4, BLUE_BLACK_IDX, MED_BLUE_IDX, 0,
-    28, 23, 4, 160<<4, 260<<4, MED_BLUE_IDX, LIGHT_BLUE_IDX, 0,
-    33, 27, 4, 180<<4, 280<<4, BLUE_BLACK_IDX, MED_BLUE_IDX, 0,
-    38, 31, 5, 200<<4, 300<<4, MED_BLUE_IDX, LIGHT_BLUE_IDX, 0,
-    44, 36, 4, 100<<4, 200<<4, BLUE_BLACK_IDX, MED_BLUE_IDX, 0,
-    49, 40, 4, 100<<4, 200<<4, BLUE_BLACK_IDX, MED_BLUE_IDX, 0,
-    54, 44, 4, 200<<4, 300<<4, MED_BLUE_IDX, LIGHT_BLUE_IDX, 0,
-    59, 48, 4, 80<<4, 180<<4, MED_RED_IDX, LIGHT_RED_IDX, 0,
-    64, 52, 4, 60<<4, 160<<4, BLUE_BLACK_IDX, MED_BLUE_IDX, 0,
-    69, 56, 4, 40<<4, 140<<4, MED_RED_IDX, LIGHT_RED_IDX, 0,
-    74, 60, 4, 20<<4, 120<<4, BLUE_BLACK_IDX, MED_BLUE_IDX, 0,
-    79, 64, 5, 0<<4, 100<<4, MED_RED_IDX, LIGHT_RED_IDX, 0,
-    85, 69, 4, 0<<4, 100<<4, DARK_RED_IDX, MED_RED_IDX, 0,
+    0, 0, 6, 100<<4, 200<<4, BLUE_IDX, BLUE_IDX,   0,
+    7, 6, 5, 100<<4, 200<<4, BLUE_IDX, BLUE_IDX,   0,
+    13, 11, 4, 100<<4, 200<<4, BLUE_IDX, BLUE_IDX, 0,
+    18, 15, 4, 120<<4, 220<<4, BLUE_IDX, LIGHT_BLUE_IDX, 0,
+    23, 19, 4, 140<<4, 240<<4, BLUE_IDX, BLUE_IDX, 0,
+    28, 23, 4, 160<<4, 260<<4, BLUE_IDX, LIGHT_BLUE_IDX, 0,
+    33, 27, 4, 180<<4, 280<<4, BLUE_IDX, BLUE_IDX, 0,
+    38, 31, 5, 200<<4, 300<<4, BLUE_IDX, LIGHT_BLUE_IDX, 0,
+    44, 36, 4, 100<<4, 200<<4, BLUE_IDX, BLUE_IDX, 0,
+    49, 40, 4, 100<<4, 200<<4, BLUE_IDX, BLUE_IDX, 0,
+    54, 44, 4, 200<<4, 300<<4, BLUE_IDX, BLUE_IDX, 0,
+    59, 48, 4, 80<<4, 180<<4, RED_IDX, LIGHT_RED_IDX, 0,
+    64, 52, 4, 60<<4, 160<<4, BLUE_IDX, BLUE_IDX, 0,
+    69, 56, 4, 40<<4, 140<<4, RED_IDX, LIGHT_RED_IDX, 0,
+    74, 60, 4, 20<<4, 120<<4, BLUE_IDX, BLUE_IDX, 0,
+    79, 64, 5, 0<<4, 100<<4, RED_IDX, LIGHT_RED_IDX, 0,
+    85, 69, 4, 0<<4, 100<<4, RED_IDX, RED_IDX, 0,
 };
 
 static const u16 walls[90] = {
@@ -42,7 +42,7 @@ static const u16 walls[90] = {
     34, 36, 37, 38, 35, 34, 
     36, 39, 40, 37, 36, 
 };
-static const s16 portals[73] ={
+static const s16 portals[73] = {
     -1, -1, 1, -1, 2, -1, 
     -1, 11, -1, 8, 0, 
     -1, 3, -1, 0, 
@@ -139,95 +139,95 @@ static const u8 wall_normal_quadrants[73] ={
 };
 
 static const wall_col wall_colors[73] ={
-    {.mid_col = DARK_GREEN_IDX},
-    {.mid_col = MED_GREEN_IDX},
-    {.upper_col = LIGHT_GREEN_IDX, .lower_col = DARK_GREEN_IDX},
+    {.mid_col = GREEN_IDX},
+    {.mid_col = GREEN_IDX},
+    {.upper_col = LIGHT_GREEN_IDX, .lower_col = GREEN_IDX},
     {.mid_col = LIGHT_GREEN_IDX},
     {.upper_col = LIGHT_GREEN_IDX, .lower_col = LIGHT_GREEN_IDX},
-    {.mid_col = MED_GREEN_IDX},
+    {.mid_col = GREEN_IDX},
     // sector 1 walls
-    {.mid_col = DARK_GREEN_IDX},
-    {.upper_col = MED_GREEN_IDX, .lower_col = MED_GREEN_IDX},
+    {.mid_col = GREEN_IDX},
+    {.upper_col = GREEN_IDX, .lower_col = GREEN_IDX},
     {.mid_col = LIGHT_GREEN_IDX},
-    {.upper_col = MED_GREEN_IDX, .lower_col = MED_GREEN_IDX},
-    {.upper_col = MED_GREEN_IDX, .lower_col = MED_GREEN_IDX},
+    {.upper_col = GREEN_IDX, .lower_col = GREEN_IDX},
+    {.upper_col = GREEN_IDX, .lower_col = GREEN_IDX},
     // sector 2 walls
-    {.mid_col = MED_GREEN_IDX},
+    {.mid_col = GREEN_IDX},
     {.upper_col = LIGHT_GREEN_IDX, .lower_col = LIGHT_GREEN_IDX},
-    {.mid_col = MED_GREEN_IDX},
+    {.mid_col = GREEN_IDX},
     {.upper_col = LIGHT_GREEN_IDX, .lower_col = LIGHT_GREEN_IDX},
     // sector 3 walls
-    {.mid_col = DARK_GREEN_IDX},
+    {.mid_col = GREEN_IDX},
     {.upper_col = LIGHT_GREEN_IDX, .lower_col = LIGHT_GREEN_IDX},
-    {.mid_col = MED_GREEN_IDX},
-    {.upper_col = DARK_GREEN_IDX, .lower_col = DARK_GREEN_IDX},
+    {.mid_col = GREEN_IDX},
+    {.upper_col = GREEN_IDX, .lower_col = GREEN_IDX},
     // sector 4 walls
-    {.mid_col = DARK_GREEN_IDX},
+    {.mid_col = GREEN_IDX},
     {.upper_col = LIGHT_GREEN_IDX, .lower_col = LIGHT_GREEN_IDX},
     {.mid_col = LIGHT_GREEN_IDX},
-    {.upper_col = DARK_GREEN_IDX, .lower_col = DARK_GREEN_IDX},
+    {.upper_col = GREEN_IDX, .lower_col = GREEN_IDX},
     // sector 5 walls
-    {.mid_col = DARK_GREEN_IDX},
+    {.mid_col =GREEN_IDX},
     {.upper_col = LIGHT_GREEN_IDX, .lower_col = LIGHT_GREEN_IDX},
     {.mid_col = LIGHT_GREEN_IDX},
-    {.upper_col = DARK_GREEN_IDX, .lower_col = DARK_GREEN_IDX},
+    {.upper_col =GREEN_IDX, .lower_col =GREEN_IDX},
     // sector 6 walls
-    {.mid_col = DARK_GREEN_IDX},
-    {.upper_col = MED_GREEN_IDX, .lower_col = MED_GREEN_IDX},
+    {.mid_col =GREEN_IDX},
+    {.upper_col = GREEN_IDX, .lower_col = GREEN_IDX},
     {.mid_col = LIGHT_GREEN_IDX},
-    {.upper_col = MED_GREEN_IDX, .lower_col = MED_GREEN_IDX},
+    {.upper_col = GREEN_IDX, .lower_col = GREEN_IDX},
     // sector 7 walls
-    {.mid_col = DARK_GREEN_IDX},
-    {.upper_col = MED_GREEN_IDX, .lower_col = MED_GREEN_IDX},
+    {.mid_col =GREEN_IDX},
+    {.upper_col = GREEN_IDX, .lower_col = GREEN_IDX},
     {.mid_col = LIGHT_GREEN_IDX},
-    {.mid_col = MED_GREEN_IDX},
-    {.upper_col = MED_GREEN_IDX, .lower_col = MED_GREEN_IDX},
+    {.mid_col = GREEN_IDX},
+    {.upper_col = GREEN_IDX, .lower_col = GREEN_IDX},
     // sector 8 walls
-    {.mid_col = MED_GREEN_IDX},
+    {.mid_col = GREEN_IDX},
     {.upper_col = LIGHT_GREEN_IDX, .lower_col = LIGHT_GREEN_IDX},
-    {.mid_col = MED_GREEN_IDX},
-    {.upper_col = DARK_GREEN_IDX, .lower_col = DARK_GREEN_IDX},
+    {.mid_col = GREEN_IDX},
+    {.upper_col =GREEN_IDX, .lower_col =GREEN_IDX},
     // sector 9 walls
-    {.mid_col = MED_GREEN_IDX},
+    {.mid_col = GREEN_IDX},
     {.mid_col = LIGHT_GREEN_IDX},
-    {.mid_col = MED_GREEN_IDX},
-    {.upper_col = DARK_GREEN_IDX, .lower_col = DARK_GREEN_IDX},
+    {.mid_col = GREEN_IDX},
+    {.upper_col =GREEN_IDX, .lower_col =GREEN_IDX},
     // sector 10 walls
-    {.mid_col = DARK_GREEN_IDX},
-    {.mid_col = MED_GREEN_IDX},
-    {.mid_col = LIGHT_GREEN_IDX},
-    {.upper_col = MED_GREEN_IDX, .lower_col = MED_GREEN_IDX},
+    {.mid_col = GREEN_IDX},
+    {.mid_col = GREEN_IDX},
+    {.mid_col = GREEN_IDX},
+    {.upper_col = GREEN_IDX, .lower_col = GREEN_IDX},
     // sector 11 walls
-    {.mid_col = DARK_GREEN_IDX},
-    {.upper_col = MED_GREEN_IDX, .lower_col = MED_GREEN_IDX},
+    {.mid_col = GREEN_IDX},
+    {.upper_col = GREEN_IDX, .lower_col = GREEN_IDX},
     {.mid_col = LIGHT_GREEN_IDX},
-    {.upper_col = MED_GREEN_IDX, .lower_col = MED_GREEN_IDX},
+    {.upper_col = GREEN_IDX, .lower_col = GREEN_IDX},
     // sector 12 walls
-    {.mid_col = MED_GREEN_IDX},
+    {.mid_col = GREEN_IDX},
     {.upper_col = LIGHT_GREEN_IDX, .lower_col = LIGHT_GREEN_IDX},
-    {.mid_col = MED_GREEN_IDX},
-    {.upper_col = DARK_GREEN_IDX, .lower_col = DARK_GREEN_IDX},
+    {.mid_col = GREEN_IDX},
+    {.upper_col = GREEN_IDX, .lower_col =GREEN_IDX},
     // sector 13 walls
-    {.mid_col = MED_GREEN_IDX},
+    {.mid_col = GREEN_IDX},
     {.upper_col = LIGHT_GREEN_IDX, .lower_col = LIGHT_GREEN_IDX},
-    {.mid_col = DARK_GREEN_IDX},
-    {.upper_col = DARK_GREEN_IDX, .lower_col = DARK_GREEN_IDX},
+    {.mid_col = GREEN_IDX},
+    {.upper_col = GREEN_IDX, .lower_col =GREEN_IDX},
     // sector 14 walls
     {.mid_col = LIGHT_GREEN_IDX},
     {.upper_col = LIGHT_GREEN_IDX, .lower_col = LIGHT_GREEN_IDX},
-    {.mid_col = DARK_GREEN_IDX},
-    {.upper_col = DARK_GREEN_IDX, .lower_col = DARK_GREEN_IDX},
+    {.mid_col = GREEN_IDX},
+    {.upper_col = GREEN_IDX, .lower_col = GREEN_IDX},
     // sector 15 walls
-    {.mid_col = MED_GREEN_IDX},
+    {.mid_col = GREEN_IDX},
     {.upper_col = LIGHT_GREEN_IDX, .lower_col = LIGHT_GREEN_IDX},
-    {.mid_col = MED_GREEN_IDX},
-    {.mid_col = DARK_GREEN_IDX},
-    {.upper_col = DARK_GREEN_IDX, .lower_col = DARK_GREEN_IDX},
+    {.mid_col = GREEN_IDX},
+    {.mid_col = GREEN_IDX},
+    {.upper_col = GREEN_IDX, .lower_col = GREEN_IDX},
     // sector 16
-    {.mid_col = MED_GREEN_IDX},
+    {.mid_col = GREEN_IDX},
     {.mid_col = LIGHT_GREEN_IDX},
-    {.mid_col = DARK_GREEN_IDX},
-    {.upper_col = DARK_GREEN_IDX, .lower_col = DARK_GREEN_IDX},
+    {.mid_col = GREEN_IDX},
+    {.upper_col = GREEN_IDX, .lower_col = GREEN_IDX},
 };
 
 // #define VERT(x1,y1) { .x = (x1 * 6), .y = ((-y1) * 6) } 
@@ -277,11 +277,56 @@ static const vertex vertexes[42] = {
     VERT(140,320),
     VERT(0,0),
 };
-const portal_map overlapping_map = {
+
+
+// sector 9,10,16
+sector_param sector_params[17] = {
+    {.light = 0},
+    {.light = 0},
+    {.light = 0},
+    {.light = -1},
+    {.light = -1},
+    {.light = -1},
+    {.light = -1},
+    {.light = -1},
+    {.light = -2},
+    {.light = -2}, // flashing
+    {.light = -2}, // flashing
+    {.light = -1},
+    {.light = -1},
+    {.light = -1},
+    {.light = -1},
+    {.light = -2},
+    {.light = -2}, // flashing
+};
+
+sector_type sector_types[17] = {
+    NO_TYPE,
+    NO_TYPE,
+    NO_TYPE,
+    NO_TYPE,
+    NO_TYPE,
+    NO_TYPE,
+    NO_TYPE,
+    NO_TYPE,
+    NO_TYPE,
+    FLASHING,
+    FLASHING,
+    NO_TYPE,
+    NO_TYPE,
+    NO_TYPE,
+    NO_TYPE,
+    NO_TYPE,
+    FLASHING
+};
+
+portal_map overlapping_map = {
     .num_sectors = 17,
     .num_walls = 73,
     .num_verts = 42,
     .sectors = sectors,
+    .sector_types = sector_types,
+    .sector_params = sector_params,
     .walls = walls,
     .portals = portals,
     .vertexes = vertexes,

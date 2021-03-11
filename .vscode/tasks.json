@@ -46,6 +46,17 @@
         "panel": "new"
       },
       "problemMatcher": []
+    },
+    {
+      "label": "SGDK - Build & Debug",
+      "type": "shell",
+      "command": ".\\build.bat debug",
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      },
+      "problemMatcher": []
     }
   ]
 }

@@ -82,6 +82,8 @@ const menu main_menu = {
 menu_state main_menu_state;
 
 void init_main_menu() {
+    VDP_setScreenWidth320();
+    VDP_setScreenHeight240();
     launch_new_mode = 0;
     init_menu_state(&main_menu, &main_menu_state);
 }

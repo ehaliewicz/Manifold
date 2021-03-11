@@ -10,4 +10,7 @@ typedef struct {
     u16 sector_special, sector_tag;
 } sector;
 
+s8 get_sector_light_level(s16 sect_idx);
+void run_sector_processes();
+
 #endif

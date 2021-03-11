@@ -8,10 +8,11 @@
 #include "vertex.h"
 
 void init_portal_renderer();
+void cleanup_portal_renderer();
 
 void clear_portal_cache();
-
 void portal_rend(u16 src_sector, u32 cur_frame);
+void portal_render_temporal_locality(u16 src_sector, u32 cur_frame);
 
 extern int portal_1_clip_status;
 extern int portal_1_x1;

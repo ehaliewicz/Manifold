@@ -66,16 +66,44 @@ u8 on_backfacing_side_of_wall(fix32 x, fix32 y, u16 wall_idx) {
   }
 
 
+int colliding(fix16 x1, fix16 y1, fix16 x2, fix16 y2, fix16 x3, fix16 y3, fix16 dist_squared) {
+    
+    fix16 px = x2-x1;
+    fix16 py = y2-y1;
+
+    fix16 norm = fix16Mul(px,px) + fix16Mul(py,py);
+    fix16 num = (fix16Mul((x3 - x1), px) + fix16Mul((y3 - y1), py));
+    fix16 u = fix32Div(num, norm); // 16.6
+
+    if (u > FIX16(1)) {
+        u = FIX16(1);
+    } else if (u < 0) {
+        u = 0;
+    }
+
+    fix16 x = x1 + fix16Mul(u, px);
+    fix16 y = y1 + fix16Mul(u, py);
+
+    fix16 dx = x - x3;
+    fix16 dy = y - y3;
+
+    //dist = (dx*dx + dy*dy)**.5
+    return (fix16Mul(dx, dx) + fix16Mul(dy, dy)) <= dist_squared;
+}
+
+
 collision_result check_for_collision(fix32 curx, fix32 cury, fix32 newx, fix32 newy, u16 cur_sector, u8 do_collision) {
     u16 wall_off = sector_wall_offset(cur_sector, cur_portal_map);
     u16 portal_off = sector_portal_offset(cur_sector, cur_portal_map);
     u16 num_walls = sector_num_walls(cur_sector, cur_portal_map);
 
 
+
     int got_x_collision = 0;
     int got_y_collision = 0;
 
-    u16 new_sector = cur_sector;
+    s16 new_sector = cur_sector;
+    s16 maybe_new_sector = -1;
 
     collision_result res;
     
@@ -88,11 +116,9 @@ collision_result check_for_collision(fix32 curx, fix32 cury, fix32 newx, fix32 n
         vertex v2 = cur_portal_map->vertexes[v2_idx];
 
         s16 neighbor_sector = cur_portal_map->portals[portal_idx];
-        //int old_side_backfacing = on_backfacing_side_of_wall(curx, cury, wall_idx);
+
         int new_side_backfacing = on_backfacing_side_of_wall(newx, cury, wall_idx);
-        
-        if(new_side_backfacing) {
-            
+        if (new_side_backfacing) {
             if(neighbor_sector != -1) {
                 new_sector = neighbor_sector;
                 break;
@@ -108,6 +134,7 @@ collision_result check_for_collision(fix32 curx, fix32 cury, fix32 newx, fix32 n
     if(!got_x_collision) {
         curx = newx;
     }
+
     for(int i = 0; i < num_walls; i++) {
         u16 wall_idx = i+wall_off;
         u16 portal_idx = i+portal_off;
@@ -117,10 +144,10 @@ collision_result check_for_collision(fix32 curx, fix32 cury, fix32 newx, fix32 n
         vertex v2 = cur_portal_map->vertexes[v2_idx];
 
         s16 neighbor_sector = cur_portal_map->portals[portal_idx];
-        //int old_side_backfacing = on_backfacing_side_of_wall(curx, cury, wall_idx);
+
         int new_side_backfacing = on_backfacing_side_of_wall(curx, newy, wall_idx);
-        
-        if(new_side_backfacing) {
+
+        if (new_side_backfacing) {
             if(neighbor_sector != -1) {
                 new_sector = neighbor_sector;
                 break;
@@ -135,6 +162,10 @@ collision_result check_for_collision(fix32 curx, fix32 cury, fix32 newx, fix32 n
 
     if(!got_y_collision) {
         cury = newy;
+    } else {
+        //if(maybe_new_sector != -1) {
+            new_sector = maybe_new_sector;
+        //}
     }
 
     //Vect2D_f32 res = {.x = curx, .y = cury};

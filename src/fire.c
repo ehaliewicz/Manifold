@@ -359,37 +359,43 @@ void init_fire() {
     //XGM_startPlay(xgm_e2m2);
 
 	SYS_disableInts();
+    //VDP_setScreenWidth320();
+    //VDP_setScreenHeight224();
 	VDP_setBackgroundColor(3);
-
 	cur_scroll_fixed = -220<<2;
 
 	VDP_setScrollingMode(HSCROLL_LINE, VSCROLL_PLANE);
 	VDP_setVerticalScroll(BG_B, cur_scroll_fixed>>2);
 	VDP_setVerticalScroll(BG_A, 0);
 
+
     
 
 	BMP_init(0, BG_A, PAL1, 0, 0);
-	SPR_init();
+	//SPR_init();
+	//SYS_enableInts();
+    //return
 
-	fire_spr = SPR_addSpriteExSafe(&fire_fixup,       256-32, 183, TILE_ATTR(1, 1, 0, 0), 0, (SPR_FLAG_FAST_AUTO_VISIBILITY | SPR_FLAG_AUTO_SPRITE_ALLOC));
-	spr2 = SPR_addSpriteExSafe(&bottom_line_cover,    70, 184, TILE_ATTR(0, 1, 0, 0), 0, (SPR_FLAG_FAST_AUTO_VISIBILITY | SPR_FLAG_AUTO_SPRITE_ALLOC));
-	spr3 = SPR_addSpriteExSafe(&bottom_line_cover, 70+96, 184, TILE_ATTR(0, 1, 0, 0), 0, (SPR_FLAG_FAST_AUTO_VISIBILITY | SPR_FLAG_AUTO_SPRITE_ALLOC));
-	SPR_setVisibility(fire_spr, VISIBLE);
-	SPR_setVisibility(spr2, VISIBLE);
-	SPR_setVisibility(spr3, VISIBLE);
+	//fire_spr = SPR_addSpriteEx(&fire_fixup,       256-32, 183, TILE_ATTR(1, 1, 0, 0), 0, (SPR_FLAG_FAST_AUTO_VISIBILITY | SPR_FLAG_AUTO_SPRITE_ALLOC | SPR_FLAG_AUTO_VRAM_ALLOC));
+	//SYS_enableInts();
+    //return;
+	//spr2 = SPR_addSpriteExSafe(&bottom_line_cover,    70, 184, TILE_ATTR(0, 1, 0, 0), 0, (SPR_FLAG_FAST_AUTO_VISIBILITY | SPR_FLAG_AUTO_SPRITE_ALLOC));
+	//spr3 = SPR_addSpriteExSafe(&bottom_line_cover, 70+96, 184, TILE_ATTR(0, 1, 0, 0), 0, (SPR_FLAG_FAST_AUTO_VISIBILITY | SPR_FLAG_AUTO_SPRITE_ALLOC));
+	//SPR_setVisibility(fire_spr, VISIBLE);
+	//SPR_setVisibility(spr2, VISIBLE);
+	//SPR_setVisibility(spr3, VISIBLE);
 
     // side effect: loads palette!
 	VDP_drawImageEx(BG_B, &doom_logo, 0x0360, 8, 0, 1, 1);
 
 	const int fire_fix_vram_addr = 0x300;
 	const int bkgd_cover_vram_addr = 0x304;
-	VDP_loadTileSet(fire_fixup.animations[0]->frames[0]->tileset, fire_fix_vram_addr, CPU);
-	VDP_loadTileSet(bottom_line_cover.animations[0]->frames[0]->tileset, bkgd_cover_vram_addr, CPU);
+	//VDP_loadTileSet(fire_fixup.animations[0]->frames[0]->tileset, fire_fix_vram_addr, CPU);
+	//VDP_loadTileSet(bottom_line_cover.animations[0]->frames[0]->tileset, bkgd_cover_vram_addr, CPU);
 
-	SPR_setVRAMTileIndex(fire_spr, fire_fix_vram_addr);
-	SPR_setVRAMTileIndex(spr2, bkgd_cover_vram_addr);
-	SPR_setVRAMTileIndex(spr3, bkgd_cover_vram_addr);
+	//SPR_setVRAMTileIndex(fire_spr, fire_fix_vram_addr);
+	//SPR_setVRAMTileIndex(spr2, bkgd_cover_vram_addr);
+	//SPR_setVRAMTileIndex(spr3, bkgd_cover_vram_addr);
 
 	start_fire_source();
 	BMP_setBufferCopy(0);
@@ -403,12 +409,12 @@ void init_fire() {
     fire_running = 1;
     fire_frame = 0;
 
-    SPR_update();
+    //SPR_update();
 
 }
 game_mode run_fire() {
     fire_frame++;
-
+    //return SAME_MODE;
     if(fire_running) {
         BMP_waitWhileFlipRequestPending();
 
@@ -432,8 +438,8 @@ game_mode run_fire() {
     if(cur_scroll < -45) {
         VDP_setVerticalScroll(BG_B, cur_scroll);
     } else if (fire_running && !fire_hidden) {
-        SPR_setVisibility(fire_spr, HIDDEN);
-        SPR_update();
+        //SPR_setVisibility(fire_spr, HIDDEN);
+        //SPR_update();
         clear_fire_source();
         fire_hidden = 1;
     }
@@ -455,11 +461,14 @@ game_mode run_fire() {
 }
 
 void cleanup_fire() {
-    SPR_releaseSprite(fire_spr);
-    SPR_releaseSprite(spr2);
-    SPR_releaseSprite(spr3);
-    SPR_clear();
-    SPR_end();
+    //KLog("cleaning up up fire");
+    //SPR_releaseSprite(fire_spr);
+    //KLog("cleaning up up fire 2");
+    //SPR_releaseSprite(spr2);
+    //KLog("cleaning up up fire 3");
+    //SPR_releaseSprite(spr3);
+    //KLog("cleaning up up fire 5");
+    //SPR_end();
     MEM_free(lookup_table_base);
     BMP_end();
     VDP_clearPlane(BG_B, 1);

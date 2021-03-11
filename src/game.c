@@ -13,7 +13,7 @@
 #include "portal.h"
 #include "portal_map.h"
 #include "portal_maps.h"
-
+#include "sector.h"
 
 player_pos cur_player_pos;
 
@@ -60,7 +60,28 @@ static int pause_game = 0;
 static int quit_game = 0;
 
 
-const fix32 move_speed = 24; 
+
+u32 last_frame_ticks = 10;
+
+u16 rot_speed;
+u32 move_speed;
+
+void calc_movement_speeds() {
+
+
+    // base speed is for 30fps
+    //KLog_S1("ticks from last frame: ", last_frame_ticks);
+
+    const fix32 base_rot_speed = FIX16(.75);
+    const fix32 base_move_speed = FIX16(.70); //24; 
+
+    // 10 ticks for a 30fps frame
+    move_speed = (base_move_speed * last_frame_ticks) >> FIX16_FRAC_BITS;
+    rot_speed = (base_rot_speed * last_frame_ticks) >> FIX16_FRAC_BITS;
+
+    //KLog_S2("move speed: ", move_speed, " rot: ", rot_speed);
+    // multiply by how many ticks
+}
 
 
 int cur_frame;
@@ -227,7 +248,6 @@ void request_flip() {
 
 void draw_3d_view(u32 cur_frame) {
 
-    // clear screen for half-wide framebuffer test
     //BMP_vertical_clear();
 
     // clear clipping buffers
@@ -237,10 +257,11 @@ void draw_3d_view(u32 cur_frame) {
     // recursively render portal graph
     portal_rend(cur_player_pos.cur_sector, cur_frame);
     // display fps
+    //BMP_waitFlipComplete();
     showFPS(1);
     // request a flip when vsync process is idle (almost always, as the software renderer is much slower than the framebuffer DMA process)
     request_flip();
-
+    //BMP_flip(1, 0);
 
     return;
 }
@@ -249,7 +270,7 @@ void draw_3d_view(u32 cur_frame) {
 u16 last_joy = 0;
 
 
-Vect2D_f32 *sector_jump_positions = NULL;
+Vect2D_f32 *sector_centers = NULL;
 
 static int last_pressed_b = 0;
 u8 do_collision = 0;
@@ -263,8 +284,8 @@ void handle_input() {
         if(next_sector >= cur_portal_map->num_sectors) {
             next_sector = 0;
         }
-        cur_player_pos.x = sector_jump_positions[next_sector].x;
-        cur_player_pos.y = sector_jump_positions[next_sector].y;
+        cur_player_pos.x = sector_centers[next_sector].x;
+        cur_player_pos.y = sector_centers[next_sector].y;
         cur_player_pos.cur_sector = next_sector;
     }
     last_pressed_b = pressed_b;
@@ -293,7 +314,7 @@ void handle_input() {
             newy = cury + leftDy*move_speed;
             newx = curx + leftDx*move_speed;
         } else {
-            newang += 15;
+            newang += rot_speed;
             if(newang > 1023) {
                 newang -= 1024;
             }
@@ -307,10 +328,10 @@ void handle_input() {
             newy = cury + rightDy*move_speed;
             newx = curx + rightDx*move_speed;
         } else {
-            if(newang < 15) {
-                newang = 1024 - (15-newang);
+            if(newang < rot_speed) {
+                newang = 1024 - (rot_speed-newang);
             } else {
-                newang -= 15;
+                newang -= rot_speed;
             }
         }
     }    
@@ -340,19 +361,15 @@ void handle_input() {
 
     }
 
-    const fix32 bobs[32] = {FIX32(0.), FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), 
+    const fix32 bobs[32] = {FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), 
                             FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), 
                             FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1),
                             FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1)};
-    cur_player_pos.z += bobs[bob_idx>>1]>>1;
+    cur_player_pos.z += bobs[bob_idx>>1]/2;
     bob_idx++;
     if(bob_idx >= 64) {
         bob_idx = 0;
     }
-
-    //char buf[32];
-    //sprintf(buf, "cur sector: %i  ", cur_player_pos.cur_sector);
-    //BMP_drawText(buf, 1, 2);
 
 
     pause_game = joy_button_pressed(BUTTON_START);
@@ -413,7 +430,7 @@ u16* cur_palette = NULL;
 
 
 void init_sector_jump_positions() {
-    sector_jump_positions = MEM_alloc(sizeof(Vect2D_f32) * cur_portal_map->num_sectors);
+    sector_centers = MEM_alloc(sizeof(Vect2D_f32) * cur_portal_map->num_sectors);
     for(int i = 0; i < cur_portal_map->num_sectors; i++) {
 
         int avg_sect_x = 0;
@@ -428,8 +445,8 @@ void init_sector_jump_positions() {
         }
         avg_sect_x /= num_walls;
         avg_sect_y /= num_walls;
-        sector_jump_positions[i].x = intToFix32(avg_sect_x);
-        sector_jump_positions[i].y = intToFix32(avg_sect_y);
+        sector_centers[i].x = intToFix32(avg_sect_x);
+        sector_centers[i].y = intToFix32(avg_sect_y);
     }
 }
 
@@ -442,6 +459,8 @@ void init_game() {
     //XGM_stopPlay();
     SYS_setVIntCallback(do_vint_flip);
     VDP_setVerticalScroll(BG_B, 0);
+    VDP_setScreenWidth320();
+    VDP_setScreenHeight240();
     //request_flip();
 
     render_mode = GAME_WIREFRAME;
@@ -469,21 +488,23 @@ void init_game() {
     } else {
         init_sector_jump_positions();
         
-        cur_player_pos.x = sector_jump_positions[0].x;
-        cur_player_pos.y = sector_jump_positions[0].y; 
+        //cur_player_pos.x = 133430;
+        cur_player_pos.x = sector_centers[0].x;
+        //cur_player_pos.y = -200904; 
+        cur_player_pos.y = sector_centers[0].y; 
         cur_player_pos.cur_sector = 0;
-        
+        //cur_player_pos.cur_sector = 0;
+
         cur_player_pos.z = (sector_floor_height(cur_player_pos.cur_sector, (portal_map*)cur_portal_map)<<(FIX32_FRAC_BITS-4)) + FIX32(40);
 
-        //cur_player_pos.x = intToFix32(cur_level->things[0].x);
-        //cur_player_pos.y = intToFix32(cur_level->things[0].y);
-        //cur_player_pos.z = intToFix32(0);
         cur_player_pos.ang = 0;
+        //cur_player_pos.ang = 904;
     }
 
     init_3d_palette();
 
-    cur_palette = (u16*)threeDPalette;
+    //cur_palette = (u16*)threeDPalette;
+    cur_palette = pal.data;
     VDP_setPalette(PAL1, cur_palette);
     
 
@@ -510,7 +531,7 @@ void maybe_set_palette(u16* new_palette) {
 
 
 
-
+/*
 const char tex[16] = {
     LIGHT_BLUE_IDX,
     MED_BLUE_IDX,
@@ -529,12 +550,13 @@ const char tex[16] = {
     DARK_RED_IDX,
     MED_RED_IDX
 };
+*/
 
 game_mode run_game() {
+    u32 start_ticks = getTick();
     
-    
-
-
+    run_sector_processes();
+    calc_movement_speeds();
     handle_input();
 
     angleCos32 = cosFix32(cur_player_pos.ang);
@@ -554,6 +576,8 @@ game_mode run_game() {
         return MAIN_MENU;
     }
     */
+
+   /*
    static u8 cur_x = 0;
    static u8 cur_y0 = 0;
    static u8 cur_y1 = 128;
@@ -609,13 +633,12 @@ game_mode run_game() {
        .clip_y1 = cur_clip_y1,
        .bmp = &door
    };
+    */
 
-   char buf[32];
-
-   switch(render_mode) {
+    switch(render_mode) {
         case GAME_WIREFRAME:
         case GAME_SOLID:
-            maybe_set_palette((u16*)threeDPalette);
+            maybe_set_palette(pal.data);
             // probably not necessary
             //VDP_waitVInt();
             
@@ -623,7 +646,7 @@ game_mode run_game() {
 
             draw_3d_view(cur_frame);
 
-
+            
             /* texture map code */
             
             //BMP_vertical_clear();
@@ -636,7 +659,10 @@ game_mode run_game() {
             
 
 
-   }
+    }
+    u32 end_ticks = getTick();
+    last_frame_ticks = end_ticks - start_ticks;
+
     cur_frame++;
     return SAME_MODE;
 }
@@ -644,7 +670,8 @@ game_mode run_game() {
 
 void cleanup_game() { 
     BMP_end();
-    MEM_free(sector_jump_positions);
+    MEM_free(sector_centers);
+    cleanup_portal_renderer();
     release_2d_buffers();
     MEM_pack();
 }

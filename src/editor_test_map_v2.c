@@ -4,11 +4,11 @@
 #include "vertex.h"
 
 static const s16 sectors[35] ={
-    0, 0, 12, -80<<4, 216<<4, BLUE_BLACK_IDX, LIGHT_BLUE_IDX,
-    13, 12, 4, -40<<4, 175<<4, BLUE_BLACK_IDX, LIGHT_BLUE_IDX,
-    18, 16, 4, -40<<4, 175<<4, BLUE_BLACK_IDX, LIGHT_BLUE_IDX,
-    23, 20, 4, -40<<4, 175<<4, BLUE_BLACK_IDX, LIGHT_BLUE_IDX,
-    28, 24, 4, -40<<4, 175<<4, BLUE_BLACK_IDX, LIGHT_BLUE_IDX,
+    0, 0, 12, -80<<4, 216<<4, BLUE_IDX, LIGHT_BLUE_IDX,
+    13, 12, 4, -40<<4, 175<<4, BLUE_IDX, LIGHT_BLUE_IDX,
+    18, 16, 4, -40<<4, 175<<4, BLUE_IDX, LIGHT_BLUE_IDX,
+    23, 20, 4, -40<<4, 175<<4, BLUE_IDX, LIGHT_BLUE_IDX,
+    28, 24, 4, -40<<4, 175<<4, BLUE_IDX, LIGHT_BLUE_IDX,
 };
 
 static const u16 walls[33] = {

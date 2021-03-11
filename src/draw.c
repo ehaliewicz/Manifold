@@ -5,6 +5,8 @@
 #include "level.h"
 #include "math3d.h"
 #include "portal.h"
+#include "texture.h"
+#include "utils.h"
 
 
 
@@ -27,7 +29,7 @@ u16 get_index(u16 x, u16 y) {
   u16 y_offset = y * 2;
   u16 x_num_pair_cols_offset = x >> 2;
   u16 x_cols_offset = x_num_pair_cols_offset * SCREEN_HEIGHT * 2;
-  return base_offset + y_offset + x_col_offset + x_cols_offset + 16;
+  return base_offset + y_offset + x_col_offset + x_cols_offset; // + 16;
 }
 
 //inline u8* getDMAWritePointer(u16 x, u16 y) {
@@ -41,37 +43,57 @@ inline u16 getDMAWriteOffset(u16 x, u16 y) {
   //return &bmp_buffer_write[get_index(x, y)];
 }
 
-u16* column_table;
+//u16* column_table;
+//u16* column_offset_table;
+u8** buf_0_column_offset_table;
+u8** buf_1_column_offset_table;
 
 void init_column_offset_table() {
   // offset from last column
   //column_table[0] = 0;
   //u8* last_ptr = getDMAWritePointer(0, 0);
 
-  for(int x = 0; x < SCREEN_WIDTH; x++) {
-    //u16 cur_off = getDMAWriteOffset(x, 0);
-    u16 cur_off = getDMAWriteOffset(x, 0); // only get odd columns
-    column_table[x] = cur_off; 
+  for(int x = 0; x < SCREEN_WIDTH/2; x++) {  
+    u16 cur_off = getDMAWriteOffset(x<<1, 0);
+    buf_0_column_offset_table[x] = bmp_buffer_0 + cur_off;
+    buf_1_column_offset_table[x] = bmp_buffer_1 + cur_off;
+    //column_table[x] = cur_off; 
   }
+
+  //column_offset_table[0] = 0;
+  //u16 last_offset = 0;
+  //for(int x = 1; x < SCREEN_WIDTH/2; x++) {
+      //u16 last_col_offset = getDMAWriteOffset((x-1)<<1, 0);
+  //    u16 cur_col_offset = getDMAWriteOffset(x, 0);
+  //    column_offset_table[x] = cur_col_offset - last_offset; //column_table[x<<1];
+  //    last_offset = cur_col_offset;
+  //}
 }
 
 
 void init_2d_buffers() {
     yclip = MEM_alloc(SCREEN_WIDTH*2*sizeof(u8));
-    column_table = MEM_alloc(sizeof(u16) * SCREEN_WIDTH); //sizeof(16) * W);
+    //column_table = MEM_alloc(sizeof(u16) * SCREEN_WIDTH); //sizeof(16) * W);
+    //double_column_table = MEM_alloc(sizeof(u16) * SCREEN_WIDTH/2);
+    //column_offset_table = MEM_alloc(sizeof(u16) * SCREEN_WIDTH);
+    buf_0_column_offset_table = MEM_alloc(sizeof(u8*) * SCREEN_WIDTH/2);
+    buf_1_column_offset_table = MEM_alloc(sizeof(u8*) * SCREEN_WIDTH/2);
     init_column_offset_table();
 }
 
 void clear_2d_buffers() {
     for(int i = 0; i < SCREEN_WIDTH; i++) {
         yclip[i*2] = 0;
-        yclip[i*2+1] = SCREEN_HEIGHT-10; // 8; idk why this is messed up 
+        yclip[i*2+1] = SCREEN_HEIGHT-1; // 8; idk why this is messed up 
     }
 }
 
 void release_2d_buffers() {
     MEM_free(yclip);
-    MEM_free(column_table);
+    //MEM_free(column_table);
+    //MEM_free(column_offset_table);
+    MEM_free(buf_1_column_offset_table);
+    MEM_free(buf_1_column_offset_table);
 }
 
 
@@ -116,6 +138,7 @@ __attribute__((noinline)) void draw_tex_column(col_params params) {
     // 5fps faster..
     // 66ms to texture map 91% of the screen, pretty fast
 
+    /*
     for(int x = params.x; x < params.x + TEX_SIZE; x++) {
         u8* off = bmp_buffer_write + column_table[x] + (y0<<1);
         u32 v_fix = 0;
@@ -138,6 +161,7 @@ __attribute__((noinline)) void draw_tex_column(col_params params) {
 
         //tex += b->h;
     }
+    */
     
 
 }
@@ -159,31 +183,219 @@ void draw_native_vertical_line_unrolled_inner(u16 jump_table_offset, u8 col, u8*
 void vline_native_dither_movep(u8* buf, u8 extra_pix, s16 jump_table_offset, u32 col1_col2);
 
 
-void draw_native_vertical_line_unrolled(s16 x, s16 y0, s16 y1, u8 col) {
+void draw_native_vertical_line_unrolled(s16 y0, s16 y1, u8 col,  u8* col_ptr) {
 
-
-    u8* col_ptr = bmp_buffer_write + column_table[x<<1] + (y0<<1);
+    col_ptr = col_ptr + (y0<<1);
     u16* word_col_ptr = (u16*)col_ptr;
-    u32 full_col = (col << 24) | (col << 16) | (col<<8) | col;
 
-    u32 word_col = (col<<8) | col;
+        u32 word_col = (col<<8) | col;
 
-    u16 dy = (y1-y0);
-    if(dy& 0b1) {
-        *word_col_ptr++ = word_col;
-    }
-    u32* lw_col_ptr = word_col_ptr;
+        u32 full_col = (word_col << 16) | word_col; //(col << 24) | (col << 16) | (col<<8) | col;
+        
+        u16 dy = (y1-y0);
+        if(dy & 0b1) {
+            *word_col_ptr++ = word_col;
+            dy--;
+        }
+        u32* lw_col_ptr = (u32*)word_col_ptr;
 
-    dy>>=1;
-    for(int y = 0; y < dy; y++) {
-        *lw_col_ptr++ = full_col;
-    }
-    //for(int y = y0; y <= y1; y++) {
-    //    *word_col_ptr++ = word_col;
-    //}
+
+        dy>>=1;
+        if(dy & 0b1) {
+            *lw_col_ptr++ = full_col;
+        }
+
+        dy>>=1;
+        if(dy & 0b1) {
+            *lw_col_ptr++ = full_col;
+            *lw_col_ptr++ = full_col;
+        }
+
+        dy>>=1;
+        //u8* char_ptr = (u8*)lw_col_ptr;
+        //char_ptr++;
+        //lw_col_ptr = (u32*)char_ptr;
+        while(dy--) {
+            __asm volatile(
+                "move.l %1, (%0)+\t\n\
+                move.l %1, (%0)+\t\n\
+                move.l %1, (%0)+\t\n\
+                move.l %1, (%0)+"
+                : "+a" (lw_col_ptr)
+                : "d" (full_col)
+                );
+
+            //*lw_col_ptr++ = full_col;
+            //*lw_col_ptr++ = full_col;
+            //*lw_col_ptr++ = full_col;
+            //*lw_col_ptr++ = full_col;
+        }
 
     return;
 
+
+    /*
+
+    move.l %1, 512(%2)\t\n\
+            move.l %1, 512(%2)\t\n\
+            move.l %1, 512(%2)\t\n\
+            move.l %1, 512(%2)\t\n\
+            move.l %1, 512(%2)\t\n\
+            move.l %1, 512(%2)\t\n\
+            move.l %1, 512(%2)\t\n\
+            move.l %1, 508(%2)\t\n\
+            move.l %1, 504(%2)\t\n\
+            move.l %1, 500(%2)\t\n\
+            move.l %1, 496(%2)\t\n\
+            move.l %1, 492(%2)\t\n\
+            move.l %1, 488(%2)\t\n\
+            move.l %1, 484(%2)\t\n\
+            move.l %1, 480(%2)\t\n\
+            move.l %1, 476(%2)\t\n\
+            move.l %1, 472(%2)\t\n\
+            move.l %1, 468(%2)\t\n\
+            move.l %1, 464(%2)\t\n\
+            move.l %1, 460(%2)\t\n\
+            move.l %1, 456(%2)\t\n\
+            move.l %1, 452(%2)\t\n\
+            move.l %1, 448(%2)\t\n\
+            move.l %1, 444(%2)\t\n\
+            move.l %1, 440(%2)\t\n\
+            move.l %1, 436(%2)\t\n\
+            move.l %1, 432(%2)\t\n\
+            move.l %1, 428(%2)\t\n\
+            move.l %1, 424(%2)\t\n\
+            move.l %1, 420(%2)\t\n\
+            move.l %1, 416(%2)\t\n\
+            move.l %1, 412(%2)\t\n\
+            move.l %1, 408(%2)\t\n\
+            move.l %1, 404(%2)\t\n\
+            move.l %1, 400(%2)\t\n\
+            move.l %1, 396(%2)\t\n\
+            move.l %1, 392(%2)\t\n\
+            move.l %1, 388(%2)\t\n\
+            move.l %1, 384(%2)\t\n\
+            move.l %1, 380(%2)\t\n\
+            move.l %1, 376(%2)\t\n\
+            move.l %1, 372(%2)\t\n\
+            move.l %1, 368(%2)\t\n\
+            move.l %1, 364(%2)\t\n\
+            move.l %1, 360(%2)\t\n\
+            move.l %1, 356(%2)\t\n\
+            move.l %1, 352(%2)\t\n\
+            move.l %1, 348(%2)\t\n\
+            move.l %1, 344(%2)\t\n\
+            move.l %1, 340(%2)\t\n\
+            move.l %1, 336(%2)\t\n\
+            move.l %1, 332(%2)\t\n\
+            move.l %1, 328(%2)\t\n\
+            move.l %1, 324(%2)\t\n\
+            move.l %1, 320(%2)\t\n\
+            move.l %1, 316(%2)\t\n\
+            move.l %1, 312(%2)\t\n\
+            move.l %1, 308(%2)\t\n\
+            move.l %1, 304(%2)\t\n\
+            move.l %1, 300(%2)\t\n\
+
+            */
+
+        // 72 max
+        //u16 dy_movel = dy >> 1; //dy & 0b1111111111111110;
+        //u16 jump_table_offset = ((72)-dy_movel)<<2;
+        
+        //if(((u32)lw_col_ptr) & 0b1) {
+        //    while(1) {
+        //        VDP_drawTextBG(BG_B, "wtf!", 5, 5);
+        //    }
+        //}
+        //return;
+        //
+            // move.l %1,296(%2)\t\n
+
+        /*
+        __asm volatile(
+           "jmp movel_tbl_%=(%%pc, %0.w)\t\n\
+           movel_tbl_%=:\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)+\t\n\
+            move.l %1,(%2)"
+            : 
+            : "d"(jump_table_offset), "d" (full_col), "a" (lw_col_ptr)
+        );
+        return;
+        */
+
+    /*
     u16 dy_movep = dy>>2;
     
     if(dy_movep > 0) { 
@@ -192,19 +404,19 @@ void draw_native_vertical_line_unrolled(s16 x, s16 y0, s16 y1, u8 col) {
             __asm volatile(
                 "subq #1, %2\t\n\
                 extra_pix_lp_%=:\t\n\
-                move.b %1, (%0)\t\n\
+                move.l %1,(%0)\t\n\
                 addq.l #2, %0\t\n\
                 dbeq %2, extra_pix_lp_%="
                 : "=a" (col_ptr)
                 : "d" (col), "d" (extra_pix)
                 );
         }
-        /*
-            movep.l %1, 312(%2) \t\n\
-            movep.l %1, 304(%2) \t\n\
-            movep.l %1, 296(%2) \t\n\
-            movep.l %1, 288(%2) \t\n\
-        */
+        
+            //movep.l %1, 312(%2) \t\n\
+            //movep.l %1, 304(%2) \t\n\
+            //movep.l %1, 296(%2) \t\n\
+            //movep.l %1, 288(%2) \t\n\
+        
 
         u16 jump_table_offset = ((SCREEN_HEIGHT/4)-dy_movep)<<2;
         __asm volatile(
@@ -263,6 +475,7 @@ void draw_native_vertical_line_unrolled(s16 x, s16 y0, s16 y1, u8 col) {
 
         
     }
+    */
    
 }
 
@@ -275,6 +488,7 @@ void flip() {
     //    BMP_clear();
     //}
 }
+
 
 void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
               s16 x2, s16 x2_ytop, s16 x2_ybot,
@@ -310,21 +524,27 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
     s16 x = beginx;
     u8* yclip_ptr = &(yclip[x<<1]);
 
-    for(;x <= endx; x++) {
+    u8** offset_ptr = (bmp_buffer_write == bmp_buffer_0) ? (&buf_0_column_offset_table[x]) : (&buf_1_column_offset_table[x]);
+    u8 tex_col = 0;
+    for(;x < endx; x++) {
         top_y_int = top_y_fix >> 16;
         bot_y_int = bot_y_fix >> 16;
         u8 min_drawable_y = *yclip_ptr++;
         u8 max_drawable_y = *yclip_ptr++;
         u8 top_draw_y = clamp(top_y_int, min_drawable_y, max_drawable_y);
         u8 bot_draw_y = clamp(bot_y_int, min_drawable_y, max_drawable_y);
+
+        u8* col_ptr = *offset_ptr++;
         if(min_drawable_y < top_draw_y) {
-            draw_native_vertical_line_unrolled(x, min_drawable_y, top_draw_y, ceil_col);
+            draw_native_vertical_line_unrolled(min_drawable_y, top_draw_y, ceil_col, col_ptr);
         }
         if(top_draw_y < bot_draw_y) {
-            draw_native_vertical_line_unrolled(x, top_draw_y, bot_draw_y, wall_col);
+            //draw_texture_vertical_line(top_y_int, top_draw_y, bot_y_int, bot_draw_y, col_ptr, tex_col&(32-1));
+            //tex_col++;
+            draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, wall_col, col_ptr);
         }
         if(bot_draw_y < max_drawable_y) {
-            draw_native_vertical_line_unrolled(x, bot_draw_y, max_drawable_y, floor_col);
+            draw_native_vertical_line_unrolled(bot_draw_y, max_drawable_y, floor_col, col_ptr);
         }
 
         top_y_fix += top_dy_per_dx;
@@ -368,7 +588,8 @@ void draw_upper_step(s16 x1, s16 x1_ytop, s16 nx1_ytop, s16 x2, s16 x2_ytop, s16
     s16 x = beginx;
     u8* yclip_ptr = &(yclip[x<<1]);
 
-    for(;x <= endx; x++) {
+    u8** offset_ptr = (bmp_buffer_write == bmp_buffer_0) ? (&buf_0_column_offset_table[x]) : (&buf_1_column_offset_table[x]);
+    for(;x < endx; x++) {
         top_y_int = top_y_fix >> 16;
         ntop_y_int = ntop_y_fix >> 16;
         u8 min_drawable_y = *yclip_ptr;
@@ -376,15 +597,17 @@ void draw_upper_step(s16 x1, s16 x1_ytop, s16 nx1_ytop, s16 x2, s16 x2_ytop, s16
         u8 top_draw_y = clamp(top_y_int, min_drawable_y, max_drawable_y);
         u8 bot_draw_y = clamp(ntop_y_int, min_drawable_y, max_drawable_y);
 
+
+        u8* col_ptr = *offset_ptr++;
         if(top_draw_y < bot_draw_y) {
-            draw_native_vertical_line_unrolled(x, top_draw_y, bot_draw_y, upper_color);
+            draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, upper_color, col_ptr);
             *yclip_ptr++ = bot_draw_y;
             yclip_ptr++;
         } else {
             yclip_ptr += 2;
         }
         if(min_drawable_y < top_draw_y) {
-            draw_native_vertical_line_unrolled(x, min_drawable_y, top_draw_y, ceil_color);
+            draw_native_vertical_line_unrolled(min_drawable_y, top_draw_y, ceil_color, col_ptr);
         }
 
         top_y_fix += top_dy_per_dx;
@@ -425,7 +648,8 @@ void draw_lower_step(s16 x1, s16 x1_ybot, s16 nx1_ybot, s16 x2, s16 x2_ybot, s16
     s16 x = beginx;
     u8* yclip_ptr = &(yclip[x<<1]);
 
-    for(;x <= endx; x++) {
+    u8** offset_ptr = (bmp_buffer_write == bmp_buffer_0) ? (&buf_0_column_offset_table[x]) : (&buf_1_column_offset_table[x]);
+    for(;x < endx; x++) {
         bot_y_int = bot_y_fix >> 16;
         nbot_y_int = nbot_y_fix >> 16;
         u8 min_drawable_y = *yclip_ptr;
@@ -433,15 +657,16 @@ void draw_lower_step(s16 x1, s16 x1_ybot, s16 nx1_ybot, s16 x2, s16 x2_ybot, s16
         u8 bot_draw_y = clamp(bot_y_int, min_drawable_y, max_drawable_y);
         u8 top_draw_y = clamp(nbot_y_int, min_drawable_y, max_drawable_y);
 
+        u8* col_ptr = *offset_ptr++;
         if(top_draw_y < bot_draw_y) {
-            draw_native_vertical_line_unrolled(x, top_draw_y, bot_draw_y, lower_color);
+            draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, lower_color, col_ptr);
             yclip_ptr++;
             *yclip_ptr++ = top_draw_y;
         } else {
             yclip_ptr += 2;
         }
         if(max_drawable_y > bot_draw_y) {
-            draw_native_vertical_line_unrolled(x, bot_draw_y, max_drawable_y, floor_color);
+            draw_native_vertical_line_unrolled(bot_draw_y, max_drawable_y, floor_color, col_ptr);
         }
 
         bot_y_fix += bot_dy_per_dx;
@@ -477,14 +702,17 @@ void draw_ceiling_update_clip(s16 x1, s16 x1_ytop, s16 x2, s16 x2_ytop, u16 wind
     s16 x = beginx;
     u8* yclip_ptr = &(yclip[x<<1]);
 
-    for(;x <= endx; x++) {
+    u8** offset_ptr = (bmp_buffer_write == bmp_buffer_0) ? (&buf_0_column_offset_table[x]) : (&buf_1_column_offset_table[x]);
+    for(;x < endx; x++) { 
         top_y_int = top_y_fix >> 16;
         u8 min_drawable_y = *yclip_ptr;
         u8 max_drawable_y = *(yclip_ptr+1);
         u8 top_draw_y = clamp(top_y_int, min_drawable_y, max_drawable_y);
 
+        u8* col_ptr = *offset_ptr++;
+
         if(min_drawable_y < top_draw_y) {
-            draw_native_vertical_line_unrolled(x, min_drawable_y, top_draw_y, ceil_color);
+            draw_native_vertical_line_unrolled(min_drawable_y, top_draw_y, ceil_color, col_ptr);
             *yclip_ptr++ = top_draw_y;
             yclip_ptr++;
         } else {
@@ -523,14 +751,16 @@ void draw_floor_update_clip(s16 x1, s16 x1_ybot, s16 x2, s16 x2_ybot, u16 window
     s16 x = beginx;
     u8* yclip_ptr = &(yclip[x<<1]);
 
-    for(;x <= endx; x++) {
+    u8** offset_ptr = (bmp_buffer_write == bmp_buffer_0) ? (&buf_0_column_offset_table[x]) : (&buf_1_column_offset_table[x]);
+    for(;x < endx; x++) {
         bot_y_int = bot_y_fix >> 16;
         u8 min_drawable_y = *yclip_ptr;
         u8 max_drawable_y = *(yclip_ptr+1);
         u8 bot_draw_y = clamp(bot_y_int, min_drawable_y, max_drawable_y);
 
+        u8* col_ptr = *offset_ptr++;
         if(max_drawable_y > bot_draw_y) {
-            draw_native_vertical_line_unrolled(x, bot_draw_y, max_drawable_y, floor_color);
+            draw_native_vertical_line_unrolled(bot_draw_y, max_drawable_y, floor_color, (u8*)((u32)col_ptr&~0b1));
             yclip_ptr++;
             *yclip_ptr++ = bot_draw_y;
         } else {

@@ -1,6 +1,7 @@
 #include <genesis.h>
 #include "math3d.h"
 #include "game.h"
+#include "utils.h"
 
 Vect2D_f32 transform_map_vert(s16 x, s16 y) {
     fix32 tlx = intToFix32(x) - cur_player_pos.x;
@@ -101,9 +102,6 @@ clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2) {
     if(rz1 > near_z_16 && rz2 > near_z_16) {
         return UNCLIPPED;
     }
-
-    //return OFFSCREEN;
-
     
     s16 dz = rz2-rz1;
     s16 dx = rx2-rx1;
@@ -123,7 +121,7 @@ clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2) {
     //s16 dx_over_dz = fix32Div(dx, dz); // change in x per change in z
 
 
-    if(rz1 < near_z_16) {
+    if(rz1 <= near_z_16) { 
         // left clipped
         s16 z_adjust = near_z_16-rz1;
         s32 x_adjust = dx_over_dz * z_adjust;

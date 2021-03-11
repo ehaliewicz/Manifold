@@ -1,5 +1,5 @@
-.globl project_and_adjust_x, project_and_adjust_y_fix
-
+.global project_and_adjust_x
+.globl project_and_adjust_y_fix
 
 transform_map_vert_blah:
 	move.l 4(%sp), %d0	| d0 is x (16-bit int)
@@ -26,10 +26,12 @@ transform_map_vert_blah:
 project_and_adjust_x:
 	move.l 4(%sp), %d0  | d0 is rx (16.0)
 	move.l 8(%sp), %d1 	| d1 is rz (16.0)
-	muls.w #60,%d0      | d0 is rx*80, 32 bits
-    divs.w %d1, %d0     | d0 here is 16rem:16:quo of (rx*80)/rz
-    add.w #64, %d0
-    rts
+	| muls.w #60,%d0      | d0 is rx*80, 32 bits
+    muls.w #32, %d0 	
+	divs.w %d1, %d0     | d0 here is 16rem:16:quo of (rx*80)/rz
+    | add.w #64, %d0
+    add.w #32, %d0
+	rts
 
 project_and_adjust_y_fix:
 	move.l 4(%sp), %d0
