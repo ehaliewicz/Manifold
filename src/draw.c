@@ -539,9 +539,9 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
             draw_native_vertical_line_unrolled(min_drawable_y, top_draw_y, ceil_col, col_ptr);
         }
         if(top_draw_y < bot_draw_y) {
-            //draw_texture_vertical_line(top_y_int, top_draw_y, bot_y_int, bot_draw_y, col_ptr, tex_col&(32-1));
-            //tex_col++;
-            draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, wall_col, col_ptr);
+            draw_texture_vertical_line(top_y_int, top_draw_y, bot_y_int, bot_draw_y, col_ptr, tex_col&(32-1));
+            tex_col++;
+            //draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, wall_col, col_ptr);
         }
         if(bot_draw_y < max_drawable_y) {
             draw_native_vertical_line_unrolled(bot_draw_y, max_drawable_y, floor_col, col_ptr);
