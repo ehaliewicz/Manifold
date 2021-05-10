@@ -6,8 +6,8 @@
 
 int main() {
 
-	//set_game_mode(INTRO);
-	set_game_mode(IN_GAME);
+	set_game_mode(INTRO);
+	//set_game_mode(IN_GAME);
 	while(1) {        
 
 		update_joy();

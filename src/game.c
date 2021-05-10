@@ -1,6 +1,7 @@
 #include <genesis.h>
 #include "collision.h"
 #include "colors.h"
+#include "dma_fb.h"
 #include "game.h"
 #include "game_mode.h"
 #include "graphics_res.h"
@@ -14,6 +15,7 @@
 #include "portal_map.h"
 #include "portal_maps.h"
 #include "sector.h"
+#include "texture.h"
 
 player_pos cur_player_pos;
 
@@ -113,139 +115,6 @@ void showFPS(u16 float_display)
 
 
 
-volatile u32 vram_copy_dst;
-volatile u8* vram_copy_src;
-
-vu8 vint_flipping;
-vu8 vint_flip_requested;
-
-volatile u32 in_use_vram_copy_dst;
-volatile u8* in_use_vram_copy_src;
-
-#define FULL_BYTES (SCREEN_WIDTH*SCREEN_HEIGHT)
-#define FULL_WORDS (FULL_BYTES/2)
-#define HALF_WORDS (FULL_WORDS/2)
-#define HALF_BYTES (FULL_BYTES/2)
-#define QUARTER_WORDS (HALF_WORDS/2)
-#define QUARTER_BYTES (HALF_BYTES/2)
-
-void after_flip_vscroll_adjustment() {
-    u16 vscr;
-    if(vram_copy_src == bmp_buffer_1) {
-        vscr = (BMP_PLANHEIGHT * 8) / 2;
-    } else {
-        vscr = 0;
-    }
-    VDP_setVerticalScroll(BG_A, vscr);
-}
-
-void copy_quarter_words(u8* src, u32 dst) {
-    DMA_doDma(DMA_VRAM,
-        src,
-        dst,
-        QUARTER_WORDS, 4);
-}
-
-void do_vint_flip() {
-    
-    if(vint_flipping == 1) {
-
-        // not finished
-        // complete second half here
-
-        // second half for framebuffer 0
-        // first half for framebuffer 1
-
-        
-        if(in_use_vram_copy_src == bmp_buffer_0) {
-            // draw second quarter of framebuffer to third quarter of VRAM framebuffer
-
-            copy_quarter_words(
-                (u8*)in_use_vram_copy_src+QUARTER_BYTES, 
-                in_use_vram_copy_dst+HALF_BYTES);
-            copy_quarter_words(
-                (u8*)in_use_vram_copy_src+QUARTER_BYTES + HALF_BYTES,
-                in_use_vram_copy_dst+2+HALF_BYTES);
-            //copy_quarter_words(
-            //    (u8*)in_use_vram_copy_src+QUARTER_BYTES,
-            //    in_use_vram_copy_dst+2+HALF_BYTES);
-        } else {
-            copy_quarter_words( 
-                (u8*)in_use_vram_copy_src, 
-                in_use_vram_copy_dst);
-            //copy_quarter_words(
-            //    (u8*)in_use_vram_copy_src,
-            //    in_use_vram_copy_dst+2);
-            copy_quarter_words(
-                (u8*)in_use_vram_copy_src+HALF_BYTES,
-                in_use_vram_copy_dst+2);
-        }
-        
-
-        after_flip_vscroll_adjustment();
-
-        vint_flipping = 0;
-    } else if(vint_flip_requested) {
-        vint_flipping = 1;
-        vint_flip_requested = 0;
-        in_use_vram_copy_dst = vram_copy_dst;
-        in_use_vram_copy_src = vram_copy_src;
-
-
-        // first half for framebuffer 1
-        // second half for framebuffer 0
-        if(in_use_vram_copy_src == bmp_buffer_0) {
-            copy_quarter_words(
-                (u8*)in_use_vram_copy_src, 
-                in_use_vram_copy_dst);
-            //copy_quarter_words(
-            //    (u8*)in_use_vram_copy_src,
-            //    in_use_vram_copy_dst+2);
-            copy_quarter_words(
-                (u8*)in_use_vram_copy_src+HALF_BYTES,
-                in_use_vram_copy_dst+2);
-        } else { 
-            copy_quarter_words(
-                (u8*)in_use_vram_copy_src+QUARTER_BYTES, 
-                in_use_vram_copy_dst+HALF_BYTES);
-            //copy_quarter_words(
-            //    (u8*)in_use_vram_copy_src+QUARTER_BYTES, 
-            //    in_use_vram_copy_dst+2+HALF_BYTES);
-            copy_quarter_words(
-                (u8*)in_use_vram_copy_src+QUARTER_BYTES+HALF_BYTES,
-                in_use_vram_copy_dst+2+HALF_BYTES);
-        }
-    }
-
-
-}
-
-
-#define FB0MIDDLEINDEX (BMP_BASETILEINDEX + (BMP_CELLWIDTH/2 * BMP_CELLHEIGHT))
-#define FB0MIDDLE (FB0MIDDLEINDEX*32)
-
-void request_flip() {
-    while(vint_flip_requested || vint_flipping) {
-        // vblank is behind one request
-        // wait until it has started, and then we can safely flip to the next framebuffer
-        //return;
-    }
-
-
-    if(bmp_buffer_write == bmp_buffer_0) {
-        vram_copy_src = bmp_buffer_0;
-        vram_copy_dst = BMP_FB0TILE;
-        bmp_buffer_write = bmp_buffer_1;
-        bmp_buffer_read = bmp_buffer_0;
-    } else {
-        vram_copy_src = bmp_buffer_1;
-        vram_copy_dst = FB0MIDDLE; //BMP_FB1TILE;
-        bmp_buffer_write = bmp_buffer_0;
-        bmp_buffer_read = bmp_buffer_0;
-    }
-    vint_flip_requested = 1;
-}
-
 void draw_3d_view(u32 cur_frame) {
 
     //BMP_vertical_clear();
@@ -260,7 +129,7 @@ void draw_3d_view(u32 cur_frame) {
     //BMP_waitFlipComplete();
     showFPS(1);
     // request a flip when vsync process is idle (almost always, as the software renderer is much slower than the framebuffer DMA process)
-    request_flip();
+    request_dma_flip();
     //BMP_flip(1, 0);
 
     return;
@@ -287,6 +156,7 @@ void handle_input() {
         cur_player_pos.x = sector_centers[next_sector].x;
         cur_player_pos.y = sector_centers[next_sector].y;
         cur_player_pos.cur_sector = next_sector;
+        cur_player_pos.z = (sector_floor_height(next_sector, (portal_map*)cur_portal_map)<<(FIX32_FRAC_BITS-4)) + FIX32(40);
     }
     last_pressed_b = pressed_b;
 
@@ -348,6 +218,8 @@ void handle_input() {
 
     cur_player_pos.ang = newang;
 
+    const fix32 bobs[32] = {FIX32(1), FIX32(2), FIX32(1), FIX32(0), FIX32(-1), FIX32(-2), FIX32(-1), FIX32(0)};
+    
     if(moved) {
 
         collision_result collision = check_for_collision(curx, cury, newx, newy, cur_player_pos.cur_sector, do_collision);
@@ -357,19 +229,18 @@ void handle_input() {
 
         cur_player_pos.z = (sector_floor_height(cur_player_pos.cur_sector, (portal_map*)cur_portal_map)<<(FIX32_FRAC_BITS-4)) + FIX32(40);
 
+        bob_idx++;
+        if(bob_idx >= 16) {
+            bob_idx = 0;
+        }
+        cur_player_pos.z += bobs[bob_idx>>1]<<2;
 
-
-    }
-
-    const fix32 bobs[32] = {FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), 
-                            FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), 
-                            FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1),
-                            FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1)};
-    cur_player_pos.z += bobs[bob_idx>>1]/2;
-    bob_idx++;
-    if(bob_idx >= 64) {
+    } else {
         bob_idx = 0;
+        cur_player_pos.z = (sector_floor_height(cur_player_pos.cur_sector, (portal_map*)cur_portal_map)<<(FIX32_FRAC_BITS-4)) + FIX32(40);
     }
+
+
 
 
     pause_game = joy_button_pressed(BUTTON_START);
@@ -450,11 +321,10 @@ void init_sector_jump_positions() {
     }
 }
 
-void do_vint_flip();
 
 void init_game() {
-    vint_flip_requested = 0;
-    vint_flipping = 0;
+    reset_dma_framebuffer();
+    
 
     //XGM_stopPlay();
     SYS_setVIntCallback(do_vint_flip);
@@ -502,6 +372,8 @@ void init_game() {
     }
 
     init_3d_palette();
+    init_textures();
+    //init_textures();
 
     //cur_palette = (u16*)threeDPalette;
     cur_palette = pal.data;
