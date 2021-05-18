@@ -178,7 +178,7 @@ collision_result check_for_collision(fix32 curx, fix32 cury, fix32 newx, fix32 n
 
 
 
-u8 in_sector(player_pos cur_player_pos, u16 test_sector) {
+u8 in_sector(object_pos cur_player_pos, u16 test_sector) {
 
     int num_walls = sector_num_walls(test_sector, cur_portal_map);
     int wall_offset = sector_wall_offset(test_sector, cur_portal_map);
@@ -199,7 +199,7 @@ u8 in_sector(player_pos cur_player_pos, u16 test_sector) {
 
 }
 
-u16 find_sector(player_pos cur_player_pos) {
+u16 find_sector(object_pos cur_player_pos) {
     // test current sector first
     
     u16 orig_sector = cur_player_pos.cur_sector;

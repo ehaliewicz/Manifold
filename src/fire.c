@@ -10,9 +10,9 @@ static u8* lookup_table_base;
 static u8* table_0;
 static u8* table_1;
 static u8* table_2;
-static u16* table_0_shift;
-static u16* table_1_shift;
-static u16* table_2_shift;
+//static u16* table_0_shift;
+//static u16* table_1_shift;
+//static u16* table_2_shift;
 
 
 void reset_scroll() {
@@ -27,13 +27,13 @@ void reset_scroll() {
 
 void init_fire_lut() {
     // allocate 2.3 KB
-    lookup_table_base = MEM_alloc(256*9);
+    lookup_table_base = MEM_alloc(256*3); //9);
     table_0 = lookup_table_base+(256*0);
     table_1 = lookup_table_base+(256*1);
     table_2 = lookup_table_base+(256*2);
-    table_0_shift = (u16*)(lookup_table_base+(256*3));
-    table_1_shift = (u16*)(lookup_table_base+(256*5));
-    table_1_shift = (u16*)(lookup_table_base+(256*7));
+    //table_0_shift = (u16*)(lookup_table_base+(256*3));
+    //table_1_shift = (u16*)(lookup_table_base+(256*5));
+    //table_1_shift = (u16*)(lookup_table_base+(256*7));
 
 	for(int i = 0; i <= 0xFF; i++) {
 		u8 h = (i >> 4) & 0xF;
@@ -50,9 +50,9 @@ void init_fire_lut() {
         table_0[i] = next_fire_0;
         table_1[i] = next_fire_1;
         table_2[i] = next_fire_2;
-        table_0_shift[i] = next_fire_0 << 8;
-        table_1_shift[i] = next_fire_1 << 8;
-        table_2_shift[i] = next_fire_2 << 8;
+        //table_0_shift[i] = next_fire_0 << 8;
+        //table_1_shift[i] = next_fire_1 << 8;
+        //table_2_shift[i] = next_fire_2 << 8;
 
 
 	}
@@ -91,10 +91,6 @@ const u16 fire_cols[16] = {
 };
 
 
-#define NUM_RANDS ((FIRE_WIDTH*FIRE_HEIGHT)>>4)+1
-
-u16 rands[NUM_RANDS];
-
 
 void fire_native(u8* src_ptr, u8* dst_ptr, u8* bmp_ptr, u16* rand_ptr, u8* byte_fire_lut_ptr);
 
@@ -123,6 +119,10 @@ void copy_fire_buffer_portion() {
 
 void spread_and_draw_fire_byte() {
     
+    #define NUM_RANDS ((FIRE_WIDTH*FIRE_HEIGHT)>>4)+1
+    //882 bytes
+    u16 rands[NUM_RANDS]; //[NUM_RANDS];
+
     for(int i = 0; i < NUM_RANDS; i++) {
         rands[i] = random();
     }
@@ -135,194 +135,8 @@ void spread_and_draw_fire_byte() {
     u16* rptr = rands;  
 
 
-    //fire_native(src_ptr, dst_ptr, bmp_ptr, rptr, &byte_fire_lut[0]);
-    //fire_native_dbl(src_ptr, dst_ptr, rptr, table_0, table_1, table_2);
-    
     fire_native_quad(src_ptr, dst_ptr, rptr, table_0, table_1, table_2);
 
-    return;
-
-    
-    u16 r = *rptr++;
-    u8 bits = 16;
-
-    //const u8 rand_mask = 0b011;
-	for(int y = 1; y < FIRE_HEIGHT; y++) {
-        for(int x = 0; x < FIRE_WIDTH; x += 4) {
-            //u8 rand_bits = (r & 0b11111);
-            u8 fire_0, fire_1, fire_2, fire_3;
-            switch(r & 0b01111) {
-                case 0b00000:
-                    fire_0 = *src_ptr++;
-                    fire_1 = *src_ptr++;
-                    fire_2 = *src_ptr++;
-                    fire_3 = *src_ptr++;
-                    *(dst_ptr-1) = fire_0;
-                    *((u16*)dst_ptr) = (fire_1 << 8)|fire_2;
-                    dst_ptr += 2; // dst_ptr = 2
-                    *dst_ptr++ = fire_3; // dst_ptr = 3
-                    dst_ptr += 1;
-                    break;
-                case 0b00001:
-                    src_ptr += 1;
-                    fire_1 = *src_ptr++;
-                    fire_2 = *src_ptr++;
-                    fire_3 = *src_ptr++;
-                    *((u16*)dst_ptr) = (fire_1 << 8)|fire_2;
-                    dst_ptr += 2; // dst_ptr = 2
-                    *dst_ptr++ = fire_3; // dst_ptr = 3
-                    dst_ptr += 1;
-                    break;
-                case 0b00010:
-                    src_ptr += 2;
-                    fire_2 = *src_ptr++;
-                    fire_3 = *src_ptr++;
-                    dst_ptr += 1; // dst_ptr = 1
-                    *dst_ptr++ = fire_2; // dst_ptr = 2
-                    *dst_ptr++ = fire_3; // dst_ptr = 3
-                    dst_ptr += 1;
-                    break;
-                case 0b00011:
-                    src_ptr += 3; // modified from +3
-                    fire_3 = *src_ptr++;
-                    fire_2 = *src_ptr;
-                    dst_ptr += 1; // dst_ptr = 1
-                    *dst_ptr++ = fire_2; // dst_ptr = 2
-                    *dst_ptr++ = fire_3; // dst_ptr = 3
-                    //src_ptr += -1;
-                    dst_ptr += 1;
-                    break;
-                case 0b00100:
-                    fire_0 = *src_ptr++;
-                    src_ptr += 2;
-                    fire_3 = *src_ptr++;
-                    *(dst_ptr-1) = fire_0;
-                    dst_ptr += 2; // dst_ptr = 2
-                    *dst_ptr++ = fire_3; // dst_ptr = 3
-                    dst_ptr += 1;
-                    break;
-                case 0b00101:
-                    fire_0 = *src_ptr++;
-                    src_ptr += 2;
-                    fire_3 = *src_ptr++;
-                    *dst_ptr++ = table_0[fire_0]; // dst_ptr = 1
-                    dst_ptr += 1; // dst_ptr = 2
-                    *dst_ptr++ = fire_3; // dst_ptr = 3
-                    dst_ptr += 1;
-                    break;
-                case 0b00110:
-                    fire_0 = *src_ptr++;
-                    fire_1 = *src_ptr++;
-                    src_ptr += 1;
-                    fire_3 = *src_ptr++;
-                    dst_ptr += 1; // dst_ptr = 1
-                    *dst_ptr++ = table_1[fire_0]; // dst_ptr = 2
-                    *((u16*)dst_ptr) = (fire_3 << 8)|table_2[fire_1];
-                    dst_ptr += 2;
-                    break;
-                case 0b00111:
-                    src_ptr += 3;
-                    fire_3 = *src_ptr++;
-                    fire_1 = *src_ptr++;
-                    dst_ptr += 2; // dst_ptr = 2
-                    *((u16*)dst_ptr) = (fire_3 << 8)|table_2[fire_1];
-                    src_ptr += -1;
-                    dst_ptr += 2;
-                    break;
-                case 0b01000:
-                    fire_0 = *src_ptr++;
-                    fire_1 = *src_ptr++;
-                    src_ptr += 1;
-                    fire_3 = *src_ptr++;
-                    *(dst_ptr-1) = fire_0;
-                    *dst_ptr++ = fire_1; // dst_ptr = 1
-                    dst_ptr += 2; // dst_ptr = 3
-                    *dst_ptr++ = table_0[fire_3]; // dst_ptr = 4
-                    break;
-                case 0b01001:
-                    src_ptr += 1;
-                    fire_1 = *src_ptr++;
-                    src_ptr += 1;
-                    fire_3 = *src_ptr++;
-                    *dst_ptr++ = fire_1; // dst_ptr = 1
-                    dst_ptr += 2; // dst_ptr = 3
-                    *dst_ptr++ = table_0[fire_3]; // dst_ptr = 4
-                    break;
-                case 0b01010:
-                    src_ptr += 1;
-                    fire_1 = *src_ptr++;
-                    src_ptr += 1;
-                    fire_3 = *src_ptr++;
-                    dst_ptr += 1; // dst_ptr = 1
-                    *dst_ptr++ = table_0[fire_1]; // dst_ptr = 2
-                    dst_ptr += 1; // dst_ptr = 3
-                    *dst_ptr++ = table_0[fire_3]; // dst_ptr = 4
-                    break;
-                case 0b01011:
-                    fire_0 = *src_ptr++;
-                    fire_1 = *src_ptr++;
-                    src_ptr += 1;
-                    fire_3 = *src_ptr++;
-                    dst_ptr += 1; // dst_ptr = 1
-                    *dst_ptr++ = table_0[fire_1]; // dst_ptr = 2
-                    *((u16*)dst_ptr) = table_2_shift[fire_0]|table_0[fire_3];
-                    dst_ptr += 2;
-                    break;
-                case 0b01100:
-                    fire_0 = *src_ptr++;
-                    fire_1 = *src_ptr++;
-                    fire_2 = *src_ptr++;
-                    fire_3 = *src_ptr++;
-                    *(dst_ptr-1) = fire_0;
-                    dst_ptr += 2; // dst_ptr = 2
-                    *((u16*)dst_ptr) = table_1_shift[fire_1]|table_0[fire_3];
-                    dst_ptr += 2; // dst_ptr = 4
-                    *dst_ptr = table_2[fire_2];
-                    break;
-                case 0b01101:
-                    fire_0 = *src_ptr++;
-                    fire_1 = *src_ptr++;
-                    fire_2 = *src_ptr++;
-                    fire_3 = *src_ptr++;
-                    *dst_ptr++ = table_0[fire_0]; // dst_ptr = 1
-                    dst_ptr += 1; // dst_ptr = 2
-                    *((u16*)dst_ptr) = table_1_shift[fire_1]|table_0[fire_3];
-                    dst_ptr += 2; // dst_ptr = 4
-                    *dst_ptr = table_2[fire_2];
-                    break;
-                case 0b01110:
-                    fire_0 = *src_ptr++;
-                    src_ptr += 2;
-                    fire_3 = *src_ptr++;
-                    fire_2 = *src_ptr;
-                    dst_ptr += 1; // dst_ptr = 1
-                    *dst_ptr++ = table_1[fire_0]; // dst_ptr = 2
-                    dst_ptr += 1; // dst_ptr = 3
-                    *dst_ptr++ = table_0[fire_3]; // dst_ptr = 4
-                    *dst_ptr = table_2[fire_2]; // dst_ptr = 5
-                    break;
-                case 0b01111:
-                    fire_0 = *src_ptr++;
-                    src_ptr += 2;
-                    fire_3 = *src_ptr++;
-                    fire_2 = *src_ptr;
-                    dst_ptr += 2; // dst_ptr = 2
-                    *((u16*)dst_ptr) = table_2_shift[fire_0]|table_0[fire_3];
-                    dst_ptr += 2; // dst_ptr = 4
-                    *dst_ptr = table_2[fire_2];
-                    break;
-                
-            }
- 
-            r >>= 4;
-            bits -= 4;         
-            if(bits == 0) {
-                r = *rptr++;
-                bits = 16;
-            }
-        }
-        
-    }
 }
 
         
@@ -369,8 +183,10 @@ void init_fire() {
 	VDP_setVerticalScroll(BG_A, 0);
 
 
-    
+    DMA_setBufferSize(2048);
+    MEM_pack();    
 
+    //rands = MEM_alloc(NUM_RANDS*2);
 	BMP_init(0, BG_A, PAL1, 0, 0);
 	//SPR_init();
 	//SYS_enableInts();
@@ -384,6 +200,7 @@ void init_fire() {
 	//SPR_setVisibility(fire_spr, VISIBLE);
 	//SPR_setVisibility(spr2, VISIBLE);
 	//SPR_setVisibility(spr3, VISIBLE);
+
 
     // side effect: loads palette!
 	VDP_drawImageEx(BG_B, &doom_logo, 0x0360, 8, 0, 1, 1);
@@ -472,5 +289,6 @@ void cleanup_fire() {
     MEM_free(lookup_table_base);
     BMP_end();
     VDP_clearPlane(BG_B, 1);
+    //MEM_free(rands);
     MEM_pack();
 }

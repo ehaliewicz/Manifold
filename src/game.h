@@ -4,6 +4,7 @@
 #include <genesis.h>
 #include "draw.h"
 #include "game_mode.h"
+#include "object.h"
 #include "vertex.h"
 
 extern int cur_frame;
@@ -13,17 +14,10 @@ extern int debug_draw;
 
 extern u32 last_frame_ticks;
 
-typedef struct {
-    fix32 x;
-    fix32 y;
-    fix32 z;
-    u16 ang;
-    u16 cur_sector;
-} player_pos;
 
 extern Vect2D_f32 *sector_centers;
 
-extern player_pos cur_player_pos;
+extern object_pos cur_player_pos;
 extern fix16 playerXFrac4;
 extern fix16 playerYFrac4;
 extern s16 playerZ12Frac4;

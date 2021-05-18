@@ -60,5 +60,6 @@ s16 project_and_adjust_x(s16 x, s16 z); //Vect2D_s16 trans_map_vert);
 
 s16 project_and_adjust_y_fix(s16 y, s16 z);
 
+s16 project_and_adjust_y_fix_c(s16 y, s16 z);
 
 #endif

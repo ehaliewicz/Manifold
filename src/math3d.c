@@ -55,7 +55,7 @@ s16 project_and_adjust_y(Vect2D_f32 trans_map_vert, s16 y) {
 */
 
 /*
-s16 project_and_adjust_y_fix(Vect2D_f32 trans_map_vert, s16 y) {    
+s16 project_and_adjust_y_fix_c(Vect2D_f32 trans_map_vert, s16 y) {    
     fix32 rz = trans_map_vert.y>>FIX32_FRAC_BITS; // 22.10
 
     fix32 playPosZFrac4 = cur_player_pos.z>>(10-4); //
@@ -69,8 +69,8 @@ s16 project_and_adjust_y_fix(Vect2D_f32 trans_map_vert, s16 y) {
 }
 */
 
-/*
-s16 project_and_adjust_y_fix(s16 y, s16 z) {    
+
+s16 project_and_adjust_y_fix_c(s16 y, s16 z) {    
     s16 yMinusPosZ = y - playerZ12Frac4;      // 12.4
     s32 const4Ry = CONST4 * yMinusPosZ;
 
@@ -79,7 +79,7 @@ s16 project_and_adjust_y_fix(s16 y, s16 z) {
     s16 yproj = (CONST3<<4) + const4RyDivZ;
     return ((SCREEN_HEIGHT-1)<<4)-yproj;
 }
-*/
+
 
 
 //const s32 near_z = 160 << FIX32_FRAC_BITS;

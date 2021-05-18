@@ -1,6 +1,7 @@
 #include <genesis.h>
 #include "collision.h"
 #include "colors.h"
+#include "clip_buf.h"
 #include "game.h"
 #include "game_mode.h"
 #include "graphics_res.h"
@@ -15,7 +16,7 @@
 #include "portal_maps.h"
 #include "sector.h"
 
-player_pos cur_player_pos;
+object_pos cur_player_pos;
 
 fix16 playerXFrac4, playerYFrac4;
 
@@ -502,6 +503,7 @@ void init_game() {
     }
 
     init_3d_palette();
+    init_clip_buffer_list();
 
     //cur_palette = (u16*)threeDPalette;
     cur_palette = pal.data;
@@ -672,6 +674,7 @@ void cleanup_game() {
     BMP_end();
     MEM_free(sector_centers);
     cleanup_portal_renderer();
+    free_clip_buffer_list();
     release_2d_buffers();
     MEM_pack();
 }
