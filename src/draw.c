@@ -1,7 +1,5 @@
 #include <genesis.h>
 #include <kdebug.h>
-#include "common.h"
-#include "dma_fb.h"
 #include "draw.h"
 #include "game.h"
 #include "level.h"
@@ -16,10 +14,34 @@
 u8* yclip;
 
 
+#define PIXEL_RIGHT_STEP 1
+#define PIXEL_DOWN_STEP 4
+//#define PIXEL_DOWN_STEP 2
+#define TILE_RIGHT_STEP 4*SCREEN_HEIGHT //640
+
+u16 get_index(u16 x, u16 y) {
+  u16 x_col_offset = x & 1;
+  u16 base_offset = 0;
+  if(x & 0b10) {
+    // use right half of framebuffer
+    base_offset = (SCREEN_WIDTH/2)*SCREEN_HEIGHT;
+  }
+  u16 y_offset = y * 2;
+  u16 x_num_pair_cols_offset = x >> 2;
+  u16 x_cols_offset = x_num_pair_cols_offset * SCREEN_HEIGHT * 2;
+  return base_offset + y_offset + x_col_offset + x_cols_offset; // + 16;
+}
+
 //inline u8* getDMAWritePointer(u16 x, u16 y) {
     //return 
 //  return &bmp_buffer_write[get_index(x, y)];
 //}
+
+inline u16 getDMAWriteOffset(u16 x, u16 y) {
+    return get_index(x, y);
+    //return 
+  //return &bmp_buffer_write[get_index(x, y)];
+}
 
 //u16* column_table;
 //u16* column_offset_table;
@@ -490,14 +512,10 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
 
     s16 beginx = max(x1, window_min);
 
-    u32 u_per_x = (32<<8)/(x2-x1);
-    u32 u_fix = 0;
-
-    u16 skip_x = beginx - x1;
+    s16 skip_x = beginx - x1;
     if(skip_x > 0) {
         top_y_fix += (skip_x * top_dy_per_dx);
         bot_y_fix += (skip_x * bot_dy_per_dx);
-        u_fix += (skip_x * u_per_x);
     }
 
 
@@ -521,13 +539,10 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
             draw_native_vertical_line_unrolled(min_drawable_y, top_draw_y, ceil_col, col_ptr);
         }
         if(top_draw_y < bot_draw_y) {
-            draw_texture_vertical_line(top_y_int, top_draw_y, bot_y_int, bot_draw_y, col_ptr, tex_col&(1)); //&(16-1)
-            //draw_texture_vertical_line(top_y_int, top_draw_y, bot_y_int, bot_draw_y, col_ptr, u_fix>>8);
-
+            draw_texture_vertical_line(top_y_int, top_draw_y, bot_y_int, bot_draw_y, col_ptr, tex_col&(32-1));
+            tex_col++;
             //draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, wall_col, col_ptr);
-        }            
-        tex_col++;
-        //u_fix += u_per_x;
+        }
         if(bot_draw_y < max_drawable_y) {
             draw_native_vertical_line_unrolled(bot_draw_y, max_drawable_y, floor_col, col_ptr);
         }

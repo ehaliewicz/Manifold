@@ -1,6 +1,4 @@
 #include <genesis.h>
-#include "common.h"
-#include "dma_fb.h"
 #include "fire.h"
 #include "game_mode.h"
 #include "graphics_res.h"
@@ -24,6 +22,8 @@ void reset_scroll() {
 		VDP_setHorizontalScrollLine(BG_A, i, &scroll, 1, CPU);
 	}
 }
+
+
 
 void init_fire_lut() {
     // allocate 2.3 KB
@@ -60,19 +60,9 @@ void init_fire_lut() {
 
 
 
-// 7kB?
-u8 *fire_buf;
-
-
 void start_fire_source() {	
-    for(int x = 0; x < SCREEN_WIDTH; x++) {
-        fire_buf[x*60+59] = 0xF;
-        //bmp_buffer_0[getDMAWriteOffset(x, 143)] = 0xFF;
-    }
-
-
-    //u8* ptr = BMP_getWritePointer(0, BASE_FRAMEBUFFER_OFFSET+FIRE_HEIGHT-1);
-    //memset(ptr, 0xFF, 128);
+    u8* ptr = BMP_getWritePointer(0, BASE_FRAMEBUFFER_OFFSET+FIRE_HEIGHT-1);
+    memset(ptr, 0xFF, 128);
 }
 
 void clear_fire_source() {	
@@ -101,17 +91,23 @@ const u16 fire_cols[16] = {
 };
 
 
-#define NUM_RANDS (SCREEN_WIDTH*60)
+#define NUM_RANDS ((FIRE_WIDTH*FIRE_HEIGHT)>>4)+1
 
-u8 rands[NUM_RANDS];
+u16 rands[NUM_RANDS];
 
+
+void fire_native(u8* src_ptr, u8* dst_ptr, u8* bmp_ptr, u16* rand_ptr, u8* byte_fire_lut_ptr);
+
+void fire_native_dbl(u8* src_ptr, u8* dst_ptr, u16* rand_ptr, u8* table_0_ptr, u8* table_1_ptr, u8* table_2_ptr);
+void fire_native_quad(u8* src_ptr, u8* dst_ptr, u16* rand_ptr, u8* table_0_ptr, u8* table_1_ptr, u8* table_2_ptr);
+
+void copy_fire_native(u32* src_ptr, u32* dst_ptr);
 
 void copy_fire_buffer_portion() {
-    //u32* src_ptr = (u32*)BMP_getReadPointer(0, BASE_FRAMEBUFFER_OFFSET);
-    //u32* dst_ptr = (u32*)BMP_getWritePointer(0, BASE_FRAMEBUFFER_OFFSET);
-    //copy_fire_native(src_ptr, dst_ptr);
-    //return;
-    /*
+    u32* src_ptr = (u32*)BMP_getReadPointer(0, BASE_FRAMEBUFFER_OFFSET);
+    u32* dst_ptr = (u32*)BMP_getWritePointer(0, BASE_FRAMEBUFFER_OFFSET);
+    copy_fire_native(src_ptr, dst_ptr);
+    return;
     for(int i = 0; i < FIRE_HEIGHT*(FIRE_WIDTH>>2); i+=8) {
             *dst_ptr++ = *src_ptr++;
             *dst_ptr++ = *src_ptr++;
@@ -122,7 +118,6 @@ void copy_fire_buffer_portion() {
             *dst_ptr++ = *src_ptr++;
             *dst_ptr++ = *src_ptr++;
     }
-    */
 }
 
 
@@ -133,55 +128,201 @@ void spread_and_draw_fire_byte() {
     }
 
     
-    //u8* src_ptr = BMP_getReadPointer(0,  BASE_FRAMEBUFFER_OFFSET+1); //&fire_buf[FIRE_WIDTH];
-    //u8* dst_ptr = BMP_getWritePointer(0,  BASE_FRAMEBUFFER_OFFSET+0); //&fire_buf[0]-1;
+    u8* src_ptr = BMP_getReadPointer(0,  BASE_FRAMEBUFFER_OFFSET+1); //&fire_buf[FIRE_WIDTH];
+    u8* dst_ptr = BMP_getWritePointer(0,  BASE_FRAMEBUFFER_OFFSET+0); //&fire_buf[0]-1;
 
 
-    u16 buf_x_off = 0;
+    u16* rptr = rands;  
 
-    u8 lut = {};
+
+    //fire_native(src_ptr, dst_ptr, bmp_ptr, rptr, &byte_fire_lut[0]);
+    //fire_native_dbl(src_ptr, dst_ptr, rptr, table_0, table_1, table_2);
     
-    for(int x = 0; x < SCREEN_WIDTH; x++) {
-        //u16 col_off = getDMAWriteOffset(x, 1);
-        //u16 left_col_off = getDMAWriteOffset((x-1)%SCREEN_WIDTH, 1);
+    fire_native_quad(src_ptr, dst_ptr, rptr, table_0, table_1, table_2);
 
+    return;
 
+    
+    u16 r = *rptr++;
+    u8 bits = 16;
 
-        for(int y = 1; y < 60; y++) {
-
-            u8 bits = random() & 0b11; // incredibly wasteful
-            u8 cur_col = fire_buf[buf_x_off+y];
-            if(cur_col != 0) {
-                u8 weaken = bits>>1;
-                cur_col -= weaken;
-                if(cur_col < 0) { cur_col = 0; }
+    //const u8 rand_mask = 0b011;
+	for(int y = 1; y < FIRE_HEIGHT; y++) {
+        for(int x = 0; x < FIRE_WIDTH; x += 4) {
+            //u8 rand_bits = (r & 0b11111);
+            u8 fire_0, fire_1, fire_2, fire_3;
+            switch(r & 0b01111) {
+                case 0b00000:
+                    fire_0 = *src_ptr++;
+                    fire_1 = *src_ptr++;
+                    fire_2 = *src_ptr++;
+                    fire_3 = *src_ptr++;
+                    *(dst_ptr-1) = fire_0;
+                    *((u16*)dst_ptr) = (fire_1 << 8)|fire_2;
+                    dst_ptr += 2; // dst_ptr = 2
+                    *dst_ptr++ = fire_3; // dst_ptr = 3
+                    dst_ptr += 1;
+                    break;
+                case 0b00001:
+                    src_ptr += 1;
+                    fire_1 = *src_ptr++;
+                    fire_2 = *src_ptr++;
+                    fire_3 = *src_ptr++;
+                    *((u16*)dst_ptr) = (fire_1 << 8)|fire_2;
+                    dst_ptr += 2; // dst_ptr = 2
+                    *dst_ptr++ = fire_3; // dst_ptr = 3
+                    dst_ptr += 1;
+                    break;
+                case 0b00010:
+                    src_ptr += 2;
+                    fire_2 = *src_ptr++;
+                    fire_3 = *src_ptr++;
+                    dst_ptr += 1; // dst_ptr = 1
+                    *dst_ptr++ = fire_2; // dst_ptr = 2
+                    *dst_ptr++ = fire_3; // dst_ptr = 3
+                    dst_ptr += 1;
+                    break;
+                case 0b00011:
+                    src_ptr += 3; // modified from +3
+                    fire_3 = *src_ptr++;
+                    fire_2 = *src_ptr;
+                    dst_ptr += 1; // dst_ptr = 1
+                    *dst_ptr++ = fire_2; // dst_ptr = 2
+                    *dst_ptr++ = fire_3; // dst_ptr = 3
+                    //src_ptr += -1;
+                    dst_ptr += 1;
+                    break;
+                case 0b00100:
+                    fire_0 = *src_ptr++;
+                    src_ptr += 2;
+                    fire_3 = *src_ptr++;
+                    *(dst_ptr-1) = fire_0;
+                    dst_ptr += 2; // dst_ptr = 2
+                    *dst_ptr++ = fire_3; // dst_ptr = 3
+                    dst_ptr += 1;
+                    break;
+                case 0b00101:
+                    fire_0 = *src_ptr++;
+                    src_ptr += 2;
+                    fire_3 = *src_ptr++;
+                    *dst_ptr++ = table_0[fire_0]; // dst_ptr = 1
+                    dst_ptr += 1; // dst_ptr = 2
+                    *dst_ptr++ = fire_3; // dst_ptr = 3
+                    dst_ptr += 1;
+                    break;
+                case 0b00110:
+                    fire_0 = *src_ptr++;
+                    fire_1 = *src_ptr++;
+                    src_ptr += 1;
+                    fire_3 = *src_ptr++;
+                    dst_ptr += 1; // dst_ptr = 1
+                    *dst_ptr++ = table_1[fire_0]; // dst_ptr = 2
+                    *((u16*)dst_ptr) = (fire_3 << 8)|table_2[fire_1];
+                    dst_ptr += 2;
+                    break;
+                case 0b00111:
+                    src_ptr += 3;
+                    fire_3 = *src_ptr++;
+                    fire_1 = *src_ptr++;
+                    dst_ptr += 2; // dst_ptr = 2
+                    *((u16*)dst_ptr) = (fire_3 << 8)|table_2[fire_1];
+                    src_ptr += -1;
+                    dst_ptr += 2;
+                    break;
+                case 0b01000:
+                    fire_0 = *src_ptr++;
+                    fire_1 = *src_ptr++;
+                    src_ptr += 1;
+                    fire_3 = *src_ptr++;
+                    *(dst_ptr-1) = fire_0;
+                    *dst_ptr++ = fire_1; // dst_ptr = 1
+                    dst_ptr += 2; // dst_ptr = 3
+                    *dst_ptr++ = table_0[fire_3]; // dst_ptr = 4
+                    break;
+                case 0b01001:
+                    src_ptr += 1;
+                    fire_1 = *src_ptr++;
+                    src_ptr += 1;
+                    fire_3 = *src_ptr++;
+                    *dst_ptr++ = fire_1; // dst_ptr = 1
+                    dst_ptr += 2; // dst_ptr = 3
+                    *dst_ptr++ = table_0[fire_3]; // dst_ptr = 4
+                    break;
+                case 0b01010:
+                    src_ptr += 1;
+                    fire_1 = *src_ptr++;
+                    src_ptr += 1;
+                    fire_3 = *src_ptr++;
+                    dst_ptr += 1; // dst_ptr = 1
+                    *dst_ptr++ = table_0[fire_1]; // dst_ptr = 2
+                    dst_ptr += 1; // dst_ptr = 3
+                    *dst_ptr++ = table_0[fire_3]; // dst_ptr = 4
+                    break;
+                case 0b01011:
+                    fire_0 = *src_ptr++;
+                    fire_1 = *src_ptr++;
+                    src_ptr += 1;
+                    fire_3 = *src_ptr++;
+                    dst_ptr += 1; // dst_ptr = 1
+                    *dst_ptr++ = table_0[fire_1]; // dst_ptr = 2
+                    *((u16*)dst_ptr) = table_2_shift[fire_0]|table_0[fire_3];
+                    dst_ptr += 2;
+                    break;
+                case 0b01100:
+                    fire_0 = *src_ptr++;
+                    fire_1 = *src_ptr++;
+                    fire_2 = *src_ptr++;
+                    fire_3 = *src_ptr++;
+                    *(dst_ptr-1) = fire_0;
+                    dst_ptr += 2; // dst_ptr = 2
+                    *((u16*)dst_ptr) = table_1_shift[fire_1]|table_0[fire_3];
+                    dst_ptr += 2; // dst_ptr = 4
+                    *dst_ptr = table_2[fire_2];
+                    break;
+                case 0b01101:
+                    fire_0 = *src_ptr++;
+                    fire_1 = *src_ptr++;
+                    fire_2 = *src_ptr++;
+                    fire_3 = *src_ptr++;
+                    *dst_ptr++ = table_0[fire_0]; // dst_ptr = 1
+                    dst_ptr += 1; // dst_ptr = 2
+                    *((u16*)dst_ptr) = table_1_shift[fire_1]|table_0[fire_3];
+                    dst_ptr += 2; // dst_ptr = 4
+                    *dst_ptr = table_2[fire_2];
+                    break;
+                case 0b01110:
+                    fire_0 = *src_ptr++;
+                    src_ptr += 2;
+                    fire_3 = *src_ptr++;
+                    fire_2 = *src_ptr;
+                    dst_ptr += 1; // dst_ptr = 1
+                    *dst_ptr++ = table_1[fire_0]; // dst_ptr = 2
+                    dst_ptr += 1; // dst_ptr = 3
+                    *dst_ptr++ = table_0[fire_3]; // dst_ptr = 4
+                    *dst_ptr = table_2[fire_2]; // dst_ptr = 5
+                    break;
+                case 0b01111:
+                    fire_0 = *src_ptr++;
+                    src_ptr += 2;
+                    fire_3 = *src_ptr++;
+                    fire_2 = *src_ptr;
+                    dst_ptr += 2; // dst_ptr = 2
+                    *((u16*)dst_ptr) = table_2_shift[fire_0]|table_0[fire_3];
+                    dst_ptr += 2; // dst_ptr = 4
+                    *dst_ptr = table_2[fire_2];
+                    break;
+                
             }
-
-            u8 move_left = bits & 0b1;
-
-            if(move_left) { 
-                fire_buf[buf_x_off-60+y-1] = cur_col;
-            } else {
-                fire_buf[buf_x_off+y-1] = cur_col;
+ 
+            r >>= 4;
+            bits -= 4;         
+            if(bits == 0) {
+                r = *rptr++;
+                bits = 16;
             }
         }
-        //col_off += 2;
-        //left_col_off += 2;
-        buf_x_off += 60;
-    } 
-    
-    
-    u8* offset_ptr = (bmp_buffer_write == bmp_buffer_0) ? (bmp_buffer_0) : (bmp_buffer_1);
-    u16 x_off = 0;
-    for(int x = 0; x < SCREEN_WIDTH; x++) {
-        u16 col_off = getDMAWriteOffset(x, 80);
-        for(int y = 0; y < 60; y++) {
-            u8 col = fire_buf[x_off+y];
-            offset_ptr[col_off+(y<<1)] = (col<<4|col);
-        }
-        x_off += 60;
+        
     }
-
 }
 
         
@@ -214,7 +355,6 @@ static Sprite* fire_spr;
 static Sprite* spr2;
 static Sprite* spr3;
 
-
 void init_fire() {
     //XGM_startPlay(xgm_e2m2);
 
@@ -226,21 +366,12 @@ void init_fire() {
 
 	VDP_setScrollingMode(HSCROLL_LINE, VSCROLL_PLANE);
 	VDP_setVerticalScroll(BG_B, cur_scroll_fixed>>2);
-	//VDP_setVerticalScroll(BG_A, 0);
+	VDP_setVerticalScroll(BG_A, 0);
 
-    fire_buf = MEM_alloc(SCREEN_WIDTH * 60);
-    memset(fire_buf, 0, SCREEN_WIDTH*60);
-
-    
-    //BMP_init(1, BG_A, PAL1, 0, 1);
-
-	BMP_init(1, BG_A, PAL1, 0, 1);
-    reset_dma_framebuffer();
 
     
 
-    //XGM_stopPlay();
-    SYS_setVIntCallback(do_vint_flip);
+	BMP_init(0, BG_A, PAL1, 0, 0);
 	//SPR_init();
 	//SYS_enableInts();
     //return
@@ -255,11 +386,10 @@ void init_fire() {
 	//SPR_setVisibility(spr3, VISIBLE);
 
     // side effect: loads palette!
-	VDP_drawImageEx(BG_B, &doom_logo, 0x0390, 8, 0, 1, 1);
+	VDP_drawImageEx(BG_B, &doom_logo, 0x0360, 8, 0, 1, 1);
 
-	//const int fire_fix_vram_addr = 0x300;
-	//const int bkgd_cover_vram_addr = 0x304;
-
+	const int fire_fix_vram_addr = 0x300;
+	const int bkgd_cover_vram_addr = 0x304;
 	//VDP_loadTileSet(fire_fixup.animations[0]->frames[0]->tileset, fire_fix_vram_addr, CPU);
 	//VDP_loadTileSet(bottom_line_cover.animations[0]->frames[0]->tileset, bkgd_cover_vram_addr, CPU);
 
@@ -273,7 +403,6 @@ void init_fire() {
 
 	VDP_setPalette(PAL1, fire_cols);
 	SYS_enableInts();
-    request_dma_flip();
 
 
 	init_fire_lut();
@@ -281,22 +410,17 @@ void init_fire() {
     fire_frame = 0;
 
     //SPR_update();
+
 }
-
-
 game_mode run_fire() {
     fire_frame++;
     //return SAME_MODE;
     if(fire_running) {
-        BMP_vertical_clear();
+        BMP_waitWhileFlipRequestPending();
+
         spread_and_draw_fire_byte();
-        request_dma_flip();
-
-        //BMP_waitWhileFlipRequestPending();
-
-
-        //BMP_flipPartial(1, 12, 0);
-        //copy_fire_buffer_portion();
+        BMP_flipPartial(1, 12, 0);
+        copy_fire_buffer_portion();
     }
 
     
@@ -327,12 +451,8 @@ game_mode run_fire() {
 
     if(fire_frame == 290) {
         fire_running = 0;
-        
-        //BMP_vertical_clear();
-
-        //request_dma_flip();
-        //BMP_clear();
-        //BMP_flipPartial(0, 12, 0);
+        BMP_clear();
+        BMP_flipPartial(0, 12, 0);
     } else if (fire_frame == 291) {
         return MAIN_MENU;
     }

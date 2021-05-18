@@ -10,10 +10,6 @@
         "math3d.h": "c",
         "portal_maps.h": "c",
         "game.h": "c",
-        "portal_map.h": "c",
-        "random": "c",
-        "draw.h": "c",
-        "dma_fb.h": "c",
-        "colors.h": "c"
+        "portal_map.h": "c"
     }
 }
