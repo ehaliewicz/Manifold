@@ -428,7 +428,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
             } else {
                 draw_floor_update_clip(x1, x1_ybot, x2, x2_ybot, window_min, window_max, floor_color);
             }
-            if(draw_forcefield) {
+            if(render_forcefield || render_glass) {
                 copy_2d_buffer(window_min, window_max, clipping_buffer);
             }
             
@@ -479,7 +479,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
 }
 
 void portal_rend(u16 src_sector, u32 cur_frame) {
-    visit_graph(src_sector, src_sector, 0, 64-1, cur_frame, 0);
+    visit_graph(src_sector, src_sector, 7, 58-1, cur_frame, 0);
 
     return;
     

@@ -460,8 +460,12 @@ void init_game() {
     //XGM_stopPlay();
     SYS_setVIntCallback(do_vint_flip);
     VDP_setVerticalScroll(BG_B, 0);
-    VDP_setScreenWidth320();
-    VDP_setScreenHeight240();
+    
+    VDP_setScreenWidth256();
+    //VDP_setScreenWidth320();
+    //VDP_setScreenHeight240();
+
+
     //request_flip();
 
     render_mode = GAME_WIREFRAME;
