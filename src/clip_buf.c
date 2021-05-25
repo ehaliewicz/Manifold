@@ -1,7 +1,6 @@
 #include <genesis.h>
 #include "clip_buf.h"
 
-#define NUM_CLIP_BUFS 4
 
 clip_buf *clip_buffers;
 

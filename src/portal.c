@@ -384,11 +384,15 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
         wall_color = calculate_color(wall_color, avg_dist, light_level);
 
         clip_buf* clipping_buffer = NULL;
-        int draw_forcefield = (sector == 0 && is_portal && portal_sector == 2) || (sector == 2 && is_portal && portal_sector == 0);
-        if (draw_forcefield)  {
+        int render_forcefield = (sector == 0 && is_portal && portal_sector == 2) || (sector == 2 && is_portal && portal_sector == 0) || (sector == 2 && is_portal && portal_sector == 3) || (sector == 3 && is_portal && portal_sector == 2);
+        int render_glass = (sector == 0 && is_portal && portal_sector == 1) || (sector == 1 && is_portal && portal_sector == 0);
+        if (render_forcefield || render_glass)  {
             
             //clipping_buffer = &clip_buffers[0]; 
             clipping_buffer = alloc_clip_buffer();
+            if(clipping_buffer == NULL) {
+                die("Out of clipping buffers!");
+            }
         }
 
         if (is_portal) {
@@ -445,15 +449,12 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
 
 
         // aftert his point, draw some sprites :^)
-        if (draw_forcefield) {
-            //static u8 c = 0x0;
-            //const uint8_t cols[4] = {(RED_IDX<<4)|RED_IDX, (LIGHT_RED_IDX<<4)|LIGHT_RED_IDX};
+        if (render_forcefield) {
 
-            //u8 cur_col = cols[(c>>3)&0b1];
-            //c++;
+            uint16_t col = (RED_IDX<<4)|LIGHT_GREEN_IDX;
+            draw_forcefield(x1, x2, window_min, window_max, clipping_buffer, col);
+            //post_process_forcefield(x1, x1_ytop)
 
-            
-            draw_transparent_wall(x1, x1_ytop, x1_ybot, x2, x2_ytop, x2_ybot, window_min, window_max, clipping_buffer, (LIGHT_RED_IDX<<4)|LIGHT_GREEN_IDX);
             free_clip_buffer(clipping_buffer);
             /*
             Vect2D_f32 sprite_pos = sector_centers[2];
@@ -469,8 +470,9 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
                 draw_monochrome_sprite_no_vclip(small_ball_sprite, sprite_x_middle, sprite_y_top, trans_sprite_pos.y, window_min, window_max);
             }
             */
-
-
+        } else if (render_glass) {
+            draw_transparent_wall(x1, x1_ytop, x1_ybot, x2, x2_ytop, x2_ybot, window_min, window_max, clipping_buffer, (LIGHT_RED_IDX<<4)|LIGHT_GREEN_IDX);
+            free_clip_buffer(clipping_buffer);
         }
 
     }

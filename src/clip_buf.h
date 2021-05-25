@@ -3,8 +3,12 @@
 
 #include <genesis.h>
 
+// 128 bytes * 4 = 512 bytes
+#define NUM_CLIP_BUFS 4 
 typedef struct clip_buf clip_buf;
 
+// we could be really fancy and create just one big buffer, and allocate chunks out of that as needed
+// but i doubt we'll ever want to draw four of these on top of each other
 struct clip_buf {
     u8 clip_buffer[128];
 };

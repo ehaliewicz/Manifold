@@ -10,6 +10,7 @@
         "math3d.h": "c",
         "portal_maps.h": "c",
         "game.h": "c",
-        "portal_map.h": "c"
+        "portal_map.h": "c",
+        "sstream": "c"
     }
 }

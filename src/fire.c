@@ -169,7 +169,9 @@ static Sprite* fire_spr;
 static Sprite* spr2;
 static Sprite* spr3;
 
+int end;
 void init_fire() {
+    end = 0;
     //XGM_startPlay(xgm_e2m2);
 
 	SYS_disableInts();
@@ -229,6 +231,8 @@ void init_fire() {
     //SPR_update();
 
 }
+int end = 0;
+
 game_mode run_fire() {
     fire_frame++;
     //return SAME_MODE;
@@ -262,15 +266,17 @@ game_mode run_fire() {
     }
 
     if(fire_hidden && skip) {
-        fire_frame = 290;
+        end = 1;
+        //fire_frame = 290;
     }
 
 
-    if(fire_frame == 290) {
+    if(end == 1) { //fire_frame == 290) {
         fire_running = 0;
         BMP_clear();
         BMP_flipPartial(0, 12, 0);
-    } else if (fire_frame == 291) {
+        end = 2;
+    } else if (end == 2) { //fire_frame == 291) {
         return MAIN_MENU;
     }
 

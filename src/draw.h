@@ -39,6 +39,11 @@ void draw_transparent_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
                             clip_buf* clipping_buffer,
                             u8 wall_col);
 
+void draw_forcefield(s16 x1, s16 x2,
+                     u16 window_min, u16 window_max,
+                     clip_buf* clipping_buffer,
+                     u8 wall_col);
+
 void draw_upper_step(s16 x1, s16 x1_ytop, s16 nx1_ytop, s16 x2, s16 x2_ytop, s16 nx2_ytop, u16 window_min, u16 window_max, u8 upper_color, u8 ceil_color);
 void draw_ceiling_update_clip(s16 x1, s16 x1_ytop, s16 x2, s16 x2_ytop, u16 window_min, u16 window_max, u8 ceil_color);
 void draw_lower_step(s16 x1, s16 x1_ybot, s16 nx1_ybot, s16 x2, s16 x2_ybot, s16 nx2_ybot, u16 window_min, u16 window_max, u8 lower_color, u8 floor_color);

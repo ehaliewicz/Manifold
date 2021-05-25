@@ -388,6 +388,89 @@ void draw_native_vertical_line_unrolled(s16 y0, s16 y1, u8 col,  u8* col_ptr) {
     return;
 }
 
+// this is fast and efficient when each column is mostly empty space
+void draw_rle_monochrome_col(uint8_t *rle_column, uint8_t *col_ptr, uint16_t y_top, uint16_t y_bot, uint16_t col, s16 y0, s16 y1) {
+
+  // scale is 16.16 scale factor, basically, it is 1/z in fixed point
+
+  if(y1 <= y0) { return; }
+  if(y_bot <= y_top) { return; }
+
+
+
+
+  u8 num_runs = *rle_column++;
+  if(num_runs == 0) { return; }
+
+  u8 byte_col = (col<<4) | col;
+  u16 word_col = (byte_col<<8) | byte_col;
+  s16 pix = y1-y0;
+
+  s32 cur_y_fix = y0<<5;
+  s16 pixels_per_texel = (pix<<5) >> 6;// / 64;
+
+  s32 y_top_fix = (y_top << 5);
+  s32 y_bot_fix = (y_bot << 5);
+
+  // load the first span out of the loop
+  //u8 texels_skipped = *rle_column++;
+  //u8 texels_length = *rle_column++;
+  //if(texels_skipped) {
+  //
+  //}
+
+
+  for(int i = 0; i < num_runs; i++) {
+    s16 texels_skipped = *rle_column++;
+    s16 texels_length = *rle_column++;
+
+    if(texels_skipped) {
+        s32 pixels_skipped_fix = pixels_per_texel;
+           __asm volatile(
+            "muls.w %1, %0"
+            :  "+d" (pixels_skipped_fix), "+d" (texels_skipped) // output
+            : // input
+        );
+    
+        cur_y_fix += pixels_skipped_fix;
+    }
+    if(cur_y_fix >= y_bot_fix) { return; }
+
+    s32 num_pixels_fix = pixels_per_texel;
+        __asm volatile(
+        "muls.w %1, %0"
+        :  "+d" (num_pixels_fix), "+d" (texels_length) // output
+        : // input
+    );
+    
+    //s32 num_pixels_fix = texels_length * pixels_per_texel;
+    s32 end_y_fix = (cur_y_fix + num_pixels_fix);
+
+    if(end_y_fix >= y_top_fix) {
+        
+        s16 span_top_y = cur_y_fix>>5;
+        span_top_y = max(y_top, min(span_top_y, y_bot));
+        s16 span_bot_y = end_y_fix>>5;
+
+        span_bot_y = max(y_top, min(span_bot_y, y_bot));
+        s16 dy = span_bot_y - span_top_y;
+        u16* col_span_ptr = &col_ptr[span_top_y<<1];
+        for(int j = 0; j < dy; j++) {
+            *col_span_ptr++ = word_col;
+        }
+        //draw_native_vertical_line_unrolled(span_top_y, span_bot_y, col, col_ptr);
+    }
+
+
+
+    cur_y_fix = end_y_fix;
+    if(cur_y_fix >= y_bot_fix) { return; }
+    
+
+
+  }
+} 
+
 #define FLAT_COLOR
 
 void flip() {
@@ -398,6 +481,158 @@ void flip() {
         //BMP_clear();
     }*/
 }
+
+/*
+uint8_t rle_texture[5] = {
+    2, // 2 runs
+    23, // skip 23 texels
+    2, // draw 2 pixels
+    27, // skip 27 more texels
+    1, // draw 1 more texel
+};
+*/
+
+
+uint8_t rle_glass[102] = {
+    0, // num runs in column 0
+    1, // num runs in column 1
+    44, // skip 44 texels
+    1, // draw 1 texels
+    1, // num runs in column 2
+    41, // skip 41 texels
+    3, // draw 3 texels
+    2, // num runs in column 3
+    22, // skip 22 texels
+    2, // draw 2 texels
+    14, // skip 14 texels
+    3, // draw 3 texels
+    2, // num runs in column 4
+    20, // skip 20 texels
+    3, // draw 3 texels
+    13, // skip 13 texels
+    3, // draw 3 texels
+    2, // num runs in column 5
+    18, // skip 18 texels
+    3, // draw 3 texels
+    14, // skip 14 texels
+    1, // draw 1 texels
+    1, // num runs in column 6
+    16, // skip 16 texels
+    3, // draw 3 texels
+    1, // num runs in column 7
+    15, // skip 15 texels
+    2, // draw 2 texels
+    1, // num runs in column 8
+    13, // skip 13 texels
+    3, // draw 3 texels
+    1, // num runs in column 9
+    11, // skip 11 texels
+    3, // draw 3 texels
+    1, // num runs in column 10
+    9, // skip 9 texels
+    3, // draw 3 texels
+    2, // num runs in column 11
+    7, // skip 7 texels
+    3, // draw 3 texels
+    40, // skip 40 texels
+    1, // draw 1 texels
+    2, // num runs in column 12
+    7, // skip 7 texels
+    1, // draw 1 texels
+    40, // skip 40 texels
+    2, // draw 2 texels
+    1, // num runs in column 13
+    47, // skip 47 texels
+    3, // draw 3 texels
+    1, // num runs in column 14
+    45, // skip 45 texels
+    3, // draw 3 texels
+    1, // num runs in column 15
+    43, // skip 43 texels
+    3, // draw 3 texels
+    1, // num runs in column 16
+    41, // skip 41 texels
+    3, // draw 3 texels
+    1, // num runs in column 17
+    39, // skip 39 texels
+    3, // draw 3 texels
+    1, // num runs in column 18
+    37, // skip 37 texels
+    3, // draw 3 texels
+    1, // num runs in column 19
+    35, // skip 35 texels
+    3, // draw 3 texels
+    1, // num runs in column 20
+    34, // skip 34 texels
+    1, // draw 1 texels
+    1, // num runs in column 21
+    18, // skip 18 texels
+    1, // draw 1 texels
+    1, // num runs in column 22
+    16, // skip 16 texels
+    2, // draw 2 texels
+    1, // num runs in column 23
+    14, // skip 14 texels
+    3, // draw 3 texels
+    2, // num runs in column 24
+    12, // skip 12 texels
+    3, // draw 3 texels
+    23, // skip 23 texels
+    2, // draw 2 texels
+    2, // num runs in column 25
+    10, // skip 10 texels
+    3, // draw 3 texels
+    23, // skip 23 texels
+    2, // draw 2 texels
+    2, // num runs in column 26
+    9, // skip 9 texels
+    2, // draw 2 texels
+    23, // skip 23 texels
+    2, // draw 2 texels
+    1, // num runs in column 27
+    34, // skip 34 texels
+    1, // draw 1 texels
+    0, // num runs in column 28
+    0, // num runs in column 29
+    0, // num runs in column 30
+    0, // num runs in column 31
+};
+uint16_t rle_glass_column_indexes[32] = {
+    0,
+    1,
+    4,
+    7,
+    12,
+    17,
+    22,
+    25,
+    28,
+    31,
+    34,
+    37,
+    42,
+    47,
+    50,
+    53,
+    56,
+    59,
+    62,
+    65,
+    68,
+    71,
+    74,
+    77,
+    80,
+    85,
+    90,
+    95,
+    98,
+    99,
+    100,
+    101,
+};
+
+
 
 
 void draw_transparent_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
@@ -424,9 +659,14 @@ void draw_transparent_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
     s16 beginx = max(x1, window_min);
 
     s16 skip_x = beginx - x1;
+
+    s32 tex_per_pix_fix = (32<<16)/dx;
+    s32 tex_col_fix = 0;
+
     if(skip_x > 0) {
         top_y_fix += (skip_x * top_dy_per_dx);
         bot_y_fix += (skip_x * bot_dy_per_dx);
+        tex_col_fix +=  (skip_x * tex_per_pix_fix);
     }
 
 
@@ -434,37 +674,80 @@ void draw_transparent_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
 
     s16 x = beginx;
     u8* yclip_ptr = &(clipping_buffer->clip_buffer[x<<1]);
-    //u8* yclip_ptr = &(clipping_buffer->clip_buffer[0]); 
-    //yclip_ptr =&(yclip[x<<1]);
 
     u8** offset_ptr = (bmp_buffer_write == bmp_buffer_0) ? (&buf_0_column_offset_table[x]) : (&buf_1_column_offset_table[x]);
-    //u8 tex_col = 0;
+    
+    u8 tex_col_int;
+
     for(;x < endx; x++) {
-        //top_y_int = top_y_fix >> 16;
-        //bot_y_int = bot_y_fix >> 16;
         u8 min_drawable_y = *yclip_ptr++;
         u8 max_drawable_y = *yclip_ptr++;
         u8 top_draw_y = min_drawable_y; 
-        //u8 top_draw_y = clamp(top_y_int, min_drawable_y, max_drawable_y);
         u8 bot_draw_y = max_drawable_y; 
-        //u8 bot_draw_y = clamp(bot_y_int, min_drawable_y, max_drawable_y);
 
         u8* col_ptr = *offset_ptr++;
-        //if(min_drawable_y < top_draw_y) {
-        //    draw_native_vertical_line_unrolled(min_drawable_y, top_draw_y, ceil_col, col_ptr);
-        //}
         if(top_draw_y < bot_draw_y) {
+            top_y_int = top_y_fix >> 16;
+            bot_y_int = bot_y_fix >> 16;
+            tex_col_int = tex_col_fix>>16;
+
+
             //draw_texture_vertical_line(top_y_int, top_draw_y, bot_y_int, bot_draw_y, col_ptr, tex_col&(32-1));
-            //tex_col++;
-            draw_native_vertical_transparent_line_unrolled(top_draw_y, bot_draw_y, wall_col, col_ptr, x&1);
+            
+            uint16_t rle_glass_index = rle_glass_column_indexes[tex_col_int];
+            tex_col_fix += tex_per_pix_fix;
+
+            draw_rle_monochrome_col(&rle_glass[rle_glass_index], col_ptr, min_drawable_y, max_drawable_y, (LIGHT_STEEL_IDX<<4)|LIGHT_STEEL_IDX, top_y_int, bot_y_int);
+            //draw_rle_monochrome_col(rle_texture, col_ptr, min_drawable_y, max_drawable_y, (LIGHT_STEEL_IDX<<4)|LIGHT_STEEL_IDX, top_y_int, bot_y_int);
+            
+            //draw_native_vertical_transparent_line_unrolled(top_draw_y, bot_draw_y, wall_col, col_ptr, x&1);
+
         }
         //if(bot_draw_y < max_drawable_y) {
         //    draw_native_vertical_line_unrolled(bot_draw_y, max_drawable_y, floor_col, col_ptr);
         //}
 
-        //top_y_fix += top_dy_per_dx;
-        //bot_y_fix += bot_dy_per_dx;
+        top_y_fix += top_dy_per_dx;
+        bot_y_fix += bot_dy_per_dx;
     }
+    
+    flip(0);
+
+    return; 
+}
+
+
+void draw_forcefield(s16 x1, s16 x2,
+                     u16 window_min, u16 window_max,
+                     clip_buf* clipping_buffer,
+                     u8 wall_col) {
+
+
+    // 4 subpixel bits here
+    s16 beginx = max(x1, window_min);
+    s16 endx = min(window_max, x2);
+
+    s16 x = beginx;
+
+    u8* yclip_ptr = &(clipping_buffer->clip_buffer[x<<1]);
+
+    u8** offset_ptr = (bmp_buffer_write == bmp_buffer_0) ? (&buf_0_column_offset_table[x]) : (&buf_1_column_offset_table[x]);
+    
+    u8 tex_col_int;
+
+    for(;x < endx; x++) {
+        u8 min_drawable_y = *yclip_ptr++;
+        u8 max_drawable_y = *yclip_ptr++;
+        u8 top_draw_y = min_drawable_y; 
+        u8 bot_draw_y = max_drawable_y; 
+
+        u8* col_ptr = *offset_ptr++;
+        if(top_draw_y < bot_draw_y) {
+            draw_native_vertical_transparent_line_unrolled(top_draw_y, bot_draw_y, wall_col, col_ptr, x&1);
+            
+        }
+    }
+
     
     flip(0);
 
@@ -569,6 +852,7 @@ void draw_upper_step(s16 x1, s16 x1_ytop, s16 nx1_ytop, s16 x2, s16 x2_ytop, s16
 
     s16 x = beginx;
     u8* yclip_ptr = &(yclip[x<<1]);
+    
 
     u8** offset_ptr = (bmp_buffer_write == bmp_buffer_0) ? (&buf_0_column_offset_table[x]) : (&buf_1_column_offset_table[x]);
     for(;x < endx; x++) {
