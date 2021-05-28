@@ -6,7 +6,7 @@
 #include "vertex.h"
 #include "vis_range.h"
 
-#define SECTOR_SIZE 8
+#define SECTOR_SIZE 7
 #define VERT_SIZE 2
 
 typedef enum {
@@ -50,6 +50,8 @@ typedef struct {
     const vertex* vertexes;
     const vis_range* wall_vis_ranges;
     const u8* wall_norm_quadrants;
+    const s16* floor_slopes;
+    const s16* ceil_slopes;
 } portal_map;
 
 s16* sector_data_start(s16 sector_idx, portal_map* mp);
@@ -67,4 +69,17 @@ s16 sector_ceil_height(s16 sector_idx, portal_map* mp);
 s16 sector_floor_color(s16 sector_idx, portal_map* mp);
 
 s16 sector_ceil_color(s16 sector_idx, portal_map* mp);
+
+s16 sector_sloped_start_wall_idx(s16 sector_idx, portal_map* mp);
+
+s16 sector_floor_slope_start_wall_idx(s16 sector_idx, portal_map* mp);
+
+// if -1, no slope
+// if >=0, it designates the portal who's neighboring sector this sector is sloped towards
+s16 sector_floor_slope_end_wall_idx(s16 sector_idx, portal_map* mp);
+
+s16 sector_ceil_slope_start_wall_idx(s16 sector_idx, portal_map* mp);
+
+s16 sector_ceil_slope_end_wall_idx(s16 sector_idx, portal_map* mp);
+
 #endif

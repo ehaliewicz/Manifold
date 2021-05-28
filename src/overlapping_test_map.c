@@ -3,24 +3,66 @@
 #include "portal_map.h"
 #include "vertex.h"
 
-static const s16 sectors[136] = {
-    0, 0, 6, 100<<4, 200<<4, BLUE_IDX, BLUE_IDX,   0,
-    7, 6, 5, 100<<4, 200<<4, BLUE_IDX, BLUE_IDX,   0,
-    13, 11, 4, 100<<4, 200<<4, BLUE_IDX, BLUE_IDX, 0,
-    18, 15, 4, 120<<4, 220<<4, BLUE_IDX, LIGHT_BLUE_IDX, 0,
-    23, 19, 4, 140<<4, 240<<4, BLUE_IDX, BLUE_IDX, 0,
-    28, 23, 4, 160<<4, 260<<4, BLUE_IDX, LIGHT_BLUE_IDX, 0,
-    33, 27, 4, 180<<4, 280<<4, BLUE_IDX, BLUE_IDX, 0,
-    38, 31, 5, 200<<4, 300<<4, BLUE_IDX, LIGHT_BLUE_IDX, 0,
-    44, 36, 4, 100<<4, 200<<4, BLUE_IDX, BLUE_IDX, 0,
-    49, 40, 4, 100<<4, 200<<4, BLUE_IDX, BLUE_IDX, 0,
-    54, 44, 4, 200<<4, 300<<4, BLUE_IDX, BLUE_IDX, 0,
-    59, 48, 4, 80<<4, 180<<4, RED_IDX, LIGHT_RED_IDX, 0,
-    64, 52, 4, 60<<4, 160<<4, BLUE_IDX, BLUE_IDX, 0,
-    69, 56, 4, 40<<4, 140<<4, RED_IDX, LIGHT_RED_IDX, 0,
-    74, 60, 4, 20<<4, 120<<4, BLUE_IDX, BLUE_IDX, 0,
-    79, 64, 5, 0<<4, 100<<4, RED_IDX, LIGHT_RED_IDX, 0,
-    85, 69, 4, 0<<4, 100<<4, RED_IDX, RED_IDX, 0,
+
+// wall offset, portal offset, number of walls, floor height, ceiling height, floor color, ceiling color, slope_start_wall_idx, slope_end_wall_idx
+static const s16 sectors[153] = {
+    0, 0, 6, 60<<4, 200<<4, BLUE_IDX, BLUE_IDX,   // floor normally 100 here
+    7, 6, 5, 100<<4, 200<<4, BLUE_IDX, BLUE_IDX,  
+    13, 11, 4, 60<<4, 200<<4, BLUE_IDX, BLUE_IDX,   // floor normally 100 here
+    18, 15, 4, 120<<4, 240<<4, BLUE_IDX, LIGHT_BLUE_IDX,
+    23, 19, 4, 140<<4, 280<<4, BLUE_IDX, BLUE_IDX,
+    28, 23, 4, 160<<4, 320<<4, BLUE_IDX, LIGHT_BLUE_IDX,
+    33, 27, 4, 180<<4, 350<<4, BLUE_IDX, BLUE_IDX,
+    38, 31, 5, 200<<4, 350<<4, BLUE_IDX, LIGHT_BLUE_IDX,
+    44, 36, 4, 100<<4, 200<<4, BLUE_IDX, BLUE_IDX,
+    49, 40, 4, 100<<4, 200<<4, BLUE_IDX, BLUE_IDX,
+    54, 44, 4, 200<<4, 350<<4, BLUE_IDX, BLUE_IDX,
+    59, 48, 4, 80<<4, 180<<4, RED_IDX, LIGHT_RED_IDX,
+    64, 52, 4, 60<<4, 160<<4, BLUE_IDX, BLUE_IDX,
+    69, 56, 4, 40<<4, 140<<4, RED_IDX, LIGHT_RED_IDX,
+    74, 60, 4, 20<<4, 120<<4, BLUE_IDX, BLUE_IDX,
+    79, 64, 5, 0<<4, 100<<4, RED_IDX, LIGHT_RED_IDX,
+    85, 69, 4, 0<<4, 100<<4, RED_IDX, RED_IDX,
+};
+
+static const s16 floor_slopes[17*2] = {
+    -1,-1, 
+    -1,-1,
+    3,1,
+    3,1,
+    3,1,
+    3,1,
+    3,1,
+    -1,-1,
+    -1,-1,
+    -1,-1,
+    -1,-1,
+    -1,-1,
+    -1,-1,
+    -1,-1,
+    -1,-1,
+    -1,-1,
+    -1,-1,
+};
+
+static const s16 ceil_slopes[17*2] = {
+    -1,-1, 
+    -1,-1,
+    -1,-1,
+    1,3,
+    1,3,
+    1,3,
+    1,3,
+    -1,-1,
+    -1,-1,
+    -1,-1,
+    -1,-1,
+    -1,-1,
+    -1,-1,
+    -1,-1,
+    -1,-1,
+    -1,-1,
+    -1,-1,
 };
 
 static const u16 walls[90] = {
@@ -331,5 +373,7 @@ portal_map overlapping_map = {
     .portals = portals,
     .vertexes = vertexes,
     .wall_colors = wall_colors,
-    .wall_norm_quadrants = wall_normal_quadrants
+    .wall_norm_quadrants = wall_normal_quadrants,
+    .floor_slopes = floor_slopes,
+    .ceil_slopes = ceil_slopes
 };
