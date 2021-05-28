@@ -259,7 +259,7 @@ void draw_3d_view(u32 cur_frame) {
     portal_rend(cur_player_pos.cur_sector, cur_frame);
     // display fps
     //BMP_waitFlipComplete();
-    showFPS(1);
+    //showFPS(1);
     // request a flip when vsync process is idle (almost always, as the software renderer is much slower than the framebuffer DMA process)
     request_flip();
     //BMP_flip(1, 0);
