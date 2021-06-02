@@ -11,6 +11,7 @@
         "portal_maps.h": "c",
         "game.h": "c",
         "portal_map.h": "c",
-        "sstream": "c"
+        "sstream": "c",
+        "maths.h": "c"
     }
 }

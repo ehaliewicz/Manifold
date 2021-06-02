@@ -274,7 +274,7 @@ u16 last_joy = 0;
 Vect2D_f32 *sector_centers = NULL;
 
 static int last_pressed_b = 0;
-u8 do_collision = 0;
+//u8 do_collision = 0;
 
 void handle_input() {
     int strafe = joy_button_pressed(BUTTON_C);
@@ -351,7 +351,9 @@ void handle_input() {
 
     if(moved) {
 
-        collision_result collision = check_for_collision(curx, cury, newx, newy, cur_player_pos.cur_sector, do_collision);
+        //collision_result collision = check_for_collision(curx, cury, newx, newy, cur_player_pos.cur_sector);
+        collision_result collision = check_for_collision_radius(curx, cury, newx, newy, 30, cur_player_pos.cur_sector);
+
         cur_player_pos.x = collision.pos.x;
         cur_player_pos.y = collision.pos.y;
         cur_player_pos.cur_sector = collision.new_sector;
