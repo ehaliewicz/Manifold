@@ -352,8 +352,8 @@ sector_type sector_types[17] = {
     NO_TYPE,
     NO_TYPE,
     NO_TYPE,
-    FLASHING,
-    FLASHING,
+    NO_TYPE, //FLASHING,
+    NO_TYPE, //FLASHING,
     NO_TYPE,
     NO_TYPE,
     NO_TYPE,
@@ -361,6 +361,44 @@ sector_type sector_types[17] = {
     NO_TYPE,
     FLASHING
 };
+
+static const u8 pvs[32*4] = {
+    // sector 0 pvs
+    0b00111110,0b00011001,0b00000000,0b00000000,
+    // sector 1 pvs
+    0b00000000,0b00000000,0b00000000,0b00000000,
+    // sector 2 pvs
+    0b11111011,0b00011001,0b00000000,0b00000000,
+    // sector 3 pvs
+    0b11111101,0b00000000,0b00000000,0b00000000,
+    // sector 4 pvs
+    0b00000000,0b00000000,0b00000000,0b00000000,
+    // sector 5 pvs
+    0b00000000,0b00000000,0b00000000,0b00000000,
+    // sector 6 pvs
+    0b00000000,0b00000000,0b00000000,0b00000000,
+    // sector 7 pvs
+    0b00000000,0b00000000,0b00000000,0b00000000,
+    // sector 8 pvs
+    0b00000000,0b00000000,0b00000000,0b00000000,
+    // sector 9 pvs
+    0b00000000,0b00000000,0b00000000,0b00000000,
+    // sector 10 pvs
+    0b00000000,0b00000000,0b00000000,0b00000000,
+    // sector 11 pvs
+    0b00000000,0b00000000,0b00000000,0b00000000,
+    // sector 12 pvs
+    0b00000000,0b00000000,0b00000000,0b00000000,
+    // sector 13 pvs
+    0b00000000,0b00000000,0b00000000,0b00000000,
+    // sector 14 pvs
+    0b00000000,0b00000000,0b00000000,0b00000000,
+    // sector 15 pvs
+    0b00000000,0b00000000,0b00000000,0b00000000,
+    // sector 16 pvs
+    0b00000000,0b00000000,0b00000000,0b00000000,
+};
+
 
 portal_map overlapping_map = {
     .num_sectors = 17,
@@ -375,5 +413,6 @@ portal_map overlapping_map = {
     .wall_colors = wall_colors,
     .wall_norm_quadrants = wall_normal_quadrants,
     .floor_slopes = floor_slopes,
-    .ceil_slopes = ceil_slopes
+    .ceil_slopes = ceil_slopes,
+    .pvs = pvs
 };

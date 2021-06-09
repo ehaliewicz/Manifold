@@ -253,6 +253,30 @@ const vertex vertexes[NUM_VERTS] = {
     VERT(26,50),
 };
 
+static const u8 pvs[32*4] = {
+    // sector 0 pvs
+    0x00,0x00,0x00,0x00,
+    // sector 1 pvs
+    0x00,0x00,0x00,0x00,
+    // sector 2 pvs
+    0x00,0x00,0x00,0x00,
+    // sector 3 pvs
+    0x00,0x00,0x00,0x00,
+    // sector 4 pvs
+    0x00,0x00,0x00,0x00,
+    // sector 5 pvs
+    0x00,0x00,0x00,0x00,
+    // sector 6 pvs
+    0x00,0x00,0x00,0x00,
+    // sector 7 pvs
+    0x00,0x00,0x00,0x00,
+    // sector 8 pvs
+    0x00,0x00,0x00,0x00,
+    // sector 9 pvs
+    0x00,0x00,0x00,0x00,
+};
+
+
 
 const portal_map portal_level_1 = {
     .num_sectors = NUM_SECTORS,
@@ -263,5 +287,6 @@ const portal_map portal_level_1 = {
     .portals = portals,
     .vertexes = vertexes,
     .wall_norm_quadrants = wall_normal_quadrants,
-    .wall_colors = wall_colors
+    .wall_colors = wall_colors,
+    .pvs = pvs
 };

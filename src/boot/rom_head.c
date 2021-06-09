@@ -24,8 +24,8 @@ const struct
 } rom_header = {
     "SEGA MEGA DRIVE ",
     "(C)FLEMTEAM 2013",
-    "PORTAL_RENDER                                   ",
-    "PORTAL_RENDER                                   ",
+    "PORTAL_ENGINE                                   ",
+    "PORTAL_ENGINE                                   ",
     "GM 00000000-00",
     0x0000,
     "JD              ",

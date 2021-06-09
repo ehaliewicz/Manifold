@@ -88,6 +88,20 @@ static const vertex vertexes[22] = {
     VERT(0,0),
 };
 
+static const u8 pvs[32*4] = {
+    // sector 0 pvs
+    0x00,0x00,0x00,0x00,
+    // sector 1 pvs
+    0x00,0x00,0x00,0x00,
+    // sector 2 pvs
+    0x00,0x00,0x00,0x00,
+    // sector 3 pvs
+    0x00,0x00,0x00,0x00,
+    // sector 4 pvs
+    0x00,0x00,0x00,0x00,
+};
+
+
 const portal_map editor_test_map = {
     .num_sectors = 5,
     .num_walls = 28,
@@ -97,5 +111,6 @@ const portal_map editor_test_map = {
     .portals = portals,
     .vertexes = vertexes,
     .wall_colors = wall_colors,
-    .wall_norm_quadrants = NULL
+    .wall_norm_quadrants = NULL,
+    .pvs = pvs
 };

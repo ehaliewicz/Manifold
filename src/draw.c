@@ -717,6 +717,80 @@ void draw_transparent_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
 }
 
 
+void draw_masked(s16 x1, s16 x1_ytop, s16 x1_ybot,
+                            s16 x2, s16 x2_ytop, s16 x2_ybot,
+                            u16 window_min, u16 window_max,
+                            clip_buf* clipping_buffer,
+                            u8 wall_col) {
+
+
+    // 4 subpixel bits here
+    s16 top_dy_fix = x2_ytop - x1_ytop;
+    s16 bot_dy_fix = x2_ybot - x1_ybot;
+
+    s16 dx = x2-x1;
+
+    fix32 top_dy_per_dx = (top_dy_fix<<12) / dx; // (dy_fix<<4) / dx; // 22.10
+    fix32 bot_dy_per_dx = (bot_dy_fix<<12) / dx;
+
+    fix32 top_y_fix = x1_ytop<<12; 
+    fix32 bot_y_fix = x1_ybot<<12;
+    s16 top_y_int;
+    s16 bot_y_int;
+
+    s16 beginx = max(x1, window_min);
+
+    s16 skip_x = beginx - x1;
+
+    s32 tex_per_pix_fix = (32<<16)/dx;
+    s32 tex_col_fix = 0;
+
+    if(skip_x > 0) {
+        top_y_fix += (skip_x * top_dy_per_dx);
+        bot_y_fix += (skip_x * bot_dy_per_dx);
+        tex_col_fix +=  (skip_x * tex_per_pix_fix);
+    }
+
+
+    s16 endx = min(window_max, x2);
+
+    s16 x = beginx;
+    u8* yclip_ptr = &(clipping_buffer->clip_buffer[x<<1]);
+
+    u8** offset_ptr = (bmp_buffer_write == bmp_buffer_0) ? (&buf_0_column_offset_table[x]) : (&buf_1_column_offset_table[x]);
+    
+    u8 tex_col_int;
+
+    for(;x < endx; x++) {
+        u8 min_drawable_y = *yclip_ptr++;
+        u8 max_drawable_y = *yclip_ptr++;
+        u8 top_draw_y = min_drawable_y; 
+        u8 bot_draw_y = max_drawable_y; 
+
+        u8* col_ptr = *offset_ptr++;
+        if(top_draw_y < bot_draw_y) {
+            top_y_int = top_y_fix >> 16;
+            bot_y_int = bot_y_fix >> 16;
+            u8 top_draw_y = clamp(top_y_int, min_drawable_y, max_drawable_y);
+            u8 bot_draw_y = clamp(bot_y_int, min_drawable_y, max_drawable_y);
+
+            if(top_draw_y < bot_draw_y) {
+                draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, wall_col, col_ptr);
+            }
+
+
+        }
+
+        top_y_fix += top_dy_per_dx;
+        bot_y_fix += bot_dy_per_dx;
+    }
+    
+    flip(0);
+
+    return; 
+}
+
+
 void draw_forcefield(s16 x1, s16 x2,
                      u16 window_min, u16 window_max,
                      clip_buf* clipping_buffer,
@@ -1041,96 +1115,3 @@ void draw_floor_update_clip(s16 x1, s16 x1_ybot, s16 x2, s16 x2_ybot, u16 window
     return; 
 }
 
-
-void draw_monochrome_sprite_no_vclip(uint8_t* sprite, uint8_t start_x, uint8_t start_y,  s16 z, u16 window_left, u16 window_right) {
-
-    u8** offset_ptr = (bmp_buffer_write == bmp_buffer_0) ? (&buf_0_column_offset_table[start_x]) : (&buf_1_column_offset_table[start_x]);
-    
-
-    uint8_t num_columns = *sprite++;
-
-
-    s16 start_x_fix = start_x<<4;
-    s16 screen_pixels_fix = 8<<4/z;  //8.4
-    s16 end_x_fix = start_x_fix+screen_pixels_fix;
-
-    s16 end_x_int = end_x_fix>>4;
-
-    s16 start_y_fix = start_y<<4;
-    s16 end_y_fix = start_y_fix+screen_pixels_fix;
-    s16 end_y_int = end_x_fix>>4;
-
-    //for(int x = start_x; x < end_x_int; x++) {
-    //    u8* col_ptr = *offset_ptr++;
-    //    draw_native_vertical_line_unrolled(start_y, end_y_int, ((RED_IDX << 4) | RED_IDX), col_ptr);
-    //}
-
-    
-    //return;
-
-    s16 size_multiplier;
-    if(z > 100) {
-        size_multiplier = 1;
-    } else if (z > 50) {
-        size_multiplier = 2;
-    } else {
-        size_multiplier = 4;
-    }
-
-    uint8_t dx = start_x;
-    uint8_t col = 0;
-    while(dx < window_left) {
-        uint8_t num_runs = *sprite++;
-        uint8_t bytes_to_skip = num_runs * 3;
-        sprite += bytes_to_skip;
-        dx++;
-        col++;
-        offset_ptr++;
-    }
-
-    for(; col < num_columns; col++) {
-
-        u8* col_sprite_ptr = sprite;
-        uint8_t num_runs = *col_sprite_ptr++;
-        u8* start_offset_ptr = offset_ptr;
-
-        for(int i = 0; i < size_multiplier; i++) {
-            if(dx >= window_right) {
-                return;
-            }
-            uint8_t dy = start_y;
-            u8* col_ptr = *offset_ptr++;
-            for(uint8_t run = 0; run < num_runs; run++) {
-                uint8_t skip = *col_sprite_ptr++;
-                dy += skip;
-                uint8_t num_pixels = (*col_sprite_ptr++)*size_multiplier;
-                uint8_t col = *col_sprite_ptr++;
-                draw_native_vertical_line_unrolled(dy, dy+num_pixels, col, col_ptr);
-                dy += num_pixels;
-            }
-            dx++;
-        }
-
-
-        /*
-        if(dx >= window_right) {
-            return;
-        }
-        uint8_t dy = start_y;
-        u8* col_ptr = *offset_ptr++
-
-        for(uint8_t run = 0; run < num_runs; run++) {
-            uint8_t skip = *sprite++;
-            dy += skip;
-            uint8_t num_pixels = (*sprite++)*size_multiplier;
-            uint8_t col = *sprite++;
-            draw_native_vertical_line_unrolled(dy, dy+num_pixels, col, col_ptr);
-            dy += num_pixels;
-        }
-        //dx++;
-        dx += size_multiplier;
-        */
-
-    }
-    flip(0);
-}

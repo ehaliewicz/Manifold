@@ -1,4 +1,5 @@
 #include <genesis.h>
+#include "div_lut.h"
 #include "math3d.h"
 #include "game.h"
 #include "utils.h"
@@ -25,6 +26,31 @@ Vect2D_s16 transform_map_vert_16(s16 x, s16 y) {
     return (Vect2D_s16){.x = res_x, .y = res_y};
 }
 
+
+
+s16 project_and_adjust_x(s16 x, s16 z, s16 z_recip) {
+    //fix32 rx = trans_map_vert.x;
+    //fix32 rz = trans_map_vert.y;
+    
+    
+    s16 const2Rx = x; //<<5; //(32 * x);
+    __asm volatile(
+            "lsl.w #5, %0"
+            : "+d" (const2Rx)
+    );
+    //s16 const2RxDivZ = const2Rx / z;
+    //s16 z_recip = z_recip_table[z];
+    s32 const2RXMulZRecip = const2Rx; // * x_project_z_recip_table[z];
+    __asm volatile(
+            "muls.w %1, %0"
+            :  "+d" (const2RXMulZRecip), "+d" (z_recip) // output
+            : // input
+    );
+
+
+    s16 transX = 32 + (const2RXMulZRecip>>16);
+    return transX;
+}
 
 
 /*
@@ -69,7 +95,33 @@ s16 project_and_adjust_y_fix_c(Vect2D_f32 trans_map_vert, s16 y) {
 }
 */
 
+s16 project_and_adjust_y_fix(s16 y, s16 z, s16 z_recip) {    
+    s16 yMinusPosZ = y - playerZ12Frac4;      // 12.4
+    s32 const4Ry = yMinusPosZ; //CONST4 * yMinusPosZ;
 
+    //s32 const4RyMulRecipZ = const4Ry * z_recip_table[z];
+    //s16 z_recip = z_recip_table[z];
+
+    
+    s32 const4RyMulRecipZ = const4Ry * z_recip * CONST4;
+    /*
+    s32 const4RyMulRecipZ = const4Ry; // * x_project_z_recip_table[z];
+    __asm volatile(
+            "muls.w %1, %0"
+            :  "+d" (const4RyMulRecipZ), "+d" (z_recip) // output
+            : // input
+    );
+    const4RyMulRecipZ = (const4RyMulRecipZ<<3) + (const4RyMulRecipZ<<6); // <<= 6;
+    */
+    s16 yproj = (CONST3<<4) + (const4RyMulRecipZ>>16);
+    return ((SCREEN_HEIGHT-1)<<4)-yproj;
+
+    //fix32 rx = trans_map_vert.x;
+    //fix32 rz = trans_map_vert.y;
+    
+
+}
+/*
 s16 project_and_adjust_y_fix_c(s16 y, s16 z) {    
     s16 yMinusPosZ = y - playerZ12Frac4;      // 12.4
     s32 const4Ry = CONST4 * yMinusPosZ;
@@ -79,7 +131,7 @@ s16 project_and_adjust_y_fix_c(s16 y, s16 z) {
     s16 yproj = (CONST3<<4) + const4RyDivZ;
     return ((SCREEN_HEIGHT-1)<<4)-yproj;
 }
-
+*/
 
 
 //const s32 near_z = 160 << FIX32_FRAC_BITS;

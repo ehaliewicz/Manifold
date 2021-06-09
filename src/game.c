@@ -11,6 +11,7 @@
 #include "music.h"
 #include "music_res.h"
 #include "menu_helper.h"
+#include "object.h"
 #include "portal.h"
 #include "portal_map.h"
 #include "portal_maps.h"
@@ -259,7 +260,7 @@ void draw_3d_view(u32 cur_frame) {
     portal_rend(cur_player_pos.cur_sector, cur_frame);
     // display fps
     //BMP_waitFlipComplete();
-    //showFPS(1);
+    showFPS(1);
     // request a flip when vsync process is idle (almost always, as the software renderer is much slower than the framebuffer DMA process)
     request_flip();
     //BMP_flip(1, 0);
@@ -521,6 +522,7 @@ void init_game() {
 
 
     //set_portal_map((portal_map*)&portal_level_1);
+    //set_portal_map(&editor_test_map_v2);
     set_portal_map((portal_map*)&overlapping_map);
 
 
@@ -562,6 +564,15 @@ void init_game() {
 
     init_portal_renderer();
 
+    init_object_lists(cur_portal_map->num_sectors);
+
+    object* red_cube = alloc_object_in_sector(10, 0);
+    //red_cube->activate_tick = 0;
+    //red_cube->object_type = 0;
+    red_cube->pos.x = sector_centers[10].x;
+    red_cube->pos.y = sector_centers[10].y;
+    red_cube->pos.z = sector_floor_height(10, cur_portal_map);
+
     if(music_on) {
         //XGM_startPlay(xgm_e1m4);
     }
@@ -576,29 +587,9 @@ void maybe_set_palette(u16* new_palette) {
 
 
 
-/*
-const char tex[16] = {
-    LIGHT_BLUE_IDX,
-    MED_BLUE_IDX,
-    DARK_BLUE_IDX,
-    LIGHT_GREEN_IDX,
-    MED_GREEN_IDX,
-    DARK_GREEN_IDX,
-    LIGHT_RED_IDX,
-    MED_RED_IDX,
-    DARK_RED_IDX,
-    MED_BROWN_IDX,
-    DARK_BROWN_IDX,
-    BLACK_IDX,
-    DARK_BROWN_IDX,
-    MED_BROWN_IDX,
-    DARK_RED_IDX,
-    MED_RED_IDX
-};
-*/
-
 game_mode run_game() {
     u32 start_ticks = getTick();
+    process_all_objects(cur_frame);
     
     run_sector_processes();
     calc_movement_speeds();
@@ -612,73 +603,6 @@ game_mode run_game() {
     playerXInt = cur_player_pos.x>>FIX32_FRAC_BITS;
     playerYInt = cur_player_pos.y>>FIX32_FRAC_BITS;
 
-    //JOY_waitPress
-    /*
-    if(joy_button_newly_pressed(BUTTON_START)) { ////pause_game) {
-        while(1) {}
-        return PAUSE_MENU;
-    } else if (quit_game) {
-        return MAIN_MENU;
-    }
-    */
-
-   /*
-   static u8 cur_x = 0;
-   static u8 cur_y0 = 0;
-   static u8 cur_y1 = 128;
-   static u8 cur_clip_y0 = 0;
-   static u8 cur_clip_y1 = 0;
-   
-    u16 joy = JOY_readJoypad(JOY_1);
-    if(joy & BUTTON_A) {
-        if(joy & BUTTON_UP) {
-            if(cur_y0 > 0) {
-                cur_y0--;
-            }
-        } else if (joy & BUTTON_A && joy & BUTTON_DOWN) {
-            if(cur_y0 < cur_y1) {
-                cur_y0++;
-            }
-        }
-    } else if (joy & BUTTON_B) {
-      if(joy & BUTTON_UP) {
-          if(cur_y1 > cur_y0) {
-              cur_y1--;
-          }
-      }  else if (joy & BUTTON_DOWN) {
-          if(cur_y1 < SCREEN_HEIGHT-1) {
-              cur_y1++;
-          }
-      }
-    } else if(joy & BUTTON_UP) {
-        if(cur_y0 > 0) {
-            cur_y0--;
-            cur_y1--;
-        }        
-    } else if (joy & BUTTON_DOWN) {
-        if(cur_y1 < SCREEN_HEIGHT-1) {
-            cur_y1++;
-            cur_y0++;
-        }
-    } else if (joy & BUTTON_LEFT) {
-        if(cur_x > 0) {
-            cur_x--;
-        }
-    } else if (joy & BUTTON_RIGHT) {
-        if(cur_x < SCREEN_WIDTH-1) {
-            cur_x++;
-        }
-    }
-
-   col_params params = {
-       .x = cur_x,
-       .y0 = cur_y0,
-       .y1 = cur_y1,
-       .clip_y0 = cur_clip_y0,
-       .clip_y1 = cur_clip_y1,
-       .bmp = &door
-   };
-    */
 
     switch(render_mode) {
         case GAME_WIREFRAME:
@@ -692,18 +616,6 @@ game_mode run_game() {
             draw_3d_view(cur_frame);
 
             
-            /* texture map code */
-            
-            //BMP_vertical_clear();
-            //showFPS(1);
-            //draw_tex_column(params);
-            //sprintf(buf, "w: %i, h: %i", door.w, door.h);
-            //VDP_drawTextBG(BG_B, buf, 7, 5);
-            //request_flip();
-            //maybe_set_palette(door.palette->data);
-            
-
-
     }
     u32 end_ticks = getTick();
     last_frame_ticks = end_ticks - start_ticks;
@@ -719,5 +631,6 @@ void cleanup_game() {
     cleanup_portal_renderer();
     free_clip_buffer_list();
     release_2d_buffers();
+    clear_object_lists();
     MEM_pack();
 }

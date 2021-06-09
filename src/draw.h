@@ -38,6 +38,12 @@ void draw_transparent_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
                             u16 window_min, u16 window_max,
                             clip_buf* clipping_buffer,
                             u8 wall_col);
+                            
+void draw_masked(s16 x1, s16 x1_ytop, s16 x1_ybot,
+                 s16 x2, s16 x2_ytop, s16 x2_ybot,
+                 u16 window_min, u16 window_max,
+                 clip_buf* clipping_buffer,
+                 u8 wall_col);
 
 void draw_forcefield(s16 x1, s16 x2,
                      u16 window_min, u16 window_max,
@@ -50,7 +56,6 @@ void draw_lower_step(s16 x1, s16 x1_ybot, s16 nx1_ybot, s16 x2, s16 x2_ybot, s16
 void draw_floor_update_clip(s16 x1, s16 x1_ybot, s16 x2, s16 x2_ybot, u16 window_min, u16 window_max, u8 floor_color);
 
 
-void draw_monochrome_sprite_no_vclip(uint8_t* sprite, uint8_t start_x, uint8_t start_y,  s16 z, u16 window_left, u16 window_right);
 
 void clear_2d_buffers();
 void init_2d_buffers();

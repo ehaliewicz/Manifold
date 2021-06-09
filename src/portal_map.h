@@ -52,6 +52,7 @@ typedef struct {
     const u8* wall_norm_quadrants;
     const s16* floor_slopes;
     const s16* ceil_slopes;
+    const u8* pvs;  // max of 32 sectors for now
 } portal_map;
 
 s16* sector_data_start(s16 sector_idx, portal_map* mp);
