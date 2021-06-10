@@ -158,19 +158,19 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, u8* 
     s16 intPy = fix32ToInt(cur_player_pos.y);
 
     //int render_red_ball = (sector == 10);
-    object* objects_in_sect = objects_in_sector(sector);
+    object* objects_in_sect = NULL; //objects_in_sector(sector);
     int needs_object_clip_buffer = (objects_in_sect != NULL);
     //int needs_object_clip_buffer = render_red_ball;
     
-    clip_buf* obj_clip_buf;
-    if(needs_object_clip_buffer) {
-        KLog_U1("allocating object clip buffer in sector: ", sector);
-        obj_clip_buf = alloc_clip_buffer();
-        if(obj_clip_buf == NULL) {
-            die("no more clip bufs");
-        }
-        copy_2d_buffer(window_min, window_max, obj_clip_buf);
-    }
+    //clip_buf* obj_clip_buf;
+    //if(needs_object_clip_buffer) {
+        //KLog_U1("allocating object clip buffer in sector: ", sector);
+    //    obj_clip_buf = alloc_clip_buffer();
+    //    if(obj_clip_buf == NULL) {
+    //        die("no more clip bufs");
+    //    }
+    //    copy_2d_buffer(window_min, window_max, obj_clip_buf);
+    //}
 
 
     for(s16 i = 0; i < num_walls; i++) {
@@ -582,7 +582,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, u8* 
             
             //clipping_buffer = &clip_buffers[0]; 
             clipping_buffer = alloc_clip_buffer();
-            KLog_U1("allocating wall clip buffer in sector: ", sector);
+            //KLog_U1("allocating wall clip buffer in sector: ", sector);
             if(clipping_buffer == NULL) {
                 die("Out of clipping buffers!");
             }
@@ -689,6 +689,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, u8* 
 
     }
 
+    /*
     if(objects_in_sect != NULL) {
         object* cur_obj = objects_in_sect;
         while(cur_obj != NULL) {
@@ -718,6 +719,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, u8* 
         }
         free_clip_buffer(obj_clip_buf);
     }
+    */
     /*
     if(objects_in_sect != NULL) {
         Vect2D_f32 ball_pos = sector_centers[10];

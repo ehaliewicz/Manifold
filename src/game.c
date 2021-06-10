@@ -566,12 +566,15 @@ void init_game() {
 
     init_object_lists(cur_portal_map->num_sectors);
 
-    object* red_cube = alloc_object_in_sector(10, 0);
+    //object* red_cube = alloc_object_in_sector(10, 0);
+    
+    //red_cube->pos.x = sector_centers[10].x;
+    //red_cube->pos.y = sector_centers[10].y;
+    //red_cube->pos.z = sector_floor_height(10, cur_portal_map);
+    
     //red_cube->activate_tick = 0;
     //red_cube->object_type = 0;
-    red_cube->pos.x = sector_centers[10].x;
-    red_cube->pos.y = sector_centers[10].y;
-    red_cube->pos.z = sector_floor_height(10, cur_portal_map);
+    
 
     if(music_on) {
         //XGM_startPlay(xgm_e1m4);
