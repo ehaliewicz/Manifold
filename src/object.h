@@ -27,6 +27,7 @@ extern const object_template object_types[];
 typedef struct object object;
 
 struct object {
+    uint16_t id;
     uint16_t current_state;
     uint8_t object_type;
     uint32_t activate_tick;
@@ -40,8 +41,7 @@ void init_object_lists(int num_sectors);
 
 void clear_object_lists();
 
-object* alloc_object_in_sector(int sector_num, uint8_t object_type);
-
+object* alloc_object_in_sector(object_pos cur_player_pos, int sector_num, fix32 x, fix32 y, fix32 z, uint8_t object_type);
 
 void free_object(object* obj);
 

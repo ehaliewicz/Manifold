@@ -13,6 +13,8 @@ extern draw_mode render_mode;
 extern int debug_draw;
 
 extern u32 last_frame_ticks;
+extern u16 rot_speed;
+extern u32 move_speed;
 
 
 extern Vect2D_f32 *sector_centers;

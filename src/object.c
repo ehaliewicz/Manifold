@@ -3,13 +3,105 @@
 #include "collision.h"
 #include "debug.h"
 #include "game.h"
+#include "level.h"
 #include "object.h"
+#include "portal_map.h"
+
+int next_obj_id = 0; 
 
 
-object* free_object_list;
+#define MAX_OBJECTS 64
+
+object* objects;
+object *free_list = NULL; 
+
+object** sector_lists;
 
 int num_sector_lists;
-object** sector_lists;
+
+object* pop(object** lst) {
+  object* head = *lst;
+  if(head == NULL) {
+    return NULL;
+  }
+
+  object* next = head->next;
+  if(next != NULL) {
+    next->prev = NULL;
+  }
+
+
+  *lst = next; // set list to next
+
+  head->next = NULL;
+  head->prev = NULL;
+  return head;
+}
+
+void push(object* new_head, object** lst) {
+  object* head = *lst;
+  new_head->next = head;
+  if(head != NULL) {
+
+    // this handles if we're pushing in the middle of a list
+    if(head->prev != NULL) {
+      new_head->prev = head->prev;
+      head->prev->next = new_head;
+    }
+
+    head->prev = new_head;
+  }
+  *lst = new_head;
+}
+
+void swap_with_prev(object* o) {
+  object* prev = o->prev;
+  object* next = o->next;
+
+  o->prev = NULL;
+  o->next = o;
+
+
+  if(prev != NULL) {
+    object* prev_prev = prev_prev;
+    o->prev = prev_prev;
+    if(prev_prev != NULL) {
+      prev->prev->next = o;
+    }
+    prev->prev = o;
+    prev->next = next;
+  }
+
+
+  if(next != NULL) {
+    next->prev = prev;
+  }
+} 
+
+// setup objects
+void init_object_lists(int num_sectors) {
+
+    num_sector_lists = num_sectors;
+    objects = MEM_alloc(sizeof(object)*MAX_OBJECTS); //[MAX_OBJECTS];
+
+    sector_lists = MEM_alloc(sizeof(object*)*num_sectors); //[NUM_SECTORS]; 
+    for(int i = 0; i < MAX_OBJECTS; i++) {
+        objects[i].prev = (i == 0 ? NULL : &(objects[i-1]));
+        objects[i].next = (i == (MAX_OBJECTS-1) ? NULL : &(objects[i+1]));
+    }
+    free_list = &objects[0];
+
+    for(int i = 0; i < num_sectors; i++) {
+        sector_lists[i] = NULL;
+    }
+} 
+
+
+void clear_object_lists() {
+    MEM_free(objects);
+    MEM_free(sector_lists);
+}
+
 
 void look_for_player(object* cur_obj, uint16_t cur_sector) {
     if(cur_player_pos.cur_sector == cur_sector) {
@@ -21,21 +113,21 @@ void look_for_player(object* cur_obj, uint16_t cur_sector) {
 void follow_player(object* cur_obj, uint16_t cur_sector) {
     object_pos pos = cur_obj->pos;
     // follow player
-    
+
     int dx = fix32ToInt(cur_player_pos.x - pos.x);
     int dy = fix32ToInt(cur_player_pos.y - pos.y);
     //int dz = fix32ToInt(cur_player_pos.z - pos.z);
 
     if(dx > 0) {
-        dx = min(4, dx);
+        dx = min(3, dx);
     } else if (dx < 0) {
-        dx = max(-4, dx);
+        dx = max(-3, dx);
     }
 
     if(dy > 0) {
-        dy = min(4, dy);
+        dy = min(3, dy);
     } else {
-        dy = max(-4, dy);
+        dy = max(-3, dy);
     }
 
     /*
@@ -52,7 +144,7 @@ void follow_player(object* cur_obj, uint16_t cur_sector) {
     fix32 dx32 = intToFix32(dx);
     fix32 dy32 = intToFix32(dy);
 
-    collision_result move_res = check_for_collision_radius(pos.x, pos.y, pos.x+dx32, pos.y+dy32, 10, cur_sector);
+    collision_result move_res = check_for_collision_radius(pos.x, pos.y, pos.x+dx32, pos.y+dy32, 8, cur_sector);
     
     cur_obj->pos.x = move_res.pos.x;
     cur_obj->pos.y = move_res.pos.y;
@@ -66,8 +158,8 @@ void follow_player(object* cur_obj, uint16_t cur_sector) {
 
     if(move_res.new_sector != cur_sector) {
         move_object_to_sector(cur_obj, move_res.new_sector);
-        cur_obj->pos.cur_sector = cur_sector;
     }
+    cur_obj->pos.z = sector_floor_height(cur_obj->pos.cur_sector, cur_portal_map);
 }
 
 
@@ -85,62 +177,69 @@ obj_state object_state_machines[] = {
     {.next_state = 1, .ticks = 1, &follow_player, }
 };
 
+fix32 dist_sqr(object_pos posa, object_pos origin) {
+    //fix16Sqrt();
+    fix16 dx1 = fix32ToFix16(posa.x - origin.x);
+    fix16 dy1 = fix32ToFix16(posa.y - origin.y);
+    return (dx1*dx1)+(dy1*dy1);
+} 
 
-#define MAX_NUM_OBJECTS 128
+// returns -1 if point 1 is closer than point 2, +1 if opposite, or 0 is they are the same distance
+int is_closer(object_pos pos1, object_pos pos2, object_pos origin) {
+  fix32 d1 = dist_sqr(pos1, origin);
+  fix32 d2 = dist_sqr(pos2, origin);
+  if(d1 == d2) {
+    return 0;
+  } else if (d1 < d2) {
+    return -1;
+  } else {
+    return 1;
+  }
+} 
 
-void init_object_lists(int num_sectors) {
-    num_sector_lists = num_sectors;
-    free_object_list = MEM_alloc(sizeof(object)*MAX_NUM_OBJECTS);
 
-    sector_lists = MEM_alloc(sizeof(object*)*num_sectors);
-
-    for(int i = 0; i < num_sectors; i++) {
-        sector_lists[i] = NULL;
-    }
-
-
-    for(int i = 0; i < MAX_NUM_OBJECTS; i++) {
-        object* prev = (i == 0) ? NULL : &(free_object_list[i-1]);
-        object* next = (i == (MAX_NUM_OBJECTS-1)) ? NULL : &(free_object_list[i+1]);
-        free_object_list[i].prev = prev;
-        free_object_list[i].next = next;
-    }
-}
-
-void clear_object_lists() {
-    MEM_free(free_object_list);
-    MEM_free(sector_lists);
-}
-
-object* alloc_object_in_sector(int sector_num, uint8_t object_type) {
-    if(free_object_list == NULL) {
+// inserts object in sorted position
+object* alloc_object_in_sector(object_pos cur_player_pos, int sector_num, fix32 x, fix32 y, fix32 z, uint8_t object_type) {
+    object* res = pop(&free_list);
+    if(res == NULL) {
         return NULL;
     }
-    object* res = free_object_list;
-    object* next_free = res->next;
-    if(next_free != NULL) { next_free->prev = NULL; }
-    free_object_list = next_free;
 
-    res->next = sector_lists[sector_num];
-    res->prev = NULL;
-    if(res->next != NULL) {
-        res->next->prev = res;
-    }
+
+    res->pos.cur_sector = sector_num;
+    res->pos.x = x;
+    res->pos.y = y;
+    res->pos.z = z;
+    res->id = next_obj_id++;
 
     res->current_state = object_types[object_type].init_state;
     res->object_type = object_type;
     res->activate_tick = 0;
     res->pos.cur_sector = sector_num;
 
-    sector_lists[sector_num] = res;
+    object** sector_list_obj = &sector_lists[sector_num];
+    /*
+    while((*sector_list_obj) != NULL) {
+        break; // TODO why does this cause such a performance hit if it's executed just once?
+        object* cur_sect_obj = *sector_list_obj;
+        if(is_closer(res->pos, cur_sect_obj->pos, cur_player_pos) == -1) {
+        // this object is the closest
+            break;
+        }
+        sector_list_obj = &(cur_sect_obj->next);
+    }
+    */
+    //return NULL;
 
-
-    return res;
-}
+  push(res, sector_list_obj);
+  return res;
+} 
 
 
 void move_object_to_sector(object* obj, int next_sector) {
+
     int old_sector = obj->pos.cur_sector;
+
 
     object* next = obj->next;
     object* prev = obj->prev;
@@ -158,6 +257,7 @@ void move_object_to_sector(object* obj, int next_sector) {
     if(prev == NULL) {
         sector_lists[old_sector] = next;
     }
+
     obj->next = sector_lists[next_sector];
     if(obj->next != NULL) {
         obj->next->prev = obj;
@@ -169,9 +269,10 @@ void move_object_to_sector(object* obj, int next_sector) {
     //VDP_drawTextBG(BG_B, buf, 10, 10);
     //sprintf(buf, "old sect %i",  )
     //die(buf);
-
 }
 
+
+/*
 void free_object(object* obj) {
     int old_sector = obj->pos.cur_sector;
     object* next = obj->next;
@@ -191,6 +292,7 @@ void free_object(object* obj) {
     obj->next = next_free;
     free_object_list = obj;
 }
+*/
 
 object* objects_in_sector(int sector_num) {
     return sector_lists[sector_num];
