@@ -1,6 +1,7 @@
 #include <genesis.h>
 #include "colors.h"
 #include "portal_map.h"
+#include "slope.h"
 #include "vertex.h"
 
 
@@ -23,6 +24,46 @@ static const s16 sectors[153] = {
     74, 60, 4, 20<<4, 120<<4, BLUE_IDX, BLUE_IDX,
     79, 64, 5, 0<<4, 100<<4, RED_IDX, LIGHT_RED_IDX,
     85, 69, 4, 0<<4, 100<<4, RED_IDX, RED_IDX,
+};
+
+static const u8 wall_floor_slope_types[90] = {
+    NO_SLOPE, NO_SLOPE, NO_SLOPE, NO_SLOPE, NO_SLOPE, NO_SLOPE, 
+    NO_SLOPE, NO_SLOPE, NO_SLOPE, NO_SLOPE, NO_SLOPE, 
+    SLOPE_TRANSITION_RIGHT, SLOPE_PORTAL, SLOPE_TRANSITION_LEFT, NO_SLOPE, 
+    SLOPE_TRANSITION_RIGHT, SLOPE_PORTAL, SLOPE_TRANSITION_LEFT, NO_SLOPE, 
+    SLOPE_TRANSITION_RIGHT, SLOPE_PORTAL, SLOPE_TRANSITION_LEFT, NO_SLOPE, 
+    SLOPE_TRANSITION_RIGHT, SLOPE_PORTAL, SLOPE_TRANSITION_LEFT, NO_SLOPE, 
+    SLOPE_TRANSITION_RIGHT, SLOPE_PORTAL, SLOPE_TRANSITION_LEFT, NO_SLOPE, 
+    NO_SLOPE, NO_SLOPE, NO_SLOPE, NO_SLOPE, NO_SLOPE, 
+    NO_SLOPE, NO_SLOPE, NO_SLOPE, NO_SLOPE, 
+    NO_SLOPE, NO_SLOPE, NO_SLOPE, NO_SLOPE, 
+    NO_SLOPE, NO_SLOPE, NO_SLOPE, NO_SLOPE, 
+    NO_SLOPE, NO_SLOPE, NO_SLOPE, NO_SLOPE, 
+    NO_SLOPE, NO_SLOPE, NO_SLOPE, NO_SLOPE, 
+    NO_SLOPE, NO_SLOPE, NO_SLOPE, NO_SLOPE, 
+    NO_SLOPE, NO_SLOPE, NO_SLOPE, NO_SLOPE, 
+    NO_SLOPE, NO_SLOPE, NO_SLOPE, NO_SLOPE, NO_SLOPE, 
+    NO_SLOPE, NO_SLOPE, NO_SLOPE, NO_SLOPE, 
+};
+
+static const u8 wall_ceil_slope_types[90] = {
+    NO_SLOPE, NO_SLOPE, NO_SLOPE, NO_SLOPE, NO_SLOPE, NO_SLOPE,
+    NO_SLOPE, NO_SLOPE, NO_SLOPE, NO_SLOPE, NO_SLOPE,
+    SLOPE_TRANSITION_LEFT, NO_SLOPE, SLOPE_TRANSITION_RIGHT, SLOPE_PORTAL,
+    SLOPE_TRANSITION_LEFT, NO_SLOPE, SLOPE_TRANSITION_RIGHT, SLOPE_PORTAL, 
+    SLOPE_TRANSITION_LEFT, NO_SLOPE, SLOPE_TRANSITION_RIGHT, SLOPE_PORTAL,
+    SLOPE_TRANSITION_LEFT, NO_SLOPE, SLOPE_TRANSITION_RIGHT, SLOPE_PORTAL,
+    SLOPE_TRANSITION_LEFT, NO_SLOPE, SLOPE_TRANSITION_RIGHT, SLOPE_PORTAL,
+    NO_SLOPE, NO_SLOPE, NO_SLOPE, NO_SLOPE, NO_SLOPE, 
+    NO_SLOPE, NO_SLOPE, NO_SLOPE, NO_SLOPE, 
+    NO_SLOPE, NO_SLOPE, NO_SLOPE, NO_SLOPE, 
+    NO_SLOPE, NO_SLOPE, NO_SLOPE, NO_SLOPE, 
+    NO_SLOPE, NO_SLOPE, NO_SLOPE, NO_SLOPE, 
+    NO_SLOPE, NO_SLOPE, NO_SLOPE, NO_SLOPE, 
+    NO_SLOPE, NO_SLOPE, NO_SLOPE, NO_SLOPE, 
+    NO_SLOPE, NO_SLOPE, NO_SLOPE, NO_SLOPE, 
+    NO_SLOPE, NO_SLOPE, NO_SLOPE, NO_SLOPE, NO_SLOPE, 
+    NO_SLOPE, NO_SLOPE, NO_SLOPE, NO_SLOPE, 
 };
 
 static const s16 floor_slopes[17*2] = {
@@ -64,6 +105,7 @@ static const s16 ceil_slopes[17*2] = {
     -1,-1,
     -1,-1,
 };
+
 
 static const u16 walls[90] = {
     0, 1, 2, 3, 4, 5, 0, 
@@ -413,6 +455,8 @@ portal_map overlapping_map = {
     .wall_colors = wall_colors,
     .wall_norm_quadrants = wall_normal_quadrants,
     .floor_slopes = floor_slopes,
+    .wall_floor_slope_types = wall_floor_slope_types,
     .ceil_slopes = ceil_slopes,
+    .wall_ceil_slope_types = wall_ceil_slope_types,
     .pvs = pvs
 };

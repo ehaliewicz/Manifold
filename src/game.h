@@ -30,6 +30,8 @@ extern s16 playerZ12Frac4;
  // 58 degrees from player viewpoint to top left of map
 #define ANGLE_58_DEGREES 164
 
+#define RENDER_WIDTH 64
+
 
 extern fix32 angleCos32;
 extern fix32 angleSin32;
