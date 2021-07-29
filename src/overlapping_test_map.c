@@ -365,23 +365,23 @@ static const vertex vertexes[42] = {
 
 // sector 9,10,16
 sector_param sector_params[17] = {
-    {.light = 0},
-    {.light = 0},
-    {.light = 0},
-    {.light = -1},
-    {.light = -1},
-    {.light = -1},
-    {.light = -1},
-    {.light = -1},
-    {.light = -2},
-    {.light = -2}, // flashing
-    {.light = -2}, // flashing
-    {.light = -1},
-    {.light = -1},
-    {.light = -1},
-    {.light = -1},
-    {.light = -2},
-    {.light = -2}, // flashing
+    {.light = 1},//0},
+    {.light = 1},//0},
+    {.light = 1},//0},
+    {.light = 0},//-1},
+    {.light = 0},//-1},
+    {.light = 0},//-1},
+    {.light = 0},//-1},
+    {.light = 0},//-1},
+    {.light = -1},//-2},
+    {.light = -1},//-2}, // flashing
+    {.light = -1},//-2}, // flashing
+    {.light = 0},//-1},
+    {.light = 0},//-1},
+    {.light = 0},//-1},
+    {.light = 0},//-1},
+    {.light = -2},//-2},
+    {.light = -2},//-2}, // flashing
 };
 
 sector_type sector_types[17] = {
@@ -394,8 +394,8 @@ sector_type sector_types[17] = {
     NO_TYPE,
     NO_TYPE,
     NO_TYPE,
-    NO_TYPE, //FLASHING,
-    NO_TYPE, //FLASHING,
+    FLASHING,
+    FLASHING,
     NO_TYPE,
     NO_TYPE,
     NO_TYPE,

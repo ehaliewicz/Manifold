@@ -60,6 +60,10 @@
 
 u8 calculate_color(u8 col_idx, u32 dist, s8 light_level);
 
+u8 get_dark_color(u8 col_idx, s8 light_level);
+u8 get_mid_dark_color(u8 col_idx, s8 light_level);
+u8 get_light_color(u8 col_idx, s8 light_level);
+
 u8 needs_dither(u32 dist);
 
 #endif

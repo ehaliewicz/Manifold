@@ -38,6 +38,8 @@ typedef enum {
     OFFSCREEN
 } clip_result;
 
+//#define NEAR_Z_32 (20 << FIX32_FRAC_BITS)
+#define NEAR_Z_16 10 
 
 // translate and rotate map vertex according to player position
 //Vect2D_f32 transform_map_vert(s16 x, s16 y);

@@ -133,6 +133,23 @@ const u8 color_calc_table[16*5*3] = {
      PIX(LIGHT_GREEN_IDX), PIX(LIGHT_RED_IDX), PIX(LIGHT_BLUE_IDX), PIX(LIGHT_BROWN_IDX), PIX(LIGHT_STEEL_IDX),
 };
 
+u8 get_dark_color(u8 col_idx, s8 light_level) {
+  u16 light_off = (light_level+2)<<4;
+  return color_calc_table[light_off+col_idx];
+}
+
+u8 get_mid_dark_color(u8 col_idx, s8 light_level) {
+  u16 light_off = (light_level+2)<<4;  
+  u16 dist_off = (16*5);
+  return color_calc_table[light_off+dist_off+col_idx];
+}
+
+u8 get_light_color(u8 col_idx, s8 light_level) {
+  u16 light_off = (light_level+2)<<4;  
+  u16 dist_off = (16*5*2);
+  return color_calc_table[light_off+dist_off+col_idx];
+}
+
 u8 calculate_color(u8 col_idx, u32 dist, s8 light_level) {
   u16 light_off = (light_level+2)<<4;
   u16 dist_off = (dist >= DARK_DIST) ? 0 : (dist >= MID_DARK_DIST) ? (16*5) : (16*5*2);

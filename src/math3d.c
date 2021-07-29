@@ -135,8 +135,6 @@ s16 project_and_adjust_y_fix_c(s16 y, s16 z) {
 
 
 //const s32 near_z = 160 << FIX32_FRAC_BITS;
-const s32 near_z_32 = 20 << FIX32_FRAC_BITS;
-const s16 near_z_16 = 10; //20;
 
 
 clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2) {
@@ -148,10 +146,10 @@ clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2) {
     s16 rx2 = trans_v2->x;
     s16 rz2 = trans_v2->y;
 
-    if(rz1 <= near_z_16 && rz2 <= near_z_16) {
+    if(rz1 <= NEAR_Z_16 && rz2 <= NEAR_Z_16) {
         return OFFSCREEN;
     }
-    if(rz1 > near_z_16 && rz2 > near_z_16) {
+    if(rz1 > NEAR_Z_16 && rz2 > NEAR_Z_16) {
         return UNCLIPPED;
     }
     
@@ -173,24 +171,24 @@ clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2) {
     //s16 dx_over_dz = fix32Div(dx, dz); // change in x per change in z
 
 
-    if(rz1 <= near_z_16) { 
+    if(rz1 <= NEAR_Z_16) { 
         // left clipped
-        s16 z_adjust = near_z_16-rz1;
+        s16 z_adjust = NEAR_Z_16-rz1;
         s32 x_adjust = dx_over_dz * z_adjust;
         s16 x_adjust_16 = x_adjust>>6;
         
         rx1 += x_adjust_16;    // modify x coord
-        rz1 = near_z_16;
+        rz1 = NEAR_Z_16;
         trans_v1->x = rx1;
         trans_v1->y = rz1;
         return LEFT_CLIPPED;
     } else {
         // right clipped
-        s16 z_adjust = near_z_16 - rz2;
+        s16 z_adjust = NEAR_Z_16 - rz2;
         s32 x_adjust = dx_over_dz * z_adjust;
         s16 x_adjust_16 = x_adjust>>6;
         rx2 += x_adjust_16;
-        rz2 = near_z_16;
+        rz2 = NEAR_Z_16;
         trans_v2->x = rx2;
         trans_v2->y = rz2;
         return RIGHT_CLIPPED;
@@ -199,7 +197,7 @@ clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2) {
 }
 
 
-
+/*
 clip_result clip_map_vertex(Vect2D_f32* trans_v1, Vect2D_f32* trans_v2) {
     // TODO: figure out how much precision we need here (16-bit instead of 32?)
     // TODO: adjust texture coordinates here as well
@@ -209,10 +207,10 @@ clip_result clip_map_vertex(Vect2D_f32* trans_v1, Vect2D_f32* trans_v2) {
     fix32 rx2 = trans_v2->x;
     fix32 rz2 = trans_v2->y;
 
-    if(rz1 <= near_z_32 && rz2 <= near_z_32) {
+    if(rz1 <= NEAR_Z_32 && rz2 <= NEAR_Z_32) {
         return OFFSCREEN;
     }
-    if(rz1 > near_z_32 && rz2 > near_z_32) {
+    if(rz1 > NEAR_Z_32 && rz2 > NEAR_Z_32) {
         return UNCLIPPED;
     }    
 
@@ -223,23 +221,24 @@ clip_result clip_map_vertex(Vect2D_f32* trans_v1, Vect2D_f32* trans_v2) {
     s16 dx_over_dz = fix32Div(dx, dz); // change in x per change in z
 
 
-    if(rz1 < near_z_32) {
+    if(rz1 < NEAR_Z_32) {
         // left clipped
-        fix32 z_adjust = near_z_32 - rz1;  // how much we need to adjust z by
+        fix32 z_adjust = NEAR_Z_32 - rz1;  // how much we need to adjust z by
         fix32 x_adjust = fix32Mul(z_adjust, dx_over_dz); // multiply z_adjust by dx_over_dx -> x_adjust
         rx1 += x_adjust;    // modify x coord
-        rz1 = near_z_32;
+        rz1 = NEAR_Z_32;
         trans_v1->x = rx1;
         trans_v1->y = rz1;
         return LEFT_CLIPPED;
     } else {
         // right clipped
-        fix32 z_adjust = near_z_32 - rz2;
+        fix32 z_adjust = NEAR_Z_32 - rz2;
         fix32 x_adjust = fix32Mul(z_adjust, dx_over_dz);
         rx2 += x_adjust;
-        rz2 = near_z_32;
+        rz2 = NEAR_Z_32;
         trans_v2->x = rx2;
         trans_v2->y = rz2;
         return RIGHT_CLIPPED;
     }
 }
+*/
