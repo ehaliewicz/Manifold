@@ -2,6 +2,7 @@
 #include <kdebug.h>
 #include "colors.h"
 #include "clip_buf.h"
+#include "div_lut.h"
 #include "draw.h"
 #include "game.h"
 #include "level.h"
@@ -485,18 +486,8 @@ void flip() {
     }*/
 }
 
-/*
-uint8_t rle_texture[5] = {
-    2, // 2 runs
-    23, // skip 23 texels
-    2, // draw 2 pixels
-    27, // skip 27 more texels
-    1, // draw 1 more texel
-};
-*/
 
-
-uint8_t rle_glass[102] = {
+const uint8_t rle_glass[102] = {
     0, // num runs in column 0
     1, // num runs in column 1
     44, // skip 44 texels
@@ -600,7 +591,7 @@ uint8_t rle_glass[102] = {
     0, // num runs in column 30
     0, // num runs in column 31
 };
-uint16_t rle_glass_column_indexes[32] = {
+const uint16_t rle_glass_column_indexes[32] = {
     0,
     1,
     4,
@@ -694,16 +685,12 @@ void draw_transparent_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
             bot_y_int = bot_y_fix >> 16;
             tex_col_int = tex_col_fix>>16;
 
-
-            //draw_texture_vertical_line(top_y_int, top_draw_y, bot_y_int, bot_draw_y, col_ptr, tex_col&(32-1));
             
             uint16_t rle_glass_index = rle_glass_column_indexes[tex_col_int];
             tex_col_fix += tex_per_pix_fix;
 
             draw_rle_monochrome_col(&rle_glass[rle_glass_index], col_ptr, min_drawable_y, max_drawable_y, (LIGHT_STEEL_IDX<<4)|LIGHT_STEEL_IDX, top_y_int, bot_y_int);
-            //draw_rle_monochrome_col(rle_texture, col_ptr, min_drawable_y, max_drawable_y, (LIGHT_STEEL_IDX<<4)|LIGHT_STEEL_IDX, top_y_int, bot_y_int);
             
-            //draw_native_vertical_transparent_line_unrolled(top_draw_y, bot_draw_y, wall_col, col_ptr, x&1);
 
         }
         //if(bot_draw_y < max_drawable_y) {
@@ -865,7 +852,6 @@ u8 ceil_needs_lighting = 0;
 u8 floor_needs_lighting = 0;
 
 void cache_floor_light_params(s16 rel_floor_height, u8 floor_col, s8 light_level) {
-
     fcache_light_col = get_light_color(floor_col, light_level);
     fcache_dark_col = get_dark_color(floor_col, light_level);
 
@@ -964,14 +950,16 @@ void draw_lit_ceiling(s16 ceil_top_y, s16 ceil_bot_y, u8* col_ptr) {
 
 void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
               s16 x2, s16 x2_ytop, s16 x2_ybot,
-              s16 max_z,
+              u16 inv_z1, u16 inv_z2,
               u16 window_min, u16 window_max,
-              u8 ceil_col, u8 wall_col, u8 floor_col) {
+              u8 ceil_col, u8 wall_col, u8 floor_col, s8 light_level) {
 
 
+    //u16 far_z = max(z1, z2);
+    u16 far_inv_z = min(inv_z1, inv_z2);
     // cache floor and ceiling stuff
-    int needs_floor_lighting = floor_needs_lighting && (max_z >= MID_DIST); 
-    int needs_ceil_lighting = ceil_needs_lighting && (max_z >= MID_DIST);
+    int needs_floor_lighting = floor_needs_lighting && (far_inv_z <= FIX_0_16_INV_MID_DIST); //(far_z >= MID_DIST);
+    int needs_ceil_lighting = ceil_needs_lighting &&  (far_inv_z <= FIX_0_16_INV_MID_DIST); //(far_z >= MID_DIST);
 
 
     // 4 subpixel bits here
@@ -990,13 +978,27 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
 
     s16 beginx = max(x1, window_min);
 
+    
+
+    s16 inv_dz = inv_z2 - inv_z1;
+    s32 fix_inv_dz_per_dx = (inv_dz << 16) / dx;
+
+    s32 cur_fix_inv_z = inv_z1<<16;
+
+
+
     s16 skip_x = beginx - x1;
     if(skip_x > 0) {
         top_y_fix += (skip_x * top_dy_per_dx);
         bot_y_fix += (skip_x * bot_dy_per_dx);
+        cur_fix_inv_z += (skip_x * fix_inv_dz_per_dx);
     }
 
+    // 65536 is 1, which is recip of z of 1, 1/1
+    // 32768 is .5, which is recip of z of 2, 1/2
 
+    //u16 dz = z2 - z1; // its 0.16 inv z 
+    //u32 dz_per_dx = (dz << 16) / dx; // 16 bits here?
 
     s16 endx = min(window_max, x2);
 
@@ -1005,6 +1007,13 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
 
     u8** offset_ptr = (bmp_buffer_write == bmp_buffer_0) ? (&buf_0_column_offset_table[x]) : (&buf_1_column_offset_table[x]);
     //u8 tex_col = 0;
+
+    u8 dark_col = get_dark_color(wall_col, light_level);
+    u8 light_col = get_light_color(wall_col, light_level);
+    u8 mid_col = get_mid_dark_color(wall_col, light_level);
+    //KLog_S2("start inv_z: ", inv_z1, "end inv_z: ", inv_z2);
+    //KLog_S2("inv_dz: ", inv_dz, "inv_dz_per_dx: ", inv_dz_per_dx);
+
     for(;x < endx; x++) {
         top_y_int = top_y_fix >> 16;
         bot_y_int = bot_y_fix >> 16;
@@ -1012,6 +1021,8 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
         u8 max_drawable_y = *yclip_ptr++;
         u8 top_draw_y = clamp(top_y_int, min_drawable_y, max_drawable_y);
         u8 bot_draw_y = clamp(bot_y_int, min_drawable_y, max_drawable_y);
+
+        
 
         u8* col_ptr = *offset_ptr++;
         if(min_drawable_y < top_draw_y) {
@@ -1024,7 +1035,16 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
         if(top_draw_y < bot_draw_y) {
             //draw_texture_vertical_line(top_y_int, top_draw_y, bot_y_int, bot_draw_y, col_ptr, tex_col&(32-1));
             //tex_col++;
-            draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, wall_col, col_ptr);
+            s16 cur_inv_z = cur_fix_inv_z>>16;
+
+            if (cur_inv_z <= FIX_0_16_INV_DARK_DIST) { //(cur_z >= (DARK_DIST<<16))  {
+                //draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, wall_col, col_ptr);
+                draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, dark_col, col_ptr);
+            } else if (cur_inv_z <= FIX_0_16_INV_MID_DIST) { //(cur_z >= (MID_DIST<<16)) {
+                draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, mid_col, col_ptr);
+            } else {
+                draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, light_col, col_ptr);
+            }
         }
         if(bot_draw_y < max_drawable_y) {
 
@@ -1040,6 +1060,7 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
 
         top_y_fix += top_dy_per_dx;
         bot_y_fix += bot_dy_per_dx;
+        cur_fix_inv_z += fix_inv_dz_per_dx;
     }
     
     flip(0);
@@ -1050,10 +1071,11 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
 
 
 void draw_upper_step(s16 x1, s16 x1_ytop, s16 nx1_ytop, s16 x2, s16 x2_ytop, s16 nx2_ytop, 
-                     s16 max_z,
-                     u16 window_min, u16 window_max, u8 upper_color, u8 ceil_col) {
+                     u16 inv_z1, u16 inv_z2,
+                     u16 window_min, u16 window_max, u8 upper_color, u8 ceil_col, s8 light_level) {
 
-    int needs_ceil_lighting = ceil_needs_lighting && (max_z >= MID_DIST); 
+    u16 far_inv_z = min(inv_z1, inv_z2);
+    int needs_ceil_lighting = ceil_needs_lighting &&  (far_inv_z <= FIX_0_16_INV_MID_DIST); //(far_z >= MID_DIST);
 
     // 4 subpixel bits here
     s16 top_dy_fix = x2_ytop - x1_ytop;
@@ -1071,11 +1093,17 @@ void draw_upper_step(s16 x1, s16 x1_ytop, s16 nx1_ytop, s16 x2, s16 x2_ytop, s16
 
     s16 beginx = max(x1, window_min);
 
+    s16 inv_dz = inv_z2 - inv_z1;
+    s32 fix_inv_dz_per_dx = (inv_dz << 16) / dx;
+
+    s32 cur_fix_inv_z = inv_z1<<16;
+
     s16 skip_x = beginx - x1;
 
     if(skip_x > 0) {
         top_y_fix += (skip_x * top_dy_per_dx);
         ntop_y_fix += (skip_x * ntop_dy_per_dx);
+        cur_fix_inv_z += (skip_x * fix_inv_dz_per_dx);
     }
 
 
@@ -1084,6 +1112,10 @@ void draw_upper_step(s16 x1, s16 x1_ytop, s16 nx1_ytop, s16 x2, s16 x2_ytop, s16
     s16 x = beginx;
     u8* yclip_ptr = &(yclip[x<<1]);
     
+
+    u8 dark_col = get_dark_color(upper_color, light_level);
+    u8 light_col = get_light_color(upper_color, light_level);
+    u8 mid_col = get_mid_dark_color(upper_color, light_level);
 
     u8** offset_ptr = (bmp_buffer_write == bmp_buffer_0) ? (&buf_0_column_offset_table[x]) : (&buf_1_column_offset_table[x]);
     for(;x < endx; x++) {
@@ -1097,7 +1129,18 @@ void draw_upper_step(s16 x1, s16 x1_ytop, s16 nx1_ytop, s16 x2, s16 x2_ytop, s16
 
         u8* col_ptr = *offset_ptr++;
         if(top_draw_y < bot_draw_y) {
-            draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, upper_color, col_ptr);
+            s16 cur_inv_z = cur_fix_inv_z>>16;
+
+            if (cur_inv_z <= FIX_0_16_INV_DARK_DIST) { //(cur_z >= (DARK_DIST<<16))  {
+                //draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, wall_col, col_ptr);
+                draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, dark_col, col_ptr);
+            } else if (cur_inv_z <= FIX_0_16_INV_MID_DIST) { //(cur_z >= (MID_DIST<<16)) {
+                draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, mid_col, col_ptr);
+            } else {
+                draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, light_col, col_ptr);
+            }
+
+            //draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, upper_color, col_ptr);
             *yclip_ptr++ = bot_draw_y;
             yclip_ptr++;
         } else {
@@ -1114,6 +1157,7 @@ void draw_upper_step(s16 x1, s16 x1_ytop, s16 nx1_ytop, s16 x2, s16 x2_ytop, s16
 
         top_y_fix += top_dy_per_dx;
         ntop_y_fix += ntop_dy_per_dx;
+        cur_fix_inv_z += fix_inv_dz_per_dx;
     }
     
     //flip(0);
@@ -1122,11 +1166,11 @@ void draw_upper_step(s16 x1, s16 x1_ytop, s16 nx1_ytop, s16 x2, s16 x2_ytop, s16
 }
 
 void draw_lower_step(s16 x1, s16 x1_ybot, s16 nx1_ybot, s16 x2, s16 x2_ybot, s16 nx2_ybot, 
-                     s16 max_z,
-                     u16 window_min, u16 window_max, u8 lower_color, u8 floor_col) {
+                     u16 inv_z1, u16 inv_z2,
+                     u16 window_min, u16 window_max, u8 lower_color, u8 floor_col, s8 light_level) {
 
-    // cache floor stuff
-    int needs_floor_lighting = floor_needs_lighting && (max_z >= MID_DIST); 
+    u16 far_inv_z = min(inv_z1, inv_z2);
+    int needs_floor_lighting = floor_needs_lighting && (far_inv_z <= FIX_0_16_INV_MID_DIST); //(far_z >= MID_DIST);
 
     s16 bot_dy_fix = x2_ybot - x1_ybot;
     s16 nbot_dy_fix = nx2_ybot - nx1_ybot;
@@ -1143,10 +1187,17 @@ void draw_lower_step(s16 x1, s16 x1_ybot, s16 nx1_ybot, s16 x2, s16 x2_ybot, s16
 
     s16 beginx = max(x1, window_min);
 
+    s16 inv_dz = inv_z2 - inv_z1;
+    s32 fix_inv_dz_per_dx = (inv_dz << 16) / dx;
+
+    s32 cur_fix_inv_z = inv_z1<<16;
+
+
     s16 skip_x = beginx - x1;
     if(skip_x > 0) {
         bot_y_fix += (skip_x * bot_dy_per_dx);
         nbot_y_fix += (skip_x * nbot_dy_per_dx);
+        cur_fix_inv_z += (skip_x * fix_inv_dz_per_dx);
     }
     
 
@@ -1155,7 +1206,13 @@ void draw_lower_step(s16 x1, s16 x1_ybot, s16 nx1_ybot, s16 x2, s16 x2_ybot, s16
     s16 x = beginx;
     u8* yclip_ptr = &(yclip[x<<1]);
 
+    u8 dark_col = get_dark_color(lower_color, light_level);
+    u8 light_col = get_light_color(lower_color, light_level);
+    u8 mid_col = get_mid_dark_color(lower_color, light_level);
+
     u8** offset_ptr = (bmp_buffer_write == bmp_buffer_0) ? (&buf_0_column_offset_table[x]) : (&buf_1_column_offset_table[x]);
+        
+
     for(;x < endx; x++) {
         bot_y_int = bot_y_fix >> 16;
         nbot_y_int = nbot_y_fix >> 16;
@@ -1166,7 +1223,17 @@ void draw_lower_step(s16 x1, s16 x1_ybot, s16 nx1_ybot, s16 x2, s16 x2_ybot, s16
 
         u8* col_ptr = *offset_ptr++;
         if(top_draw_y < bot_draw_y) {
-            draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, lower_color, col_ptr);
+            s16 cur_inv_z = cur_fix_inv_z>>16;
+
+            if (cur_inv_z <= FIX_0_16_INV_DARK_DIST) { //(cur_z >= (DARK_DIST<<16))  {
+                //draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, wall_col, col_ptr);
+                draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, dark_col, col_ptr);
+            } else if (cur_inv_z <= FIX_0_16_INV_MID_DIST) { //(cur_z >= (MID_DIST<<16)) {
+                draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, mid_col, col_ptr);
+            } else {
+                draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, light_col, col_ptr);
+            }
+            //draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, lower_color, col_ptr);
             yclip_ptr++;
             *yclip_ptr++ = top_draw_y;
         } else {
@@ -1186,6 +1253,8 @@ void draw_lower_step(s16 x1, s16 x1_ybot, s16 nx1_ybot, s16 x2, s16 x2_ybot, s16
 
         bot_y_fix += bot_dy_per_dx;
         nbot_y_fix += nbot_dy_per_dx;
+        cur_fix_inv_z += fix_inv_dz_per_dx;
+
     }
     
     flip(0);

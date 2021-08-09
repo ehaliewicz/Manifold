@@ -28,7 +28,7 @@ Vect2D_s16 transform_map_vert_16(s16 x, s16 y) {
 
 
 
-s16 project_and_adjust_x(s16 x, s16 z, s16 z_recip) {
+s16 project_and_adjust_x(s16 x, s16 z_recip) {
     //fix32 rx = trans_map_vert.x;
     //fix32 rz = trans_map_vert.y;
     
@@ -95,7 +95,7 @@ s16 project_and_adjust_y_fix_c(Vect2D_f32 trans_map_vert, s16 y) {
 }
 */
 
-s16 project_and_adjust_y_fix(s16 y, s16 z, s16 z_recip) {    
+s16 project_and_adjust_y_fix(s16 y, s16 z_recip) {    
     s16 yMinusPosZ = y - playerZ12Frac4;      // 12.4
     s32 const4Ry = yMinusPosZ; //CONST4 * yMinusPosZ;
 
@@ -118,9 +118,8 @@ s16 project_and_adjust_y_fix(s16 y, s16 z, s16 z_recip) {
 
     //fix32 rx = trans_map_vert.x;
     //fix32 rz = trans_map_vert.y;
-    
-
 }
+
 /*
 s16 project_and_adjust_y_fix_c(s16 y, s16 z) {    
     s16 yMinusPosZ = y - playerZ12Frac4;      // 12.4
@@ -136,9 +135,9 @@ s16 project_and_adjust_y_fix_c(s16 y, s16 z) {
 
 //const s32 near_z = 160 << FIX32_FRAC_BITS;
 
+#define CLIP_DIVISION
 
 clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2) {
-    // TODO: figure out how much precision we need here (16-bit instead of 32?)
     // TODO: adjust texture coordinates here as well
 
     s16 rx1 = trans_v1->x;
@@ -153,12 +152,13 @@ clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2) {
         return UNCLIPPED;
     }
     
-    s16 dz = rz2-rz1;
     s16 dx = rx2-rx1;
+    s16 dz = rz2 - rz1;
+    
 
     // SLOW
+    #ifdef CLIP_DIVISION
     s32 fix_dx = dx<<6;
-    //s16 dx_over_dz = fix_dx/dz; // 12.6 fixed point
     s16 dx_over_dz = fix_dx;
 
     __asm volatile(
@@ -167,6 +167,10 @@ clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2) {
         : // input
     );
     
+   #else
+   s16 inv_dz = (dz < 0) ? -(z_recip_table[-dz]>>10) : (z_recip_table[dz]>>10);
+   s16 dx_over_dz = dx * inv_dz; //dx_over_dz_32 >> 10;
+   #endif 
     
     //s16 dx_over_dz = fix32Div(dx, dz); // change in x per change in z
 

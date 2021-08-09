@@ -52,7 +52,7 @@ clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2);
 // project map vertex without height attributes
 //s16 project_and_adjust_x(Vect2D_f32 trans_map_vert);
 
-s16 project_and_adjust_x(s16 x, s16 z, s16 z_recip); //Vect2D_s16 trans_map_vert);
+s16 project_and_adjust_x(s16 x, s16 z_recip); //Vect2D_s16 trans_map_vert);
 
 //s16 project_and_adjust_y(Vect2D_f32 trans_map_vert, s16 y);
 
@@ -60,7 +60,7 @@ s16 project_and_adjust_x(s16 x, s16 z, s16 z_recip); //Vect2D_s16 trans_map_vert
 
 //s16 project_and_adjust_y_fix(Vect2D_s16 trans_map_vert, s16 y);
 
-s16 project_and_adjust_y_fix(s16 y, s16 z, s16 z_recip);
+s16 project_and_adjust_y_fix(s16 y, s16 z_recip);
 
 s16 project_and_adjust_y_fix_c(s16 y, s16 z);
 

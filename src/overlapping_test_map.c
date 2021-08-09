@@ -66,6 +66,50 @@ static const u8 wall_ceil_slope_types[90] = {
     NO_SLOPE, NO_SLOPE, NO_SLOPE, NO_SLOPE, 
 };
 
+static const s16 floor_slope_portals[90] = {
+    -1,-1,-1,-1,-1,-1,
+    -1,-1,-1,-1,-1,
+
+    3,-1,3,-1,
+    4,-1,4,-1,
+    5,-1,5,-1,
+    6,-1,6,-1,
+    7,-1,7,-1,
+
+    -1,-1,-1,-1,-1,
+    -1,-1,-1,-1,
+    -1,-1,-1,-1,
+    -1,-1,-1,-1,
+    -1,-1,-1,-1,
+    -1,-1,-1,-1,
+    -1,-1,-1,-1,
+    -1,-1,-1,-1,
+    -1,-1,-1,-1,-1,
+    -1,-1,-1,-1,
+};
+
+static const s16 ceil_slope_portals[90] = {
+    -1,-1,-1,-1,-1,-1,
+    -1,-1,-1,-1,-1,
+
+    0,-1,0,-1,
+    2,-1,2,-1,
+    3,-1,3,-1,
+    4,-1,4,-1,
+    5,-1,5,-1,
+
+    -1,-1,-1,-1,-1,
+    -1,-1,-1,-1,
+    -1,-1,-1,-1,
+    -1,-1,-1,-1,
+    -1,-1,-1,-1,
+    -1,-1,-1,-1,
+    -1,-1,-1,-1,
+    -1,-1,-1,-1,
+    -1,-1,-1,-1,-1,
+    -1,-1,-1,-1,
+};
+
 static const s16 floor_slopes[17*2] = {
     -1,-1, 
     -1,-1,
@@ -126,6 +170,7 @@ static const u16 walls[90] = {
     34, 36, 37, 38, 35, 34, 
     36, 39, 40, 37, 36, 
 };
+
 static const s16 portals[73] = {
     -1, -1, 1, -1, 2, -1, 
     -1, 11, -1, 8, 0, 
@@ -456,7 +501,9 @@ portal_map overlapping_map = {
     .wall_norm_quadrants = wall_normal_quadrants,
     .floor_slopes = floor_slopes,
     .wall_floor_slope_types = wall_floor_slope_types,
+    .floor_slope_portals = floor_slope_portals,
     .ceil_slopes = ceil_slopes,
     .wall_ceil_slope_types = wall_ceil_slope_types,
+    .ceil_slope_portals = ceil_slope_portals,
     .pvs = pvs
 };

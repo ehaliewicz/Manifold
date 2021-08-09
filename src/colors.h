@@ -4,8 +4,11 @@
 #include <genesis.h>
 
 #define MID_DIST 150
+#define FIX_0_16_INV_MID_DIST (65536/MID_DIST)
 #define MID_DARK_DIST 250
+#define FIX_0_16_INV_MID_DARK_DIST (65536/MID_DARK_DIST)
 #define DARK_DIST 350
+#define FIX_0_16_INV_DARK_DIST (65536/DARK_DIST)
 
 /*
 #define WHITE       RGB24_TO_VDPCOLOR(0xFFFFFF)

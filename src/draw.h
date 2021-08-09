@@ -33,13 +33,13 @@ void cache_ceil_light_params(s16 rel_ceil_height, u8 ceil_col, s8 light_level);
 
 void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
               s16 x2, s16 x2_ytop, s16 x2_ybot,
-              s16 max_z,
+              u16 inv_z1, u16 inv_z2,
               u16 window_min, u16 window_max,
-              u8 ceil_col, u8 wall_col, u8 floor_col);
+              u8 ceil_col, u8 wall_col, u8 floor_col, s8 light_level);
 
 void draw_upper_step(s16 x1, s16 x1_ytop, s16 nx1_ytop, s16 x2, s16 x2_ytop, s16 nx2_ytop, 
-                     s16 max_z,
-                     u16 window_min, u16 window_max, u8 upper_color, u8 ceil_color);
+                     u16 inv_z1, u16 inv_z2,
+                     u16 window_min, u16 window_max, u8 upper_color, u8 ceil_color, s8 light_level);
 
 void draw_ceiling_update_clip(s16 x1, s16 x1_ytop, s16 x2, s16 x2_ytop, 
                               s16 max_z,
@@ -47,8 +47,8 @@ void draw_ceiling_update_clip(s16 x1, s16 x1_ytop, s16 x2, s16 x2_ytop,
 
 //void draw_lower_step(s16 x1, s16 x1_ybot, s16 nx1_ybot, s16 x2, s16 x2_ybot, s16 nx2_ybot, u16 window_min, u16 window_max, u8 lower_color, u8 floor_color);
 void draw_lower_step(s16 x1, s16 x1_ybot, s16 nx1_ybot, s16 x2, s16 x2_ybot, s16 nx2_ybot, 
-                     s16 max_z,
-                     u16 window_min, u16 window_max, u8 lower_color, u8 floor_col);
+                     u16 inv_z1, u16 inv_z2,
+                     u16 window_min, u16 window_max, u8 lower_color, u8 floor_col, s8 light_level);
 
 void draw_floor_update_clip(s16 x1, s16 x1_ybot, s16 x2, s16 x2_ybot, 
                             s16 max_z,
