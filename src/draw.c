@@ -220,39 +220,79 @@ void draw_native_vertical_transparent_line_unrolled(s16 y0, s16 y1, u8 col, u8* 
                 word_col_ptr++;
                 lw_col_ptr = word_col_ptr;
 
-                *lw_col_ptr++ = full_col;
+                __asm volatile(
+                    "move.l %1, (%0)+"
+                    : "+a" (lw_col_ptr)
+                    : "d" (full_col)
+                ); // *lw_col_ptr++ = full_col;
                 lw_col_ptr++;
-                *lw_col_ptr++ = full_col;
+                __asm volatile(
+                    "move.l %1, (%0)+"
+                    : "+a" (lw_col_ptr)
+                    : "d" (full_col)
+                ); // *lw_col_ptr++ = full_col;
                 break;
             case 6:
                 lw_col_ptr = word_col_ptr;
 
-                *lw_col_ptr++ = full_col;
+                __asm volatile(
+                    "move.l %1, (%0)+"
+                    : "+a" (lw_col_ptr)
+                    : "d" (full_col)
+                ); // *lw_col_ptr++ = full_col;
                 lw_col_ptr++;
-                *lw_col_ptr++ = full_col;
+                __asm volatile(
+                    "move.l %1, (%0)+"
+                    : "+a" (lw_col_ptr)
+                    : "d" (full_col)
+                ); // *lw_col_ptr++ = full_col;
                 break;
             case 5:
-                *word_col_ptr++ = word_col;
+                __asm volatile(
+                    "move.w %1, (%0)+"
+                    : "+a" (word_col_ptr)
+                    : "d" (word_col)
+                );  // *word_col_ptr++ = word_col;
                 lw_col_ptr = word_col_ptr;
                 lw_col_ptr++;
-                *lw_col_ptr++ = full_col;
+                __asm volatile(
+                    "move.l %1, (%0)+"
+                    : "+a" (lw_col_ptr)
+                    : "d" (full_col)
+                ); // *lw_col_ptr++ = full_col;
                 break;
             case 4:
                 lw_col_ptr = word_col_ptr;
                 lw_col_ptr++;
-                *lw_col_ptr++ = full_col;
+                __asm volatile(
+                    "move.l %1, (%0)+"
+                    : "+a" (lw_col_ptr)
+                    : "d" (full_col)
+                ); // *lw_col_ptr++ = full_col;
                 break;
             case 3:
                 word_col_ptr++;
                 lw_col_ptr = word_col_ptr;
-                *lw_col_ptr++ = full_col;
+                __asm volatile(
+                    "move.l %1, (%0)+"
+                    : "+a" (lw_col_ptr)
+                    : "d" (full_col)
+                ); // *lw_col_ptr++ = full_col;
                 break;
             case 2: 
                 lw_col_ptr = word_col_ptr;
-                *lw_col_ptr++ = full_col;
+                __asm volatile(
+                    "move.l %1, (%0)+"
+                    : "+a" (lw_col_ptr)
+                    : "d" (full_col)
+                ); // *lw_col_ptr++ = full_col;
                 break;
             case 1:
-                *word_col_ptr++ = word_col;
+                __asm volatile(
+                    "move.w %1, (%0)+"
+                    : "+a" (word_col_ptr)
+                    : "d" (word_col)
+                );  // *word_col_ptr++ = word_col;
                 lw_col_ptr = word_col_ptr;
                 break;
             case 0:
@@ -262,31 +302,55 @@ void draw_native_vertical_transparent_line_unrolled(s16 y0, s16 y1, u8 col, u8* 
     } else { 
         switch (dy & 0b111) {
             case 7:
-                *word_col_ptr++ = word_col;
+                __asm volatile(
+                    "move.w %1, (%0)+"
+                    : "+a" (word_col_ptr)
+                    : "d" (word_col)
+                );  // *word_col_ptr++ = word_col;
                 lw_col_ptr = (u32*)word_col_ptr;
                 lw_col_ptr++;
-                *lw_col_ptr++ = full_col;
+                __asm volatile(
+                    "move.l %1, (%0)+"
+                    : "+a" (lw_col_ptr)
+                    : "d" (full_col)
+                ); // *lw_col_ptr++ = full_col;
                 lw_col_ptr++;
                 break;
             case 6:
                 lw_col_ptr = word_col_ptr;
                 lw_col_ptr++;
-                *lw_col_ptr++ = full_col;
+                __asm volatile(
+                    "move.l %1, (%0)+"
+                    : "+a" (lw_col_ptr)
+                    : "d" (full_col)
+                ); //*lw_col_ptr++ = full_col;
                 lw_col_ptr++;
                 break;
             case 5:
                 word_col_ptr++;
                 lw_col_ptr = word_col_ptr;
-                *lw_col_ptr++ = full_col;
+                __asm volatile(
+                    "move.l %1, (%0)+"
+                    : "+a" (lw_col_ptr)
+                    : "d" (full_col)
+                ); //*lw_col_ptr++ = full_col;
                 lw_col_ptr++;
                 break;
             case 4:
                 lw_col_ptr = word_col_ptr;
-                *lw_col_ptr++ = full_col;
+                __asm volatile(
+                    "move.l %1, (%0)+"
+                    : "+a" (lw_col_ptr)
+                    : "d" (full_col)
+                ); //*lw_col_ptr++ = full_col;
                 lw_col_ptr++;
                 break;
             case 3:
-                *word_col_ptr++ = word_col;
+                __asm volatile(
+                    "move.w %1, (%0)+"
+                    : "+a" (word_col_ptr)
+                    : "d" (word_col)
+                );  // *word_col_ptr++ = word_col;
                 lw_col_ptr = word_col_ptr;
                 lw_col_ptr++;
                 break;
@@ -409,6 +473,7 @@ void draw_native_vertical_line_unrolled(s16 y0, s16 y1, u8 col,  u8* col_ptr) {
 }
 
 // this is fast and efficient when each column is mostly empty space
+// used for partially transparent textured walls
 void draw_rle_monochrome_col(uint8_t *rle_column, uint8_t *col_ptr, uint16_t y_top, uint16_t y_bot, uint16_t col, s16 y0, s16 y1) {
 
   // scale is 16.16 scale factor, basically, it is 1/z in fixed point
@@ -444,7 +509,6 @@ void draw_rle_monochrome_col(uint8_t *rle_column, uint8_t *col_ptr, uint16_t y_t
     int i = num_runs;
     while(i--> 0) {
     s16 texels_skipped = *rle_column++;
-    s16 texels_length = *rle_column++;
 
     if(texels_skipped) {
         s32 pixels_skipped_fix = pixels_per_texel;
@@ -456,6 +520,9 @@ void draw_rle_monochrome_col(uint8_t *rle_column, uint8_t *col_ptr, uint16_t y_t
     
         cur_y_fix += pixels_skipped_fix;
     }
+
+    s16 texels_length = *rle_column++;
+
     if(cur_y_fix >= y_bot_fix) { return; }
 
     s32 num_pixels_fix = pixels_per_texel;
