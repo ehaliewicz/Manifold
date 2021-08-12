@@ -603,7 +603,11 @@ void portal_rend(u16 src_sector, u32 cur_frame) {
     portals_frustum_culled = 0;
     post_project_backfacing_walls = 0;
     #endif
+    #ifdef H32_MODE
+    visit_graph(src_sector, src_sector, 7, RENDER_WIDTH-7-1, cur_frame, 0);
+    #else
     visit_graph(src_sector, src_sector, 0, RENDER_WIDTH-1, cur_frame, 0);
+    #endif
     #ifdef DEBUG_PORTAL_CLIP
     KLog_S1("walls pre-transform backface culled ", pre_transform_backfacing_walls);
     KLog_S1("portals/walls frustum culled ", walls_frustum_culled);
