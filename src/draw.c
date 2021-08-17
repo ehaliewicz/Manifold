@@ -474,62 +474,68 @@ void draw_native_vertical_line_unrolled(s16 y0, s16 y1, u8 col,  u8* col_ptr) {
 
 // this is fast and efficient when each column is mostly empty space
 // used for partially transparent textured walls
-void draw_rle_monochrome_col(uint8_t *rle_column, uint8_t *col_ptr, uint16_t y_top, uint16_t y_bot, uint16_t col, s16 y0, s16 y1) {
+void draw_rle_monochrome_col(uint16_t *rle_column, uint8_t *col_ptr, uint16_t y_top, uint16_t y_bot, uint16_t col, s32 y0_fix, s32 y1_fix) {
 
   // scale is 16.16 scale factor, basically, it is 1/z in fixed point
 
-  if(y1 <= y0) { return; }
+  if(y1_fix <= y0_fix) { return; }
   if(y_bot <= y_top) { return; }
 
 
 
 
-  u8 num_runs = *rle_column++;
+  u16 num_runs; // = *rle_column++;
+  __asm volatile(
+        "move.w (%0)+, %1"
+        : "+a" (rle_column), "=d" (num_runs)
+  );
   if(num_runs == 0) { return; }
 
   u8 byte_col = (col<<4) | col;
   u16 word_col = (byte_col<<8) | byte_col;
-  s16 pix = y1-y0;
-  //s32 pix_fix = y1_fix - y0_fix;
+  u32 pix_fix = y1_fix - y0_fix;
 
-  s16 cur_y_fix = y0 << 5; //<<5;
-  //s32 pixels_per_texel = pix_fix >> 6;
-  s16 pixels_per_texel = (pix<<5) >> 6;// / 64;
+  u32 cur_y_fix = y0_fix; 
 
-  s32 y_top_fix = (y_top << 5); // << 16
-  s32 y_bot_fix = (y_bot << 5); //5);
+  u32 pixels_per_texel = pix_fix >> 6;  // 16.16 / 16.0 = 16.16 //
+  u16 pix_per_tex_16 = (pixels_per_texel >> 7); // 7.9
+  s32 y_top_fix = y_top << 16;
+  s32 y_bot_fix = y_bot << 16;
 
-  // load the first span out of the loop
-  //u8 texels_skipped = *rle_column++;
-  //u8 texels_length = *rle_column++;
-  //if(texels_skipped) {
-  //
-  //}
 
-    int i = num_runs;
-    while(i--> 0) {
-    s16 texels_skipped = *rle_column++;
+  int i = num_runs;
+  while(i--> 0) {
+    u16 texels_skipped_fix_7; // = *rle_column++;
+    __asm volatile(
+        "move.w (%0)+, %1"
+        : "+a" (rle_column), "=d" (texels_skipped_fix_7)
+    );
 
-    if(texels_skipped) {
-        s32 pixels_skipped_fix = pixels_per_texel;
+    if(texels_skipped_fix_7) {
+        u32 pixels_skipped_fix = pix_per_tex_16;
            __asm volatile(
-            "muls.w %1, %0"
-            :  "+d" (pixels_skipped_fix), "+d" (texels_skipped) // output
-            : // input
+            "mulu.w %1, %0"
+            :  "+d" (pixels_skipped_fix)  // output
+            : "d" (texels_skipped_fix_7) // input
         );
     
         cur_y_fix += pixels_skipped_fix;
     }
 
-    s16 texels_length = *rle_column++;
-
     if(cur_y_fix >= y_bot_fix) { return; }
 
-    s32 num_pixels_fix = pixels_per_texel;
-        __asm volatile(
-        "muls.w %1, %0"
-        :  "+d" (num_pixels_fix), "+d" (texels_length) // output
-        : // input
+    u16 texels_length_fix_7; // = *rle_column++;
+    __asm volatile(
+        "move.w (%0)+, %1"
+        : "+a" (rle_column), "=d" (texels_length_fix_7)
+    );
+
+
+    u32 num_pixels_fix = pix_per_tex_16;
+    __asm volatile(
+        "mulu.w %1, %0"
+        :  "+d" (num_pixels_fix)  // output
+        : "d" (texels_length_fix_7) // input
     );
     
     //s32 num_pixels_fix = texels_length * pixels_per_texel;
@@ -537,25 +543,16 @@ void draw_rle_monochrome_col(uint8_t *rle_column, uint8_t *col_ptr, uint16_t y_t
 
     if(end_y_fix >= y_top_fix) {
         
-        s16 span_top_y = cur_y_fix>>5;
+        s16 span_top_y = cur_y_fix>>16; //>>5;
         span_top_y = max(y_top, min(span_top_y, y_bot));
-        s16 span_bot_y = end_y_fix>>5;
+        s16 span_bot_y = end_y_fix>>16; //>>5;
 
         span_bot_y = max(y_top, min(span_bot_y, y_bot));
         s16 dy = span_bot_y - span_top_y;
         u16* col_span_ptr = &col_ptr[span_top_y<<1];
 
         
-        /*
-        while(dy--) {
-            //*col_span_ptr++ = word_col;
-            __asm volatile(
-                "move.w %1, (%0)+"
-                : "+a" (col_span_ptr)
-                : "d" (word_col)
-            );
-        }
-        */
+
         if(dy & 0b1) {
             __asm volatile(
                 "move.w %1, (%0)+"
@@ -576,18 +573,13 @@ void draw_rle_monochrome_col(uint8_t *rle_column, uint8_t *col_ptr, uint16_t y_t
                 );
             }
         }
-        //draw_native_vertical_line_unrolled(span_top_y, span_bot_y, col, col_ptr);
     }
-
-
 
     cur_y_fix = end_y_fix;
     if(cur_y_fix >= y_bot_fix) { return; }
-    
-
 
   }
-} 
+}
 
 #define FLAT_COLOR
 
@@ -601,105 +593,106 @@ void flip() {
 }
 
 
-const uint8_t rle_glass[102] = {
+const uint16_t rle_glass[102] = {
+//const uint8_t rle_glass[102] = {
     0, // num runs in column 0
     1, // num runs in column 1
-    44, // skip 44 texels
-    1, // draw 1 texels
+    44<<7, // skip 44 texels
+    1<<7, // draw 1 texels
     1, // num runs in column 2
-    41, // skip 41 texels
-    3, // draw 3 texels
+    41<<7, // skip 41 texels
+    3<<7, // draw 3 texels
     2, // num runs in column 3
-    22, // skip 22 texels
-    2, // draw 2 texels
-    14, // skip 14 texels
-    3, // draw 3 texels
+    22<<7, // skip 22 texels
+    2<<7, // draw 2 texels
+    14<<7, // skip 14 texels
+    3<<7, // draw 3 texels
     2, // num runs in column 4
-    20, // skip 20 texels
-    3, // draw 3 texels
-    13, // skip 13 texels
-    3, // draw 3 texels
+    20<<7, // skip 20 texels
+    3<<7, // draw 3 texels
+    13<<7, // skip 13 texels
+    3<<7, // draw 3 texels
     2, // num runs in column 5
-    18, // skip 18 texels
-    3, // draw 3 texels
-    14, // skip 14 texels
-    1, // draw 1 texels
+    18<<7, // skip 18 texels
+    3<<7, // draw 3 texels
+    14<<7, // skip 14 texels
+    1<<7, // draw 1 texels
     1, // num runs in column 6
-    16, // skip 16 texels
-    3, // draw 3 texels
+    16<<7, // skip 16 texels
+    3<<7, // draw 3 texels
     1, // num runs in column 7
-    15, // skip 15 texels
-    2, // draw 2 texels
+    15<<7, // skip 15 texels
+    2<<7, // draw 2 texels
     1, // num runs in column 8
-    13, // skip 13 texels
-    3, // draw 3 texels
+    13<<7, // skip 13 texels
+    3<<7, // draw 3 texels
     1, // num runs in column 9
-    11, // skip 11 texels
-    3, // draw 3 texels
+    11<<7, // skip 11 texels
+    3<<7, // draw 3 texels
     1, // num runs in column 10
-    9, // skip 9 texels
-    3, // draw 3 texels
+    9<<7, // skip 9 texels
+    3<<7, // draw 3 texels
     2, // num runs in column 11
-    7, // skip 7 texels
-    3, // draw 3 texels
-    40, // skip 40 texels
-    1, // draw 1 texels
+    7<<7, // skip 7 texels
+    3<<7, // draw 3 texels
+    40<<7, // skip 40 texels
+    1<<7, // draw 1 texels
     2, // num runs in column 12
-    7, // skip 7 texels
-    1, // draw 1 texels
-    40, // skip 40 texels
-    2, // draw 2 texels
+    7<<7, // skip 7 texels
+    1<<7, // draw 1 texels
+    40<<7, // skip 40 texels
+    2<<7, // draw 2 texels
     1, // num runs in column 13
-    47, // skip 47 texels
-    3, // draw 3 texels
+    47<<7, // skip 47 texels
+    3<<7, // draw 3 texels
     1, // num runs in column 14
-    45, // skip 45 texels
-    3, // draw 3 texels
+    45<<7, // skip 45 texels
+    3<<7, // draw 3 texels
     1, // num runs in column 15
-    43, // skip 43 texels
-    3, // draw 3 texels
+    43<<7, // skip 43 texels
+    3<<7, // draw 3 texels
     1, // num runs in column 16
-    41, // skip 41 texels
-    3, // draw 3 texels
+    41<<7, // skip 41 texels
+    3<<7, // draw 3 texels
     1, // num runs in column 17
-    39, // skip 39 texels
-    3, // draw 3 texels
+    39<<7, // skip 39 texels
+    3<<7, // draw 3 texels
     1, // num runs in column 18
-    37, // skip 37 texels
-    3, // draw 3 texels
+    37<<7, // skip 37 texels
+    3<<7, // draw 3 texels
     1, // num runs in column 19
-    35, // skip 35 texels
-    3, // draw 3 texels
+    35<<7, // skip 35 texels
+    3<<7, // draw 3 texels
     1, // num runs in column 20
-    34, // skip 34 texels
-    1, // draw 1 texels
+    34<<7, // skip 34 texels
+    1<<7, // draw 1 texels
     1, // num runs in column 21
-    18, // skip 18 texels
-    1, // draw 1 texels
+    18<<7, // skip 18 texels
+    1<<7, // draw 1 texels
     1, // num runs in column 22
-    16, // skip 16 texels
-    2, // draw 2 texels
+    16<<7, // skip 16 texels
+    2<<7, // draw 2 texels
     1, // num runs in column 23
-    14, // skip 14 texels
-    3, // draw 3 texels
+    14<<7, // skip 14 texels
+    3<<7, // draw 3 texels
     2, // num runs in column 24
-    12, // skip 12 texels
-    3, // draw 3 texels
+    12<<7, // skip 12 texels
+    3<<7, // draw 3 texels
     23, // skip 23 texels
-    2, // draw 2 texels
+    2<<7, // draw 2 texels
     2, // num runs in column 25
-    10, // skip 10 texels
-    3, // draw 3 texels
-    23, // skip 23 texels
-    2, // draw 2 texels
+    10<<7, // skip 10 texels
+    3<<7, // draw 3 texels
+    23<<7, // skip 23 texels
+    2<<7, // draw 2 texels
     2, // num runs in column 26
-    9, // skip 9 texels
-    2, // draw 2 texels
-    23, // skip 23 texels
-    2, // draw 2 texels
+    9<<7, // skip 9 texels
+    2<<7, // draw 2 texels
+    23<<7, // skip 23 texels
+    2<<7, // draw 2 texels
     1, // num runs in column 27
-    34, // skip 34 texels
-    1, // draw 1 texels
+    34<<7, // skip 34 texels
+    1<<7, // draw 1 texels
     0, // num runs in column 28
     0, // num runs in column 29
     0, // num runs in column 30
@@ -795,8 +788,8 @@ void draw_transparent_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
 
         u8* col_ptr = *offset_ptr++;
         if(top_draw_y < bot_draw_y) {
-            top_y_int = top_y_fix >> 16;
-            bot_y_int = bot_y_fix >> 16;
+            //top_y_int = top_y_fix >> 16;
+            //bot_y_int = bot_y_fix >> 16;
             tex_col_int = tex_col_fix>>16;
 
             
@@ -806,7 +799,8 @@ void draw_transparent_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
             draw_rle_monochrome_col(&rle_glass[rle_glass_index], col_ptr, 
                                     min_drawable_y, max_drawable_y, 
                                     (LIGHT_STEEL_IDX<<4)|LIGHT_STEEL_IDX, 
-                                    top_y_int, bot_y_int);
+                                    top_y_fix, bot_y_fix);
+                                    //top_y_int, bot_y_int);
             
 
         }
