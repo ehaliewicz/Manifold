@@ -23,19 +23,19 @@ typedef struct {
 
 void draw_tex_column(col_params params);
 //void draw_native_vertical_line_unrolled(s16 y0, s16 y1, u8 col, u8* col_ptr);
-void draw_native_vertical_line_unrolled(s16 y0, s16 y1, u8 col, u8* col_ptr);
+void draw_native_vertical_line_unrolled(s16 y0, s16 y1, u32 full_col,  u8* col_ptr);
 void copy_2d_buffer(u16 left, u16 right, clip_buf* dest);
 void draw_native_vertical_transparent_line_unrolled(s16 y0, s16 y1, u8 col, u8* col_ptr, u8 odd);
 
 
-void cache_floor_light_params(s16 rel_floor_height, u8 floor_col, s8 light_level);
-void cache_ceil_light_params(s16 rel_ceil_height, u8 ceil_col, s8 light_level);
+void cache_floor_light_params(s16 rel_floor_height, u8 floor_col, s8 light_level, u32 avg_dist, u8 sloped);
+void cache_ceil_light_params(s16 rel_ceil_height, u8 ceil_col, s8 light_level, u32 avg_dist, u8 sloped);
 
 void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
               s16 x2, s16 x2_ytop, s16 x2_ybot,
               u16 inv_z1, u16 inv_z2,
               u16 window_min, u16 window_max,
-              u8 ceil_col, u8 wall_col, u8 floor_col, s8 light_level);
+              u8 wall_col, s8 light_level);
 
 void draw_upper_step(s16 x1, s16 x1_ytop, s16 nx1_ytop, s16 x2, s16 x2_ytop, s16 nx2_ytop, 
                      u16 inv_z1, u16 inv_z2,

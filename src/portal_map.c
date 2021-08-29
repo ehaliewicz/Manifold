@@ -33,6 +33,10 @@ s16 sector_ceil_color(s16 sector_idx, portal_map* mp) {
     return mp->sectors[sector_idx*SECTOR_SIZE+6];
 }
 
+u16 sector_flags(s16 sector_idx, portal_map* mp) {
+    return mp->sectors[sector_idx*SECTOR_SIZE+7];
+}
+
 s16 sector_floor_slope_start_wall_idx(s16 sector_idx, portal_map* mp) {
     return mp->floor_slopes[sector_idx*2];
 }

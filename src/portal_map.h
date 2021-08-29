@@ -6,8 +6,12 @@
 #include "vertex.h"
 #include "vis_range.h"
 
-#define SECTOR_SIZE 7
+#define SECTOR_SIZE 8
 #define VERT_SIZE 2
+
+
+#define SECTOR_FLOOR_SLOPED 1<<0
+#define SECTOR_CEIL_SLOPED 1<<1
 
 typedef enum {
     QUADRANT_0,
@@ -74,6 +78,8 @@ s16 sector_ceil_height(s16 sector_idx, portal_map* mp);
 s16 sector_floor_color(s16 sector_idx, portal_map* mp);
 
 s16 sector_ceil_color(s16 sector_idx, portal_map* mp);
+
+u16 sector_flags(s16 sector_idx, portal_map* mp);
 
 s16 sector_sloped_start_wall_idx(s16 sector_idx, portal_map* mp);
 

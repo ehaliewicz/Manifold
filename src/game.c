@@ -1,6 +1,7 @@
 #include <genesis.h>
 #include "collision.h"
 #include "colors.h"
+#include "config.h"
 #include "clip_buf.h"
 #include "game.h"
 #include "game_mode.h"
@@ -95,7 +96,7 @@ int bob_idx;
 
 void showFPS(u16 float_display)
 {
-    char str[16];
+    char str[8];
     const u16 y = 5;
 
     if (float_display)
@@ -111,6 +112,7 @@ void showFPS(u16 float_display)
 
     // display FPS
     VDP_drawTextBG(BG_B, str, 1, y);
+
 }
 
 
@@ -148,8 +150,9 @@ void copy_quarter_words(u8* src, u32 dst) {
         QUARTER_WORDS, 4);
 }
 
+u32 vints = 0;
 void do_vint_flip() {
-    
+    vints++;
     if(vint_flipping == 1) {
 
         // not finished
@@ -232,6 +235,10 @@ void request_flip() {
         // wait until it has started, and then we can safely flip to the next framebuffer
         //return;
     }
+    char buf[32];
+    sprintf(buf, "vints: %i ", vints);
+    vints = 0;
+    VDP_drawTextBG(BG_B, buf, 1, 6);
 
 
     if(bmp_buffer_write == bmp_buffer_0) {
@@ -241,7 +248,7 @@ void request_flip() {
         bmp_buffer_read = bmp_buffer_0;
     } else {
         vram_copy_src = bmp_buffer_1;
-        vram_copy_dst = FB0MIDDLE; //BMP_FB1TILE;
+        vram_copy_dst = FB0MIDDLE; 
         bmp_buffer_write = bmp_buffer_0;
         bmp_buffer_read = bmp_buffer_0;
     }
@@ -251,7 +258,6 @@ void request_flip() {
 void draw_3d_view(u32 cur_frame) {
 
     //BMP_vertical_clear();
-
     // clear clipping buffers
     clear_2d_buffers();
     // clear portal graph visited cache
@@ -501,10 +507,14 @@ void init_game() {
     SYS_setVIntCallback(do_vint_flip);
     VDP_setVerticalScroll(BG_B, 0);
     
-    //VDP_setScreenWidth256();
+    #ifdef H32_MODE
+    VDP_setScreenWidth256();
+    #else 
     VDP_setScreenWidth320();
-    VDP_setScreenHeight240();
+    #endif
+    //VDP_setScreenHeight240();
 
+    //BMP_setBufferCopy(1);
 
     //request_flip();
 
