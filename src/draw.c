@@ -9,6 +9,7 @@
 #include "math3d.h"
 #include "portal.h"
 #include "texture.h"
+#include "textures.h"
 #include "utils.h"
 
 
@@ -112,74 +113,6 @@ void release_2d_buffers() {
 }
 
 
-// do texture map stuff :^)
-
-__attribute__((noinline)) void draw_tex_column(col_params params) {
-    u8 x0 = params.x;
-    //u8 x1 = params.x1;
-    u8 y0 = params.y0;
-    u8 y1 = params.y1;
-    u16 dy = y1 - y0;
-    //u16 dx = x1 - x0;
-
-    if(dy == 0) { return; } // || dx == 0) { return ;}
-    Bitmap *b = params.bmp;
-    s32 tex_size_fix = b->h/2 << 16;
-    s32 dv_dy = tex_size_fix / dy; // 8.16
-    u8* tex = params.bmp->image;
-    s32 swapped_dv_dy = (dv_dy << 16) | (dv_dy>>16);
-
-    #define TEX_SIZE 64
-    /*
-        roughly 100ms?
-    for(int x = params.x; x < params.x + TEX_SIZE; x++) {
-        u8* off = bmp_buffer_write + column_table[x] + (y0<<1);
-        s32 v_fix = 0;
-        for(int y = y0; y <= y1; y++) {
-            char c = (tex[v_fix>>16]);
-            *off = c;
-            off += 2;
-            v_fix += dv_dy;
-        }
-        // go to next row in texture (which is actually a column since it's rotated 90 degrees)
-        tex += 128;
-    }
-    //return;
-    */
-
-
-
-    //addx texture map experiment code 
-    // 5fps faster..
-    // 66ms to texture map 91% of the screen, pretty fast
-
-    /*
-    for(int x = params.x; x < params.x + TEX_SIZE; x++) {
-        u8* off = bmp_buffer_write + column_table[x] + (y0<<1);
-        u32 v_fix = 0;
-
-        // reset dy because the inline asm below clobbers it
-        dy = (y1-y0);
-        
-        
-        __asm volatile(
-        " subq #1, %0\t\n\
-        lp_%=:\t\n\
-            move.b 0(%4, %2.w), (%1)\t\n\
-            addx.l %3, %2\t\n\
-            addq.l #2, %1\t\n\
-            dbeq %0, lp_%="
-            : "+d" (dy), "+a" (off),  "+d" (v_fix)
-            : "d" (swapped_dv_dy), "a" (tex)
-        );
-        tex += 128;
-
-        //tex += b->h;
-    }
-    */
-    
-
-}
 
 
 void draw_vertical_line(s16 y0, s16 y1, u8 col, u8* col_ptr) {
@@ -192,6 +125,66 @@ void draw_vertical_line(s16 y0, s16 y1, u8 col, u8* col_ptr) {
     }
 }
 
+
+void run_texture_test() {
+    BMP_vertical_clear();
+    static u16 last_input = 0;
+
+    //static s16 tex_col = 0;
+    static s16 top_clip = 0;
+    static s16 bot_clip = 0;
+    static u16 x0 = 0; //RENDER_WIDTH/2;
+    //static u16 x1 = 32;
+    static u16 y0 = 0; //(SCREEN_HEIGHT/2)-(32/2);
+    static u16 y1 = 128; //(SCREEN_HEIGHT/2)+(32/2);
+    //u16 tex_idx = tex_col * TEX_HEIGHT;
+    //u16* tex_column = &wall_light[tex_idx];
+
+    u8** offset_ptr = (bmp_buffer_write == bmp_buffer_0) ? (&buf_0_column_offset_table[x0]) : (&buf_1_column_offset_table[x0]);
+
+
+    u16 input = JOY_readJoypad(JOY_1); 
+    u16 new_input = (last_input ^ input) & input;
+    u8 pushed_up = (input & BUTTON_UP);
+    u8 pushed_down = (input & BUTTON_DOWN);
+    u8 pushed_left = (input & BUTTON_LEFT);
+    u8 pushed_right = (input & BUTTON_RIGHT);
+
+    s16 clipped_y0 = y0+top_clip;
+    s16 clipped_y1 = y1-bot_clip;
+    s16 dy = clipped_y1-clipped_y0;
+    if(input & BUTTON_A) {
+        if(pushed_up && top_clip != 0) {
+            top_clip--;
+        } else if (pushed_down && clipped_y0 < clipped_y1) {
+            top_clip++;
+        }
+    } else if(input & BUTTON_B)  {
+        if(pushed_up && clipped_y1 > clipped_y0) {
+            bot_clip++;
+        } else if (pushed_down && bot_clip != 0) {
+            bot_clip--;
+        }
+    
+    } else {
+        if(pushed_up && y0 != 0) {
+            y0--;
+            y1--; 
+        } else if (pushed_down && y1 != SCREEN_HEIGHT-1) {
+            y0++;
+            y1++;
+        }
+    }
+    last_input = input;
+    for(int i = 0; i < 32; i++) {
+        u8* col_ptr = *offset_ptr++;
+        u16 tex_idx = i * TEX_HEIGHT;
+        u16* tex_column = &wall_light[tex_idx];
+        draw_texture_vertical_line(y0, y0+top_clip, y1, y1-bot_clip, col_ptr, tex_column);
+    }
+    showFPS(1);
+    request_flip();
+}
 
 
 void draw_native_vertical_line_unrolled_inner(u16 jump_table_offset, u8 col, u8* col_ptr);
@@ -405,7 +398,7 @@ void draw_native_vertical_transparent_line_unrolled(s16 y0, s16 y1, u8 col, u8* 
 
 void vline_native_movel(s16 dy, u32 col, u8* col_ptr);
 
-u32 long_color_table[256] = {
+const u32 long_color_table[256] = {
  0x00000000, 0x01010101, 0x02020202, 0x03030303,
 0x04040404, 0x05050505, 0x06060606, 0x07070707,
 0x08080808, 0x09090909, 0x0a0a0a0a, 0x0b0b0b0b,
@@ -862,6 +855,7 @@ const uint16_t rle_glass[102] = {
     0, // num runs in column 30
     0, // num runs in column 31
 };
+
 const uint16_t rle_glass_column_indexes[32] = {
     0,
     1,
@@ -1027,8 +1021,6 @@ void draw_masked(s16 x1, s16 x1_ytop, s16 x1_ybot,
 
     u8** offset_ptr = (bmp_buffer_write == bmp_buffer_0) ? (&buf_0_column_offset_table[x]) : (&buf_1_column_offset_table[x]);
     
-    u8 tex_col_int;
-
     for(;x < endx; x++) {
         u8 min_drawable_y = *yclip_ptr++;
         u8 max_drawable_y = *yclip_ptr++;
@@ -1149,14 +1141,14 @@ void cache_floor_light_params(s16 rel_floor_height, u8 floor_col, s8 light_level
     
     int table_idx = (-rel_floor_height)*4;
 
-    s16 dark_top = 0;
+    //s16 dark_top = 0;
     s16 dark_bot = floor_light_positions[table_idx++];
 
     fcache_dark_y = dark_bot;
 
     s16 mid_dark_bot = floor_light_positions[table_idx++];
 
-    s16 mid_top = mid_dark_bot;
+    //s16 mid_top = mid_dark_bot;
     s16 mid_bot = floor_light_positions[table_idx++];
 
     fcache_mid_y = mid_bot;
@@ -1857,9 +1849,10 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
 
 void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
               s16 x2, s16 x2_ytop, s16 x2_ybot,
+              u16 z1,     u16 z2,
               u16 inv_z1, u16 inv_z2,
               u16 window_min, u16 window_max,
-              u8 wall_col, s8 light_level) {
+              u8 wall_col, s8 light_level, texmap_info tmap_info) {
 
     
     u16 far_inv_z = min(inv_z1, inv_z2);
@@ -1893,17 +1886,40 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
     s16 beginx = max(x1, window_min);
 
     
-
+    s16 dz = z2-z1;
     s16 inv_dz = inv_z2 - inv_z1;
     s32 fix_inv_dz_per_dx = (inv_dz << 16) / dx;
 
     s32 cur_fix_inv_z = inv_z1<<16;
+
+    //u32 du_dx = (1<<16)/dx;
+    //u32 cur_u = 0;
+
+    s32 left_u = tmap_info.left_u;
+    s32 right_u = tmap_info.right_u;
+    
+    s32 du_dx_fix;
+    s32 du_dz_fix;
+    s32 dz_dx_fix;
+    //du_dx_fix = ((right_u-left_u)*TEX_WIDTH)/dx;
+    du_dx_fix = (right_u-left_u)/dx;
+    //if(dz == 0) {
+    //} else {
+        //du_dz_fix = (dz == 0) ? 0 : ((right_u-left_u)/dz); // 16.16
+        //dz_dx_fix = (dz<<16) / dx;
+    //}
+
+    //s32 du_dx = (right_u-left_u)/dx; // 16.16
+    s32 cur_u_fix = left_u; // 16.16
+    s32 cur_z_fix = z1<<16; // 16.16
 
     s16 skip_x = beginx - x1;
     if(skip_x > 0) {
         top_y_fix += (skip_x * top_dy_per_dx);
         bot_y_fix += (skip_x * bot_dy_per_dx);
         cur_fix_inv_z += (skip_x * fix_inv_dz_per_dx);
+        cur_u_fix += skip_x * du_dx_fix;
+        //cur_z_fix += skip_x * dz_dx;
     }
 
     // 65536 is 1, which is recip of z of 1, 1/1
@@ -1918,12 +1934,40 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
     u8* yclip_ptr = &(yclip[x<<1]);
 
     u8** offset_ptr = (bmp_buffer_write == bmp_buffer_0) ? (&buf_0_column_offset_table[x]) : (&buf_1_column_offset_table[x]);
-    u8 tex_col = 0;
 
-    u32 dark_full_col = long_color_table[get_dark_color(wall_col, light_level)];
-    u32 light_full_col = long_color_table[get_light_color(wall_col, light_level)];
-    u32 mid_full_col = long_color_table[get_mid_dark_color(wall_col, light_level)];
-
+    //u32 dark_full_col = long_color_table[get_dark_color(wall_col, light_level)];
+    //u32 light_full_col = long_color_table[get_light_color(wall_col, light_level)];
+    //u32 mid_full_col = long_color_table[get_mid_dark_color(wall_col, light_level)];
+    u16* dark_tex;
+    u16* mid_tex;
+    u16* light_tex;
+    switch(light_level) {
+      case -2:
+        light_tex = dark_texture;
+        mid_tex = dark_texture;
+        dark_tex = dark_texture;
+        break;
+      case -1:
+        light_tex = mid_texture;
+        mid_tex = dark_texture;
+        dark_tex = dark_texture;
+        break;
+      case 0:
+        light_tex = light_texture;
+        mid_tex = mid_texture;
+        dark_tex = dark_texture;
+        break;
+      case 1:
+        dark_tex = mid_texture;
+        mid_tex = light_texture;
+        light_tex = light_texture;
+        break;
+      case 2:
+        dark_tex = light_texture;
+        mid_tex = light_texture;
+        light_tex = light_texture;
+        break;
+    }
     u16 cnt = endx-x;
 
     //volatile s16 real_z;
@@ -1934,6 +1978,8 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
     //prev_real_z = 65536/inv_z1;
     //s16 dz = 65536/inv_dz;
     //s32 du_dz = (64<<4)/dz;
+
+    //u8 tex_col = 0;
 
     while(cnt--) {
     //for(;x < endx; x++) {
@@ -1953,19 +1999,27 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
         }
         if(top_draw_y < bot_draw_y) {
             s16 cur_inv_z = cur_fix_inv_z >> 16;
-            u32 tex_col_offset = (tex_col&(32-1))*TEX_HEIGHT;
+
+
+            u32 tex_col = ((cur_u_fix<<TEX_WIDTH_SHIFT)>>16) & (TEX_WIDTH-1); // >> 16!
+            //u32 tex_col = ((cur_u_fix*TEX_WIDTH)>>16) & (TEX_WIDTH-1); // >> 16!
+            u32 tex_idx = tex_col*TEX_HEIGHT;// << TEX_HEIGHT_SHIFT;
+          
+
             u16* tex_column;
 
             if (cur_inv_z <= FIX_0_16_INV_DARK_DIST) {
-                tex_column = &dark_texture[tex_col_offset];
+                //tex_column = &dark_texture[tex_col_offset];
+                tex_column = &dark_tex[tex_idx];
             } else if (cur_inv_z <= FIX_0_16_INV_MID_DIST) {
-                tex_column = &mid_texture[tex_col_offset];
+                //tex_column = &mid_texture[tex_col_offset];
+                tex_column = &mid_tex[tex_idx];
             } else {
-                tex_column = &light_texture[tex_col_offset];
+                //tex_column = &light_texture[tex_col_offset];
+                tex_column = &light_tex[tex_idx];
             }
 
             draw_texture_vertical_line(top_y_int, top_draw_y, bot_y_int, bot_draw_y, col_ptr, tex_column);
-            tex_col++;
             /*
             s16 cur_inv_z = cur_fix_inv_z >> 16;
 
@@ -1986,6 +2040,15 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
         top_y_fix += top_dy_per_dx;
         bot_y_fix += bot_dy_per_dx;
         cur_fix_inv_z += fix_inv_dz_per_dx;
+        //tex_col++;
+        //cur_u += du_dx;
+        //if(du_dz == 0) {
+            cur_u_fix += du_dx_fix;
+        //} else {
+        //    s32 prev_z_fix = cur_z_fix;
+        //    cur_z_fix += dz_dx_fix;
+        //    cur_u_fix += ((du_dz_fix>>8) * ((cur_z_fix-prev_z_fix)>>8));
+        //}
         //if((cnt-- & 0xFF) == 0) { 
         //  cur_z = 65536/cur_fix_inv_z;
         //  cur_dz_dx = (real_z-prev_real_z)>>4;
@@ -1995,6 +2058,7 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
         //  //cur_u_fix += cur_du_dx;
         //}
         //cnt--;
+
     }
 
     flip();

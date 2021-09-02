@@ -12,6 +12,10 @@
         "game.h": "c",
         "portal_map.h": "c",
         "sstream": "c",
-        "maths.h": "c"
+        "maths.h": "c",
+        "config.h": "c",
+        "texture.h": "c",
+        "colors.h": "c",
+        "cart_ram.h": "c"
     }
 }

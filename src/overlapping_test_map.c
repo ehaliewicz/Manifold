@@ -410,21 +410,21 @@ static const vertex vertexes[42] = {
 
 // sector 9,10,16
 sector_param sector_params[17] = {
-    {.light = 1},//0},
-    {.light = 1},//0},
-    {.light = 1},//0},
-    {.light = 0},//-1},
-    {.light = 0},//-1},
-    {.light = 0},//-1},
-    {.light = 0},//-1},
-    {.light = 0},//-1},
-    {.light = -1},//-2},
-    {.light = -1},//-2}, // flashing
-    {.light = -1},//-2}, // flashing
-    {.light = 0},//-1},
-    {.light = 0},//-1},
-    {.light = 0},//-1},
-    {.light = 0},//-1},
+    {.light = 0}, //1},
+    {.light = 0}, //1},
+    {.light = 0}, //1},
+    {.light = -1}, //0},
+    {.light = -1}, //0},
+    {.light = -1}, //0},
+    {.light = -1}, //0},
+    {.light = -1}, //0},
+    {.light = -1}, //-1},
+    {.light = -2}, //-1}, // flashing
+    {.light = -2}, //-1}, // flashing
+    {.light = -1}, //0},
+    {.light = -1},//0},
+    {.light = -1},//0},
+    {.light = -1},//0},
     {.light = -2},//-2},
     {.light = -2},//-2}, // flashing
 };

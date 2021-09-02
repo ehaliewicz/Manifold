@@ -1,8 +1,10 @@
 #include <genesis.h>
+#include "cart_ram.h"
 #include "collision.h"
 #include "colors.h"
 #include "config.h"
 #include "clip_buf.h"
+#include "debug.h"
 #include "game.h"
 #include "game_mode.h"
 #include "graphics_res.h"
@@ -93,6 +95,7 @@ int debug_draw;
 int subpixel;
 int bob_idx;
 
+#include "tex_tables_lookup.h"
 
 void showFPS(u16 float_display)
 {
@@ -112,6 +115,9 @@ void showFPS(u16 float_display)
 
     // display FPS
     VDP_drawTextBG(BG_B, str, 1, y);
+
+    
+
 
 }
 
@@ -412,8 +418,8 @@ void handle_input() {
                             FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), 
                             FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1),
                             FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1)};
-    cur_player_pos.z += bobs[bob_idx>>1]/2;
-    bob_idx++;
+    //cur_player_pos.z += bobs[bob_idx>>1]/2;
+    //bob_idx++;
     if(bob_idx >= 64) {
         bob_idx = 0;
     }
@@ -498,8 +504,45 @@ void init_sector_jump_positions() {
 }
 
 void do_vint_flip();
+void test_ram() {
+    u32 bytes = 0;
+    unlock_ram();
+    ram_set(0, 12);
+    u16 v0 = ram_get(0);
+    ram_set(200000, 13);
+    u16 v1 = ram_get(200000);
+    char buf[32];
+    sprintf(buf, "test: %u %u ", v0, v1);
+    VDP_drawTextBG(BG_B, buf, 1, 5);
+    while(1) {
+        request_flip();
+    }
+}
+
+void copy_texture_tables() {
+    #ifdef RAM_TEXTURE
+    u32 ram_position = RAM_START;
+    //u32 slot = 0;
+    //return;
+    for(int i = 1; i < 500; i++) {
+        u16* table_start = (u16*)(jump_table_lut[i]);
+        u32 words_to_copy = i*2 + 1; // each instruction in the table is 2 words, plus 1 extra for the rts
+        u32 bytes_to_copy = words_to_copy*2;
+
+        
+        unlock_ram();
+        memcpy((void*)ram_position, (void*)(jump_table_lut[i]), bytes_to_copy);
+        lock_ram();
+        
+        jump_table_lut[i] = ram_position;
+        ram_position += bytes_to_copy;
+    }        
+    #endif
+}
 
 void init_game() {
+    copy_texture_tables();
+    //ram_set(100, 0);
     vint_flip_requested = 0;
     vint_flipping = 0;
 
@@ -592,11 +635,14 @@ void maybe_set_palette(u16* new_palette) {
     }
 }
 
-
-
 game_mode run_game() {
+
+    //run_texture_test();
+    //return SAME_MODE;
+
     u32 start_ticks = getTick();
     process_all_objects(cur_frame);
+
     
     run_sector_processes();
     calc_movement_speeds();
@@ -628,6 +674,7 @@ game_mode run_game() {
     last_frame_ticks = end_ticks - start_ticks;
 
     cur_frame++;
+    tick_texture();
     return SAME_MODE;
 }
 

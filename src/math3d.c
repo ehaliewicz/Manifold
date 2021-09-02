@@ -2,6 +2,7 @@
 #include "div_lut.h"
 #include "math3d.h"
 #include "game.h"
+#include "texture.h"
 #include "utils.h"
 
 Vect2D_f32 transform_map_vert(s16 x, s16 y) {
@@ -137,7 +138,7 @@ s16 project_and_adjust_y_fix_c(s16 y, s16 z) {
 
 #define CLIP_DIVISION
 
-clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2) {
+clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2, texmap_info* tmap, u32 wall_len) {
     // TODO: adjust texture coordinates here as well
 
     s16 rx1 = trans_v1->x;
@@ -145,27 +146,69 @@ clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2) {
     s16 rx2 = trans_v2->x;
     s16 rz2 = trans_v2->y;
 
+    s16 dz = rz2 - rz1;
+
     if(rz1 <= NEAR_Z_16 && rz2 <= NEAR_Z_16) {
         return OFFSCREEN;
     }
+
+    tmap->needs_perspective = (dz != 0);
+    #define TEX_REPEAT_DIST 64
+    u16 repetitions = max(1, wall_len / TEX_REPEAT_DIST);
+    //KLog_U1("repetitions: ", repetitions);
+
+    s32 base_left_u = 0;
+    s32 base_right_u = (repetitions)<<16;
+
+    s32 fix_du = (base_right_u-base_left_u);
+    //KLog_S1("fix_du: ", fix_du);
+    //KLog_S1("du: ", fix_du>>8);
+    //KLog_S1("dz: ", dz);
+    s32 du_over_dz = fix_du; // 16.16
+    if(dz != 0) {
+        du_over_dz = fix_du / dz;
+        //__asm volatile(
+        //    "divs.w %1, %0"
+        //    : "+d" (du_over_dz) 
+        //    : "d" (dz)
+        //);
+        tmap->du_over_dz = du_over_dz;
+        //KLog_S1("du over dz: ", du_over_dz);
+        tmap->needs_perspective = 1;
+    } else {
+        tmap->needs_perspective = 0;
+    }
+
     if(rz1 > NEAR_Z_16 && rz2 > NEAR_Z_16) {
+        //u32 fix_du = 32<<6;
+
+        //__asm volatile(
+        //    "divs.w %1, %0"
+        //    :  "+d" (du_over_dx)  // output
+        //    :  "d" (dx) // input
+        //);
+        tmap->left_u = base_left_u;
+        tmap->right_u = base_right_u;
+
         return UNCLIPPED;
     }
     
     s16 dx = rx2-rx1;
-    s16 dz = rz2 - rz1;
     
+
 
     // SLOW
     #ifdef CLIP_DIVISION
     s32 fix_dx = dx<<6;
     s16 dx_over_dz = fix_dx;
 
+    //divs.w %3, %1
     __asm volatile(
         "divs.w %1, %0"
-        :  "+d" (dx_over_dz), "+d" (dz) // output
-        : // input
+        :  "+d" (dx_over_dz)  // output
+        :  "d" (dz) // input
     );
+   
     
    #else
    s16 inv_dz = (dz < 0) ? -(z_recip_table[-dz]>>10) : (z_recip_table[dz]>>10);
@@ -176,15 +219,25 @@ clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2) {
 
 
     if(rz1 <= NEAR_Z_16) { 
+        //if(dz == 0) { die("wtf"); }
         // left clipped
         s16 z_adjust = NEAR_Z_16-rz1;
         s32 x_adjust = dx_over_dz * z_adjust;
         s16 x_adjust_16 = x_adjust>>6;
+
+        s32 u_adjust = du_over_dz * z_adjust; // 12.4 fixed point
+        
         
         rx1 += x_adjust_16;    // modify x coord
         rz1 = NEAR_Z_16;
         trans_v1->x = rx1;
         trans_v1->y = rz1;
+        
+        //KLog_S1("z adjust: ", z_adjust);
+        //KLog_S1("u adjust: ", u_adjust>>16);
+        tmap->left_u = (base_left_u + u_adjust);
+        tmap->right_u = base_right_u; //1<<16;
+
         return LEFT_CLIPPED;
     } else {
         // right clipped
@@ -195,6 +248,11 @@ clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2) {
         rz2 = NEAR_Z_16;
         trans_v2->x = rx2;
         trans_v2->y = rz2;
+
+        s32 u_adjust = (du_over_dz) * z_adjust;
+        tmap->left_u = base_left_u;
+        tmap->right_u = ((base_right_u)+(u_adjust));
+
         return RIGHT_CLIPPED;
     }
     

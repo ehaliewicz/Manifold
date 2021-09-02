@@ -155,41 +155,8 @@ u8 calculate_color(u8 col_idx, u32 dist, s8 light_level) {
   u16 dist_off = (dist >= DARK_DIST) ? 0 : (dist >= MID_DARK_DIST) ? (16*5) : (16*5*2);
 
   return color_calc_table[light_off+dist_off+col_idx];
-  
-
-  
-  /*
-  if(dist < 0) {}
-  switch(light_level) {
-    case -2:
-      col_idx = dark_col_lut[col_idx];
-    case -1:
-      col_idx = dark_col_lut[col_idx];
-      break;
-    case 0:
-      break;
-    case 2:
-      col_idx = light_col_lut[col_idx];
-    case 1:
-      col_idx = light_col_lut[col_idx];
-      break;
-  }
-  if(light_level == 2) {
-    return (col_idx << 4) | col_idx;
-  }
-  if(dist >= DARK_DIST) {
-    return (dark_col_lut[col_idx] << 4) | dark_col_lut[col_idx];
-  } else if (dist >= MID_DARK_DIST) {
-    return (col_idx << 4) | dark_col_lut[col_idx];
-  } else { // if (dist >= MID_DIST) {
-    return col_idx << 4 | col_idx;
-  } //else {
-
-    //return col_idx << 4 | light_col_lut[col_idx];
-  //}
-  */
-  
 }
+
 
 u8 needs_dither(u32 dist) {
   if(dist >= DARK_DIST) {

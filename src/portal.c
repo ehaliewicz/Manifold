@@ -148,6 +148,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
 
         vertex v1 = map->vertexes[old_prev_v2_idx];
         vertex v2 = map->vertexes[v2_idx];
+        u32 wall_len = getApproximatedDistance(v2.x - v1.x, v2.y - v1.y);
 
         volatile Vect2D_s16 trans_v1;
 
@@ -210,8 +211,8 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
         volatile Vect2D_s16 trans_v2 = transform_map_vert_16(v2.x, v2.y);
         prev_transformed_vert = trans_v2;
         
-
-        clip_result clipped = clip_map_vertex_16(&trans_v1, &trans_v2);  
+        texmap_info tmap_info;
+        clip_result clipped = clip_map_vertex_16(&trans_v1, &trans_v2, &tmap_info, wall_len);  
 
         u16 z_recip_v1 = z_recip_table[trans_v1.y];
         u16 z_recip_v2 = z_recip_table[trans_v2.y];  
@@ -505,8 +506,9 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
             u8 wall_color = map->wall_colors[portal_idx].mid_col;
             //wall_color = calculate_color(wall_color, avg_dist, light_level);
             draw_wall(x1, x1_ytop, x1_ybot, x2, x2_ytop, x2_ybot, 
+                      trans_v1.y, trans_v2.y,
                       z_recip_v1, z_recip_v2,
-                      window_min, window_max, wall_color, light_level);
+                      window_min, window_max, wall_color, light_level, tmap_info);
         }
         //nwalls++;
         // after this point, draw some sprites :^)
