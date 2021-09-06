@@ -25,13 +25,11 @@ s8 point_sign_int_vert(fix32 x, fix32 y, s16 v1_x, s16 v1_y, s16 v2_x, s16 v2_y)
 }
 
 int within_sector(fix32 x, fix32 y, u16 sector) {
-    u16 wall_off = sector_wall_offset(sector, cur_portal_map);
-    u16 portal_off = sector_portal_offset(sector, cur_portal_map);
-    u16 num_walls = sector_num_walls(sector, cur_portal_map);
+    u16 wall_off = sector_wall_offset(sector, (portal_map*)cur_portal_map);
+    u16 num_walls = sector_num_walls(sector, (portal_map*)cur_portal_map);
 
     int sign = 0;
     int got_sign = 0;
-    int cur_sign = 0;
 
 
     for(int i = 0; i < num_walls; i++) {
@@ -77,16 +75,13 @@ fix32 sq_shortest_dist_to_point(fix32 px, fix32 py, vertex a, vertex b) {
 }
 
 int within_sector_radius(fix32 x, fix32 y, u16 radius, u16 sector) {
-    u16 wall_off = sector_wall_offset(sector, cur_portal_map);
-    u16 portal_off = sector_portal_offset(sector, cur_portal_map);
-    u16 num_walls = sector_num_walls(sector, cur_portal_map);
+    u16 wall_off = sector_wall_offset(sector, (portal_map*)cur_portal_map);
+    u16 portal_off = sector_portal_offset(sector, (portal_map*)cur_portal_map);
+    u16 num_walls = sector_num_walls(sector, (portal_map*)cur_portal_map);
 
     int maybe_inside = within_sector(x, y, sector);
     if(!maybe_inside) { return 0; }
 
-    int sign = 0;
-    int got_sign = 0;
-    int cur_sign = 0;
 
     //s32 dmax;
     //s32 dmin;
@@ -149,9 +144,8 @@ collision_result check_for_collision(fix32 curx, fix32 cury, fix32 newx, fix32 n
     } else {
 
         // check if traversed to new sector
-        u16 wall_off = sector_wall_offset(cur_sector, cur_portal_map);
-        u16 portal_off = sector_portal_offset(cur_sector, cur_portal_map);
-        u16 num_walls = sector_num_walls(cur_sector, cur_portal_map);
+        u16 portal_off = sector_portal_offset(cur_sector, (portal_map*)cur_portal_map);
+        u16 num_walls = sector_num_walls(cur_sector, (portal_map*)cur_portal_map);
         for(int i = 0; i < num_walls; i++) {
             u16 portal_idx = portal_off+i;
             s16 portal_sect = cur_portal_map->portals[portal_idx];
@@ -173,9 +167,8 @@ collision_result check_for_collision(fix32 curx, fix32 cury, fix32 newx, fix32 n
         cury = newy;
     } else {
         // check if traversed to new sector
-        u16 wall_off = sector_wall_offset(cur_sector, cur_portal_map);
-        u16 portal_off = sector_portal_offset(cur_sector, cur_portal_map);
-        u16 num_walls = sector_num_walls(cur_sector, cur_portal_map);
+        u16 portal_off = sector_portal_offset(cur_sector, (portal_map*)cur_portal_map);
+        u16 num_walls = sector_num_walls(cur_sector, (portal_map*)cur_portal_map);
         for(int i = 0; i < num_walls; i++) {
             u16 portal_idx = portal_off+i;
             s16 portal_sect = cur_portal_map->portals[portal_idx];
@@ -208,9 +201,8 @@ collision_result check_for_collision_radius(fix32 curx, fix32 cury, fix32 newx, 
     } else {
 
         // check if traversed to new sector
-        u16 wall_off = sector_wall_offset(cur_sector, cur_portal_map);
-        u16 portal_off = sector_portal_offset(cur_sector, cur_portal_map);
-        u16 num_walls = sector_num_walls(cur_sector, cur_portal_map);
+        u16 portal_off = sector_portal_offset(cur_sector, (portal_map*)cur_portal_map);
+        u16 num_walls = sector_num_walls(cur_sector, (portal_map*)cur_portal_map);
         for(int i = 0; i < num_walls; i++) {
             u16 portal_idx = portal_off+i;
             s16 portal_sect = cur_portal_map->portals[portal_idx];
@@ -232,9 +224,8 @@ collision_result check_for_collision_radius(fix32 curx, fix32 cury, fix32 newx, 
         cury = newy;
     } else {
         // check if traversed to new sector
-        u16 wall_off = sector_wall_offset(cur_sector, cur_portal_map);
-        u16 portal_off = sector_portal_offset(cur_sector, cur_portal_map);
-        u16 num_walls = sector_num_walls(cur_sector, cur_portal_map);
+        u16 portal_off = sector_portal_offset(cur_sector, (portal_map*)cur_portal_map);
+        u16 num_walls = sector_num_walls(cur_sector, (portal_map*)cur_portal_map);
         for(int i = 0; i < num_walls; i++) {
             u16 portal_idx = portal_off+i;
             s16 portal_sect = cur_portal_map->portals[portal_idx];
@@ -270,8 +261,8 @@ u16 find_sector(object_pos cur_player_pos) {
     }
 
     // otherwise test connected sectors
-    u16 orig_sector_num_walls = sector_num_walls(orig_sector, cur_portal_map);
-    u16 portal_offset = sector_portal_offset(orig_sector, cur_portal_map);
+    u16 orig_sector_num_walls = sector_num_walls(orig_sector, (portal_map*)cur_portal_map);
+    u16 portal_offset = sector_portal_offset(orig_sector, (portal_map*)cur_portal_map);
     for(int i = 0; i < orig_sector_num_walls; i++) {
         s16 dest_sector = cur_portal_map->portals[portal_offset+i];
         if(dest_sector == -1) {

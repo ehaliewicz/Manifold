@@ -30,32 +30,42 @@ void copy_2d_buffer(u16 left, u16 right, clip_buf* dest);
 void draw_native_vertical_transparent_line_unrolled(s16 y0, s16 y1, u8 col, u8* col_ptr, u8 odd);
 
 
-void cache_floor_light_params(s16 rel_floor_height, u8 floor_col, s8 light_level, u32 avg_dist, u8 sloped);
-void cache_ceil_light_params(s16 rel_ceil_height, u8 ceil_col, s8 light_level, u32 avg_dist, u8 sloped);
+typedef struct {
+    u8 needs_lighting;
+    u8 mid_y;
+    u8 dark_y;
+    u32 light_color;
+    u32 mid_color;
+    u32 dark_color;
+} light_params;
+
+void cache_floor_light_params(s16 rel_floor_height, u8 floor_col, s8 light_level, u32 avg_dist, u8 sloped, light_params* params);
+void cache_ceil_light_params(s16 rel_ceil_height, u8 ceil_col, s8 light_level, u32 avg_dist, u8 sloped, light_params* params);
 
 void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
               s16 x2, s16 x2_ytop, s16 x2_ybot,
               u16 z1,     u16 z2,
               u16 inv_z1, u16 inv_z2,
               u16 window_min, u16 window_max,
-              u8 wall_col, s8 light_level, texmap_info tmap_info);
+              u8 wall_col, s8 light_level, texmap_info tmap_info, 
+              light_params* floor_params, light_params* ceil_params);
 
 void draw_upper_step(s16 x1, s16 x1_ytop, s16 nx1_ytop, s16 x2, s16 x2_ytop, s16 nx2_ytop, 
                      u16 inv_z1, u16 inv_z2,
-                     u16 window_min, u16 window_max, u8 upper_color, u8 ceil_color, s8 light_level);
+                     u16 window_min, u16 window_max, u8 upper_color, s8 light_level, light_params* params);
 
 void draw_ceiling_update_clip(s16 x1, s16 x1_ytop, s16 x2, s16 x2_ytop, 
                               s16 max_z,
-                              u16 window_min, u16 window_max, u8 ceil_color);
+                              u16 window_min, u16 window_max, light_params* params);
 
 //void draw_lower_step(s16 x1, s16 x1_ybot, s16 nx1_ybot, s16 x2, s16 x2_ybot, s16 nx2_ybot, u16 window_min, u16 window_max, u8 lower_color, u8 floor_color);
 void draw_lower_step(s16 x1, s16 x1_ybot, s16 nx1_ybot, s16 x2, s16 x2_ybot, s16 nx2_ybot, 
                      u16 inv_z1, u16 inv_z2,
-                     u16 window_min, u16 window_max, u8 lower_color, u8 floor_col, s8 light_level);
+                     u16 window_min, u16 window_max, u8 lower_color, s8 light_level, light_params* params);
 
 void draw_floor_update_clip(s16 x1, s16 x1_ybot, s16 x2, s16 x2_ybot, 
                             s16 max_z,
-                            u16 window_min, u16 window_max, u8 floor_color);
+                            u16 window_min, u16 window_max, light_params* params);
 
 
 void draw_transparent_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,

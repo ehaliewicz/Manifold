@@ -159,7 +159,7 @@ void follow_player(object* cur_obj, uint16_t cur_sector) {
     if(move_res.new_sector != cur_sector) {
         move_object_to_sector(cur_obj, move_res.new_sector);
     }
-    cur_obj->pos.z = sector_floor_height(cur_obj->pos.cur_sector, cur_portal_map);
+    cur_obj->pos.z = sector_floor_height(cur_obj->pos.cur_sector, (portal_map*)cur_portal_map);
 }
 
 
@@ -236,7 +236,7 @@ object* alloc_object_in_sector(object_pos cur_player_pos, int sector_num, fix32 
 } 
 
 
-void move_object_to_sector(object* obj, int next_sector) {
+void move_object_to_sector(object* obj, u16 next_sector) {
 
     int old_sector = obj->pos.cur_sector;
 

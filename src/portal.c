@@ -119,8 +119,9 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
             abs(fix32ToInt(sector_center.x - cur_player_pos.x))+
             abs(fix32ToInt(sector_center.y - cur_player_pos.y)));
     }
-    cache_ceil_light_params(rel_ceil_height, ceil_color, light_level, avg_dist, sect_flags & SECTOR_CEIL_SLOPED);
-    cache_floor_light_params(rel_floor_height, floor_color, light_level, avg_dist, sect_flags & SECTOR_FLOOR_SLOPED);
+    light_params ceil_params, floor_params;
+    cache_ceil_light_params(rel_ceil_height, ceil_color, light_level, avg_dist, sect_flags & SECTOR_CEIL_SLOPED, &ceil_params);
+    cache_floor_light_params(rel_floor_height, floor_color, light_level, avg_dist, sect_flags & SECTOR_FLOOR_SLOPED, &floor_params);
 
     for(s16 i = 0; i < num_walls; i++) {
         // this is plus 1 because we store the number of real walls, 
@@ -228,8 +229,8 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
                     KLog_S2("z1: ", trans_v1.y, " z2: ", trans_v2.y);
                 }
                 #endif
-                if(trans_v1.y == 0) { trans_v1.y = 1; z_recip_v1 = 65535; }
-                if(trans_v2.y == 0) { trans_v2.y = 1; z_recip_v2 = 65535; }
+                if(trans_v1.y == 0) { trans_v1.y = 1<<2; z_recip_v1 = 65535; }
+                if(trans_v2.y == 0) { trans_v2.y = 1<<2; z_recip_v2 = 65535; }
                 if(trans_v1.y < 0 && trans_v2.y < 0) {  continue; }
                 s16 x1 = project_and_adjust_x(trans_v1.x, z_recip_v1);
                 s16 x2 = project_and_adjust_x(trans_v2.x, z_recip_v2);
@@ -422,7 +423,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
 
 
         
-        if (render_forcefield || render_glass)  {
+        if (render_forcefield) { //} || render_glass)  {
             
             //clipping_buffer = &clip_buffers[0]; 
             clipping_buffer = alloc_clip_buffer();
@@ -445,17 +446,17 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
                 s16 nx2_ytop = project_and_adjust_y_fix(neighbor_ceil_height, z_recip_v2);
                 if(ceil_slope == SLOPE_PORTAL) {
 
-                    draw_ceiling_update_clip(x1, nx1_ytop, x2, nx2_ytop, max_z, window_min, window_max, ceil_color);
+                    draw_ceiling_update_clip(x1, nx1_ytop, x2, nx2_ytop, max_z, window_min, window_max, &ceil_params);
                 } else {
                     u8 upper_color = map->wall_colors[portal_idx].upper_col;
                     //upper_color = calculate_color(upper_color, avg_dist, light_level);
                     // draw step from ceiling
                     draw_upper_step(x1, x1_ytop, nx1_ytop, x2, x2_ytop, nx2_ytop, 
                                     z_recip_v1, z_recip_v2,
-                                    window_min, window_max, upper_color, ceil_color, light_level);
+                                    window_min, window_max, upper_color, light_level, &ceil_params);
                 }
             } else {
-                draw_ceiling_update_clip(x1, x1_ytop, x2, x2_ytop, max_z, window_min, window_max, ceil_color);
+                draw_ceiling_update_clip(x1, x1_ytop, x2, x2_ytop, max_z, window_min, window_max, &ceil_params);
             }
 
             // not sure if this logic is correct
@@ -466,7 +467,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
                 if(floor_slope == SLOPE_PORTAL) {
                     draw_floor_update_clip(x1, nx1_ybot, x2, nx2_ybot, 
                                            max_z,
-                                           window_min, window_max, floor_color);
+                                           window_min, window_max, &floor_params);
 
                 } else {
                     u8 lower_color = map->wall_colors[portal_idx].lower_col;
@@ -475,12 +476,12 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
                     // draw step from floor
                     draw_lower_step(x1, x1_ybot, nx1_ybot, x2, x2_ybot, nx2_ybot, 
                                     z_recip_v1, z_recip_v2,
-                                    window_min, window_max, lower_color, floor_color, light_level);
+                                    window_min, window_max, lower_color, light_level, &floor_params);
                 }
             } else {
                 draw_floor_update_clip(x1, x1_ybot, x2, x2_ybot, 
                                        max_z,
-                                       window_min, window_max, floor_color);
+                                       window_min, window_max, &floor_params);
             }
             if(render_forcefield || render_glass) {
                 copy_2d_buffer(window_min, window_max, clipping_buffer);
@@ -492,9 +493,6 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
                             ((clipped == RIGHT_CLIPPED) ? window_max : endx),
                             cur_frame, depth+1);
                             
-                cache_ceil_light_params(rel_ceil_height, ceil_color, light_level, avg_dist, sect_flags & SECTOR_CEIL_SLOPED);
-                cache_floor_light_params(rel_floor_height, floor_color, light_level, avg_dist, sect_flags & SECTOR_FLOOR_SLOPED);
-
             }
 
         } else { 
@@ -502,24 +500,23 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
             KLog_S2("wall in sector: ", sector, " drawn with wall idx: ", i);
             #endif
 
-
+            //if(sector != 0) { continue; }
             u8 wall_color = map->wall_colors[portal_idx].mid_col;
-            //wall_color = calculate_color(wall_color, avg_dist, light_level);
             draw_wall(x1, x1_ytop, x1_ybot, x2, x2_ytop, x2_ybot, 
-                      trans_v1.y, trans_v2.y,
-                      z_recip_v1, z_recip_v2,
-                      window_min, window_max, wall_color, light_level, tmap_info);
+                        trans_v1_z, trans_v2_z,
+                        z_recip_v1, z_recip_v2,
+                        window_min, window_max, wall_color, light_level, tmap_info, &floor_params, &ceil_params);
         }
         //nwalls++;
         // after this point, draw some sprites :^)
         
         if (render_forcefield) {
-            uint16_t col = (RED_IDX<<4)|LIGHT_GREEN_IDX;
-            draw_forcefield(x1, x2, window_min, window_max, clipping_buffer, col);
+            //uint16_t col = (RED_IDX<<4)|LIGHT_GREEN_IDX;
+            //draw_forcefield(x1, x2, window_min, window_max, clipping_buffer, col);
             free_clip_buffer(clipping_buffer);
         } else if (render_glass) {
-            draw_transparent_wall(x1, x1_ytop, x1_ybot, x2, x2_ytop, x2_ybot, window_min, window_max, clipping_buffer, (LIGHT_RED_IDX<<4)|LIGHT_GREEN_IDX);
-            free_clip_buffer(clipping_buffer);
+            //draw_transparent_wall(x1, x1_ytop, x1_ybot, x2, x2_ytop, x2_ybot, window_min, window_max, clipping_buffer, (LIGHT_RED_IDX<<4)|LIGHT_GREEN_IDX);
+            //free_clip_buffer(clipping_buffer);
         }
     }
 

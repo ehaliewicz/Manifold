@@ -31,5 +31,31 @@ typedef struct {
     s16 right_z;
     s32 du_over_dz;
     u8 needs_perspective;
+    u16 repetitions;
 } texmap_info;
+
+#define FAR_MIP_WIDTH 16
+#define FAR_MIP_WIDTH_SHIFT 4
+#define FAR_MIP_HEIGHT 64
+
+#define MID_MIP_WIDTH 32
+#define MID_MIP_WIDTH_SHIFT 5
+#define MID_MIP_HEIGHT 64
+
+#define NEAR_MIP_WIDTH 64
+#define NEAR_MIP_WIDTH_SHIFT 6
+#define NEAR_MIP_HEIGHT 64
+
+typedef struct {
+    const uint16_t* dark;
+    const uint16_t* mid;
+    const uint16_t* light;
+} lit_texture;
+// three mipmap levels
+typedef struct {
+    lit_texture mip_far;
+    lit_texture mip_mid;
+    lit_texture mip_near;
+} texture_set;
+
 #endif

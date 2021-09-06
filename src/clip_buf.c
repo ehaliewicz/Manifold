@@ -30,6 +30,7 @@ clip_buf* alloc_clip_buffer() {
 
 
 void free_clip_buffer(clip_buf* buf) {
-    sp--;
-
+    if(&(clip_buffers[--sp]) != buf) {
+        die("Freed wrong clip buffer!");
+    }
 }

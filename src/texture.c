@@ -12,9 +12,9 @@
 // 64 pixels wide
 // which means 64 rasterized columns
 
-u16* mid_texture = (u16*)wall_mid; //hello_tex_0_mid;
-u16* light_texture = (u16*)wall_light; //hello_tex_0_light;
-u16* dark_texture = (u16*)wall_dark; //hello_tex_0_dark;
+//u16* mid_texture = (u16*)wall_mid; //hello_tex_0_mid;
+//u16* light_texture = (u16*)wall_light; //hello_tex_0_light;
+//u16* dark_texture = (u16*)wall_dark; //hello_tex_0_dark;
 int ticks = 50;
 
 
@@ -37,8 +37,6 @@ void tick_texture() {
     }
     */
 }
-// goes up to maybe 1024
-static s16 max_dy = 0;
 
 //void draw_unclipped_vertical_line(s16 y0, s16 y1, s16 unclipped_y1, s16 y1, u8* col_ptr, u8 tex_col_idx) {}
 
@@ -275,8 +273,8 @@ void draw_texline_asm(u16 unclipped_dy, u16 clip_top, u16 dy, u16* word_col_ptr,
         return;
     }
 
-    u32* lw_col_ptr = (u32*)word_col_ptr;
-    u32* lw_tex_column = (u32*)tex_column;
+    //u32* lw_col_ptr = (u32*)word_col_ptr;
+    //u32* lw_tex_column = (u32*)tex_column;
     dv_per_dy<<=1;
     v_fix <<= 1;
     u8 v_low = (v_fix&0xFF);
@@ -369,8 +367,8 @@ void draw_texline_asm_unrolled(u16 unclipped_dy, u16 clip_top, u16 dy, u16* word
         return;
     }
 
-    u32* lw_col_ptr = (u32*)word_col_ptr;
-    u32* lw_tex_column = (u32*)tex_column;
+    //u32* lw_col_ptr = (u32*)word_col_ptr;
+    //u32* lw_tex_column = (u32*)tex_column;
     dv_per_dy <<=1;
     v_fix <<= 1;
     dy>>=1;
@@ -832,7 +830,7 @@ void draw_texture_vertical_line(s16 unclipped_y0, s16 y0, s16 unclipped_y1, s16 
     #endif
     
     register const a0 asm ("%a0") = ((u32)tex_column); // - (clip_bot<<1 * du_dy);
-    register const  a1 asm ("%a1") = col_ptr;
+    register const  a1 asm ("%a1") = (u32)col_ptr;
     #ifdef RAM_TEXTURE
     register const  a2 asm ("%a2") = base_call_loc + (clip_top<<2); // + (clip_top<<2);
     #else 
@@ -846,9 +844,9 @@ void draw_texture_vertical_line(s16 unclipped_y0, s16 y0, s16 unclipped_y1, s16 
         volatile u32 volatile* patch_arr = (volatile u32 volatile*)base_call_loc;
         u32 prev_val = patch_arr[unclipped_dy-clip_bot];
         patch_arr[unclipped_dy-clip_bot] = 0x4E750000;
-        if(patch_arr[unclipped_dy-clip_bot] != 0x4E750000) {
-            die("what in the fuck");
-        }
+        //if(patch_arr[unclipped_dy-clip_bot] != 0x4E750000) {
+        //    die("what in the fuck");
+        //}
         u32 scratch = 0;
         //u32 patch_loc = (u32)base_call_loc + (unclipped_dy<<2) - (clip_bot<<2); // + (unclipped_dy<<2) - (clip_bot<<3);
         //volatile u16* wpatch_loc = (volatile u16*)base_call_loc; //(volatile u16*)patch_loc;
@@ -860,7 +858,7 @@ void draw_texture_vertical_line(s16 unclipped_y0, s16 y0, s16 unclipped_y1, s16 
             :
             : "a" (a2), "a" (a0), "a" (a1), "a" (clip_bot), "d" (scratch)
         );
-        //patch_arr[unclipped_dy-clip_bot] = prev_val;
+        patch_arr[unclipped_dy-clip_bot] = prev_val;
         //*wpatch_loc = prev_val;
         lock_ram();
     } else {
@@ -920,8 +918,8 @@ void draw_texture_vertical_line(s16 unclipped_y0, s16 y0, s16 unclipped_y1, s16 
         //dy;
     }
 
-    u32* lw_col_ptr = (u32*)word_col_ptr;
-    u32* lw_tex_column = (u32*)tex_column;
+    //u32* lw_col_ptr = (u32*)word_col_ptr;
+    //u32* lw_tex_column = (u32*)tex_column;
     dy>>=1;
 
     v_fix <<= 9;
