@@ -149,6 +149,8 @@ clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2, texma
     s16 dz = rz2 - rz1;
 
     if(rz1 <= NEAR_Z_16 && rz2 <= NEAR_Z_16) {
+        tmap->needs_perspective = 0;
+    
         return OFFSCREEN;
     }
 
@@ -158,13 +160,13 @@ clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2, texma
     //KLog_U1("repetitions: ", repetitions);
 
     s32 base_left_u = 0;
-    s32 base_right_u = (repetitions)<<16;
+    s32 base_right_u = (1)<<16;
 
     s32 fix_du = (base_right_u-base_left_u);
     //KLog_S1("fix_du: ", fix_du);
     //KLog_S1("du: ", fix_du>>8);
     //KLog_S1("dz: ", dz);
-    s32 du_over_dz = fix_du; // 16.16
+    s32 du_over_dz; // = fix_du; // 16.16
     if(dz != 0) {
         du_over_dz = fix_du / dz;
         //__asm volatile(
@@ -241,8 +243,8 @@ clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2, texma
         return LEFT_CLIPPED;
     } else {
         // right clipped
-        s16 z_adjust = NEAR_Z_16 - rz2;
-        s32 x_adjust = dx_over_dz * z_adjust;
+        s16 z_adjust = NEAR_Z_16 - rz2; 
+        s32 x_adjust = dx_over_dz * z_adjust; // dx_over_dz is negative
         s16 x_adjust_16 = x_adjust>>6;
         rx2 += x_adjust_16;
         rz2 = NEAR_Z_16;
@@ -252,7 +254,6 @@ clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2, texma
         s32 u_adjust = (du_over_dz) * z_adjust;
         tmap->left_u = base_left_u;
         tmap->right_u = ((base_right_u)+(u_adjust));
-
         return RIGHT_CLIPPED;
     }
     

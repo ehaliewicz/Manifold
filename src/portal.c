@@ -212,7 +212,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
         volatile Vect2D_s16 trans_v2 = transform_map_vert_16(v2.x, v2.y);
         prev_transformed_vert = trans_v2;
         
-        texmap_info tmap_info;
+        texmap_info tmap_info = {.needs_perspective = 0};
         clip_result clipped = clip_map_vertex_16(&trans_v1, &trans_v2, &tmap_info, wall_len);  
 
         u16 z_recip_v1 = z_recip_table[trans_v1.y];
@@ -505,7 +505,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
             draw_wall(x1, x1_ytop, x1_ybot, x2, x2_ytop, x2_ybot, 
                         trans_v1_z, trans_v2_z,
                         z_recip_v1, z_recip_v2,
-                        window_min, window_max, wall_color, light_level, tmap_info, &floor_params, &ceil_params);
+                        window_min, window_max, wall_color, light_level, &tmap_info, &floor_params, &ceil_params);
         }
         //nwalls++;
         // after this point, draw some sprites :^)
