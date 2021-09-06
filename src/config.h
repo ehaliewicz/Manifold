@@ -2,5 +2,5 @@
 #define CONFIG_H
 
 //#define H32_MODE
-#define RAM_TEXTURE
+//#define RAM_TEXTURE
 #endif

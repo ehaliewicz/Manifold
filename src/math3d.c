@@ -179,6 +179,8 @@ clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2, texma
         tmap->needs_perspective = 1;
     } else {
         tmap->needs_perspective = 0;
+        tmap->left_u = base_left_u;
+        tmap->right_u = base_right_u;
     }
 
     if(rz1 > NEAR_Z_16 && rz2 > NEAR_Z_16) {

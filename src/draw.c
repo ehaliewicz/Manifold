@@ -1876,18 +1876,6 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
     u8 needs_perspective = tmap_info->needs_perspective;
     
 
-
-   
-
-    //if(dz == 0) {
-    //} else {
-        //du_dz_fix = (dz == 0) ? 0 : ((right_u-left_u)/dz); // 16.16
-        //dz_dx_fix = (dz<<16) / dx;
-    //}
-
-    //s32 cur_u_fix = left_u; // 16.16
-    //s32 cur_z_fix = z1<<16; // 16.16
-
     #define Z_FRAC_BITS 16
     s32 one_over_z;
     s32 u_over_z;
@@ -1897,7 +1885,7 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
     s32 du_over_dx;
     s32 u_fix;
         
-    s32 du_over_dx_fix;
+    s32 du_over_dx_fix = (right_u-left_u)/dx;
     if(needs_perspective) {
         //s32 one_over_dx = (1<<16)/dx;
         one_over_z = z_recip_table[z1]; //(1<<16)/z1;     // 16.16
@@ -1911,7 +1899,7 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
         s32 du_over_z = (u_over_z_end - u_over_z); // 16.16
         du_over_z_dx = du_over_z / dx; //(du_over_z>>8) * (one_over_dx>>8); // 16.16
     } else {
-        du_over_dx_fix = (right_u-left_u)/dx;
+        u_fix = left_u;
     }
 
 
@@ -1922,34 +1910,34 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
         bot_y_fix += (skip_x * bot_dy_per_dx);
         cur_fix_inv_z += (skip_x * fix_inv_dz_per_dx);
         //cur_u_fix += skip_x * du_dx_fix;
-        //if(needs_perspective) {
+        if(needs_perspective) {
             one_over_z += skip_x * (d_one_over_z_dx);
             u_over_z += skip_x * du_over_z_dx;
-        //} else {
+        } else {
             u_fix += skip_x * du_over_dx_fix;
-        //}
+        }
     }
 
     lit_texture lit_tex;
     u8 tex_width_shift;
     u8 tex_width;
 
-    //const u32 scaled_du_over_dx_fix = du_over_dx_fix << TEX_WIDTH_SHIFT;
-    //const u32 test_du_over_dx_fix = scaled_du_over_dx_fix>>16;
+    const u32 scaled_du_over_dx_fix = du_over_dx_fix << TEX_WIDTH_SHIFT;
+    const u32 test_du_over_dx_fix = scaled_du_over_dx_fix>>16;
     
-    //if(test_du_over_dx_fix >= 2) {
-    //    lit_tex = wall_texture.mip_far;
-    //    tex_width_shift = FAR_MIP_WIDTH_SHIFT;
-    //    tex_width = FAR_MIP_WIDTH;
-    //} else if (test_du_over_dx_fix >= 1) {
+    if(test_du_over_dx_fix >= 2) {
+        lit_tex = wall_texture.mip_far;
+        tex_width_shift = FAR_MIP_WIDTH_SHIFT;
+        tex_width = FAR_MIP_WIDTH;
+    } else if (test_du_over_dx_fix >= 1) {
         lit_tex = wall_texture.mip_mid;
         tex_width_shift = MID_MIP_WIDTH_SHIFT;
         tex_width = MID_MIP_WIDTH;
-    //} else {
-    //    lit_tex = wall_texture.mip_near;
-    //    tex_width_shift = NEAR_MIP_WIDTH_SHIFT;
-    //    tex_width = NEAR_MIP_WIDTH;
-    //}
+    } else {
+        lit_tex = wall_texture.mip_near;
+        tex_width_shift = NEAR_MIP_WIDTH_SHIFT;
+        tex_width = NEAR_MIP_WIDTH;
+    }
 
 
     s16 endx = min(window_max, x2);
@@ -2027,11 +2015,8 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
                 tex_col = (tex_col_repeat) & (tex_width-1);
 
                 //u32 tex_col = (((u_over_z * z)<< tex_width_shift)>>16) & (tex_width-1);
-                one_over_z += d_one_over_z_dx;
-                u_over_z += du_over_z_dx;
             } else {
                 tex_col = ((u_fix<<tex_width_shift)>>16) & (tex_width-1);
-                u_fix += du_over_dx_fix;
             }
             
             u32 tex_idx = tex_col*TEX_HEIGHT;
@@ -2060,7 +2045,12 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
         top_y_fix += top_dy_per_dx;
         bot_y_fix += bot_dy_per_dx;
         cur_fix_inv_z += fix_inv_dz_per_dx;
-
+        if(needs_perspective) {
+            one_over_z += d_one_over_z_dx;
+            u_over_z += du_over_z_dx;
+        } else {
+            u_fix += du_over_dx_fix;
+        }
 
     }
 
