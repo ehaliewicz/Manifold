@@ -1,7 +1,13 @@
-import glfw
+#import glfw
+import sdl2
+from sdl2 import *
+import ctypes
+
 import imgui
-from imgui.integrations.glfw import GlfwRenderer
+#from imgui.integrations.glfw import GlfwRenderer
+from imgui.integrations.sdl2 import SDL2Renderer
 import math
+
 import OpenGL.GL as gl
 from enum import Enum
 import sys
@@ -12,73 +18,28 @@ from tkinter import filedialog
 import atexit
 import pickle
 
+
+import line
+import script
+import sector
+import trigger
+import texture
+import utils
+import vertex
+
+
 # commands
 
+class Mode(Enum):
+    SECTOR = 'Sector'
+    LINE = 'Line'
+    VERTEX = 'Vertex'
+    SCRIPT = 'Script'
+    TRIGGER = 'Trigger'
+    TEXTURE = 'Texture'
 
 
-
-
-def dist(x1,y1, x2,y2):
-    dx = x2-x1
-    dy = y2-y1
-    return math.sqrt((dx*dx)+(dy*dy))
     
-def point_circle(px,py,cx,cy,r):
-    dx = px-cx
-    dy = py-cy
-    
-    if abs(dx) > r or abs(dy) > r:
-        return False
-
-    dst = dist(px,py, cx,cy)
-    return dst <= r
-
-
-def line_point(x1, y1, x2, y2, px, py):
-
-    # get distance from the point to the two ends of the line
-    d1 = dist(px,py, x1,y1)
-    d2 = dist(px,py, x2,y2)
-
-    # get the length of the line
-    line_len = dist(x1,y1, x2,y2)
-
-    # since floats are so minutely accurate, add
-    # a little buffer zone that will give collision
-    buf = 0.1    # higher num = less accurate
-
-    # if the two distances are equal to the line's 
-    # length, the point is on the line!
-    # note we use the buffer here to give a range, 
-    # rather than one #
-    return (d1+d2 >= line_len-buf and d1+d2 <= line_len+buf)
-
-def line_circle(x1,y1, x2,y2, cx, cy, r):
-    inside1 = point_circle(x1,y1, cx,cy, r)
-    inside2 = point_circle(x2,y2, cx,cy, r)
-    if inside1 or inside2:
-        return True
-
-    #dx = x1-x2
-    #dy = y1-y2
-    dx = x2-x1
-    dy = y2-y1
-    length = dist(x1,y1, x2, y2)
-
-    dot = ( ((cx-x1)*dx) + ((cy-y1)*dy) ) / math.pow(length,2)
-    closestX = x1 + (dot * dx)
-    closestY = y1 + (dot * dy)
-
-    onSegment = line_point(x1,y1,x2,y2, closestX,closestY);
-    if not onSegment:
-        return False
-
-    #distX = closestX - cx;
-    #distY = closestY - cy;
-    dst = dist(closestX,closestY, cx, cy)
-
-    return dst <= r
- 
 
 
 class Map():
@@ -199,167 +160,70 @@ class Map():
         
         return res
 
-class Sector():
-    def __init__(self, index, walls=None, floor_height=0, ceil_height=100, floor_color=1, ceil_color=1):
-        self.floor_height = floor_height
-        self.ceil_height = ceil_height
-        self.floor_color = floor_color
-        self.ceil_color = ceil_color
 
-        if walls is not None:
-            self.walls = walls
-        else:
-            self.walls = []
-        
-        self.index = index
-
-    def __str__(self):
-        return "F: {} C: {}".format(self.floor_height, self.ceil_height)
-
-
-class Wall():
-    def __init__(self, v1, v2, sector_idx, adj_sector_idx): #, index):
-        self.v1 = v1
-        self.v2 = v2
-        self.sector_idx = sector_idx
-        self.adj_sector_idx = adj_sector_idx
-        #self.index = index
-        self.up_color = 1
-        self.low_color = 1
-        self.mid_color = 1
-        
-    def __str__(self):
-        return "v1: {} v2: {}".format(self.v1.index, self.v2.index)
-
-    def rough_mid_point(self):
-        v1 = self.v1
-        v2 = self.v2
-        dx = v2.x - v1.x
-        dy = v2.y - v1.y
-        midx = int(v1.x + (0.9*dx/2))
-        midy = int(v1.y + (0.9*dy/2))
-        return (midx, midy)
-        
-    def normal(self):
-        v1 = self.v1
-        v2 = self.v2
-        dx = v2.x - v1.x
-        dy = v2.y - v1.y
-        mag = math.sqrt((dx*dx)+(dy*dy))
-
-        scale = 10/mag
-        return int(-dy*scale),int(dx*scale)
-
-    def normal_quadrant(self):
-        nx,ny = self.normal()
-        rads = math.atan2(-ny, nx)
-        ang = rads * 180/math.pi
-        if ang < 0:
-            ang += 360
-
-        if ang == 0:
-            return "FACING_RIGHT"
-        elif ang < 90:
-            return "QUADRANT_0"
-        elif ang == 90:
-            return "FACING_UP"
-        elif ang < 180:
-            return "QUADRANT_1"
-        elif ang == 180:
-            return "FACING_LEFT"
-        elif ang < 270:
-            return "QUADRANT_2"
-        elif ang == 270:
-            return "FACING_DOWN"
-        else:
-            return "QUADRANT_3"
-
-        
-    def centered_normal(self):
-        (mx,my) = self.rough_mid_point()
-        (nx,ny) = self.normal()
-        return (mx,my), (mx+nx, my+ny)
-        
-    def point_collides(self, cx, cy, collide_with_normal=False):
-        radius = 10
-
-        x1 = self.v1.x
-        y1 = self.v1.y
-        x2 = self.v2.x
-        y2 = self.v2.y
-
-        if line_circle(x1,y1, x2,y2, cx, cy, 5):
-            return True
-
-        if not collide_with_normal:
-            return False
-        
-        ((n1x,n1y),(n2x,n2y)) = self.centered_normal()
-        return line_circle(n1x,n1y, n2x,n2y, cx, cy, 5)
-            
-        
-class Vertex():
-    def __init__(self, x, y, index):
-        self.x = x
-        self.y = y
-        self.index = index
-
-    def __str__(self):
-        return "x: {} y: {}".format(self.x, self.y)
-
-    def point_collides(self,x,y):
-        radius = 5
-        x1 = self.x
-        y1 = self.y
-        x2 = x
-        y2 = y
-
-        return point_circle(x1,y1,x2,y2,radius)
-
-        
-
-def main():
-    def glfw_init():
+    
+def main_sdl2():
+    def pysdl2_init():
         width, height = 1280, 800
-        window_name = "Map Editor"
-        if not glfw.init():
-            print("Could not initialize OpenGL context")
+        window_name = "minimal ImGui/SDL2 example"
+        if SDL_Init(SDL_INIT_EVERYTHING) < 0:
+            print("Error: SDL could not initialize! SDL Error: " + SDL_GetError())
             exit(1)
-        # OS X supports only forward-compatible core profiles from 3.2
-        glfw.window_hint(glfw.CONTEXT_VERSION_MAJOR, 3)
-        glfw.window_hint(glfw.CONTEXT_VERSION_MINOR, 3)
-        glfw.window_hint(glfw.OPENGL_PROFILE, glfw.OPENGL_CORE_PROFILE)
-        glfw.window_hint(glfw.OPENGL_FORWARD_COMPAT, gl.GL_TRUE)
-        # Create a windowed mode window and its OpenGL context
-        window = glfw.create_window(
-            int(width), int(height), window_name, None, None
-        )
-        glfw.make_context_current(window)
-        if not window:
-            glfw.terminate()
-            print("Could not initialize Window")
+        SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1)
+        SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24)
+        SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8)
+        SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1)
+        SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1)
+        SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 16)
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG)
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4)
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1)
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE)
+        SDL_SetHint(SDL_HINT_MAC_CTRL_CLICK_EMULATE_RIGHT_CLICK, b"1")
+        SDL_SetHint(SDL_HINT_VIDEO_HIGHDPI_DISABLED, b"1")
+        window = SDL_CreateWindow(window_name.encode('utf-8'),
+                                SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+                                width, height,
+                                SDL_WINDOW_OPENGL|SDL_WINDOW_RESIZABLE)
+        if window is None:
+            print("Error: Window could not be created! SDL Error: " + SDL_GetError())
             exit(1)
-        return window
-    window = glfw_init()
-    impl = GlfwRenderer(window)
-    while not glfw.window_should_close(window):
-        glfw.poll_events()
-        impl.process_inputs()
+        gl_context = SDL_GL_CreateContext(window)
+        if gl_context is None:
+            print("Error: Cannot create OpenGL Context! SDL Error: " + SDL_GetError())
+            exit(1)
+        SDL_GL_MakeCurrent(window, gl_context)
+        if SDL_GL_SetSwapInterval(1) < 0:
+            print("Warning: Unable to set VSync! SDL Error: " + SDL_GetError())
+            exit(1)
+        return window, gl_context
+    window, gl_context = pysdl2_init()
+    renderer = SDL2Renderer(window)
+
+    running = True
+
+    event = SDL_Event()
+
+    
+    while running:
+        while SDL_PollEvent(ctypes.byref(event)) != 0:
+            if event.type == SDL_QUIT:
+                running = False
+                break
+            renderer.process_event(event)
+        renderer.process_inputs()
         imgui.new_frame()
         on_frame()
         gl.glClearColor(1., 1., 1., 1)
         gl.glClear(gl.GL_COLOR_BUFFER_BIT)
         imgui.render()
-        impl.render(imgui.get_draw_data())
-        glfw.swap_buffers(window)
-    impl.shutdown()
-    glfw.terminate()
+        renderer.render(imgui.get_draw_data())
+        SDL_GL_SwapWindow(window)
+    renderer.shutdown()
+    SDL_GL_DeleteContext(gl_context)
+    SDL_DestroyWindow(window)
+    SDL_Quit()
 
-
-class Mode(Enum):
-    SECTOR = 'Sector'
-    LINE = 'Line'
-    VERTEX = 'Vertex'
 
 
 class State(object):
@@ -380,227 +244,34 @@ class State(object):
         
 cur_state = State()
 
-
-
-
-
-
-def input_int(label, id_str, input_val, set_val):
-    imgui.text(label)
-    imgui.same_line()
-    changed,new_val = imgui.input_int(id_str, input_val)
-
-    if changed:
-        set_val(new_val)
-
-        
-def input_int2(label, id_str, input_vals, set_vals):
-    imgui.text(label)
-    imgui.same_line()
-    changed,new_vals = imgui.input_int2(id_str, *input_vals)
-
-    if changed:
-        set_vals(new_vals)
-
-
-def draw_list(id_str, label, items, select_item, delete_callback = None):
-    
-    imgui.begin_child(id_str)
-    imgui.text(label)
-
-    cur_state.hovered_item = None
-    
-    for idx,item in enumerate(items):
-        cur_id_str = "##list_{}_{}".format(id_str, idx)
-        sel_btn_id  = "Select {} {}".format(idx, cur_id_str)
-        del_btn_id = "X{}".format(cur_id_str)
-        
-        imgui.begin_group()
-        if imgui.button(sel_btn_id):
-            print("clicked {}".format(idx))
-            select_item(idx)
-        imgui.same_line()
-        
-        imgui.text(str(item))
-        if delete_callback is not None:
-            imgui.same_line()
-            if imgui.button(del_btn_id):
-                delete_callback(item)
-                print("delete!!")
-        
-        
-        imgui.end_group()
-
-        if imgui.is_item_hovered():
-            cur_state.hovered_item = item
-            
-    imgui.end_child()
-
-
-def add_new_sector():
-    num_sects = len(cur_state.map_data.sectors)
-    new_sect = Sector(num_sects)
-    cur_state.map_data.sectors.append(new_sect)
-    return new_sect
         
 def add_new_wall(v1, v2):
     num_walls = len(cur_state.cur_sector.walls)
-    new_wall = Wall(v1=v1, v2=v2, sector_idx=cur_state.cur_sector.index, adj_sector_idx=-1)
+    new_wall = line.Wall(v1=v1, v2=v2, sector_idx=cur_state.cur_sector.index, adj_sector_idx=-1)
     cur_state.cur_sector.walls.append(new_wall)
     return new_wall
     
 def add_new_vertex(x,y):
     num_verts = len(cur_state.map_data.vertexes)
-    new_vert = Vertex(x, y, index=num_verts)
+    new_vert = vertex.Vertex(x, y, index=num_verts)
     cur_state.map_data.vertexes.append(new_vert)
     return new_vert
     
-def draw_sector_mode():
-    
-    if imgui.button("New sector"):
-        cur_state.cur_sector = add_new_sector()
-        
-    
-    if cur_state.cur_sector is not None:
-        cur_sect = cur_state.cur_sector
-        imgui.same_line()
-        imgui.text("Sector {}".format(cur_sect.index))
-
-        input_int("Floor height:   ", "##sector{}_floor_height".format(cur_sect.index), cur_sect.floor_height, lambda v: setattr(cur_sect, 'floor_height', v))
-        input_int("Floor color:    ", "##sector{}_floor_color".format(cur_sect.index), cur_sect.floor_color, lambda v: setattr(cur_sect, 'floor_color', v))
-        
-        input_int("Ceiling height: ", "##sector{}_ceil".format(cur_sect.index), cur_sect.ceil_height, lambda v: setattr(cur_sect, 'ceil_height', v))
-        input_int("Ceiling color:  ", "##sector{}_ceil_color".format(cur_sect.index), cur_sect.ceil_color, lambda v: setattr(cur_sect, 'ceil_color', v))
-
-    def set_cur_sector(idx):
-        cur_state.cur_sector = cur_state.map_data.sectors[idx]
-
-    draw_list("Sectors", "Sector list", cur_state.map_data.sectors, set_cur_sector)
 
 
-def delete_line(wall):
-    cur_state.cur_sector
-    # find wall in sectors
-    # delete it from that sector
-    # if this is the currently selected wall, unselect the wall
-    if cur_state.cur_wall == wall:
-        cur_state.cur_wall = None
 
-    
-    for sector in cur_state.map_data.sectors:
-        for idx,cur_wall in enumerate(sector.walls):
-            if cur_wall is wall:
-                del sector.walls[idx]
-                break
+MODE_DRAW_FUNCS = {
+    Mode.SECTOR: sector.draw_sector_mode,
+    Mode.LINE: line.draw_line_mode,
+    Mode.VERTEX: vertex.draw_vert_mode,
+    Mode.SCRIPT: script.draw_script_mode,
+    Mode.TRIGGER: trigger.draw_trigger_mode,
+    Mode.TEXTURE: texture.draw_texture_mode
+}
 
-col_names = [
-    'TRANSPARENT',
-    'LIGHT_RED',
-    'MED_RED',
-    'DARK_RED',
-    'LIGHT_GREEN',
-    'MED_GREEN',
-    'DARK_GREEN',
-    'LIGHT_BLUE',
-    'MED_BLUE',
-    'DARK_BLUE',
-    'MED_BROWN',
-    'DARK_BROWN',
-    'UNSET',
-    'UNSET',
-    'UNSET',
-    'BLACK'
-]
 
-def draw_line_mode():
-    
-    #if imgui.button("New line") and cur_state.cur_sector is not None and len(cur_state.map_data.vertexes) >= 2:
-    #    cur_state.cur_wall = add_new_wall()
-            
-    if cur_state.cur_wall is not None:
-        cur_wall = cur_state.cur_wall
-        #imgui.same_line()
-        #imgui.text("Line {}".format(cur_wall.index))
-        
-        #vert_opts = ["{}".format(idx) for idx in range(len(cur_state.map_data.vertexes))]
-        vert_opts = ["{}".format(idx) for idx in range(len(cur_state.map_data.vertexes))]
-                     
-        color_opts = ["{}".format(col_names[idx]) for idx in range(16)]
-        
-        v1_changed,new_v1_idx = imgui.core.combo("v1", cur_wall.v1.index, vert_opts)
-        
-        v2_changed,new_v2_idx = imgui.core.combo("v2", cur_wall.v2.index, vert_opts)
-        
-        sector_opts = ["-1"] + ["{}".format(idx) for idx in range(len(cur_state.map_data.sectors))]
-        
-        adj_changed,new_adj_sector_idx = imgui.core.combo("adj sector", cur_wall.adj_sector_idx+1, sector_opts)
-
-        up_col_changed, new_up_col = imgui.core.combo("upper color", cur_wall.up_color, color_opts)
-        mid_col_changed, new_mid_col = imgui.core.combo("middle color", cur_wall.mid_color, color_opts)
-        low_col_changed, new_low_col = imgui.core.combo("lower color", cur_wall.low_color, color_opts)
-        
-        if v1_changed:
-            cur_wall.v1 = cur_state.map_data.vertexes[new_v1_idx]
-
-        if v2_changed and new_v2_idx != cur_wall.v1.index:
-            
-            cur_wall.v2 = cur_state.map_data.vertexes[new_v2_idx]
-            
-        if adj_changed:
-            cur_wall.adj_sector_idx = new_adj_sector_idx-1
-
-        if up_col_changed:
-            cur_wall.up_color = new_up_col
-        if mid_col_changed:
-            cur_wall.mid_color = new_mid_col
-        if low_col_changed:
-            cur_wall.low_color = new_low_col
-            
-        
-    def set_cur_wall(idx):
-        global cur_state
-        cur_state.cur_wall = cur_state.cur_sector.walls[idx]
-
-    if cur_state.cur_sector is not None:
-        draw_list("Lines", "Line list", cur_state.cur_sector.walls, set_cur_wall,
-                  delete_callback=delete_line)
-    
-
-def draw_vert_mode():
-    
-    #if imgui.button("New vertex"):
-    #    cur_state.cur_vertex = add_new_vertex()
-    
-    
-    if cur_state.cur_vertex is not None:
-
-        cur_vertex = cur_state.cur_vertex
-        imgui.text("Vertex {}".format(cur_vertex.index))
-
-        def set_xy(xy):
-            (x,y) = xy
-            cur_state.cur_vertex.x = x
-            cur_state.cur_vertex.y = y
-            
-        input_int2("x,y: ", "##vert{}_xy".format(cur_vertex.index), (cur_vertex.x, cur_vertex.y),
-                   set_xy)                  
-    
-    
-
-    def set_cur_vertex(idx):
-        cur_state.cur_vertex = cur_state.map_data.vertexes[idx]
-
-    draw_list("Vertexes", "Vertex list", cur_state.map_data.vertexes, set_cur_vertex)
-
-   
 def draw_mode():
     
-    draw_funcs = {
-        Mode.SECTOR: draw_sector_mode,
-        Mode.LINE: draw_line_mode,
-        Mode.VERTEX: draw_vert_mode
-    }
-        
     changed, text_val = imgui.input_text("Name: ", cur_state.map_data.name, buffer_length=64)
     if changed:
         cur_state.map_data.name = text_val
@@ -608,13 +279,13 @@ def draw_mode():
         
     imgui.text("{} mode".format(cur_state.mode.value))
 
-    for k in draw_funcs.keys():
+    for k in MODE_DRAW_FUNCS.keys():
         #if can_switch_to(k.value):
         if imgui.radio_button(k.value, cur_state.mode == k):
             cur_state.mode = k
     
         
-    draw_funcs[cur_state.mode]()
+    MODE_DRAW_FUNCS[cur_state.mode](cur_state)
 
 
 vert_default = (1,1,1,1)
@@ -628,6 +299,7 @@ wall_highlight = (1,0,1,1)
 wall_selected = (1,1,0,1)
 
 
+
 def draw_map_vert(draw_list, vert, highlight=False):
     if highlight:
         color = vert_highlight
@@ -638,6 +310,8 @@ def draw_map_vert(draw_list, vert, highlight=False):
     cam_y = cur_state.camera_y
     draw_list.add_circle_filled(vert.x-cam_x, vert.y-cam_y, 2, imgui.get_color_u32_rgba(*color), num_segments=12)
 
+
+    
 def draw_map_wall(draw_list, wall, highlight=False):
     is_portal = wall.adj_sector_idx != -1
     tbl = [
@@ -685,14 +359,14 @@ def draw_map():
     #for wall in cur_state.map_data.walls:
     #    draw_map_wall(draw_list, wall, highlight = ((cur_state.mode == Mode.LINE and wall==cur_state.cur_wall) or wall == cur_state.hovered_item))
     
-    for sector in cur_state.map_data.sectors:
-        is_selected = cur_state.mode == Mode.SECTOR and sector == cur_state.cur_sector
-        is_hovered = cur_state.hovered_item == sector
-        draw_sector(draw_list, sector, highlight = is_selected or is_hovered)
+    for sect in cur_state.map_data.sectors:
+        is_selected = cur_state.mode == Mode.SECTOR and sect == cur_state.cur_sector
+        is_hovered = cur_state.hovered_item == sect
+        draw_sector(draw_list, sect, highlight = is_selected or is_hovered)
 
     if (cur_state.mode == Mode.SECTOR and cur_state.cur_sector is not None):
         draw_sector(draw_list, cur_state.cur_sector, highlight=True)
-    if cur_state.hovered_item and isinstance(cur_state.hovered_item, Sector):
+    if cur_state.hovered_item and isinstance(cur_state.hovered_item, sector.Sector):
         draw_sector(draw_list, cur_state.hovered_item, highlight=True)
 
 LEFT_BUTTON = 0
@@ -856,6 +530,7 @@ def load_map():
         load_map_from_file(f)
         f.close()
         
+        
 def load_map_from_file(f):
     global cur_state
     old_state = pickle.load(f)
@@ -877,20 +552,22 @@ def load_map_from_file(f):
     cur_state.cur_vertex = None
     cur_state.cur_wall = None
     
-    
-    
+        
 
 def save_map():
     f = filedialog.asksaveasfile(mode="wb")
     if f is not None:
         pickle.dump(cur_state, f)
         f.close()
-        
+    print(f)
+
+    
 def export_map():
     f = filedialog.asksaveasfile(mode="w")
     if f is not None:
         f.write(cur_state.map_data.generate_c_from_map())
         f.close()
+
         
 if __name__ == '__main__':
     
@@ -905,6 +582,6 @@ if __name__ == '__main__':
             load_map_from_file(f)
             f.close()
 
-    main()
+    main_sdl2()
     
     atexit.register(root.destroy)
