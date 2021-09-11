@@ -3,6 +3,6 @@
 
 #include <genesis.h>
 
-const u16 z_recip_table[1024];
-
+const u32 z_recip_table_32[4096];
+const u16 z_recip_table_16[4096];
 #endif

@@ -5,6 +5,7 @@
 #include "texture.h"
 #include "utils.h"
 
+/*
 Vect2D_f32 transform_map_vert(s16 x, s16 y) {
     fix32 tlx = intToFix32(x) - cur_player_pos.x;
     fix32 tly = intToFix32(y) - cur_player_pos.y;
@@ -14,7 +15,9 @@ Vect2D_f32 transform_map_vert(s16 x, s16 y) {
 
     return (Vect2D_f32){.x = rx, .y = ry};
 }
+*/
 
+/*
 Vect2D_s16 transform_map_vert_16(s16 x, s16 y) {
     
     s16 tlx = x - playerXInt; // 16-bit integer
@@ -24,6 +27,19 @@ Vect2D_s16 transform_map_vert_16(s16 x, s16 y) {
     s32 ry = (tlx * angleCos16) + (tly * angleSin16);
     s16 res_x = rx>>(FIX16_FRAC_BITS);
     s16 res_y = ry>>(FIX16_FRAC_BITS);
+    return (Vect2D_s16){.x = res_x, .y = res_y};
+}
+*/
+
+Vect2D_s16 transform_map_vert_16(s16 x, s16 y) {
+    
+    s16 tlx = x - playerXInt; // 16-bit integer
+    s16 tly = y - playerYInt; // 16-bit integer
+
+    s32 rx = (tlx * angleSin16) - (tly * angleCos16); // 22.10 * 16 -> 22.10
+    s32 ry = (tlx * angleCos16) + (tly * angleSin16);
+    s16 res_x = rx>>(FIX16_FRAC_BITS);
+    s16 res_y = ry>>(FIX16_FRAC_BITS-TRANS_Z_FRAC_BITS); // 12.4
     return (Vect2D_s16){.x = res_x, .y = res_y};
 }
 
@@ -40,7 +56,7 @@ s16 project_and_adjust_x(s16 x, s16 z_recip) {
             : "+d" (const2Rx)
     );
     //s16 const2RxDivZ = const2Rx / z;
-    //s16 z_recip = z_recip_table[z];
+    //s16 z_recip = z_recip_table_16[z];
     s32 const2RXMulZRecip = const2Rx; // * x_project_z_recip_table[z];
     __asm volatile(
             "muls.w %1, %0"
@@ -142,40 +158,42 @@ clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2, texma
     // TODO: adjust texture coordinates here as well
 
     s16 rx1 = trans_v1->x;
-    s16 rz1 = trans_v1->y;
+    s16 rz1_12_4 = trans_v1->y; // 12.4
     s16 rx2 = trans_v2->x;
-    s16 rz2 = trans_v2->y;
+    s16 rz2_12_4 = trans_v2->y; // 12.4
 
-    s16 dz = rz2 - rz1;
+    //s16 rz1 = rz1_fix >> TRANS_Z_FRAC_BITS;
+    //s16 rz2 = rz2_fix >> TRANS_Z_FRAC_BITS;
 
-    if(rz1 <= NEAR_Z_16 && rz2 <= NEAR_Z_16) {
+    if(rz1_12_4 <= NEAR_Z_12_4 && rz2_12_4 <= NEAR_Z_12_4) {
         tmap->needs_perspective = 0;
     
         return OFFSCREEN;
     }
 
-    tmap->needs_perspective = (dz != 0);
+    s16 dz_12_4 = rz2_12_4 - rz1_12_4;
+
+    tmap->needs_perspective = 0; //(dz_12_4 > (1<<4));
     #define TEX_REPEAT_DIST 64
     u16 repetitions = max(1, wall_len / TEX_REPEAT_DIST);
+    tmap->repetitions = repetitions;
     //KLog_U1("repetitions: ", repetitions);
 
     s32 base_left_u = 0;
-    s32 base_right_u = (1)<<16;
+    s32 base_right_u = (repetitions)<<16;
 
     s32 fix_du = (base_right_u-base_left_u);
-    //KLog_S1("fix_du: ", fix_du);
-    //KLog_S1("du: ", fix_du>>8);
-    //KLog_S1("dz: ", dz);
-    s32 du_over_dz; // = fix_du; // 16.16
-    if(dz != 0) {
-        du_over_dz = fix_du / dz;
+
+    s32 du_over_dz_16; // = fix_du; // 16.16
+    if(dz_12_4 != 0) {
+        du_over_dz_16 = (fix_du<<TRANS_Z_FRAC_BITS) / dz_12_4; // fix 16
         //__asm volatile(
         //    "divs.w %1, %0"
         //    : "+d" (du_over_dz) 
         //    : "d" (dz)
         //);
-        tmap->du_over_dz = du_over_dz;
-        //KLog_S1("du over dz: ", du_over_dz);
+        tmap->du_over_dz = du_over_dz_16;
+
         tmap->needs_perspective = 1;
     } else {
         tmap->needs_perspective = 0;
@@ -183,7 +201,7 @@ clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2, texma
         tmap->right_u = base_right_u;
     }
 
-    if(rz1 > NEAR_Z_16 && rz2 > NEAR_Z_16) {
+    if(rz1_12_4 > NEAR_Z_12_4 && rz2_12_4 > NEAR_Z_12_4) {
         //u32 fix_du = 32<<6;
 
         //__asm volatile(
@@ -203,15 +221,18 @@ clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2, texma
 
     // SLOW
     #ifdef CLIP_DIVISION
-    s32 fix_dx = dx<<6;
-    s16 dx_over_dz = fix_dx;
+    //s32 fix_dx = dx<<6; // .6
+    s16 dx_over_dz_6 = (dx<<6)/ dz_12_4;
+
+    //s16 dx_over_dz_6 = fix_dx<<TRANS_Z_FRAC_BITS;
 
     //divs.w %3, %1
-    __asm volatile(
-        "divs.w %1, %0"
-        :  "+d" (dx_over_dz)  // output
-        :  "d" (dz) // input
-    );
+    // dx_over_dz = fix 6
+    //__asm volatile(
+    //    "divs.w %1, %0"
+    //    :  "+d" (dx_over_dz_6)  // output
+    //    :  "d" (dz_12_4) // input
+    //);
    
     
    #else
@@ -222,40 +243,41 @@ clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2, texma
     //s16 dx_over_dz = fix32Div(dx, dz); // change in x per change in z
 
 
-    if(rz1 <= NEAR_Z_16) { 
+    if(rz1_12_4 < NEAR_Z_12_4) { 
         //if(dz == 0) { die("wtf"); }
         // left clipped
-        s16 z_adjust = NEAR_Z_16-rz1;
-        s32 x_adjust = dx_over_dz * z_adjust;
-        s16 x_adjust_16 = x_adjust>>6;
+        s16 z_adjust_12_4 = NEAR_Z_12_4-rz1_12_4;
+        s32 x_adjust_10 = dx_over_dz_6 * z_adjust_12_4;
+        s16 x_adjust_int = x_adjust_10>>10;
 
-        s32 u_adjust = du_over_dz * z_adjust; // 12.4 fixed point
+        s32 u_adjust_20 = du_over_dz_16 * z_adjust_12_4; // 12.20 // 12.4 fixed point
         
         
-        rx1 += x_adjust_16;    // modify x coord
-        rz1 = NEAR_Z_16;
+        rx1 += x_adjust_int;    // modify x coord
+        rz1_12_4 = NEAR_Z_12_4;
         trans_v1->x = rx1;
-        trans_v1->y = rz1;
+        trans_v1->y = rz1_12_4;
         
         //KLog_S1("z adjust: ", z_adjust);
-        //KLog_S1("u adjust: ", u_adjust>>16);
-        tmap->left_u = (base_left_u + u_adjust);
-        tmap->right_u = base_right_u; //1<<16;
+        //KLog_S1("u adjust: ", u_adjust);
+        //KLog_S1("u result: ", base_left_u + u_adjust);
+        tmap->left_u = (base_left_u + (u_adjust_20>>TRANS_Z_FRAC_BITS));
+        tmap->right_u = base_right_u;
 
         return LEFT_CLIPPED;
     } else {
         // right clipped
-        s16 z_adjust = NEAR_Z_16 - rz2; 
-        s32 x_adjust = dx_over_dz * z_adjust; // dx_over_dz is negative
-        s16 x_adjust_16 = x_adjust>>6;
+        s16 z_adjust_12_4 = NEAR_Z_12_4 - rz2_12_4; 
+        s32 x_adjust_10 = dx_over_dz_6 * z_adjust_12_4; // dx_over_dz is negative
+        s16 x_adjust_16 = x_adjust_10>>10;
         rx2 += x_adjust_16;
-        rz2 = NEAR_Z_16;
+        rz1_12_4 = NEAR_Z_12_4;
         trans_v2->x = rx2;
-        trans_v2->y = rz2;
+        trans_v2->y = rz1_12_4;
 
-        s32 u_adjust = (du_over_dz) * z_adjust;
+        s32 u_adjust_20 = du_over_dz_16 * z_adjust_12_4;
         tmap->left_u = base_left_u;
-        tmap->right_u = ((base_right_u)+(u_adjust));
+        tmap->right_u = (base_right_u+(u_adjust_20>>TRANS_Z_FRAC_BITS));
         return RIGHT_CLIPPED;
     }
     

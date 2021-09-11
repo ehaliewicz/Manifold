@@ -47,7 +47,7 @@ project_and_adjust_x_new:
 	lsl.w #5,%d0	|, tmp49
 	move.w 10(%sp),%a0	| z, z
 	add.l %a0,%a0	| z, tmp53
-	lea z_recip_table,%a1	|, tmp51
+	lea z_recip_table_16,%a1	|, tmp51
 
 	|moveq #0,%d1	| tmp54
 	move.w (%a0,%a1.l),%d1	| x_project_z_recip_table, tmp54

@@ -32,6 +32,7 @@ typedef struct {
     s32 du_over_dz;
     u8 needs_perspective;
     u16 repetitions;
+
 } texmap_info;
 
 #define FAR_MIP_WIDTH 16

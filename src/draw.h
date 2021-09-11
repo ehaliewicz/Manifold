@@ -47,8 +47,8 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
               u16 z1,     u16 z2,
               u16 inv_z1, u16 inv_z2,
               u16 window_min, u16 window_max,
-              u8 wall_col, s8 light_level, texmap_info* tmap_info, 
-              light_params* floor_params, light_params* ceil_params);
+              s8 light_level, texmap_info* tmap_info, 
+              light_params* floor_params, light_params* ceil_params, int debug_persp);
 
 void draw_upper_step(s16 x1, s16 x1_ytop, s16 nx1_ytop, s16 x2, s16 x2_ytop, s16 nx2_ytop, 
                      u16 inv_z1, u16 inv_z2,

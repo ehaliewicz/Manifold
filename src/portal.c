@@ -90,7 +90,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
 
     //int render_red_ball = (sector == 10);
     object* objects_in_sect = objects_in_sector(sector);
-    int needs_object_clip_buffer = (objects_in_sect != NULL);
+    int needs_object_clip_buffer = 0; //(objects_in_sect != NULL);
     //int needs_object_clip_buffer = render_red_ball;
     
     clip_buf* obj_clip_buf;
@@ -215,8 +215,8 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
         texmap_info tmap_info = {.needs_perspective = 0};
         clip_result clipped = clip_map_vertex_16(&trans_v1, &trans_v2, &tmap_info, wall_len);  
 
-        u16 z_recip_v1 = z_recip_table[trans_v1.y];
-        u16 z_recip_v2 = z_recip_table[trans_v2.y];  
+        u16 z_recip_v1 = z_recip_table_16[trans_v1.y>>TRANS_Z_FRAC_BITS];
+        u16 z_recip_v2 = z_recip_table_16[trans_v2.y>>TRANS_Z_FRAC_BITS];  
         s16 neighbor_floor_height;
         s16 neighbor_ceil_height;
 
@@ -229,8 +229,8 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
                     KLog_S2("z1: ", trans_v1.y, " z2: ", trans_v2.y);
                 }
                 #endif
-                if(trans_v1.y == 0) { trans_v1.y = 1<<2; z_recip_v1 = 65535; }
-                if(trans_v2.y == 0) { trans_v2.y = 1<<2; z_recip_v2 = 65535; }
+                if(trans_v1.y == 0) { trans_v1.y = (1<<2)<<TRANS_Z_FRAC_BITS; z_recip_v1 = 65535; }
+                if(trans_v2.y == 0) { trans_v2.y = (1<<2)<<TRANS_Z_FRAC_BITS; z_recip_v2 = 65535; }
                 if(trans_v1.y < 0 && trans_v2.y < 0) {  continue; }
                 s16 x1 = project_and_adjust_x(trans_v1.x, z_recip_v1);
                 s16 x2 = project_and_adjust_x(trans_v2.x, z_recip_v2);
@@ -277,10 +277,13 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
             
             continue;
         }
-        s16 trans_v1_z = trans_v1.y;
-        s16 trans_v2_z = trans_v2.y;
+        
+        s16 trans_v1_z_fix = trans_v1.y;
+        s32 trans_v1_z_int = trans_v1_z_fix>>TRANS_Z_FRAC_BITS;
+        s16 trans_v2_z_fix = trans_v2.y;
+        s32 trans_v2_z_int = trans_v2_z_fix>>TRANS_Z_FRAC_BITS;
 
-        s16 max_z = max(trans_v1_z, trans_v2_z);
+        s16 max_z_int = max(trans_v1_z_int, trans_v1_z_int);
         s16 x1 = project_and_adjust_x(trans_v1.x, z_recip_v1);
         s16 x2 = project_and_adjust_x(trans_v2.x, z_recip_v2);
         s16 beginx = x1;
@@ -419,7 +422,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
 
         int render_forcefield = (sector == 0 && is_portal && portal_sector == 2) || (sector == 2 && is_portal && portal_sector == 0); 
         render_forcefield = (sector == 6 && is_portal && portal_sector == 7) || (sector == 7 && is_portal && portal_sector == 6);
-        int render_glass = (sector == 0 && is_portal && portal_sector == 1) || (sector == 1 && is_portal && portal_sector == 0);
+        int render_glass = 0; //(sector == 0 && is_portal && portal_sector == 1) || (sector == 1 && is_portal && portal_sector == 0);
 
 
         
@@ -446,7 +449,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
                 s16 nx2_ytop = project_and_adjust_y_fix(neighbor_ceil_height, z_recip_v2);
                 if(ceil_slope == SLOPE_PORTAL) {
 
-                    draw_ceiling_update_clip(x1, nx1_ytop, x2, nx2_ytop, max_z, window_min, window_max, &ceil_params);
+                    draw_ceiling_update_clip(x1, nx1_ytop, x2, nx2_ytop, max_z_int, window_min, window_max, &ceil_params);
                 } else {
                     u8 upper_color = map->wall_colors[portal_idx].upper_col;
                     //upper_color = calculate_color(upper_color, avg_dist, light_level);
@@ -456,7 +459,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
                                     window_min, window_max, upper_color, light_level, &ceil_params);
                 }
             } else {
-                draw_ceiling_update_clip(x1, x1_ytop, x2, x2_ytop, max_z, window_min, window_max, &ceil_params);
+                draw_ceiling_update_clip(x1, x1_ytop, x2, x2_ytop, max_z_int, window_min, window_max, &ceil_params);
             }
 
             // not sure if this logic is correct
@@ -466,7 +469,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
                 s16 nx2_ybot = project_and_adjust_y_fix(neighbor_floor_height, z_recip_v2);
                 if(floor_slope == SLOPE_PORTAL) {
                     draw_floor_update_clip(x1, nx1_ybot, x2, nx2_ybot, 
-                                           max_z,
+                                           max_z_int,
                                            window_min, window_max, &floor_params);
 
                 } else {
@@ -480,7 +483,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
                 }
             } else {
                 draw_floor_update_clip(x1, x1_ybot, x2, x2_ybot, 
-                                       max_z,
+                                       max_z_int,
                                        window_min, window_max, &floor_params);
             }
             if(render_forcefield || render_glass) {
@@ -501,11 +504,14 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
             #endif
 
             //if(sector != 0) { continue; }
-            u8 wall_color = map->wall_colors[portal_idx].mid_col;
+            //if(i != 0) { continue; }
             draw_wall(x1, x1_ytop, x1_ybot, x2, x2_ytop, x2_ybot, 
-                        trans_v1_z, trans_v2_z,
+                        trans_v1_z_int, trans_v2_z_int,
                         z_recip_v1, z_recip_v2,
-                        window_min, window_max, wall_color, light_level, &tmap_info, &floor_params, &ceil_params);
+                        window_min, window_max, 
+                        light_level, &tmap_info, 
+                        &floor_params, &ceil_params,
+                        (sector == 0 && i == 0));
         }
         //nwalls++;
         // after this point, draw some sprites :^)

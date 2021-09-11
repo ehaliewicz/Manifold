@@ -365,7 +365,7 @@ void handle_input() {
     if(moved) {
 
         //collision_result collision = check_for_collision(curx, cury, newx, newy, cur_player_pos.cur_sector);
-        collision_result collision = check_for_collision_radius(curx, cury, newx, newy, 30, cur_player_pos.cur_sector);
+        collision_result collision = check_for_collision_radius(curx, cury, newx, newy, PLAYER_COLLISION_DISTANCE, cur_player_pos.cur_sector);
 
         cur_player_pos.x = collision.pos.x;
         cur_player_pos.y = collision.pos.y;

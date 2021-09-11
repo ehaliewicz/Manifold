@@ -40,10 +40,13 @@ typedef enum {
 } clip_result;
 
 //#define NEAR_Z_32 (20 << FIX32_FRAC_BITS)
-#define NEAR_Z_16 10 
+#define NEAR_Z_16 5
+//25 
+#define NEAR_Z_12_4 (NEAR_Z_16<<TRANS_Z_FRAC_BITS)
 
 // translate and rotate map vertex according to player position
 //Vect2D_f32 transform_map_vert(s16 x, s16 y);
+#define TRANS_Z_FRAC_BITS 4
 Vect2D_s16 transform_map_vert_16(s16 x, s16 y);
 
 // clip pair of map vertexes against near z plane, modifies input pointers if necessary
