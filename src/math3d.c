@@ -243,7 +243,7 @@ clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2, texma
     s32 fix_du_16 = (base_right_u_16-base_left_u_16);
 
     s32 du_over_dz_16; // = fix_du; // 16.16
-    if(dz_12_4 != 0) {
+    if((dz_12_4>>4) != 0) {
         du_over_dz_16 = (fix_du_16<<TRANS_Z_FRAC_BITS) / dz_12_4; // fix 16
         if(0) { //if(debug) {
             KLog_S1("du_over_dz_20: ", du_over_dz_16);

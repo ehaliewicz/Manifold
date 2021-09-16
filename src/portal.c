@@ -439,7 +439,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
 
 
         
-        if (render_forcefield) { //} || render_glass)  {
+        if (render_forcefield || render_glass)  {
             
             //clipping_buffer = &clip_buffers[0]; 
             clipping_buffer = alloc_clip_buffer();
@@ -528,12 +528,12 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
         // after this point, draw some sprites :^)
         
         if (render_forcefield) {
-            //uint16_t col = (RED_IDX<<4)|LIGHT_GREEN_IDX;
-            //draw_forcefield(x1, x2, window_min, window_max, clipping_buffer, col);
+            uint16_t col = (RED_IDX<<4)|LIGHT_GREEN_IDX;
+            draw_forcefield(x1, x2, window_min, window_max, clipping_buffer, col);
             free_clip_buffer(clipping_buffer);
         } else if (render_glass) {
-            //draw_transparent_wall(x1, x1_ytop, x1_ybot, x2, x2_ytop, x2_ybot, window_min, window_max, clipping_buffer, (LIGHT_RED_IDX<<4)|LIGHT_GREEN_IDX);
-            //free_clip_buffer(clipping_buffer);
+            draw_transparent_wall(x1, x1_ytop, x1_ybot, x2, x2_ytop, x2_ybot, window_min, window_max, clipping_buffer, (LIGHT_RED_IDX<<4)|LIGHT_GREEN_IDX);
+            free_clip_buffer(clipping_buffer);
         }
     }
 
