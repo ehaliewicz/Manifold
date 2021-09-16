@@ -420,9 +420,9 @@ void handle_input() {
                             FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1)};
     //cur_player_pos.z += bobs[bob_idx>>1]/2;
     //bob_idx++;
-    if(bob_idx >= 64) {
-        bob_idx = 0;
-    }
+    //if(bob_idx >= 64) {
+    //    bob_idx = 0;
+    //}
 
 
     pause_game = joy_button_pressed(BUTTON_START);
