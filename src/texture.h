@@ -25,9 +25,9 @@ void tick_texture();
 
 
 typedef struct {
-    s32 left_u;    // 16.16
+    u32 left_u;    // 16.16
     s16 left_z;
-    s32 right_u;   // 16.16
+    u32 right_u;   // 16.16
     s16 right_z;
     s32 du_over_dz;
     u8 needs_perspective;

@@ -637,8 +637,6 @@ void maybe_set_palette(u16* new_palette) {
 
 game_mode run_game() {
 
-    //run_texture_test();
-    //return SAME_MODE;
 
     u32 start_ticks = getTick();
     process_all_objects(cur_frame);
@@ -648,10 +646,16 @@ game_mode run_game() {
     calc_movement_speeds();
     handle_input();
 
+    //BMP_vertical_clear();
     angleCos32 = cosFix32(cur_player_pos.ang);
     angleSin32 = sinFix32(cur_player_pos.ang); 
     angleCos16 = cosFix16(cur_player_pos.ang);
     angleSin16 = sinFix16(cur_player_pos.ang); 
+    //KLog("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+    //KLog_S1("cur ang: ", cur_player_pos.ang);;
+    //KLog_S1("angCos16: ", angleCos16);
+    //KLog_S1("angSin16: ", angleSin16);
+
     playerZ12Frac4 = cur_player_pos.z >> (FIX32_FRAC_BITS-4);
     playerXInt = cur_player_pos.x>>FIX32_FRAC_BITS;
     playerYInt = cur_player_pos.y>>FIX32_FRAC_BITS;

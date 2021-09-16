@@ -1,30 +1,24 @@
 #import glfw
-import sdl2
-from sdl2 import *
+import atexit
 import ctypes
-
-import imgui
-#from imgui.integrations.glfw import GlfwRenderer
-from imgui.integrations.sdl2 import SDL2Renderer
-import math
-
-import OpenGL.GL as gl
-from enum import Enum
+import pickle
 import sys
-
 import tkinter as tk
+from enum import Enum
 from tkinter import filedialog
 
-import atexit
-import pickle
-
+import OpenGL.GL as gl
+import imgui
+# from imgui.integrations.glfw import GlfwRenderer
+from imgui.integrations.sdl2 import SDL2Renderer
+from sdl2 import *
 
 import line
+import render_3d
 import script
 import sector
-import trigger
 import texture
-import utils
+import trigger
 import vertex
 
 
@@ -37,6 +31,7 @@ class Mode(Enum):
     SCRIPT = 'Script'
     TRIGGER = 'Trigger'
     TEXTURE = 'Texture'
+    PREVIEW = 'Preview'
 
 
     
@@ -127,10 +122,10 @@ class Map():
         res += "static const wall_col wall_colors[{}] =".format(num_walls) + "{\n"
         for sect in self.sectors:
             for wall in sect.walls:
+                mcol = "0x{}{}".format(wall.mid_color, wall.mid_color)
+                ucol = "0x{}{}".format(wall.up_color, wall.up_color)
+                dcol = "0x{}{}".format(wall.low_color, wall.low_color)
                 if wall.adj_sector_idx == -1:
-                    mcol = "0x{}{}".format(wall.mid_color, wall.mid_color)
-                    ucol = "0x{}{}".format(wall.up_color, wall.up_color)
-                    dcol = "0x{}{}".format(wall.low_color, wall.low_color)
                     res += "    {" + ".mid_col = {}".format(mcol) + "},\n"
                 else:
                     res += "    {" + ".upper_col = {}, .lower_col = {}".format(ucol, dcol) + "},\n"
@@ -165,7 +160,7 @@ class Map():
 def main_sdl2():
     def pysdl2_init():
         width, height = 1280, 800
-        window_name = "minimal ImGui/SDL2 example"
+        window_name = "Map Edit"
         if SDL_Init(SDL_INIT_EVERYTHING) < 0:
             print("Error: SDL could not initialize! SDL Error: " + SDL_GetError())
             exit(1)
@@ -197,12 +192,16 @@ def main_sdl2():
             print("Warning: Unable to set VSync! SDL Error: " + SDL_GetError())
             exit(1)
         return window, gl_context
+
     window, gl_context = pysdl2_init()
+
     renderer = SDL2Renderer(window)
 
     running = True
 
     event = SDL_Event()
+
+    render_3d.init_sdl_window()
 
     
     while running:
@@ -262,6 +261,7 @@ def add_new_vertex(x,y):
 
 MODE_DRAW_FUNCS = {
     Mode.SECTOR: sector.draw_sector_mode,
+    Mode.PREVIEW: render_3d.draw_preview,
     Mode.LINE: line.draw_line_mode,
     Mode.VERTEX: vertex.draw_vert_mode,
     Mode.SCRIPT: script.draw_script_mode,
@@ -478,8 +478,7 @@ def on_frame():
             
             imgui.end_menu()
         imgui.end_main_menu_bar()
-    
-        
+
     imgui.begin("Tools", False)
     tools_hovered = imgui.is_window_hovered()
     draw_mode()
@@ -537,8 +536,8 @@ def load_map_from_file(f):
     #cur_state = old_state
     old_map = old_state.map_data
 
-    new_sectors = [Sector(index=s.index, walls=s.walls,
-                          floor_height=s.floor_height, ceil_height=s.ceil_height)
+    new_sectors = [sector.Sector(index=s.index, walls=s.walls,
+                                 floor_height=s.floor_height, ceil_height=s.ceil_height)
                    for s in old_map.sectors]
 
     new_map = Map(name=old_map.name,

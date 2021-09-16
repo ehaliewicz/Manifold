@@ -32,6 +32,7 @@ Vect2D_s16 transform_map_vert_16(s16 x, s16 y) {
 */
 
 Vect2D_s16 transform_map_vert_16(s16 x, s16 y) {
+
     
     s16 tlx = x - playerXInt; // 16-bit integer
     s16 tly = y - playerYInt; // 16-bit integer
@@ -40,6 +41,25 @@ Vect2D_s16 transform_map_vert_16(s16 x, s16 y) {
     s32 ry = (tlx * angleCos16) + (tly * angleSin16);
     s16 res_x = rx>>(FIX16_FRAC_BITS);
     s16 res_y = ry>>(FIX16_FRAC_BITS-TRANS_Z_FRAC_BITS); // 12.4
+
+    
+    if(0) { //if(debug) {
+        KLog_S1("playerXInt: ", playerXInt);
+        KLog_S1("playerYInt: ", playerYInt);
+        KLog_S1("vert x: ", x);
+        KLog_S1("vert y: ", y);
+        KLog_S1("playerAngle: ", cur_player_pos.ang);
+        KLog_S1("angleSin16: ", angleSin16);
+        KLog_S1("angleCos16: ", angleCos16);
+        KLog_S1("tlx: ", tlx);
+        KLog_S1("tly: ", tly);
+        KLog_S1("rx: ", rx);
+        KLog_S1("ry: ", ry);
+        KLog_S1("res_x int: ", res_x);
+        KLog_S1("res_y_fix_4: ", res_y);
+    }
+    
+
     return (Vect2D_s16){.x = res_x, .y = res_y};
 }
 
@@ -49,12 +69,22 @@ s16 project_and_adjust_x(s16 x, s16 z_recip) {
     //fix32 rx = trans_map_vert.x;
     //fix32 rz = trans_map_vert.y;
     
+    if(0) { //if(debug) {
+        KLog_S1("x to project: ", x);
+        KLog_S1("z_recip: ", z_recip);
+    }
+    
     
     s16 const2Rx = x; //<<5; //(32 * x);
     __asm volatile(
             "lsl.w #5, %0"
             : "+d" (const2Rx)
     );
+    
+    if(0) { //if(debug) {
+        KLog_S1("rx_5: ", const2Rx);
+    }
+    
     //s16 const2RxDivZ = const2Rx / z;
     //s16 z_recip = z_recip_table_16[z];
     s32 const2RXMulZRecip = const2Rx; // * x_project_z_recip_table[z];
@@ -64,8 +94,18 @@ s16 project_and_adjust_x(s16 x, s16 z_recip) {
             : // input
     );
 
+    
+    if(0) { //if(debug) {
+        KLog_S1("CONST2*rx*(1/z): ", const2RXMulZRecip);
+    }
+    
 
     s16 transX = 32 + (const2RXMulZRecip>>16);
+    
+    if(0) { //if(debug) {
+        KLog_S1("transX: ", transX);
+    }
+    
     return transX;
 }
 
@@ -156,7 +196,11 @@ s16 project_and_adjust_y_fix_c(s16 y, s16 z) {
 
 clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2, texmap_info* tmap, u32 wall_len) {
     // TODO: adjust texture coordinates here as well
-
+    
+    if(0) { //if(debug) {
+        KLog_U1("Wall len: ", wall_len);
+    }
+    
     s16 rx1 = trans_v1->x;
     s16 rz1_12_4 = trans_v1->y; // 12.4
     s16 rx2 = trans_v2->x;
@@ -165,28 +209,45 @@ clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2, texma
     //s16 rz1 = rz1_fix >> TRANS_Z_FRAC_BITS;
     //s16 rz2 = rz2_fix >> TRANS_Z_FRAC_BITS;
 
-    if(rz1_12_4 <= NEAR_Z_12_4 && rz2_12_4 <= NEAR_Z_12_4) {
+    if(rz1_12_4 < NEAR_Z_FIX && rz2_12_4 < NEAR_Z_FIX) {
+    //if(rz1_12_4 < NEAR_Z_FIX && rz2_12_4 < NEAR_Z_FIX) {
+        if(0) { //if(debug) {
+            KLog("wall is offscreen!");
+        }
         tmap->needs_perspective = 0;
     
         return OFFSCREEN;
     }
 
     s16 dz_12_4 = rz2_12_4 - rz1_12_4;
+    if(0) { //if(debug) {
+        KLog_S1("dz_12_4: ", dz_12_4);
+    }
 
     tmap->needs_perspective = 0; //(dz_12_4 > (1<<4));
     #define TEX_REPEAT_DIST 64
     u16 repetitions = max(1, wall_len / TEX_REPEAT_DIST);
+    if(0) { //if(debug) {
+        KLog_U1("repetitions: ", repetitions);
+    }
     tmap->repetitions = repetitions;
     //KLog_U1("repetitions: ", repetitions);
 
-    s32 base_left_u = 0;
-    s32 base_right_u = (repetitions)<<16;
-
-    s32 fix_du = (base_right_u-base_left_u);
+    s32 base_left_u_16 = 0;
+    s32 base_right_u_16 = (repetitions)<<16;
+    if(0) { //if(debug) {
+        //KLog_S1("base_left_u: ", base_left_u_20);
+        //KLog_S1("base_right_u: ", base_right_u_20);
+        //KLog_S1("base_right_u int: ", base_right_u_20>>20);
+    }
+    s32 fix_du_16 = (base_right_u_16-base_left_u_16);
 
     s32 du_over_dz_16; // = fix_du; // 16.16
     if(dz_12_4 != 0) {
-        du_over_dz_16 = (fix_du<<TRANS_Z_FRAC_BITS) / dz_12_4; // fix 16
+        du_over_dz_16 = (fix_du_16<<TRANS_Z_FRAC_BITS) / dz_12_4; // fix 16
+        if(0) { //if(debug) {
+            KLog_S1("du_over_dz_20: ", du_over_dz_16);
+        }
         //__asm volatile(
         //    "divs.w %1, %0"
         //    : "+d" (du_over_dz) 
@@ -196,12 +257,18 @@ clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2, texma
 
         tmap->needs_perspective = 1;
     } else {
+        if(0) { //if(debug) {
+            KLog("NO PERSPECTIVE NEEDED");
+        }
         tmap->needs_perspective = 0;
-        tmap->left_u = base_left_u;
-        tmap->right_u = base_right_u;
+        tmap->left_u = base_left_u_16;
+        tmap->right_u = base_right_u_16;
     }
 
-    if(rz1_12_4 > NEAR_Z_12_4 && rz2_12_4 > NEAR_Z_12_4) {
+    if(rz1_12_4 >= NEAR_Z_FIX && rz2_12_4 >= NEAR_Z_FIX) {
+        if(0) { //if(debug) {
+            KLog("NOT CLIPPED");
+        }
         //u32 fix_du = 32<<6;
 
         //__asm volatile(
@@ -209,20 +276,23 @@ clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2, texma
         //    :  "+d" (du_over_dx)  // output
         //    :  "d" (dx) // input
         //);
-        tmap->left_u = base_left_u;
-        tmap->right_u = base_right_u;
+        tmap->left_u = base_left_u_16;
+        tmap->right_u = base_right_u_16;
 
         return UNCLIPPED;
     }
     
     s16 dx = rx2-rx1;
-    
+    KLog_S1("dx: ", dx);
 
 
     // SLOW
     #ifdef CLIP_DIVISION
     //s32 fix_dx = dx<<6; // .6
-    s16 dx_over_dz_6 = (dx<<6)/ dz_12_4;
+    s32 dx_over_dz_6 = (dx<<(6+TRANS_Z_FRAC_BITS))/ dz_12_4; // << 6
+    if(0) { //if(debug) {
+        KLog_S1("dx over dz: ", dx_over_dz_6);
+    }
 
     //s16 dx_over_dz_6 = fix_dx<<TRANS_Z_FRAC_BITS;
 
@@ -240,44 +310,60 @@ clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2, texma
    s16 dx_over_dz = dx * inv_dz; //dx_over_dz_32 >> 10;
    #endif 
     
-    //s16 dx_over_dz = fix32Div(dx, dz); // change in x per change in z
 
-
-    if(rz1_12_4 < NEAR_Z_12_4) { 
+    if(rz1_12_4 < NEAR_Z_FIX) { 
+        if(0) { //if(debug) {
+            KLog("LEFT CLIPPED");
+        }
         //if(dz == 0) { die("wtf"); }
         // left clipped
-        s16 z_adjust_12_4 = NEAR_Z_12_4-rz1_12_4;
+        s16 z_adjust_12_4 = NEAR_Z_FIX-rz1_12_4;
         s32 x_adjust_10 = dx_over_dz_6 * z_adjust_12_4;
-        s16 x_adjust_int = x_adjust_10>>10;
+        s16 x_adjust_int = x_adjust_10>>(6+TRANS_Z_FRAC_BITS);
 
-        s32 u_adjust_20 = du_over_dz_16 * z_adjust_12_4; // 12.20 // 12.4 fixed point
-        
+        if(0) { //if(debug) {
+            KLog_S1("z_adjust_10_6: ", z_adjust_12_4);
+            KLog_S1("x_adjust_12: ", x_adjust_10);
+            KLog_S1("x_adjust_int: ", x_adjust_int);
+        }
+
+        s32 u_adjust_20 = (du_over_dz_16 * z_adjust_12_4); // 12.20 // 12.4 fixed point
+
+        if(0) { //if(debug) {
+            //KLog_S1("u_adjust_22: ", u_adjust_20);
+        }
         
         rx1 += x_adjust_int;    // modify x coord
-        rz1_12_4 = NEAR_Z_12_4;
+        rz1_12_4 = NEAR_Z_FIX;
         trans_v1->x = rx1;
         trans_v1->y = rz1_12_4;
         
         //KLog_S1("z adjust: ", z_adjust);
         //KLog_S1("u adjust: ", u_adjust);
         //KLog_S1("u result: ", base_left_u + u_adjust);
-        tmap->left_u = (base_left_u + (u_adjust_20>>TRANS_Z_FRAC_BITS));
-        tmap->right_u = base_right_u;
+        tmap->left_u = base_left_u_16 + (u_adjust_20>>4);
+        if(0) { //if(debug) {
+            KLog_S1("clipped left u: ", tmap->left_u);
+        }
+        tmap->right_u = base_right_u_16;
 
         return LEFT_CLIPPED;
     } else {
+        if(0) { //if(debug) {
+            KLog("RIGHT CLIPPED");
+        }
         // right clipped
-        s16 z_adjust_12_4 = NEAR_Z_12_4 - rz2_12_4; 
+        s16 z_adjust_12_4 = NEAR_Z_FIX - rz2_12_4; 
         s32 x_adjust_10 = dx_over_dz_6 * z_adjust_12_4; // dx_over_dz is negative
-        s16 x_adjust_16 = x_adjust_10>>10;
-        rx2 += x_adjust_16;
-        rz1_12_4 = NEAR_Z_12_4;
+        s16 x_adjust_int = x_adjust_10>>(6+TRANS_Z_FRAC_BITS);
+        rx2 += x_adjust_int;
+        rz1_12_4 = NEAR_Z_FIX;
         trans_v2->x = rx2;
         trans_v2->y = rz1_12_4;
 
         s32 u_adjust_20 = du_over_dz_16 * z_adjust_12_4;
-        tmap->left_u = base_left_u;
-        tmap->right_u = (base_right_u+(u_adjust_20>>TRANS_Z_FRAC_BITS));
+        tmap->left_u = base_left_u_16;
+        tmap->right_u = base_right_u_16 + (u_adjust_20>>4);
         return RIGHT_CLIPPED;
     }
     

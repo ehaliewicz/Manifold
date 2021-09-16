@@ -124,6 +124,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
     cache_floor_light_params(rel_floor_height, floor_color, light_level, avg_dist, sect_flags & SECTOR_FLOOR_SLOPED, &floor_params);
 
     for(s16 i = 0; i < num_walls; i++) {
+        //const int debug = (sector == 0) && (i == 0);
         // this is plus 1 because we store the number of real walls, 
         // but duplicate the first at the end of the wall list per sector, so we don't need modulo math
         s16 wall_idx = wall_offset+i+1;
@@ -156,6 +157,9 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
         if(last_frontfacing_wall == i-1) {
             trans_v1 = prev_transformed_vert;
         } else {
+            if(0) { //if(debug) {
+                KLog("VERT 1");
+            }
             trans_v1 = transform_map_vert_16(v1.x, v1.y);
         }        
 
@@ -209,6 +213,9 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
                 
 
         last_frontfacing_wall = i;
+        if(0) { //if(debug) {
+            KLog("VERT 2");
+        }
         volatile Vect2D_s16 trans_v2 = transform_map_vert_16(v2.x, v2.y);
         prev_transformed_vert = trans_v2;
         
@@ -284,7 +291,13 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
         s32 trans_v2_z_int = trans_v2_z_fix>>TRANS_Z_FRAC_BITS;
 
         s16 max_z_int = max(trans_v1_z_int, trans_v1_z_int);
+        if(0) { //if(debug) {
+            KLog("debug project v1 x");
+        }
         s16 x1 = project_and_adjust_x(trans_v1.x, z_recip_v1);
+        if(0) { //if(debug) {
+            KLog("debug project v2 x");
+        }
         s16 x2 = project_and_adjust_x(trans_v2.x, z_recip_v2);
         s16 beginx = x1;
         if(beginx <= window_min) {
@@ -437,6 +450,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
         }
         
 
+        //if(!debug) { continue; }
         if (is_portal) {
 
 
@@ -503,15 +517,12 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
             KLog_S2("wall in sector: ", sector, " drawn with wall idx: ", i);
             #endif
 
-            //if(sector != 0) { continue; }
-            //if(i != 0) { continue; }
             draw_wall(x1, x1_ytop, x1_ybot, x2, x2_ytop, x2_ybot, 
-                        trans_v1_z_int, trans_v2_z_int,
+                        trans_v1_z_fix, trans_v2_z_fix,
                         z_recip_v1, z_recip_v2,
                         window_min, window_max, 
                         light_level, &tmap_info, 
-                        &floor_params, &ceil_params,
-                        (sector == 0 && i == 0));
+                        &floor_params, &ceil_params);
         }
         //nwalls++;
         // after this point, draw some sprites :^)
