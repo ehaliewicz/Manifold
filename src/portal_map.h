@@ -54,12 +54,6 @@ typedef struct {
     const vertex* vertexes;
     const vis_range* wall_vis_ranges;
     const u8* wall_norm_quadrants;
-    const s16* floor_slopes;
-    const u8* wall_floor_slope_types;
-    const s16* floor_slope_portals;
-    const s16* ceil_slopes;
-    const u8* wall_ceil_slope_types;
-    const s16* ceil_slope_portals;
     const u8* pvs;  // max of 32 sectors for now
 } portal_map;
 
@@ -80,17 +74,5 @@ s16 sector_floor_color(s16 sector_idx, portal_map* mp);
 s16 sector_ceil_color(s16 sector_idx, portal_map* mp);
 
 u16 sector_flags(s16 sector_idx, portal_map* mp);
-
-s16 sector_sloped_start_wall_idx(s16 sector_idx, portal_map* mp);
-
-s16 sector_floor_slope_start_wall_idx(s16 sector_idx, portal_map* mp);
-
-// if -1, no slope
-// if >=0, it designates the portal who's neighboring sector this sector is sloped towards
-s16 sector_floor_slope_end_wall_idx(s16 sector_idx, portal_map* mp);
-
-s16 sector_ceil_slope_start_wall_idx(s16 sector_idx, portal_map* mp);
-
-s16 sector_ceil_slope_end_wall_idx(s16 sector_idx, portal_map* mp);
 
 #endif

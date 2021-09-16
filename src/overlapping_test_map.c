@@ -1,7 +1,6 @@
 #include <genesis.h>
 #include "colors.h"
 #include "portal_map.h"
-#include "slope.h"
 #include "vertex.h"
 
 
@@ -9,11 +8,11 @@
 static const s16 sectors[136] = {
     0, 0, 6,    60<<4, 200<<4, BLUE_IDX, BLUE_IDX,       0, // floor normally 100 here
     7, 6, 5,   100<<4, 200<<4, BLUE_IDX, BLUE_IDX,       0,
-    13, 11, 4,  60<<4, 200<<4, BLUE_IDX, BLUE_IDX,       SECTOR_FLOOR_SLOPED|SECTOR_CEIL_SLOPED, // floor normally 100 here
-    18, 15, 4, 120<<4, 240<<4, BLUE_IDX, LIGHT_BLUE_IDX, SECTOR_FLOOR_SLOPED|SECTOR_CEIL_SLOPED,
-    23, 19, 4, 140<<4, 280<<4, BLUE_IDX, BLUE_IDX,       SECTOR_FLOOR_SLOPED|SECTOR_CEIL_SLOPED,
-    28, 23, 4, 160<<4, 320<<4, BLUE_IDX, LIGHT_BLUE_IDX, SECTOR_FLOOR_SLOPED|SECTOR_CEIL_SLOPED,
-    33, 27, 4, 180<<4, 350<<4, BLUE_IDX, BLUE_IDX,       SECTOR_FLOOR_SLOPED|SECTOR_CEIL_SLOPED,
+    13, 11, 4,  60<<4, 200<<4, BLUE_IDX, BLUE_IDX,       0, //SECTOR_FLOOR_SLOPED|SECTOR_CEIL_SLOPED, // floor normally 100 here
+    18, 15, 4, 120<<4, 240<<4, BLUE_IDX, LIGHT_BLUE_IDX, 0, //SECTOR_FLOOR_SLOPED|SECTOR_CEIL_SLOPED,
+    23, 19, 4, 140<<4, 280<<4, BLUE_IDX, BLUE_IDX,       0, //SECTOR_FLOOR_SLOPED|SECTOR_CEIL_SLOPED,
+    28, 23, 4, 160<<4, 320<<4, BLUE_IDX, LIGHT_BLUE_IDX, 0, //SECTOR_FLOOR_SLOPED|SECTOR_CEIL_SLOPED,
+    33, 27, 4, 180<<4, 350<<4, BLUE_IDX, BLUE_IDX,       0, //SECTOR_FLOOR_SLOPED|SECTOR_CEIL_SLOPED,
     38, 31, 5, 200<<4, 350<<4, BLUE_IDX, LIGHT_BLUE_IDX, 0,
     44, 36, 4, 100<<4, 200<<4, BLUE_IDX, BLUE_IDX,       0,
     49, 40, 4, 100<<4, 200<<4, BLUE_IDX, BLUE_IDX,       0,
@@ -26,129 +25,7 @@ static const s16 sectors[136] = {
     85, 69, 4,   0<<4, 100<<4, RED_IDX,  RED_IDX,        0,
 };
 
-static const u8 wall_floor_slope_types[90] = {
-    NO_SLOPE, NO_SLOPE, NO_SLOPE, NO_SLOPE, NO_SLOPE, NO_SLOPE, 
-    NO_SLOPE, NO_SLOPE, NO_SLOPE, NO_SLOPE, NO_SLOPE, 
-    SLOPE_TRANSITION_RIGHT, SLOPE_PORTAL, SLOPE_TRANSITION_LEFT, NO_SLOPE, 
-    SLOPE_TRANSITION_RIGHT, SLOPE_PORTAL, SLOPE_TRANSITION_LEFT, NO_SLOPE, 
-    SLOPE_TRANSITION_RIGHT, SLOPE_PORTAL, SLOPE_TRANSITION_LEFT, NO_SLOPE, 
-    SLOPE_TRANSITION_RIGHT, SLOPE_PORTAL, SLOPE_TRANSITION_LEFT, NO_SLOPE, 
-    SLOPE_TRANSITION_RIGHT, SLOPE_PORTAL, SLOPE_TRANSITION_LEFT, NO_SLOPE, 
-    NO_SLOPE, NO_SLOPE, NO_SLOPE, NO_SLOPE, NO_SLOPE, 
-    NO_SLOPE, NO_SLOPE, NO_SLOPE, NO_SLOPE, 
-    NO_SLOPE, NO_SLOPE, NO_SLOPE, NO_SLOPE, 
-    NO_SLOPE, NO_SLOPE, NO_SLOPE, NO_SLOPE, 
-    NO_SLOPE, NO_SLOPE, NO_SLOPE, NO_SLOPE, 
-    NO_SLOPE, NO_SLOPE, NO_SLOPE, NO_SLOPE, 
-    NO_SLOPE, NO_SLOPE, NO_SLOPE, NO_SLOPE, 
-    NO_SLOPE, NO_SLOPE, NO_SLOPE, NO_SLOPE, 
-    NO_SLOPE, NO_SLOPE, NO_SLOPE, NO_SLOPE, NO_SLOPE, 
-    NO_SLOPE, NO_SLOPE, NO_SLOPE, NO_SLOPE, 
-};
 
-static const u8 wall_ceil_slope_types[90] = {
-    NO_SLOPE, NO_SLOPE, NO_SLOPE, NO_SLOPE, NO_SLOPE, NO_SLOPE,
-    NO_SLOPE, NO_SLOPE, NO_SLOPE, NO_SLOPE, NO_SLOPE,
-    SLOPE_TRANSITION_LEFT, NO_SLOPE, SLOPE_TRANSITION_RIGHT, SLOPE_PORTAL,
-    SLOPE_TRANSITION_LEFT, NO_SLOPE, SLOPE_TRANSITION_RIGHT, SLOPE_PORTAL, 
-    SLOPE_TRANSITION_LEFT, NO_SLOPE, SLOPE_TRANSITION_RIGHT, SLOPE_PORTAL,
-    SLOPE_TRANSITION_LEFT, NO_SLOPE, SLOPE_TRANSITION_RIGHT, SLOPE_PORTAL,
-    SLOPE_TRANSITION_LEFT, NO_SLOPE, SLOPE_TRANSITION_RIGHT, SLOPE_PORTAL,
-    NO_SLOPE, NO_SLOPE, NO_SLOPE, NO_SLOPE, NO_SLOPE, 
-    NO_SLOPE, NO_SLOPE, NO_SLOPE, NO_SLOPE, 
-    NO_SLOPE, NO_SLOPE, NO_SLOPE, NO_SLOPE, 
-    NO_SLOPE, NO_SLOPE, NO_SLOPE, NO_SLOPE, 
-    NO_SLOPE, NO_SLOPE, NO_SLOPE, NO_SLOPE, 
-    NO_SLOPE, NO_SLOPE, NO_SLOPE, NO_SLOPE, 
-    NO_SLOPE, NO_SLOPE, NO_SLOPE, NO_SLOPE, 
-    NO_SLOPE, NO_SLOPE, NO_SLOPE, NO_SLOPE, 
-    NO_SLOPE, NO_SLOPE, NO_SLOPE, NO_SLOPE, NO_SLOPE, 
-    NO_SLOPE, NO_SLOPE, NO_SLOPE, NO_SLOPE, 
-};
-
-static const s16 floor_slope_portals[90] = {
-    -1,-1,-1,-1,-1,-1,
-    -1,-1,-1,-1,-1,
-
-    3,-1,3,-1,
-    4,-1,4,-1,
-    5,-1,5,-1,
-    6,-1,6,-1,
-    7,-1,7,-1,
-
-    -1,-1,-1,-1,-1,
-    -1,-1,-1,-1,
-    -1,-1,-1,-1,
-    -1,-1,-1,-1,
-    -1,-1,-1,-1,
-    -1,-1,-1,-1,
-    -1,-1,-1,-1,
-    -1,-1,-1,-1,
-    -1,-1,-1,-1,-1,
-    -1,-1,-1,-1,
-};
-
-static const s16 ceil_slope_portals[90] = {
-    -1,-1,-1,-1,-1,-1,
-    -1,-1,-1,-1,-1,
-
-    0,-1,0,-1,
-    2,-1,2,-1,
-    3,-1,3,-1,
-    4,-1,4,-1,
-    5,-1,5,-1,
-
-    -1,-1,-1,-1,-1,
-    -1,-1,-1,-1,
-    -1,-1,-1,-1,
-    -1,-1,-1,-1,
-    -1,-1,-1,-1,
-    -1,-1,-1,-1,
-    -1,-1,-1,-1,
-    -1,-1,-1,-1,
-    -1,-1,-1,-1,-1,
-    -1,-1,-1,-1,
-};
-
-static const s16 floor_slopes[17*2] = {
-    -1,-1, 
-    -1,-1,
-    3,1,
-    3,1,
-    3,1,
-    3,1,
-    3,1,
-    -1,-1,
-    -1,-1,
-    -1,-1,
-    -1,-1,
-    -1,-1,
-    -1,-1,
-    -1,-1,
-    -1,-1,
-    -1,-1,
-    -1,-1,
-};
-
-static const s16 ceil_slopes[17*2] = {
-    -1,-1, 
-    -1,-1,
-    -1,-1,
-    1,3,
-    1,3,
-    1,3,
-    1,3,
-    -1,-1,
-    -1,-1,
-    -1,-1,
-    -1,-1,
-    -1,-1,
-    -1,-1,
-    -1,-1,
-    -1,-1,
-    -1,-1,
-    -1,-1,
-};
 
 
 static const u16 walls[90] = {
@@ -499,11 +376,5 @@ portal_map overlapping_map = {
     .vertexes = vertexes,
     .wall_colors = wall_colors,
     .wall_norm_quadrants = wall_normal_quadrants,
-    .floor_slopes = floor_slopes,
-    .wall_floor_slope_types = wall_floor_slope_types,
-    .floor_slope_portals = floor_slope_portals,
-    .ceil_slopes = ceil_slopes,
-    .wall_ceil_slope_types = wall_ceil_slope_types,
-    .ceil_slope_portals = ceil_slope_portals,
     .pvs = pvs
 };

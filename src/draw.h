@@ -39,8 +39,8 @@ typedef struct {
     u32 dark_color;
 } light_params;
 
-void cache_floor_light_params(s16 rel_floor_height, u8 floor_col, s8 light_level, u32 avg_dist, u8 sloped, light_params* params);
-void cache_ceil_light_params(s16 rel_ceil_height, u8 ceil_col, s8 light_level, u32 avg_dist, u8 sloped, light_params* params);
+void cache_floor_light_params(s16 rel_floor_height, u8 floor_col, s8 light_level, light_params* params);
+void cache_ceil_light_params(s16 rel_ceil_height, u8 ceil_col, s8 light_level, light_params* params);
 
 void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
               s16 x2, s16 x2_ytop, s16 x2_ybot,

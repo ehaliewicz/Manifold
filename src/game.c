@@ -370,43 +370,8 @@ void handle_input() {
         cur_player_pos.x = collision.pos.x;
         cur_player_pos.y = collision.pos.y;
         cur_player_pos.cur_sector = collision.new_sector;
-        s16 start_slope_wall_idx = sector_floor_slope_start_wall_idx(cur_player_pos.cur_sector, (portal_map*)cur_portal_map);
-        s16 end_slope_wall_idx = sector_floor_slope_end_wall_idx(cur_player_pos.cur_sector, (portal_map*)cur_portal_map);
         s16 cur_sector_height = sector_floor_height(cur_player_pos.cur_sector, (portal_map*)cur_portal_map);
 
-
-        if(end_slope_wall_idx > -1) {
-
-            s16 wall_offset = sector_wall_offset(cur_player_pos.cur_sector, (portal_map*)cur_portal_map);
-
-            u16 v1_idx = cur_portal_map->walls[wall_offset+start_slope_wall_idx];
-            u16 v2_idx = cur_portal_map->walls[wall_offset+end_slope_wall_idx];
-
-            s16 portal_offset = sector_portal_offset(cur_player_pos.cur_sector, (portal_map*)cur_portal_map);
-
-
-            vertex v1 = cur_portal_map->vertexes[v1_idx];
-            vertex v2 = cur_portal_map->vertexes[v2_idx];
-            s16 total_dx = v2.x - v1.x;
-            s16 total_dy = v2.y - v1.y;
-            u32 total_dist = distance_approx(total_dx, total_dy);
-
-            s16 player_dx = v2.x - playerXInt;
-            s16 player_dy = v2.y - playerYInt;
-
-            u32 player_dist = distance_approx(player_dx, player_dy);
-            u16 dist_percent_to_255 = 255-((player_dist<<8)/total_dist);
-
-
-            s16 neighbor = cur_portal_map->portals[portal_offset+end_slope_wall_idx];
-            s16 neighbor_height = sector_floor_height(neighbor, (portal_map*)cur_portal_map);
-            s16 height_diff = neighbor_height - cur_sector_height;
-
-            s16 height_add = (dist_percent_to_255 * height_diff)>>8;
-            cur_sector_height = cur_sector_height + height_add;
-
-
-        }
         
         cur_player_pos.z = (cur_sector_height<<(FIX32_FRAC_BITS-4)) + FIX32(50);
         

@@ -14,7 +14,6 @@
 #include "portal_map.h"
 #include "portal_maps.h"
 #include "sector.h"
-#include "slope.h"
 #include "vertex.h"
 
 
@@ -112,16 +111,10 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
     u8 ceil_color = sector_ceil_color(sector, map);
 
     u16 sect_flags = sector_flags(sector, map);
-    u32 avg_dist;
-    if ((sect_flags & SECTOR_CEIL_SLOPED) || (sect_flags & SECTOR_FLOOR_SLOPED)) { 
-        Vect2D_f32 sector_center = sector_centers[sector];
-        u32 avg_dist = (
-            abs(fix32ToInt(sector_center.x - cur_player_pos.x))+
-            abs(fix32ToInt(sector_center.y - cur_player_pos.y)));
-    }
+
     light_params ceil_params, floor_params;
-    cache_ceil_light_params(rel_ceil_height, ceil_color, light_level, avg_dist, sect_flags & SECTOR_CEIL_SLOPED, &ceil_params);
-    cache_floor_light_params(rel_floor_height, floor_color, light_level, avg_dist, sect_flags & SECTOR_FLOOR_SLOPED, &floor_params);
+    cache_ceil_light_params(rel_ceil_height, ceil_color, light_level, &ceil_params);
+    cache_floor_light_params(rel_floor_height, floor_color, light_level, &floor_params);
 
     for(s16 i = 0; i < num_walls; i++) {
         //const int debug = (sector == 0) && (i == 0);
@@ -364,9 +357,6 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
             #endif
         }
 
-        slope_type floor_slope = cur_portal_map->wall_floor_slope_types[portal_idx];
-        slope_type ceil_slope = cur_portal_map->wall_ceil_slope_types[portal_idx];
-
         int recur = 0;
 
         s16 x1_ytop;
@@ -387,22 +377,9 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
             }
         } else {
             
-            // we can have slopes on floor and ceiling, sloping in different ways :^)
             s16 x2_ybot_floor_height = floor_height;
             s16 x1_ybot_floor_height = floor_height;
 
-
-            if (floor_slope == SLOPE_TRANSITION_RIGHT) {
-                s16 floor_slope_portal_sector = map->floor_slope_portals[portal_offset+i];
-
-                neighbor_floor_height = sector_floor_height(floor_slope_portal_sector, map);
-                x2_ybot_floor_height = neighbor_floor_height;
-            } else if (floor_slope == SLOPE_TRANSITION_LEFT) {
-                s16 floor_slope_portal_sector = map->floor_slope_portals[portal_offset+i];
-
-                neighbor_floor_height = sector_floor_height(floor_slope_portal_sector, map);
-                x1_ybot_floor_height = neighbor_floor_height;
-            }
             x2_ybot = project_and_adjust_y_fix(x2_ybot_floor_height, z_recip_v2);
             x1_ybot = project_and_adjust_y_fix(x1_ybot_floor_height, z_recip_v1);
 
@@ -411,17 +388,6 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
             s16 x1_ytop_floor_height = ceil_height;
             
 
-            if(ceil_slope == SLOPE_TRANSITION_RIGHT) {
-                s16 ceil_slope_portal_sector = map->ceil_slope_portals[portal_offset+i];
-
-                neighbor_ceil_height = sector_ceil_height(ceil_slope_portal_sector, map);
-                x2_ytop_floor_height = neighbor_ceil_height;
-            } else if (ceil_slope == SLOPE_TRANSITION_LEFT) {
-                s16 ceil_slope_portal_sector = map->ceil_slope_portals[portal_offset+i];
-
-                neighbor_ceil_height = sector_ceil_height(ceil_slope_portal_sector, map);
-                x1_ytop_floor_height = neighbor_ceil_height;
-            }
             x2_ytop = project_and_adjust_y_fix(x2_ytop_floor_height, z_recip_v2);
             x1_ytop = project_and_adjust_y_fix(x1_ytop_floor_height, z_recip_v1);
         
@@ -461,17 +427,12 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
             if(neighbor_ceil_height < ceil_height && neighbor_ceil_height > floor_height) {
                 s16 nx1_ytop = project_and_adjust_y_fix(neighbor_ceil_height, z_recip_v1);
                 s16 nx2_ytop = project_and_adjust_y_fix(neighbor_ceil_height, z_recip_v2);
-                if(ceil_slope == SLOPE_PORTAL) {
 
-                    draw_ceiling_update_clip(x1, nx1_ytop, x2, nx2_ytop, max_z_int, window_min, window_max, &ceil_params);
-                } else {
-                    u8 upper_color = map->wall_colors[portal_idx].upper_col;
-                    //upper_color = calculate_color(upper_color, avg_dist, light_level);
-                    // draw step from ceiling
-                    draw_upper_step(x1, x1_ytop, nx1_ytop, x2, x2_ytop, nx2_ytop, 
-                                    z_recip_v1, z_recip_v2,
-                                    window_min, window_max, upper_color, light_level, &ceil_params);
-                }
+                u8 upper_color = map->wall_colors[portal_idx].upper_col;
+                // draw step from ceiling
+                draw_upper_step(x1, x1_ytop, nx1_ytop, x2, x2_ytop, nx2_ytop, 
+                                z_recip_v1, z_recip_v2,
+                                window_min, window_max, upper_color, light_level, &ceil_params);
             } else {
                 draw_ceiling_update_clip(x1, x1_ytop, x2, x2_ytop, max_z_int, window_min, window_max, &ceil_params);
             }
@@ -481,20 +442,14 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
             if(neighbor_floor_height > floor_height && neighbor_floor_height < ceil_height) {
                 s16 nx1_ybot = project_and_adjust_y_fix(neighbor_floor_height, z_recip_v1);
                 s16 nx2_ybot = project_and_adjust_y_fix(neighbor_floor_height, z_recip_v2);
-                if(floor_slope == SLOPE_PORTAL) {
-                    draw_floor_update_clip(x1, nx1_ybot, x2, nx2_ybot, 
-                                           max_z_int,
-                                           window_min, window_max, &floor_params);
 
-                } else {
-                    u8 lower_color = map->wall_colors[portal_idx].lower_col;
-                    //lower_color = calculate_color(lower_color, avg_dist, light_level);
+                u8 lower_color = map->wall_colors[portal_idx].lower_col;
 
-                    // draw step from floor
-                    draw_lower_step(x1, x1_ybot, nx1_ybot, x2, x2_ybot, nx2_ybot, 
-                                    z_recip_v1, z_recip_v2,
-                                    window_min, window_max, lower_color, light_level, &floor_params);
-                }
+                // draw step from floor
+                draw_lower_step(x1, x1_ybot, nx1_ybot, x2, x2_ybot, nx2_ybot, 
+                                z_recip_v1, z_recip_v2,
+                                window_min, window_max, lower_color, light_level, &floor_params);
+
             } else {
                 draw_floor_update_clip(x1, x1_ybot, x2, x2_ybot, 
                                        max_z_int,
