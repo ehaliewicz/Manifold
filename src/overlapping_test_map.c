@@ -361,7 +361,7 @@ static const wall_col wall_colors[73] ={
 
 // #define VERT(x1,y1) { .x = (x1 * 6), .y = ((-y1) * 6) } 
 
-#define VERT(x1,y1) { .x = (x1 * 2.5), .y = ((-y1) * 2.5) }
+#define VERT(x1,y1) { .x = (x1 * 2), .y = ((-y1) * 2) }
 static const vertex vertexes[42] = {
     VERT(70,60),
     VERT(170,60),
