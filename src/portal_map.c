@@ -21,9 +21,18 @@ s16 sector_floor_height(s16 sector_idx, portal_map* mp) {
     return mp->sectors[sector_idx*SECTOR_SIZE+3];
 }
 
+void set_sector_floor_height(s16 sector_idx, portal_map* mp, s16 height) {
+    mp->sectors[sector_idx * SECTOR_SIZE + 3] = height;
+}
+
 s16 sector_ceil_height(s16 sector_idx, portal_map* mp) {
     return mp->sectors[sector_idx*SECTOR_SIZE+4];
 }
+
+void set_sector_ceil_height(s16 sector_idx, portal_map* mp, s16 height) {
+    mp->sectors[sector_idx * SECTOR_SIZE + 4] = height;
+}
+
 
 s16 sector_floor_color(s16 sector_idx, portal_map* mp) {
     return mp->sectors[sector_idx*SECTOR_SIZE+5];

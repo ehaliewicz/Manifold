@@ -173,6 +173,9 @@ int end;
 void init_fire() {
     end = 0;
     //XGM_startPlay(xgm_e2m2);
+    //intro_wav;
+
+    //SND_startPlay_PCM(intro_wav, sizeof(intro_wav), SOUND_RATE_13400, SOUND_PAN_CENTER, 1);
 
 	SYS_disableInts();
     //VDP_setScreenWidth320();
@@ -207,8 +210,8 @@ void init_fire() {
     // side effect: loads palette!
 	VDP_drawImageEx(BG_B, &doom_logo, 0x0360, 8, 0, 1, 1);
 
-	const int fire_fix_vram_addr = 0x300;
-	const int bkgd_cover_vram_addr = 0x304;
+	//const int fire_fix_vram_addr = 0x300;
+	//const int bkgd_cover_vram_addr = 0x304;
 	//VDP_loadTileSet(fire_fixup.animations[0]->frames[0]->tileset, fire_fix_vram_addr, CPU);
 	//VDP_loadTileSet(bottom_line_cover.animations[0]->frames[0]->tileset, bkgd_cover_vram_addr, CPU);
 
@@ -258,9 +261,10 @@ game_mode run_fire() {
 
     if(cur_scroll < -45) {
         VDP_setVerticalScroll(BG_B, cur_scroll);
-    } else if (fire_running && !fire_hidden) {
+    } else if ((fire_running && !fire_hidden) || skip) {
         //SPR_setVisibility(fire_spr, HIDDEN);
         //SPR_update();
+        
         clear_fire_source();
         fire_hidden = 1;
     }

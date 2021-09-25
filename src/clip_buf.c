@@ -1,5 +1,6 @@
 #include <genesis.h>
 #include "clip_buf.h"
+#include "debug.h"
 
 
 clip_buf *clip_buffers;

@@ -3,8 +3,6 @@
 
 #include <genesis.h>
 
-void draw_texture_vertical_line(s16 unclipped_y0, s16 y0, s16 unclipped_y1, s16 y1, u8* col_ptr, u16* tex_column);
-
 //#define TEX_HEIGHT 128
 //#define TEX_HEIGHT_SHIFT 7
 
@@ -25,6 +23,12 @@ void tick_texture();
 
 
 typedef struct {
+    const uint16_t* dark;
+    const uint16_t* mid;
+    const uint16_t* light;
+} lit_texture;
+
+typedef struct {
     u32 left_u;    // 16.16
     s16 left_z;
     u32 right_u;   // 16.16
@@ -32,8 +36,18 @@ typedef struct {
     s32 du_over_dz;
     u8 needs_perspective;
     u16 repetitions;
+    lit_texture* tex;
+} texmap_params;
 
-} texmap_info;
+typedef struct {
+    u32 one_over_z_26;
+    s32 d_one_over_z_dx_26;
+
+    u32 u_over_z_23;
+    u32 d_u_over_z_dx_23;
+} persp_params;
+
+persp_params calc_perspective(u16 z1_12_4, u16 z2_12_4, u32 left_u_16, u32 right_u_16, s16 dx);
 
 #define FAR_MIP_WIDTH 16
 #define FAR_MIP_WIDTH_SHIFT 4
@@ -47,16 +61,16 @@ typedef struct {
 #define NEAR_MIP_WIDTH_SHIFT 6
 #define NEAR_MIP_HEIGHT 64
 
-typedef struct {
-    const uint16_t* dark;
-    const uint16_t* mid;
-    const uint16_t* light;
-} lit_texture;
 // three mipmap levels
 typedef struct {
     lit_texture mip_far;
     lit_texture mip_mid;
     lit_texture mip_near;
 } texture_set;
+
+
+void draw_texture_vertical_line(s16 unclipped_y0, s16 y0, s16 unclipped_y1, s16 y1, u8* col_ptr, u16* tex_column);
+void calc_textures_for_light_level(s8 light_level, lit_texture* lit_tex, u16** dark_tex, u16** mid_tex, u16** light_tex);
+
 
 #endif

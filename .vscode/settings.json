@@ -16,6 +16,9 @@
         "config.h": "c",
         "texture.h": "c",
         "colors.h": "c",
-        "cart_ram.h": "c"
-    }
+        "cart_ram.h": "c",
+        "graphics_res.h": "c",
+        "level.h": "c"
+    },
+    "C_Cpp.errorSquiggles": "Enabled"
 }

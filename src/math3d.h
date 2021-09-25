@@ -40,7 +40,7 @@ typedef enum {
 } clip_result;
 
 //#define NEAR_Z_32 (20 << FIX32_FRAC_BITS)
-#define NEAR_Z_16 20
+#define NEAR_Z_16 10
 //25 
 #define NEAR_Z_FIX (NEAR_Z_16<<TRANS_Z_FRAC_BITS)
 
@@ -51,7 +51,7 @@ Vect2D_s16 transform_map_vert_16(s16 x, s16 y);
 
 // clip pair of map vertexes against near z plane, modifies input pointers if necessary
 //clip_result clip_map_vertex(Vect2D_f32* trans_v1, Vect2D_f32* trans_v2);
-clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2, texmap_info* tmap, u32 wall_len);
+clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2, texmap_params* tmap, u32 wall_len);
 
 // project map vertex without height attributes
 //s16 project_and_adjust_x(Vect2D_f32 trans_map_vert);

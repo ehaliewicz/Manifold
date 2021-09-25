@@ -3,6 +3,7 @@
 #define PORTAL_MAP_H
 
 #include <genesis.h>
+#include "sector.h"
 #include "vertex.h"
 #include "vis_range.h"
 
@@ -30,22 +31,11 @@ typedef struct {
     u8 lower_col;
 } wall_col;
 
-typedef enum {
-    NO_TYPE = 0,
-    FLASHING = 1,
-} sector_type;
-
-typedef struct {
-    s8 light;
-    s16 par2;
-    s8 stash;
-} sector_param;
-
 typedef struct {
     const int num_sectors;
     const int num_walls;
     const int num_verts;
-    const s16* sectors;
+    s16* sectors;
     const sector_type* sector_types;
     sector_param* sector_params;
     const u16* walls;
@@ -65,8 +55,10 @@ s16 sector_portal_offset(s16 sector_idx, portal_map* mp);
 
 s16 sector_num_walls(s16 sector_idx, portal_map* mp);
 
+void set_sector_floor_height(s16 sector_idx, portal_map* mp, s16 height);
 s16 sector_floor_height(s16 sector_idx, portal_map* mp);
 
+void set_sector_ceil_height(s16 sector_idx, portal_map* mp, s16 height);
 s16 sector_ceil_height(s16 sector_idx, portal_map* mp);
 
 s16 sector_floor_color(s16 sector_idx, portal_map* mp);

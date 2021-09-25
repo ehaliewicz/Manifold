@@ -5,11 +5,12 @@ from utils import input_int, draw_list
 
 
 class Sector():
-    def __init__(self, index, walls=None, floor_height=0, ceil_height=100, floor_color=1, ceil_color=1):
+    def __init__(self, index, walls=None, floor_height=0, ceil_height=100, floor_color=1, ceil_color=1, flags=0):
         self.floor_height = floor_height
         self.ceil_height = ceil_height
         self.floor_color = floor_color
         self.ceil_color = ceil_color
+        self.flags = flags
 
         if walls is not None:
             self.walls = walls

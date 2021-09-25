@@ -57,7 +57,7 @@ class Map():
         num_vertexes = len(self.vertexes)
         num_walls = sum(len(sect.walls) for sect in self.sectors)
 
-        NUM_SECTOR_ATTRIBUTES = 7
+        NUM_SECTOR_ATTRIBUTES = 8
 
         res = """#include <genesis.h>
 #include "colors.h"
@@ -73,9 +73,9 @@ class Map():
         portal_offset = 0
         for sect in self.sectors:
             sect_num_walls = len(sect.walls)
-            res += "    {}, {}, {}, {}<<4, {}<<4, {}, {},\n".format(wall_offset, portal_offset, sect_num_walls,
+            res += "    {}, {}, {}, {}<<4, {}<<4, {}, {}, {},\n".format(wall_offset, portal_offset, sect_num_walls,
                                                                     sect.floor_height, sect.ceil_height,
-                                                                    sect.floor_color, sect.ceil_color)
+                                                                    sect.floor_color, sect.ceil_color, sect.flags)
             
             wall_offset += sect_num_walls+1
             portal_offset += sect_num_walls

@@ -32,35 +32,6 @@ fix16 angleSinFrac12, angleCosFrac12;
 s16 playerZ12Frac4;
 
 
-void init_3d_palette() {
-    for(int i = 0; i < 16; i++) {
-        //u16 col = RGB24_TO_VDPCOLOR((random() << 8) | random());
-        //u16 col = RGB24_TO_VDPCOLOR(((random() & 0xFF)<<16) |( (random()&0xFF)<<8) | (random()&0xFF));
-        //threeDPalette[i] = col;
-    }
-}
-
-u16 mapPalette[16] = {
-    RGB24_TO_VDPCOLOR(0),
-    RGB24_TO_VDPCOLOR(0xFF0000),
-    RGB24_TO_VDPCOLOR(0xFFFF00),
-    RGB24_TO_VDPCOLOR(0xAF0000),
-    RGB24_TO_VDPCOLOR(0xAFAF00),
-    RGB24_TO_VDPCOLOR(0),
-    RGB24_TO_VDPCOLOR(0),
-    RGB24_TO_VDPCOLOR(0),
-    RGB24_TO_VDPCOLOR(0),
-    RGB24_TO_VDPCOLOR(0),
-    RGB24_TO_VDPCOLOR(0),
-    RGB24_TO_VDPCOLOR(0),
-    RGB24_TO_VDPCOLOR(0),
-    RGB24_TO_VDPCOLOR(0),
-    RGB24_TO_VDPCOLOR(0),
-    RGB24_TO_VDPCOLOR(0xFFFFFF),
-};
-
-
-
 static int pause_game = 0;
 static int quit_game = 0;
 
@@ -93,32 +64,31 @@ int cur_frame;
 draw_mode render_mode;
 int debug_draw;
 int subpixel;
-int bob_idx;
 
-#include "tex_tables_lookup.h"
 
+u32 vints = 0;
 void showFPS(u16 float_display)
 {
-    char str[8];
+    char str[32];
     const u16 y = 5;
 
     if (float_display)
     {
         fix32ToStr(SYS_getFPSAsFloat(), str, 1);
-        VDP_clearTextBG(BG_B, 2, y, 5);
+        VDP_clearTextBG(BG_B, 1, y, 4);
     }
     else
     {
         uintToStr(SYS_getFPS(), str, 1);
-        VDP_clearTextBG(BG_B, 2, y, 2);
+        VDP_clearTextBG(BG_B, 1, y, 2);
     }
 
     // display FPS
     VDP_drawTextBG(BG_B, str, 1, y);
 
-    
-
-
+    sprintf(str, "%i ", vints);
+    vints = 0;
+    VDP_drawTextBG(BG_B, str, 1, 6);
 }
 
 
@@ -156,7 +126,6 @@ void copy_quarter_words(u8* src, u32 dst) {
         QUARTER_WORDS, 4);
 }
 
-u32 vints = 0;
 void do_vint_flip() {
     vints++;
     if(vint_flipping == 1) {
@@ -241,11 +210,6 @@ void request_flip() {
         // wait until it has started, and then we can safely flip to the next framebuffer
         //return;
     }
-    char buf[32];
-    sprintf(buf, "vints: %i ", vints);
-    vints = 0;
-    VDP_drawTextBG(BG_B, buf, 1, 6);
-
 
     if(bmp_buffer_write == bmp_buffer_0) {
         vram_copy_src = bmp_buffer_0;
@@ -264,15 +228,19 @@ void request_flip() {
 void draw_3d_view(u32 cur_frame) {
 
     //BMP_vertical_clear();
+
     // clear clipping buffers
     clear_2d_buffers();
+
     // clear portal graph visited cache
     clear_portal_cache();
+
     // recursively render portal graph
     portal_rend(cur_player_pos.cur_sector, cur_frame);
+
     // display fps
-    //BMP_waitFlipComplete();
-    showFPS(1);
+    //showFPS(1);
+
     // request a flip when vsync process is idle (almost always, as the software renderer is much slower than the framebuffer DMA process)
     request_flip();
     //BMP_flip(1, 0);
@@ -289,29 +257,47 @@ Vect2D_f32 *sector_centers = NULL;
 static int last_pressed_b = 0;
 //u8 do_collision = 0;
 
+int bob_idx;
+u8 gun_bob_idx;
+const fix32 bobs[32] = {FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), 
+                        FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), 
+                        FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1),
+                        FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1)};
+
+
+const Vect2D_s16 gun_bobs[16] = {
+    {-1,-1},{-2,-2},{-3,-3},{-4,-4},{-3,4},{-2,4},{-1,4},{0,4},{1,4},{2,4},{3,4},{4,4},{3,3},{2,2},{1,1},{0,0}
+};
+
+
+
+Sprite* shotgun_spr;
+#define BASE_GUN_X 128
+#define BASE_GUN_Y 110
+
+void set_gun_pos() {
+    u8 idx = (gun_bob_idx>>4) % 0xF;
+
+    SPR_setPosition(shotgun_spr, BASE_GUN_X+(gun_bobs[idx].x<<1), BASE_GUN_Y+(gun_bobs[idx].y<<1));
+}
+
+void step_gun_bob() {
+    set_gun_pos();
+    gun_bob_idx++;
+}
+void reset_gun_bob() {
+    gun_bob_idx = 0;
+    set_gun_pos();
+}
+
+
+int holding_down_move = 0;
+
 void handle_input() {
     int strafe = joy_button_pressed(BUTTON_C);
 
     int pressed_b = joy_button_pressed(BUTTON_B);
-    if(!last_pressed_b && pressed_b) {
-        int next_sector = cur_player_pos.cur_sector + 1;
-        if(next_sector >= cur_portal_map->num_sectors) {
-            next_sector = 0;
-        }
-        cur_player_pos.x = sector_centers[next_sector].x;
-        cur_player_pos.y = sector_centers[next_sector].y;
-        cur_player_pos.cur_sector = next_sector;
-    }
-    last_pressed_b = pressed_b;
 
-    //ssector* cur_ssect = find_subsector_for_position(cur_player_pos.x, cur_player_pos.y, cur_level->num_nodes-1);
-
-    //u16 sector_idx = ssect_sector_idx(cur_ssect);
-    //sector* cur_sector = &(cur_level->sectors[sector_idx]);
-
-    //cur_player_pos.z = cur_sector->floor_height;
-    
-    //player_pos new_player_pos = cur_player_pos;
 
     int moved = 0;
     fix32 curx = cur_player_pos.x;
@@ -348,7 +334,10 @@ void handle_input() {
                 newang -= rot_speed;
             }
         }
-    }    
+    }   
+
+
+
     if(joy_button_pressed(BUTTON_DOWN)) {   
         newy = cury - angleSin32*move_speed;
         newx = curx - angleCos32*move_speed;
@@ -358,7 +347,6 @@ void handle_input() {
         newx = curx + angleCos32*move_speed;
         moved = 1;
     }
-    
 
     cur_player_pos.ang = newang;
 
@@ -379,15 +367,25 @@ void handle_input() {
 
     }
 
-    const fix32 bobs[32] = {FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), 
-                            FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), 
-                            FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1),
-                            FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1)};
     //cur_player_pos.z += bobs[bob_idx>>1]/2;
     //bob_idx++;
     //if(bob_idx >= 64) {
     //    bob_idx = 0;
     //}
+
+    u8 move_button = joy_button_pressed(BUTTON_UP) ? BUTTON_UP : (joy_button_pressed(BUTTON_DOWN) ? BUTTON_DOWN : 0);
+
+    step_gun_bob();
+    /*
+    if(!holding_down_move && move_button) {
+        holding_down_move = move_button;
+    } else if (holding_down_move && (holding_down_move == move_button)) {
+        step_gun_bob();
+    } else {
+        holding_down_move = 0;
+        reset_gun_bob();
+    }
+    */
 
 
     pause_game = joy_button_pressed(BUTTON_START);
@@ -469,21 +467,8 @@ void init_sector_jump_positions() {
 }
 
 void do_vint_flip();
-void test_ram() {
-    u32 bytes = 0;
-    unlock_ram();
-    ram_set(0, 12);
-    u16 v0 = ram_get(0);
-    ram_set(200000, 13);
-    u16 v1 = ram_get(200000);
-    char buf[32];
-    sprintf(buf, "test: %u %u ", v0, v1);
-    VDP_drawTextBG(BG_B, buf, 1, 5);
-    while(1) {
-        request_flip();
-    }
-}
 
+#include "tex_tables_lookup.h"
 void copy_texture_tables() {
     #ifdef RAM_TEXTURE
     u32 ram_position = RAM_START;
@@ -505,11 +490,30 @@ void copy_texture_tables() {
     #endif
 }
 
+u16 free_tile_loc = 0x390;
+
+
 void init_game() {
     copy_texture_tables();
+    
+    VDP_setTextPalette(PAL3);
+
+    //DMA_doVRamFill(0x0390, 0x0170, 0x00, 1);
+    VDP_fillTileData(0x00, 0x0390, 0x170, 1);
+    
     //ram_set(100, 0);
     vint_flip_requested = 0;
     vint_flipping = 0;
+    
+
+    //SPR_init();
+    //shotgun_spr = SPR_addSprite(&shotgun, BASE_GUN_X, BASE_GUN_Y, TILE_ATTR_FULL(PAL0, 0, 0, 0, free_tile_loc));
+    //SPR_setVRAMTileIndex(shotgun_spr, free_tile_loc);
+    free_tile_loc += shotgun.maxNumTile;
+    reset_gun_bob();
+    
+    PAL_setPalette(PAL0, shotgun.palette->data);
+    SPR_update();
 
     //XGM_stopPlay();
     SYS_setVIntCallback(do_vint_flip);
@@ -522,27 +526,21 @@ void init_game() {
     #endif
     //VDP_setScreenHeight240();
 
-    //BMP_setBufferCopy(1);
-
-    //request_flip();
 
     render_mode = GAME_WIREFRAME;
-    bob_idx = 0;
+
     subpixel = 1;
+    holding_down_move = 0;
 
     cur_frame = 1;
     debug_draw = 0;
-    //PAL3
-    //VDP_setBackgroundColor(LIGHT_BLUE_IDX);
-    //VDP_setVerticalScroll(BG_B, 0);
-    //VDP_drawImageEx(BG_B, &bg_img,   TILE_ATTR_FULL(PAL3, 0, 0, 0, 0x0360), 8, 0, 1, 1);
-	//VDP_drawImageEx(BG_B, &doom_logo, 0x0360, 8, 0, 1, 1);
+    
+	VDP_setBackgroundColor(1);
 
+    #include "editor_test_map.h"
 
-    //set_portal_map((portal_map*)&portal_level_1);
-    //set_portal_map(&editor_test_map_v2);
     set_portal_map((portal_map*)&overlapping_map);
-
+    //set_portal_map((portal_map*)&blahblah);
 
 
 
@@ -552,23 +550,17 @@ void init_game() {
     } else {
         init_sector_jump_positions();
         
-        //cur_player_pos.x = 133430;
         cur_player_pos.x = sector_centers[0].x;
-        //cur_player_pos.y = -200904; 
         cur_player_pos.y = sector_centers[0].y; 
         cur_player_pos.cur_sector = 0;
-        //cur_player_pos.cur_sector = 0;
 
         cur_player_pos.z = (sector_floor_height(cur_player_pos.cur_sector, (portal_map*)cur_portal_map)<<(FIX32_FRAC_BITS-4)) + FIX32(50);
 
         cur_player_pos.ang = 0;
-        //cur_player_pos.ang = 904;
     }
 
-    init_3d_palette();
     init_clip_buffer_list();
 
-    //cur_palette = (u16*)threeDPalette;
     cur_palette = pal.data;
     VDP_setPalette(PAL1, cur_palette);
     
@@ -577,6 +569,20 @@ void init_game() {
 
 
     BMP_init(1, BG_A, PAL1, 0, 1);
+    
+
+
+    u16 skybox_gradient_basetile = TILE_ATTR_FULL(PAL3, 0, 0, 0, free_tile_loc);
+	VDP_drawImageEx(BG_B, &skybox_gradient, skybox_gradient_basetile, 4, 4, 0, 1);
+    //VDP_setTileMapEx(BG_B, skybox_gradient.tilemap, skybox_gradient_basetile, 4, 4, 0, 0, skybox_gradient.tilemap->w, skybox_gradient.tilemap->h, CPU);
+    //VDP_setTileMapData(VDP_BG_B, skybox_gradient.tileset->tiles, skybox_gradient_basetile, 0x0390, skybox_gradient.tileset->numTile, 2);
+    PAL_setPalette(PAL3, skybox_gradient.palette->data);
+
+    free_tile_loc += skybox_gradient.tileset->numTile;
+
+    //u16 hud_base_tile = TILE_ATTR_FULL(PAL2, 1, 0, 0, free_tile_loc);
+    //VDP_drawImageEx(BG_B, &hud, hud_base_tile, 0, 20, 0, 1);
+    //PAL_setPalette(PAL2, hud.palette->data);
     
     init_2d_buffers();
 
@@ -639,21 +645,24 @@ game_mode run_game() {
 
             
     }
+    //SPR_update();
     u32 end_ticks = getTick();
     last_frame_ticks = end_ticks - start_ticks;
 
     cur_frame++;
-    tick_texture();
     return SAME_MODE;
 }
 
 
 void cleanup_game() { 
     BMP_end();
+    //SPR_releaseSprite(shotgun_spr);
+    //SPR_end();
     MEM_free(sector_centers);
     cleanup_portal_renderer();
     free_clip_buffer_list();
     release_2d_buffers();
     clear_object_lists();
+    
     MEM_pack();
 }

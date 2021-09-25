@@ -170,9 +170,9 @@ s16 project_and_adjust_y_fix(s16 y, s16 z_recip) {
     );
     const4RyMulRecipZ = (const4RyMulRecipZ<<3) + (const4RyMulRecipZ<<6); // <<= 6;
     */
+   const s16 yaw = 20;
     s16 yproj = (CONST3<<4) + (const4RyMulRecipZ>>16);
     return ((SCREEN_HEIGHT-1)<<4)-yproj;
-
     //fix32 rx = trans_map_vert.x;
     //fix32 rz = trans_map_vert.y;
 }
@@ -194,7 +194,7 @@ s16 project_and_adjust_y_fix_c(s16 y, s16 z) {
 
 #define CLIP_DIVISION
 
-clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2, texmap_info* tmap, u32 wall_len) {
+clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2, texmap_params* tmap, u32 wall_len) {
     // TODO: adjust texture coordinates here as well
     
     if(0) { //if(debug) {
@@ -210,39 +210,25 @@ clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2, texma
     //s16 rz2 = rz2_fix >> TRANS_Z_FRAC_BITS;
 
     if(rz1_12_4 < NEAR_Z_FIX && rz2_12_4 < NEAR_Z_FIX) {
-    //if(rz1_12_4 < NEAR_Z_FIX && rz2_12_4 < NEAR_Z_FIX) {
-        if(0) { //if(debug) {
-            KLog("wall is offscreen!");
-        }
         tmap->needs_perspective = 0;
     
         return OFFSCREEN;
     }
 
     s16 dz_12_4 = rz2_12_4 - rz1_12_4;
-    if(0) { //if(debug) {
-        KLog_S1("dz_12_4: ", dz_12_4);
-    }
 
     tmap->needs_perspective = 0; //(dz_12_4 > (1<<4));
     #define TEX_REPEAT_DIST 64
     u16 repetitions = max(1, wall_len / TEX_REPEAT_DIST);
-    if(0) { //if(debug) {
-        KLog_U1("repetitions: ", repetitions);
-    }
     tmap->repetitions = repetitions;
     //KLog_U1("repetitions: ", repetitions);
 
     s32 base_left_u_16 = 0;
     s32 base_right_u_16 = (repetitions)<<16;
-    if(0) { //if(debug) {
-        //KLog_S1("base_left_u: ", base_left_u_20);
-        //KLog_S1("base_right_u: ", base_right_u_20);
-        //KLog_S1("base_right_u int: ", base_right_u_20>>20);
-    }
     s32 fix_du_16 = (base_right_u_16-base_left_u_16);
 
     s32 du_over_dz_16; // = fix_du; // 16.16
+
     if((dz_12_4>>4) != 0) {
         du_over_dz_16 = (fix_du_16<<TRANS_Z_FRAC_BITS) / dz_12_4; // fix 16
         if(0) { //if(debug) {
@@ -283,7 +269,7 @@ clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2, texma
     }
     
     s16 dx = rx2-rx1;
-    KLog_S1("dx: ", dx);
+    //KLog_S1("dx: ", dx);
 
 
     // SLOW

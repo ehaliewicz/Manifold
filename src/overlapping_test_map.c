@@ -5,42 +5,42 @@
 
 
 // wall offset, portal offset, number of walls, floor height, ceiling height, floor color, ceiling color, slope_start_wall_idx, slope_end_wall_idx
-static const s16 sectors[136] = {
-    0, 0, 6,    60<<4, 200<<4, BLUE_IDX, BLUE_IDX,       0, // floor normally 100 here
-    7, 6, 5,   100<<4, 200<<4, BLUE_IDX, BLUE_IDX,       0,
-    13, 11, 4,  60<<4, 200<<4, BLUE_IDX, BLUE_IDX,       0, //SECTOR_FLOOR_SLOPED|SECTOR_CEIL_SLOPED, // floor normally 100 here
-    18, 15, 4, 120<<4, 240<<4, BLUE_IDX, LIGHT_BLUE_IDX, 0, //SECTOR_FLOOR_SLOPED|SECTOR_CEIL_SLOPED,
-    23, 19, 4, 140<<4, 280<<4, BLUE_IDX, BLUE_IDX,       0, //SECTOR_FLOOR_SLOPED|SECTOR_CEIL_SLOPED,
-    28, 23, 4, 160<<4, 320<<4, BLUE_IDX, LIGHT_BLUE_IDX, 0, //SECTOR_FLOOR_SLOPED|SECTOR_CEIL_SLOPED,
-    33, 27, 4, 180<<4, 350<<4, BLUE_IDX, BLUE_IDX,       0, //SECTOR_FLOOR_SLOPED|SECTOR_CEIL_SLOPED,
-    38, 31, 5, 200<<4, 350<<4, BLUE_IDX, LIGHT_BLUE_IDX, 0,
-    44, 36, 4, 100<<4, 200<<4, BLUE_IDX, BLUE_IDX,       0,
-    49, 40, 4, 100<<4, 200<<4, BLUE_IDX, BLUE_IDX,       0,
-    54, 44, 4, 200<<4, 350<<4, BLUE_IDX, BLUE_IDX,       0,
-    59, 48, 4,  80<<4, 180<<4, RED_IDX,  LIGHT_RED_IDX,  0,
-    64, 52, 4,  60<<4, 160<<4, BLUE_IDX, BLUE_IDX,       0,
-    69, 56, 4,  40<<4, 140<<4, RED_IDX,  LIGHT_RED_IDX,  0,
-    74, 60, 4,  20<<4, 120<<4, BLUE_IDX, BLUE_IDX,       0,
-    79, 64, 5,   0<<4, 100<<4, RED_IDX,  LIGHT_RED_IDX,  0,
-    85, 69, 4,   0<<4, 100<<4, RED_IDX,  RED_IDX,        0,
+static s16 sectors[136] = {
+    0, 0, 6,    60<<4, 200<<4, BLUE_IDX, BLUE_IDX,        0, // floor normally 100 here
+    7, 6, 5,    60<<4, 60<<4,  BLUE_IDX, BLUE_IDX,         0,
+    13, 11, 4, 200<<4, 200<<4, BLUE_IDX, BLUE_IDX,        0, //SECTOR_FLOOR_SLOPED|SECTOR_CEIL_SLOPED, // floor normally 100 here
+    18, 15, 4, 120<<4, 240<<4, BLUE_IDX, LIGHT_BLUE_IDX,  0, //SECTOR_FLOOR_SLOPED|SECTOR_CEIL_SLOPED,
+    23, 19, 4, 140<<4, 280<<4, BLUE_IDX, BLUE_IDX,        0, //SECTOR_FLOOR_SLOPED|SECTOR_CEIL_SLOPED,
+    28, 23, 4, 160<<4, 320<<4, BLUE_IDX, LIGHT_BLUE_IDX,  0, //SECTOR_FLOOR_SLOPED|SECTOR_CEIL_SLOPED,
+    33, 27, 4, 180<<4, 350<<4, BLUE_IDX, BLUE_IDX,        0, //SECTOR_FLOOR_SLOPED|SECTOR_CEIL_SLOPED,
+    38, 31, 5, 200<<4, 350<<4, BLUE_IDX, LIGHT_BLUE_IDX,  0,
+    44, 36, 4,  60<<4, 200<<4, BLUE_IDX, BLUE_IDX,         0,
+    49, 40, 4, 100<<4, 200<<4, BLUE_IDX, BLUE_IDX,        0,
+    54, 44, 4, 200<<4, 350<<4, BLUE_IDX, TRANSPARENT_IDX, 0,
+    59, 48, 4,  60<<4, 180<<4, RED_IDX,  LIGHT_RED_IDX,   0,
+    64, 52, 4,  60<<4, 160<<4, BLUE_IDX, BLUE_IDX,        0,
+    69, 56, 4,  40<<4, 140<<4, RED_IDX,  LIGHT_RED_IDX,   0,
+    74, 60, 4,  20<<4, 120<<4, BLUE_IDX, BLUE_IDX,        0,
+    79, 64, 5,   0<<4, 100<<4, RED_IDX,  LIGHT_RED_IDX,   0,
+    85, 69, 4,   0<<4, 100<<4, RED_IDX,  RED_IDX,         0,
 };
 
 
 
 
 static const u16 walls[90] = {
-    0, 1, 2, 3, 4, 5, 0, 
-    2, 6, 7, 21, 3, 2, 
-    4, 8, 9, 5, 4, 
-    8, 10, 11, 9, 8, 
+     0,  1,  2,  3,  4,  5,  0, 
+     2,  6,  7, 21,  3,  2, 
+     4,  8,  9,  5,  4, 
+     8, 10, 11,  9,  8, 
     10, 12, 13, 11, 10, 
     12, 14, 15, 13, 12, 
     14, 16, 17, 15, 14, 
     16, 18, 19, 20, 17, 16, 
-    21, 22, 23, 3, 21, 
+    21, 22, 23,  3, 21, 
     22, 24, 25, 23, 22, 
     18, 26, 27, 19, 18, 
-    6, 28, 29, 7, 6, 
+     6, 28, 29,  7,  6, 
     28, 30, 31, 29, 28, 
     30, 32, 33, 31, 30, 
     32, 34, 35, 33, 32, 
@@ -288,8 +288,14 @@ static const vertex vertexes[42] = {
 // sector 9,10,16
 sector_param sector_params[17] = {
     {.light = 0}, //1},
-    {.light = 0}, //1},
-    {.light = 0}, //1},
+    {.light = 0, 
+     .orig_height = 200<<4, 
+     .state = CLOSED, 
+     .frames_left=30, }, //1},
+    {.light = 0,
+     .orig_height = 60<<4,
+     .state = CLOSED,
+     .frames_left=30, }, //1},
     {.light = -1}, //0},
     {.light = -1}, //0},
     {.light = -1}, //0},
@@ -308,8 +314,8 @@ sector_param sector_params[17] = {
 
 sector_type sector_types[17] = {
     NO_TYPE,
-    NO_TYPE,
-    NO_TYPE,
+    DOOR,
+    LIFT,
     NO_TYPE,
     NO_TYPE,
     NO_TYPE,
