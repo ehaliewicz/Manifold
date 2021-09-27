@@ -628,15 +628,30 @@ movel_draw_table_%=:\t\n\
 
 int cleared = 0;
 
+int last_pressed_a = 0;
 void flip() {  
   //u8* dst_buf = (bmp_buffer_write == bmp_buffer_0) ? bmp_buffer_1 : bmp_buffer_0;
   
-  //if(JOY_readJoypad(JOY_1) & BUTTON_A) {
-  //    if(!cleared) { BMP_vertical_clear(); request_flip(); VDP_waitVInt(); BMP_vertical_clear(); cleared = 1; }
-  //    request_flip();
-  //    memcpy(bmp_buffer_read, bmp_buffer_write, 256*144/2);
-  //    waitMs(250);
-  //}
+  if(JOY_readJoypad(JOY_1) & BUTTON_A) {
+    if(!last_pressed_a) {
+        // just copy written buffer to next buffer
+        //memcpy(bmp_buffer_read, bmp_buffer_write, 256*144/2);
+        request_flip(); // draw buffer with one wall
+        u8* tmp = bmp_buffer_write;
+        bmp_buffer_write = bmp_buffer_read;
+        bmp_buffer_read = tmp;
+        last_pressed_a = 1;
+    } else {
+        memcpy(bmp_buffer_read, bmp_buffer_write, 256*144/2);
+        request_flip(); // draw buffer with one wall
+        u8* tmp = bmp_buffer_write;
+        bmp_buffer_write = bmp_buffer_read;
+        bmp_buffer_read = tmp;
+    }
+    waitMs(125);
+  } else {
+      last_pressed_a = 0;
+  }
 
 }
 

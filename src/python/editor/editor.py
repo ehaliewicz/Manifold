@@ -66,8 +66,8 @@ class Map():
 
 """
         
-                
-        res += "static const s16 sectors[{}] =".format(num_sectors * NUM_SECTOR_ATTRIBUTES) + "{\n"
+
+        res += "static s16 sectors[{}] =".format(num_sectors * NUM_SECTOR_ATTRIBUTES) + "{\n"
 
         wall_offset = 0
         portal_offset = 0
@@ -122,9 +122,9 @@ class Map():
         res += "static const wall_col wall_colors[{}] =".format(num_walls) + "{\n"
         for sect in self.sectors:
             for wall in sect.walls:
-                mcol = "0x{}{}".format(wall.mid_color, wall.mid_color)
-                ucol = "0x{}{}".format(wall.up_color, wall.up_color)
-                dcol = "0x{}{}".format(wall.low_color, wall.low_color)
+                mcol = "0x{}".format(wall.mid_color, wall.mid_color)
+                ucol = "0x{}".format(wall.up_color, wall.up_color)
+                dcol = "0x{}".format(wall.low_color, wall.low_color)
                 if wall.adj_sector_idx == -1:
                     res += "    {" + ".mid_col = {}".format(mcol) + "},\n"
                 else:
@@ -137,8 +137,22 @@ class Map():
         res += "static const vertex vertexes[{}]".format(num_vertexes) + " = {\n"
         for vert in self.vertexes:
             res += "    VERT({},{}),\n".format(vert.x, vert.y)
-        res += "};\n"
-        
+        res += "};\n\n"
+
+        res += "static const sector_type sector_types[{}]".format(num_sectors) + " = {\n"
+        for sect in self.sectors:
+            res += "{},".format(sect.type)
+        res += "};\n\n"
+
+        res += "static sector_param sector_params[{}]".format(num_sectors) + " = {\n"
+        for sect in self.sectors:
+            res += "{"
+            res += ".light={}, .orig_height={}<<4, .ticks_left={}, .state={}".format(
+                sect.params.light, sect.params.orig_height, sect.params.ticks_left, sect.params.state
+            )
+            res += "},\n"
+        res += "};\n\n"
+
         
         res += "const portal_map {} ".format(self.name.replace(" ", "_")) + " = {\n"
         res += "    .num_sectors = {},\n".format(num_sectors)
@@ -149,7 +163,9 @@ class Map():
         res += "    .portals = portals,\n"
         res += "    .vertexes = vertexes,\n"
         res += "    .wall_colors = wall_colors,\n"
-        res += "    .wall_norm_quadrants = wall_normal_quadrants\n"
+        res += "    .wall_norm_quadrants = wall_normal_quadrants,\n"
+        res += "    .sector_params = sector_params,\n"
+        res += "    .sector_types = sector_types\n"
         res += "};"
                 
         
@@ -537,7 +553,8 @@ def load_map_from_file(f):
     old_map = old_state.map_data
 
     new_sectors = [sector.Sector(index=s.index, walls=s.walls,
-                                 floor_height=s.floor_height, ceil_height=s.ceil_height)
+                                 floor_height=s.floor_height, ceil_height=s.ceil_height,
+                                 type=getattr(s, 'type', 0), params=getattr(s,'params', sector.SectorParams(0,0,0,0)))
                    for s in old_map.sectors]
 
     new_map = Map(name=old_map.name,
@@ -563,6 +580,15 @@ def save_map():
     
 def export_map():
     f = filedialog.asksaveasfile(mode="w")
+    if f is not None:
+        f.write(cur_state.map_data.generate_c_from_map())
+        f.close()
+
+def export_map_to_rom():
+    f = filedialog.asksaveasfile(mode="rwb")
+    slot = 2
+    fileContent = f.read()
+
     if f is not None:
         f.write(cur_state.map_data.generate_c_from_map())
         f.close()

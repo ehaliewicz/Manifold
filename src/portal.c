@@ -12,7 +12,6 @@
 #include "level.h"
 #include "math3D.h"
 #include "portal_map.h"
-#include "portal_maps.h"
 #include "sector.h"
 #include "textures.h"
 #include "vertex.h"
@@ -27,17 +26,16 @@ static u32* sector_visited_cache; // i don't know if this helps much, but we mig
 
 void init_portal_renderer() {
     //vert_transform_cache = MEM_alloc(sizeof(u32) * cur_portal_map->num_verts);
-    sector_visited_cache = MEM_alloc(sizeof(u32) * cur_portal_map->num_sectors);   
+    sector_visited_cache = MEM_alloc(sizeof(u32) * cur_portal_map->num_sectors);  
 }
 
 void clear_portal_cache() {
-    //memset(sector_visited_cache, 0, sizeof(u32) * cur_portal_map->num_sectors);
+    memset(sector_visited_cache, 0, sizeof(u32) * cur_portal_map->num_sectors);
 }
 
 void cleanup_portal_renderer() {
     MEM_free(sector_visited_cache);
 }
-
 
 
 // #define DEBUG_PORTAL_CLIP
@@ -60,11 +58,11 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
     portal_map* map = (portal_map*)cur_portal_map;
 
     // if this sector has been visited 32 times, or is already being currently rendered, skip it
-    if(sector_visited_cache[sector] == cur_frame) { //} & 0b101) { //0x21) {
+    if(sector_visited_cache[sector] & 0b1) { //} & 0b101) { //0x21) {
             return; // Odd = still rendering, 0x20 = give up
     }
 
-    sector_visited_cache[sector] = cur_frame;
+    sector_visited_cache[sector]++;
         
     u16 window_min = x1; //cur_item.x1;
     u16 window_max = x2; //cur_item.x2;
@@ -369,16 +367,26 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
 
         s16 x1_pegged, x2_pegged;
 
+        u8 floor_needs_render, ceil_needs_render;
+
         if(is_portal) {
+            s16 neighbor_ceil_color = sector_floor_color(portal_sector, map);
+            s16 neighbor_floor_color = sector_floor_color(portal_sector, map);
             neighbor_floor_height = sector_floor_height(portal_sector, map);
             neighbor_ceil_height = sector_ceil_height(portal_sector, map);
+            floor_needs_render = (floor_height != neighbor_floor_height || floor_color != neighbor_floor_color);
+            ceil_needs_render = (ceil_height != neighbor_ceil_height || ceil_color != neighbor_ceil_color);
 
+            if(floor_needs_render) {
 
+                x1_ybot = project_and_adjust_y_fix(floor_height, z_recip_v1);
+                x2_ybot = project_and_adjust_y_fix(floor_height, z_recip_v2);
+            }
 
-            x1_ytop = project_and_adjust_y_fix(ceil_height, z_recip_v1);
-            x1_ybot = project_and_adjust_y_fix(floor_height, z_recip_v1);
-            x2_ytop = project_and_adjust_y_fix(ceil_height, z_recip_v2);
-            x2_ybot = project_and_adjust_y_fix(floor_height, z_recip_v2);
+            if(ceil_needs_render) {
+                x1_ytop = project_and_adjust_y_fix(ceil_height, z_recip_v1);
+                x2_ytop = project_and_adjust_y_fix(ceil_height, z_recip_v2);
+            }
 
             if (neighbor_ceil_height > floor_height && neighbor_floor_height < ceil_height) {
                 recur = 1;
@@ -401,7 +409,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
 
             if(cur_sect_type == DOOR || cur_sect_type == LIFT) {
                 // top peg all walls in a door/crusher type sector
-                s16 orig_door_height = cur_portal_map->sector_params[sector].orig_height;
+                s16 orig_door_height = get_sector_orig_height(sector);
                 //s16 orig_height_diff = orig_door_height - neighbor_floor_height;
                 x1_pegged = project_and_adjust_y_fix(orig_door_height, z_recip_v1);
                 x2_pegged = project_and_adjust_y_fix(orig_door_height, z_recip_v2);
@@ -415,8 +423,8 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
         clip_buf* clipping_buffer = NULL;
 
 
-        int render_forcefield = (sector == 0 && is_portal && portal_sector == 2) || (sector == 2 && is_portal && portal_sector == 0); 
-        render_forcefield = (sector == 6 && is_portal && portal_sector == 7) || (sector == 7 && is_portal && portal_sector == 6);
+        int render_forcefield = 0; //(sector == 0 && is_portal && portal_sector == 2) || (sector == 2 && is_portal && portal_sector == 0); 
+        render_forcefield = 0; //(sector == 6 && is_portal && portal_sector == 7) || (sector == 7 && is_portal && portal_sector == 6);
         int render_glass = 0; //(sector == 0 && is_portal && portal_sector == 1) || (sector == 1 && is_portal && portal_sector == 0);
 
 
@@ -432,11 +440,12 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
 
         if (is_portal) {
 
-
             #ifdef DEBUG_PORTAL_CLIP
             KLog_S2("portal in sector: ", sector, " drawn with wall idx: ", i);
             #endif
             // draw step down from ceiling
+            if(ceil_needs_render) {
+
             if(neighbor_ceil_height < ceil_height) {
 
                 s16 nx1_ytop = project_and_adjust_y_fix(neighbor_ceil_height, z_recip_v1);
@@ -446,7 +455,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
                 if(neighbor_sector_type == DOOR) { 
                     tmap_info.tex = &sci_fi_door_texture.mip_mid;
 
-                    s16 orig_door_height = cur_portal_map->sector_params[portal_sector].orig_height;
+                    s16 orig_door_height = get_sector_orig_height(portal_sector);
                     s16 orig_height_diff = orig_door_height - neighbor_floor_height;
                     x1_pegged = project_and_adjust_y_fix(neighbor_ceil_height+orig_height_diff, z_recip_v1);
                     x2_pegged = project_and_adjust_y_fix(neighbor_ceil_height+orig_height_diff, z_recip_v2);
@@ -478,7 +487,9 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
                                          min(z_recip_v1, z_recip_v2),
                                         window_min, window_max, &ceil_params);
             }
+            }
 
+            if(floor_needs_render) {
             // not sure if this logic is correct
             // if the neighbor's floor is higher than our ceiling we should still draw the lower step, right?
             if(neighbor_floor_height > floor_height) { //} && neighbor_floor_height <= ceil_height) {
@@ -519,6 +530,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
             }
             if(render_forcefield || render_glass) {
                 copy_2d_buffer(window_min, window_max, clipping_buffer);
+            }
             }
             
             if(recur) {
@@ -601,6 +613,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
     }
     */
 
+    sector_visited_cache[sector]++;
 
 }
 

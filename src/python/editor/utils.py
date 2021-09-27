@@ -122,3 +122,11 @@ def input_int2(label, id_str, input_vals, set_vals):
 
     if changed:
         set_vals(new_vals)
+
+def input_select(label, id_str, input_choices, cur_value, set_val):
+    imgui.text(label)
+    imgui.same_line()
+    changed, new_val = imgui.core.combo(id_str, cur_value, input_choices)
+
+    if changed:
+        set_val(new_val)

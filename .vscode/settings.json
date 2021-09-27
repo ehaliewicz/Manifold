@@ -18,7 +18,9 @@
         "colors.h": "c",
         "cart_ram.h": "c",
         "graphics_res.h": "c",
-        "level.h": "c"
+        "level.h": "c",
+        "editor_test_map.h": "c",
+        "maps.h": "c"
     },
     "C_Cpp.errorSquiggles": "Enabled"
 }

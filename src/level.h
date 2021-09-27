@@ -8,6 +8,6 @@ extern const portal_map* cur_portal_map;
 
 
 
-void set_portal_map(portal_map* l);
+void load_portal_map(portal_map* l);
 
 #endif

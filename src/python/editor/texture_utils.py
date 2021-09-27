@@ -254,6 +254,7 @@ if __name__ == '__main__':
     #norm_f = "C:\\Users\Erik\\Desktop\\sci-fi-wall.png"
     #mid_f = "C:\\Users\Erik\\Desktop\\sci-fi-walldarker.png"
     #dark_f = "C:\\Users\Erik\\Desktop\\sci-fi-walldarkest.png"
+
     norm_f = "C:\\Users\\Erik\\code\\genesis\\DOOM\\res\\textures\\DOOR.png"
     mid_f = norm_f
     dark_f = mid_f

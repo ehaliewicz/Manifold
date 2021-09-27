@@ -10,6 +10,8 @@
 #include "graphics_res.h"
 #include "joy_helper.h"
 #include "level.h"
+#include "maps.h"
+#include "map_table.h"
 #include "math3d.h"
 #include "music.h"
 #include "music_res.h"
@@ -17,7 +19,6 @@
 #include "object.h"
 #include "portal.h"
 #include "portal_map.h"
-#include "portal_maps.h"
 #include "sector.h"
 
 object_pos cur_player_pos;
@@ -59,11 +60,7 @@ void calc_movement_speeds() {
     // multiply by how many ticks
 }
 
-
 int cur_frame;
-draw_mode render_mode;
-int debug_draw;
-int subpixel;
 
 
 u32 vints = 0;
@@ -227,7 +224,7 @@ void request_flip() {
 
 void draw_3d_view(u32 cur_frame) {
 
-    //BMP_vertical_clear();
+    BMP_vertical_clear();
 
     // clear clipping buffers
     clear_2d_buffers();
@@ -239,7 +236,7 @@ void draw_3d_view(u32 cur_frame) {
     portal_rend(cur_player_pos.cur_sector, cur_frame);
 
     // display fps
-    //showFPS(1);
+    showFPS(1);
 
     // request a flip when vsync process is idle (almost always, as the software renderer is much slower than the framebuffer DMA process)
     request_flip();
@@ -493,6 +490,7 @@ void copy_texture_tables() {
 u16 free_tile_loc = 0x390;
 
 
+
 void init_game() {
     copy_texture_tables();
     
@@ -527,20 +525,16 @@ void init_game() {
     //VDP_setScreenHeight240();
 
 
-    render_mode = GAME_WIREFRAME;
 
-    subpixel = 1;
     holding_down_move = 0;
 
     cur_frame = 1;
-    debug_draw = 0;
     
 	VDP_setBackgroundColor(1);
 
-    #include "editor_test_map.h"
 
-    set_portal_map((portal_map*)&overlapping_map);
-    //set_portal_map((portal_map*)&blahblah);
+    load_portal_map((portal_map*)map_table[3]);
+
 
 
 
@@ -632,19 +626,9 @@ game_mode run_game() {
     playerYInt = cur_player_pos.y>>FIX32_FRAC_BITS;
 
 
-    switch(render_mode) {
-        case GAME_WIREFRAME:
-        case GAME_SOLID:
-            maybe_set_palette(pal.data);
-            // probably not necessary
-            //VDP_waitVInt();
-            
-            /* 3d render code */
+    maybe_set_palette(pal.data);
+    draw_3d_view(cur_frame);
 
-            draw_3d_view(cur_frame);
-
-            
-    }
     //SPR_update();
     u32 end_ticks = getTick();
     last_frame_ticks = end_ticks - start_ticks;
@@ -663,6 +647,7 @@ void cleanup_game() {
     free_clip_buffer_list();
     release_2d_buffers();
     clear_object_lists();
+    clean_sector_parameters();
     
     MEM_pack();
 }

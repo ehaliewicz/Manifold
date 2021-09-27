@@ -4,72 +4,75 @@
 #include "portal_map.h"
  
 
-s8 get_sector_light_level(s16 sect_idx) {
-    sector_param param = cur_portal_map->sector_params[sect_idx];
+sector_param* live_sector_parameters;
+
+
+s8 get_sector_light_level(u16 sect_idx) {
+    sector_param param = live_sector_parameters[sect_idx];
     return param.light;
 }
 
-s16 get_flashing_sector_ticks_left(s16 sect_idx) {
-    sector_param param = cur_portal_map->sector_params[sect_idx];
-    return param.par2;
+s16 get_sector_orig_height(u16 sect_idx) {
+    return live_sector_parameters[sect_idx].orig_height;
 }
 
-s8 get_stash_param(s16 sect_idx) {
-    return cur_portal_map->sector_params[sect_idx].stash;
+s16 get_flashing_sector_ticks_left(u16 sect_idx) {
+    sector_param param = live_sector_parameters[sect_idx];
+    return param.ticks_left;
 }
 
-void set_sector_light_level(s16 sect_idx, s8 light_level) {
-    cur_portal_map->sector_params[sect_idx].light = light_level;
+void set_sector_light_level(u16 sect_idx, s8 light_level) {
+    live_sector_parameters[sect_idx].light = light_level;
 }
 
-void set_flashing_sector_ticks_left(s16 sect_idx, u8 ticks_left) {
-    cur_portal_map->sector_params[sect_idx].par2 = ticks_left;
-}
-
-void set_stash_param(s16 sect_idx, s8 stash) {
-    cur_portal_map->sector_params[sect_idx].stash = stash;
+void set_flashing_sector_ticks_left(u16 sect_idx, u8 ticks_left) {
+    live_sector_parameters[sect_idx].ticks_left = ticks_left;
 }
 
 
-
-void run_door(s16 sect_idx, sector_param params) {
-    door_lift_state state = cur_portal_map->sector_params[sect_idx].state;
+void run_door(u16 sect_idx, sector_param params) {
+    KLog("running door code lol");
+    door_lift_state state = live_sector_parameters[sect_idx].state;
     s16 cur_height = sector_ceil_height(sect_idx, cur_portal_map);
     s16 orig_door_height = params.orig_height;
     switch(state) {
         case CLOSED: do {
-                if(cur_portal_map->sector_params[sect_idx].frames_left-- == 0) {
-                    cur_portal_map->sector_params[sect_idx].state = GOING_UP;
+                KLog("in CLOSED state");
+                if(live_sector_parameters[sect_idx].ticks_left-- == 0) {
+                    live_sector_parameters[sect_idx].state = GOING_UP;
                 }
             } while(0);
             break;
 
         case GOING_UP: do {
+                KLog("in GOING_UP state");
                 cur_height += 128;
                 set_sector_ceil_height(sect_idx, cur_portal_map, cur_height);
                 if(cur_height >= orig_door_height) {
                     set_sector_ceil_height(sect_idx, cur_portal_map, orig_door_height);
-                    cur_portal_map->sector_params[sect_idx].state = OPEN;
-                    cur_portal_map->sector_params[sect_idx].frames_left = 30;
+                    live_sector_parameters[sect_idx].state = OPEN;
+                    live_sector_parameters[sect_idx].ticks_left = 30;
                 }
             } while(0);
             break;
 
         case OPEN: do {
-            if(cur_portal_map->sector_params[sect_idx].frames_left-- == 0) {
-                cur_portal_map->sector_params[sect_idx].state = GOING_DOWN;
+            KLog("in OPEN state");
+            if(live_sector_parameters[sect_idx].ticks_left-- == 0) {
+                live_sector_parameters[sect_idx].state = GOING_DOWN;
             }
         } while(0);
             break;
 
         case GOING_DOWN: do {
+            KLog("in GOING_DOWN state");
             s16 floor_height = sector_floor_height(sect_idx, cur_portal_map);
             cur_height -= 128;
             set_sector_ceil_height(sect_idx, cur_portal_map, cur_height);
             if(cur_height <= floor_height) {
                     set_sector_ceil_height(sect_idx, cur_portal_map, floor_height);
-                    cur_portal_map->sector_params[sect_idx].state = CLOSED;
-                    cur_portal_map->sector_params[sect_idx].frames_left = 30;
+                    live_sector_parameters[sect_idx].state = CLOSED;
+                    live_sector_parameters[sect_idx].ticks_left = 30;
             }
         } while(0);
         break;
@@ -77,15 +80,15 @@ void run_door(s16 sect_idx, sector_param params) {
 }
 
 
-void run_lift(s16 sect_idx, sector_param params) {
-    door_lift_state state = cur_portal_map->sector_params[sect_idx].state;
+void run_lift(u16 sect_idx, sector_param params) {
+    door_lift_state state = live_sector_parameters[sect_idx].state;
     s16 cur_height = sector_floor_height(sect_idx, cur_portal_map);
     s16 ceil_height = sector_ceil_height(sect_idx, cur_portal_map);
     s16 orig_lift_height = params.orig_height;
     switch(state) {
         case CLOSED: do {
-                if(cur_portal_map->sector_params[sect_idx].frames_left-- == 0) {
-                    cur_portal_map->sector_params[sect_idx].state = GOING_DOWN;
+                if(live_sector_parameters[sect_idx].ticks_left-- == 0) {
+                    live_sector_parameters[sect_idx].state = GOING_DOWN;
                 }
             } while(0);
             break;
@@ -97,15 +100,15 @@ void run_lift(s16 sect_idx, sector_param params) {
                 set_sector_floor_height(sect_idx, cur_portal_map, cur_height);
                 if(cur_height <= orig_lift_height) {
                         set_sector_floor_height(sect_idx, cur_portal_map, orig_lift_height);
-                        cur_portal_map->sector_params[sect_idx].state = OPEN;
-                        cur_portal_map->sector_params[sect_idx].frames_left = 30;
+                        live_sector_parameters[sect_idx].state = OPEN;
+                        live_sector_parameters[sect_idx].ticks_left = 30;
                 }
             } while(0);
             break;
 
         case OPEN: do {
-                if(cur_portal_map->sector_params[sect_idx].frames_left-- == 0) {
-                    cur_portal_map->sector_params[sect_idx].state = GOING_UP;
+                if(live_sector_parameters[sect_idx].ticks_left-- == 0) {
+                    live_sector_parameters[sect_idx].state = GOING_UP;
                 }
         } while(0);
             break;
@@ -115,8 +118,8 @@ void run_lift(s16 sect_idx, sector_param params) {
                 set_sector_floor_height(sect_idx, cur_portal_map, cur_height);
                 if(cur_height >= ceil_height) {
                     set_sector_floor_height(sect_idx, cur_portal_map, ceil_height);
-                    cur_portal_map->sector_params[sect_idx].state = CLOSED;
-                    cur_portal_map->sector_params[sect_idx].frames_left = 30;
+                    live_sector_parameters[sect_idx].state = CLOSED;
+                    live_sector_parameters[sect_idx].ticks_left = 30;
                 }
             } while(0);
             break;
@@ -124,7 +127,7 @@ void run_lift(s16 sect_idx, sector_param params) {
 }
 
 
-void run_flash(s16 sect_idx) {
+void run_flash(u16 sect_idx) {
     
     s8 light_level = get_sector_light_level(sect_idx);
     s16 ticks_left = get_flashing_sector_ticks_left(sect_idx);
@@ -165,8 +168,7 @@ void run_sector_processes() {
     for(int sect_idx = 0; sect_idx < cur_portal_map->num_sectors; sect_idx++) {
 
         sector_type typ = cur_portal_map->sector_types[sect_idx];
-        //u32 param = cur_portal_map->sector_params[sect_idx];
-        sector_param params = cur_portal_map->sector_params[sect_idx];
+        sector_param params = live_sector_parameters[sect_idx];
 
         switch(typ) {
             case NO_TYPE:

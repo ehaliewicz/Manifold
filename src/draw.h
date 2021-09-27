@@ -6,11 +6,6 @@
 #include "texture.h"
 #include "vertex.h"
 
-typedef enum {
-    GAME_WIREFRAME = 1,
-    GAME_SOLID = 2 
-} draw_mode;
-
 
 
 typedef struct {

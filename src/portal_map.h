@@ -1,4 +1,3 @@
-
 #ifndef PORTAL_MAP_H
 #define PORTAL_MAP_H
 
@@ -32,9 +31,9 @@ typedef struct {
 } wall_col;
 
 typedef struct {
-    const int num_sectors;
-    const int num_walls;
-    const int num_verts;
+    const u16 num_sectors;
+    const u16 num_walls;
+    const u16 num_verts;
     s16* sectors;
     const sector_type* sector_types;
     sector_param* sector_params;
@@ -45,6 +44,7 @@ typedef struct {
     const vis_range* wall_vis_ranges;
     const u8* wall_norm_quadrants;
     const u8* pvs;  // max of 32 sectors for now
+    const u8* portal_contributes;
 } portal_map;
 
 s16* sector_data_start(s16 sector_idx, portal_map* mp);

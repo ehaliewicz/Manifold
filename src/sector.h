@@ -2,9 +2,9 @@
 #define SECTOR_H
 
 #include <genesis.h>
+#include "portal_map.h"
 
-#define SECTOR_TYPES 3
-
+#define NUM_SECTOR_TYPES 4
 
 typedef enum {
     NO_TYPE = 0,
@@ -23,15 +23,18 @@ typedef enum {
 
 typedef struct {
     s8 light;
-    s16 par2;
-    s8 stash;
     s16 orig_height;
-    u8 frames_left;
+    u8 ticks_left;
     u8 state; // 0 closed, 1 going up, 2 open, 3 going on
 } sector_param;
 
 
-s8 get_sector_light_level(s16 sect_idx);
+extern sector_param* live_sector_parameters;
+
+ void clean_sector_parameters();
+
+s16 get_sector_orig_height(u16 sect_idx);
+s8 get_sector_light_level(u16 sect_idx);
 void run_sector_processes();
 
 #endif

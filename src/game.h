@@ -8,9 +8,6 @@
 #include "vertex.h"
 
 extern int cur_frame;
-extern int automap_mode;
-extern draw_mode render_mode;
-extern int debug_draw;
 
 extern u32 last_frame_ticks;
 extern u16 rot_speed;
@@ -41,7 +38,6 @@ extern s16 angleSinFrac12;
 extern s16 angleCosFrac12;
 extern s16 playerXInt;
 extern s16 playerYInt;
-extern int subpixel;
 
 void init_game();
 game_mode run_game();

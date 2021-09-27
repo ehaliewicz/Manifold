@@ -286,16 +286,16 @@ static const vertex vertexes[42] = {
 
 
 // sector 9,10,16
-sector_param sector_params[17] = {
+static sector_param sector_params[17] = {
     {.light = 0}, //1},
     {.light = 0, 
      .orig_height = 200<<4, 
      .state = CLOSED, 
-     .frames_left=30, }, //1},
+     .ticks_left=30, }, //1},
     {.light = 0,
      .orig_height = 60<<4,
      .state = CLOSED,
-     .frames_left=30, }, //1},
+     .ticks_left=30, }, //1},
     {.light = -1}, //0},
     {.light = -1}, //0},
     {.light = -1}, //0},
@@ -312,7 +312,7 @@ sector_param sector_params[17] = {
     {.light = -2},//-2}, // flashing
 };
 
-sector_type sector_types[17] = {
+static const sector_type sector_types[17] = {
     NO_TYPE,
     DOOR,
     LIFT,

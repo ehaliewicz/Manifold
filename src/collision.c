@@ -173,7 +173,9 @@ collision_result check_for_collision(fix32 curx, fix32 cury, fix32 newx, fix32 n
             u16 portal_idx = portal_off+i;
             s16 portal_sect = cur_portal_map->portals[portal_idx];
             if(portal_sect == -1) {
-                continue;
+                //continue;
+                cury = newy;
+                break;
             }
 
             if(within_sector(curx, newy, portal_sect)) {
@@ -187,8 +189,8 @@ collision_result check_for_collision(fix32 curx, fix32 cury, fix32 newx, fix32 n
 
     collision_result res;
     res.new_sector = cur_sector;
-    res.pos.x = curx;
-    res.pos.y = cury;
+    res.pos.x = newx; //curx;
+    res.pos.y = newy; //cury;
 
     return res;
 

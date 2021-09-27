@@ -2,6 +2,6 @@
 #define EDITOR_TEST_MAP
 
 
-extern const portal_map blahblah;
+extern const portal_map editor_test_map;
 
 #endif
