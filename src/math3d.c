@@ -170,7 +170,6 @@ s16 project_and_adjust_y_fix(s16 y, s16 z_recip) {
     );
     const4RyMulRecipZ = (const4RyMulRecipZ<<3) + (const4RyMulRecipZ<<6); // <<= 6;
     */
-   const s16 yaw = 20;
     s16 yproj = (CONST3<<4) + (const4RyMulRecipZ>>16);
     return ((SCREEN_HEIGHT-1)<<4)-yproj;
     //fix32 rx = trans_map_vert.x;

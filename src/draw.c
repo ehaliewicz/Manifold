@@ -749,7 +749,6 @@ void draw_forcefield(s16 x1, s16 x2,
 
     u8** offset_ptr = (bmp_buffer_write == bmp_buffer_0) ? (&buf_0_column_offset_table[x]) : (&buf_1_column_offset_table[x]);
     
-    u8 tex_col_int;
 
     for(;x < endx; x++) {
         u8 min_drawable_y = *yclip_ptr++;
@@ -1036,7 +1035,6 @@ void draw_top_pegged_textured_upper_step(s16 x1, s16 x1_ytop, s16 nx1_ytop, s16 
 
     s16 top_y_int;
     s16 ntop_y_int;
-    s16 door_top_int;
 
     s16 beginx = max(x1, window_min);
 
@@ -1747,7 +1745,6 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
             
 
                 u16* tex_column;
-                u8 tex;
                 if (cur_inv_z <= FIX_0_16_INV_DARK_DIST) {
                     tex_column = &dark_tex[tex_idx];
                 } else if (cur_inv_z <= FIX_0_16_INV_MID_DIST) {

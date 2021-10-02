@@ -10,9 +10,6 @@
 #define VERT_SIZE 2
 
 
-#define SECTOR_FLOOR_SLOPED 1<<0
-#define SECTOR_CEIL_SLOPED 1<<1
-
 typedef enum {
     QUADRANT_0,
     QUADRANT_1,
@@ -36,7 +33,7 @@ typedef struct {
     const u16 num_verts;
     s16* sectors;
     const sector_type* sector_types;
-    sector_param* sector_params;
+    const s16* sector_params;
     const u16* walls;
     const s16* portals;
     const wall_col* wall_colors;

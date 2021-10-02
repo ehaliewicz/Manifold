@@ -12,9 +12,6 @@ void cleanup_portal_renderer();
 
 void clear_portal_cache();
 void portal_rend(u16 src_sector, u32 cur_frame);
-void portal_render_temporal_locality(u16 src_sector, u32 cur_frame);
+void portal_scan(u16 src_sector, u16 window_min, u16 window_max, u32 cur_frame);
 
-extern int portal_1_clip_status;
-extern int portal_1_x1;
-extern int portal_1_x2;
 #endif

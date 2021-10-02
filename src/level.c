@@ -9,7 +9,7 @@ const portal_map* cur_portal_map = NULL;
  void init_sector_parameters(portal_map* map) {
     
     u16 num_sectors = map->num_sectors;
-    u16 num_bytes = num_sectors * sizeof(sector_param);
+    u16 num_bytes = num_sectors * sizeof(s16) * NUM_SECTOR_PARAMS;
     live_sector_parameters = MEM_alloc(num_bytes);
     memcpy(live_sector_parameters, cur_portal_map->sector_params, num_bytes);
  }

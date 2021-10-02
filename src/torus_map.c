@@ -1,3 +1,4 @@
+/*
 #include <genesis.h>
 #include "colors.h"
 #include "portal_map.h"
@@ -99,3 +100,4 @@ const portal_map torus_map  = {
     .sector_types = sector_types,
     .sector_params = sector_params,
 };
+*/

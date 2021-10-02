@@ -2,13 +2,15 @@
 #include "portal_map.h"
 #include "maps.h"
 
-#define NUM_MAPS 32
+#include "map_table.h"
 
 
-const portal_map* map_table[NUM_MAPS+2] = {
-    (portal_map*)0xDEADBEEF,
+
+const portal_map* map_table[NUM_MAPS+3] = {
+    (portal_map*)"maps",
+    (portal_map*)"list",
     1, // number of maps
-    &overlapping_map, &editor_test_map, 0, 0, 0, 0, 0, 0,
+    &overlapping_map, 0, 0, 0, 0, 0, 0, 0, // &editor_test_map
     0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0,

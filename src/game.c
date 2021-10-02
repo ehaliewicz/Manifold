@@ -235,12 +235,12 @@ void draw_3d_view(u32 cur_frame) {
     // recursively render portal graph
     portal_rend(cur_player_pos.cur_sector, cur_frame);
 
+
     // display fps
     showFPS(1);
 
     // request a flip when vsync process is idle (almost always, as the software renderer is much slower than the framebuffer DMA process)
     request_flip();
-    //BMP_flip(1, 0);
 
     return;
 }
@@ -611,15 +611,10 @@ game_mode run_game() {
     calc_movement_speeds();
     handle_input();
 
-    //BMP_vertical_clear();
     angleCos32 = cosFix32(cur_player_pos.ang);
     angleSin32 = sinFix32(cur_player_pos.ang); 
     angleCos16 = cosFix16(cur_player_pos.ang);
     angleSin16 = sinFix16(cur_player_pos.ang); 
-    //KLog("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-    //KLog_S1("cur ang: ", cur_player_pos.ang);;
-    //KLog_S1("angCos16: ", angleCos16);
-    //KLog_S1("angSin16: ", angleSin16);
 
     playerZ12Frac4 = cur_player_pos.z >> (FIX32_FRAC_BITS-4);
     playerXInt = cur_player_pos.x>>FIX32_FRAC_BITS;

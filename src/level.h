@@ -9,5 +9,6 @@ extern const portal_map* cur_portal_map;
 
 
 void load_portal_map(portal_map* l);
+void clean_sector_parameters();
 
 #endif

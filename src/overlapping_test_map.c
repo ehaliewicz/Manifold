@@ -5,9 +5,9 @@
 
 
 // wall offset, portal offset, number of walls, floor height, ceiling height, floor color, ceiling color, slope_start_wall_idx, slope_end_wall_idx
-static s16 sectors[136] = {
+static s16 sectors[17*SECTOR_SIZE] = {
     0, 0, 6,    60<<4, 200<<4, BLUE_IDX, BLUE_IDX,        0, // floor normally 100 here
-    7, 6, 5,    60<<4, 60<<4,  BLUE_IDX, BLUE_IDX,         0,
+    7, 6, 5,    60<<4, 60<<4,  BLUE_IDX, BLUE_IDX,        0,
     13, 11, 4, 200<<4, 200<<4, BLUE_IDX, BLUE_IDX,        0, //SECTOR_FLOOR_SLOPED|SECTOR_CEIL_SLOPED, // floor normally 100 here
     18, 15, 4, 120<<4, 240<<4, BLUE_IDX, LIGHT_BLUE_IDX,  0, //SECTOR_FLOOR_SLOPED|SECTOR_CEIL_SLOPED,
     23, 19, 4, 140<<4, 280<<4, BLUE_IDX, BLUE_IDX,        0, //SECTOR_FLOOR_SLOPED|SECTOR_CEIL_SLOPED,
@@ -286,30 +286,25 @@ static const vertex vertexes[42] = {
 
 
 // sector 9,10,16
-static sector_param sector_params[17] = {
-    {.light = 0}, //1},
-    {.light = 0, 
-     .orig_height = 200<<4, 
-     .state = CLOSED, 
-     .ticks_left=30, }, //1},
-    {.light = 0,
-     .orig_height = 60<<4,
-     .state = CLOSED,
-     .ticks_left=30, }, //1},
-    {.light = -1}, //0},
-    {.light = -1}, //0},
-    {.light = -1}, //0},
-    {.light = -1}, //0},
-    {.light = -1}, //0},
-    {.light = -1}, //-1},
-    {.light = -2}, //-1}, // flashing
-    {.light = -2}, //-1}, // flashing
-    {.light = -1}, //0},
-    {.light = -1},//0},
-    {.light = -1},//0},
-    {.light = -1},//0},
-    {.light = -2},//-2},
-    {.light = -2},//-2}, // flashing
+static s16 sector_params[NUM_SECTOR_PARAMS*17] = {
+    // light, orig_height, ticks_left, state
+    0, 0, 0, 0, // only LIGHT is relevant here
+    0, 200<<4, CLOSED, 30,
+    0, 60<<4, CLOSED, 30,
+    -1, 0, 0, 0,
+    -1, 0, 0, 0,
+    -1, 0, 0, 0,
+    -1, 0, 0, 0,
+    -1, 0, 0, 0,
+    -1, 0, 0, 0,
+    -2, 0, 0, 0,
+    -2, 0, 0, 0,
+    -1, 0, 0, 0,
+    -1, 0, 0, 0,
+    -1, 0, 0, 0,
+    -1, 0, 0, 0,
+    -2, 0, 0, 0,
+    -2, 0, 0, 0,
 };
 
 static const sector_type sector_types[17] = {
