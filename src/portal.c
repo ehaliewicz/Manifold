@@ -293,7 +293,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
         volatile Vect2D_s16 trans_v2 = transform_map_vert_16(v2.x, v2.y);
         prev_transformed_vert = trans_v2;
         
-        texmap_params tmap_info = {.needs_perspective = 0, .tex = &sci_fi_wall_texture.mip_mid};
+        texmap_params tmap_info = {.needs_perspective = 0};;
         clip_result clipped = clip_map_vertex_16(&trans_v1, &trans_v2, &tmap_info, wall_len);  
 
         u16 z_recip_v1 = z_recip_table_16[trans_v1.y>>TRANS_Z_FRAC_BITS];
@@ -510,6 +510,9 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
             }
         }
         
+        u8 tex_idx = map->wall_colors[(portal_idx<<WALL_COLOR_NUM_PARAMS_SHIFT)+WALL_TEXTURE_IDX];
+        lit_texture* tex = map->textures[tex_idx];
+        tmap_info.tex = tex;
 
         if (is_portal) {
 
@@ -525,7 +528,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
                 sector_type neighbor_sector_type = cur_portal_map->sector_types[portal_sector];
                 
                 if(neighbor_sector_type == DOOR) { 
-                    tmap_info.tex = &sci_fi_door_texture.mip_mid;
+                    tmap_info.tex = &sci_fi_door_texture;
 
                     s16 orig_door_height = get_sector_orig_height(portal_sector);
                     s16 orig_height_diff = orig_door_height - neighbor_floor_height;
@@ -533,7 +536,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
                     x2_pegged = project_and_adjust_y_fix(neighbor_ceil_height+orig_height_diff, z_recip_v2);
                 }
 
-                u8 upper_color = map->wall_colors[portal_idx].upper_col;
+                u8 upper_color = map->wall_colors[(portal_idx<<WALL_COLOR_NUM_PARAMS_SHIFT)+WALL_HIGH_COLOR_IDX];
                 // draw step from ceiling
                 //draw_upper_step(x1, x1_ytop, nx1_ytop, x2, x2_ytop, nx2_ytop, 
                 //                z_recip_v1, z_recip_v2,
@@ -568,7 +571,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
                 sector_type neighbor_sector_type = cur_portal_map->sector_types[portal_sector];
                 
                 if(neighbor_sector_type == LIFT) { 
-                    tmap_info.tex = &sci_fi_door_texture.mip_mid;
+                    tmap_info.tex = &sci_fi_door_texture;
 
                     s16 orig_lift_height = get_sector_orig_height(portal_sector);
                     s16 orig_height_diff = neighbor_ceil_height - orig_lift_height;
@@ -577,7 +580,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
                     //KLOG
                 }
 
-                u8 lower_color = map->wall_colors[portal_idx].lower_col;
+                u8 lower_color = map->wall_colors[(portal_idx<<WALL_COLOR_NUM_PARAMS_SHIFT)+WALL_LOW_COLOR_IDX];
 
                 if(neighbor_sector_type == LIFT) {
                     
@@ -598,7 +601,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
                                     min(z_recip_v1, z_recip_v2),
                                     window_min, window_max, &floor_params);
             }
-            
+
             if(render_forcefield || render_glass) {
                 copy_2d_buffer(window_min, window_max, clipping_buffer);
             }
@@ -688,6 +691,8 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
 
 }
 
+
+/*
 
 typedef struct {
     u16 sector;
@@ -786,7 +791,9 @@ void portal_scan(u16 src_sector, u16 window_min, u16 window_max, u32 cur_frame) 
             Vect2D_s16 trans_v1 = transform_map_vert_16(v1.x, v1.y);
             Vect2D_s16 trans_v2 = transform_map_vert_16(v2.x, v2.y);
 
-            texmap_params tmap_info = {.needs_perspective = 0, .tex = &sci_fi_wall_texture.mip_mid};
+            texmap_params tmap_info = {.needs_perspective = 0};
+            
+            //, .tex = &sci_fi_wall_texture;
             clip_result clipped = clip_map_vertex_16(&trans_v1, &trans_v2, &tmap_info, wall_len);
 
 
@@ -850,7 +857,7 @@ void portal_scan(u16 src_sector, u16 window_min, u16 window_max, u32 cur_frame) 
 
     } while(head != tail);
 }
-
+*/
 
 void portal_rend(u16 src_sector, u32 cur_frame) {
     #ifdef DEBUG_PORTAL_CLIP
@@ -888,7 +895,7 @@ void portal_rend(u16 src_sector, u32 cur_frame) {
         u16 sector = b.sector;
         s8 light_level = get_sector_light_level(sector);
         //continue;
-        texmap_params tmap = {.needs_perspective = 1, .tex = &sci_fi_wall_texture.mip_mid};
+        texmap_params tmap = {.needs_perspective = 1, .tex = &sci_fi_wall_texture};
         s16 floor_height = sector_floor_height(sector, cur_portal_map); 
         s16 ceil_height = sector_ceil_height(sector, cur_portal_map);
         s16 floor_col = sector_floor_color(sector, cur_portal_map);

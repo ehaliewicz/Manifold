@@ -533,7 +533,7 @@ void init_game() {
 	VDP_setBackgroundColor(1);
 
 
-    load_portal_map((portal_map*)map_table[3]);
+    load_portal_map((portal_map*)map_table[2]);
 
 
 

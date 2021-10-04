@@ -62,11 +62,13 @@ persp_params calc_perspective(u16 z1_12_4, u16 z2_12_4, u32 left_u_16, u32 right
 #define NEAR_MIP_HEIGHT 64
 
 // three mipmap levels
-typedef struct {
-    lit_texture mip_far;
-    lit_texture mip_mid;
-    lit_texture mip_near;
-} texture_set;
+
+
+//typedef struct {
+//    lit_texture mip_far;
+//    lit_texture mip_mid;
+//    lit_texture mip_near;
+//} texture_set;
 
 
 void draw_texture_vertical_line(s16 unclipped_y0, s16 y0, s16 unclipped_y1, s16 y1, u8* col_ptr, u16* tex_column);

@@ -57,3 +57,5 @@ out/
 # cached python modules, and cached wads loaded by python tool
 *.pyc
 *.cache
+
+.vscode/*

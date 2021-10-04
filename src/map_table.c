@@ -6,13 +6,11 @@
 
 
 
-const portal_map* map_table[NUM_MAPS+3] = {
-    (portal_map*)"maps",
-    (portal_map*)"list",
+const u32 map_table[NUM_MAPS+2] = {
+    0xDEADBEEF,
     1, // number of maps
-    &overlapping_map, 0, 0, 0, 0, 0, 0, 0, // &editor_test_map
+    (u32)&overlapping_map, 0, 0, 0, 0, 0, 0, 0, // &editor_test_map
     0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0,
 };
-

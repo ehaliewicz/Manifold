@@ -372,12 +372,13 @@ const u16 wall_dark_far[16*64] = {
 0xeeee, 0xffff, 0xbbbb, 0xffff, 0xeeee, 0xeeee, 0xffff, 0xbbbb, 0xbbbb, 0xffff, 0xeeee, 0xeeee, 0xffff, 0xeeee, 0xefef, 0xfefe, 0xffff, 0xffff, 0xfeee, 0xfeee, 0xfeee, 0xfeee, 0xfeee, 0xfeee, 0xfeee, 0xfeee, 0xfeee, 0xffff, 0xeeee, 0xeeee, 0xeeee, 0xeeee, 0xeeee, 0xeeee, 0xeeee, 0xeeee, 0xeeee, 0xeeee, 0xeeee, 0xeeee, 0xffff, 0xcccf, 0xdddf, 0xdddf, 0xdddf, 0xdddf, 0xdddf, 0xdddf, 0xdddf, 0xdddf, 0xdddf, 0xdddf, 0xdddf, 0xdddf, 0xdddf, 0xdddf, 0xdddf, 0xdddf, 0xdddf, 0xdddf, 0xffff, 0xdddd, 0xffff, 
 };
 
-
-texture_set wall_texture = {
+/*
+const texture_set wall_texture = {
     .mip_mid  = {.light = wall_light,      .mid = wall_mid,      .dark = wall_dark},
     .mip_near = {.light = wall_light_near, .mid = wall_mid_near, .dark = wall_dark_near},
     .mip_far  = {.light = wall_light_far,  .mid = wall_mid_far,  .dark = wall_dark_far},
 };
+*/
 
 
 const u16 sci_fi_wall_light[32*64] = {
@@ -752,17 +753,8 @@ const u16 sci_fi_wall_dark_far[16*64] = {
 };
 
 
-/*
-texture_set sci_fi_wall_texture = {
-    .mip_mid  = {sci_fi_wall_light, sci_fi_wall_mid, sci_fi_wall_dark},
-    .mip_near = {sci_fi_wall_light_near, sci_fi_wall_mid_near, sci_fi_wall_dark_near},
-    .mip_far  = {sci_fi_wall_light_far, sci_fi_wall_mid_far, sci_fi_wall_dark_far},
-};
-*/
-texture_set sci_fi_wall_texture = {
-    .mip_mid  = {.dark = sci_fi_wall_dark, .mid = sci_fi_wall_mid, .light = sci_fi_wall_light},
-    .mip_near = {.dark = sci_fi_wall_dark_near, .mid = sci_fi_wall_mid_near, .light = sci_fi_wall_light_near},
-    .mip_far  = {.dark = sci_fi_wall_dark_far, .mid = sci_fi_wall_mid_far, .light = sci_fi_wall_light_far},
+const lit_texture sci_fi_wall_texture = {
+    sci_fi_wall_dark, .mid = sci_fi_wall_mid, .light = sci_fi_wall_light
 };
 
 const u16 sci_fi_door_light[32*64] = {
@@ -1137,8 +1129,10 @@ const u16 sci_fi_door_dark_far[16*64] = {
 };
 
 
-texture_set sci_fi_door_texture = {
-    .mip_mid  = {sci_fi_door_light, sci_fi_door_mid, sci_fi_door_dark},
-    .mip_near = {sci_fi_door_light_near, sci_fi_door_mid_near, sci_fi_door_dark_near},
-    .mip_far  = {sci_fi_door_light_far, sci_fi_door_mid_far, sci_fi_door_dark_far},
+const lit_texture sci_fi_door_texture = {
+    sci_fi_door_light, sci_fi_door_mid, sci_fi_door_dark,
+};
+
+const lit_texture* textures[2] = {
+    &sci_fi_wall_texture, &sci_fi_door_texture,
 };

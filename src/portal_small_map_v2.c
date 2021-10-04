@@ -1,3 +1,4 @@
+/*
 #include <genesis.h>
 #include "colors.h"
 #include "portal_map.h"
@@ -290,3 +291,4 @@ const portal_map portal_level_1 = {
     .wall_colors = wall_colors,
     .pvs = pvs
 };
+*/

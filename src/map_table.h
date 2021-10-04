@@ -4,6 +4,6 @@
 #include "portal_map.h"
 
 #define NUM_MAPS 32
-extern const portal_map* map_table[NUM_MAPS+3];
+const u32 map_table[NUM_MAPS+2];
 
 #endif

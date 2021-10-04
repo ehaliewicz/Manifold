@@ -3,6 +3,7 @@
 
 #include <genesis.h>
 #include "sector.h"
+#include "texture.h"
 #include "vertex.h"
 #include "vis_range.h"
 
@@ -23,9 +24,16 @@ typedef enum {
 
 typedef struct {
     u8 upper_col;
-    u8 mid_col;
+    u8* texture;
     u8 lower_col;
 } wall_col;
+
+#define WALL_TEXTURE_IDX 0
+#define WALL_HIGH_COLOR_IDX 1
+#define WALL_LOW_COLOR_IDX 2
+
+#define WALL_COLOR_NUM_PARAMS 4
+#define WALL_COLOR_NUM_PARAMS_SHIFT 2
 
 typedef struct {
     const u16 num_sectors;
@@ -36,12 +44,13 @@ typedef struct {
     const s16* sector_params;
     const u16* walls;
     const s16* portals;
-    const wall_col* wall_colors;
+    const u8* wall_colors;
     const vertex* vertexes;
     const vis_range* wall_vis_ranges;
     const u8* wall_norm_quadrants;
     const u8* pvs;  // max of 32 sectors for now
     const u8* portal_contributes;
+    const lit_texture** textures;
 } portal_map;
 
 s16* sector_data_start(s16 sector_idx, portal_map* mp);
