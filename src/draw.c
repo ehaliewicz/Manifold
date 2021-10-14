@@ -37,42 +37,22 @@ u16 get_index(u16 x, u16 y) {
   return base_offset + y_offset + x_col_offset + x_cols_offset; // + 16;
 }
 
-//inline u8* getDMAWritePointer(u16 x, u16 y) {
-    //return 
-//  return &bmp_buffer_write[get_index(x, y)];
-//}
 
 inline u16 getDMAWriteOffset(u16 x, u16 y) {
     return get_index(x, y);
-    //return 
-  //return &bmp_buffer_write[get_index(x, y)];
 }
 
-//u16* column_table;
-//u16* column_offset_table;
 u8** buf_0_column_offset_table;
 u8** buf_1_column_offset_table;
 
 void init_column_offset_table() {
   // offset from last column
-  //column_table[0] = 0;
-  //u8* last_ptr = getDMAWritePointer(0, 0);
 
   for(int x = 0; x < SCREEN_WIDTH/2; x++) {  
     u16 cur_off = getDMAWriteOffset(x<<1, 0);
     buf_0_column_offset_table[x] = bmp_buffer_0 + cur_off;
     buf_1_column_offset_table[x] = bmp_buffer_1 + cur_off;
-    //column_table[x] = cur_off; 
   }
-
-  //column_offset_table[0] = 0;
-  //u16 last_offset = 0;
-  //for(int x = 1; x < SCREEN_WIDTH/2; x++) {
-      //u16 last_col_offset = getDMAWriteOffset((x-1)<<1, 0);
-  //    u16 cur_col_offset = getDMAWriteOffset(x, 0);
-  //    column_offset_table[x] = cur_col_offset - last_offset; //column_table[x<<1];
-  //    last_offset = cur_col_offset;
-  //}
 }
 
 
@@ -81,9 +61,6 @@ void init_2d_buffers() {
     
     drawn_buf = MEM_alloc(RENDER_WIDTH);
 
-    //column_table = MEM_alloc(sizeof(u16) * SCREEN_WIDTH); //sizeof(16) * W);
-    //double_column_table = MEM_alloc(sizeof(u16) * SCREEN_WIDTH/2);
-    //column_offset_table = MEM_alloc(sizeof(u16) * SCREEN_WIDTH);
     buf_0_column_offset_table = MEM_alloc(sizeof(u8*) * SCREEN_WIDTH/2);
     buf_1_column_offset_table = MEM_alloc(sizeof(u8*) * SCREEN_WIDTH/2);
     init_column_offset_table();
@@ -101,19 +78,12 @@ void clear_2d_buffers() {
 
 void copy_2d_buffer(u16 left, u16 right, clip_buf* dest) {
     int bytes_to_copy = ((right+1)-left)*2;
-    //for(int x = left; x <= right; x++) {
-    //    dest->clip_buffer[x*2] = yclip[x*2];
-    //    dest->clip_buffer[(x*2)+1] = yclip[(x*2)+1];
-    //}
-    
     memcpy(&(dest->clip_buffer[left<<1]), &yclip[left<<1], bytes_to_copy); //bytes_to_copy); //128);
 }
 
 void release_2d_buffers() {
     MEM_free(yclip);
     MEM_free(drawn_buf);
-    //MEM_free(column_table);
-    //MEM_free(column_offset_table);
     MEM_free(buf_1_column_offset_table);
     MEM_free(buf_1_column_offset_table);
 }

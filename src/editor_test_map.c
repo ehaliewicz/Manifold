@@ -4,7 +4,7 @@
 #include "portal_map.h"
 #include "vertex.h"
 
-static s16 sectors[112] ={
+static s16 sectors[4*14] ={
     0, 0, 4, 0,
     5, 4, 4, 0,
     10, 8, 4,0,

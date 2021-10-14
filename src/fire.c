@@ -116,13 +116,12 @@ void copy_fire_buffer_portion() {
     }
 }
 
-#define NUM_RANDS ((FIRE_WIDTH*FIRE_HEIGHT)>>4)+1
-static u16* rands; //[NUM_RANDS];
 
 void spread_and_draw_fire_byte() {
     
+    #define NUM_RANDS ((FIRE_WIDTH*FIRE_HEIGHT)>>4)+1
     //882 bytes
-     //[NUM_RANDS];
+    u16 rands[NUM_RANDS]; //[NUM_RANDS];
 
     for(int i = 0; i < NUM_RANDS; i++) {
         rands[i] = random();
@@ -188,7 +187,7 @@ void init_fire() {
     DMA_setBufferSize(2048);
     MEM_pack();    
 
-    rands = MEM_alloc(NUM_RANDS*2);
+    //rands = MEM_alloc(NUM_RANDS*2);
 	BMP_init(0, BG_A, PAL1, 0, 0);
 	//SPR_init();
 	//SYS_enableInts();
@@ -296,6 +295,6 @@ void cleanup_fire() {
     MEM_free(lookup_table_base);
     BMP_end();
     VDP_clearPlane(BG_B, 1);
-    MEM_free(rands);
+    //MEM_free(rands);
     MEM_pack();
 }
