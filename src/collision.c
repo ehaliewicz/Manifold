@@ -24,6 +24,8 @@ s8 point_sign_int_vert(fix32 x, fix32 y, s16 v1_x, s16 v1_y, s16 v2_x, s16 v2_y)
     return (res > 0 ? 1 : (res < 0 ? -1 : 0));
 }
 
+
+
 int within_sector(fix32 x, fix32 y, u16 sector) {
     u16 wall_off = sector_wall_offset(sector, (portal_map*)cur_portal_map);
     u16 num_walls = sector_num_walls(sector, (portal_map*)cur_portal_map);
@@ -50,6 +52,7 @@ int within_sector(fix32 x, fix32 y, u16 sector) {
 
     return 1;
 }
+
 
 fix32 sq_shortest_dist_to_point(fix32 px, fix32 py, vertex a, vertex b) {
     s16 dx = b.x - a.x;
@@ -92,12 +95,16 @@ int within_sector_radius(fix32 x, fix32 y, u16 radius, u16 sector) {
     s32 xInt = fix32ToInt(x);
     s32 yInt = fix32ToInt(y);
 
+    const s16* portals = cur_portal_map->portals;
+
     for(int i = 0; i < num_walls-1; i++) {
         u16 vert_idx = wall_off+i;
         u16 v_idx = cur_portal_map->walls[vert_idx];
         vertex v = cur_portal_map->vertexes[v_idx];
+        u16 left_portal_off = (i == 0) ? (num_walls-1) : (i-1);
+        u8 is_portal = (portals[portal_off+i] != -1) && (portals[portal_off+left_portal_off] != -1);
         s32 distsqr = ((v.x - xInt)*(v.x - xInt)) + ((v.y - yInt)*(v.y - yInt));
-        if(radius_sqr > distsqr) { return 0; }
+        if(radius_sqr > distsqr && !is_portal) { return 0; }
         //if(!got_dist) {
         //    dmin = distsqr;
         //    got_dist = 1;

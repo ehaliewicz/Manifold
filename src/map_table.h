@@ -3,7 +3,7 @@
 
 #include "portal_map.h"
 
-#define NUM_MAPS 32
-const u32 map_table[NUM_MAPS+2];
+#define NUM_MAPS 4
+const __UINTPTR_TYPE__ map_table[NUM_MAPS+3];
 
 #endif

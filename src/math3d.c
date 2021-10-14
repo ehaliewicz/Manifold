@@ -196,9 +196,7 @@ s16 project_and_adjust_y_fix_c(s16 y, s16 z) {
 clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2, texmap_params* tmap, u32 wall_len) {
     // TODO: adjust texture coordinates here as well
     
-    if(0) { //if(debug) {
-        KLog_U1("Wall len: ", wall_len);
-    }
+
     
     s16 rx1 = trans_v1->x;
     s16 rz1_12_4 = trans_v1->y; // 12.4

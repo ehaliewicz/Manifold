@@ -159,7 +159,7 @@ void follow_player(object* cur_obj, uint16_t cur_sector) {
     if(move_res.new_sector != cur_sector) {
         move_object_to_sector(cur_obj, move_res.new_sector);
     }
-    cur_obj->pos.z = sector_floor_height(cur_obj->pos.cur_sector, (portal_map*)cur_portal_map);
+    cur_obj->pos.z = get_sector_floor_height(cur_obj->pos.cur_sector);
 }
 
 

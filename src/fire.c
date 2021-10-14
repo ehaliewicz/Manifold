@@ -116,12 +116,13 @@ void copy_fire_buffer_portion() {
     }
 }
 
+#define NUM_RANDS ((FIRE_WIDTH*FIRE_HEIGHT)>>4)+1
+static u16* rands; //[NUM_RANDS];
 
 void spread_and_draw_fire_byte() {
     
-    #define NUM_RANDS ((FIRE_WIDTH*FIRE_HEIGHT)>>4)+1
     //882 bytes
-    u16 rands[NUM_RANDS]; //[NUM_RANDS];
+     //[NUM_RANDS];
 
     for(int i = 0; i < NUM_RANDS; i++) {
         rands[i] = random();
@@ -165,10 +166,6 @@ static int fire_frame = 0;
 static int fire_hidden = 0;
 
 
-static Sprite* fire_spr;
-static Sprite* spr2;
-static Sprite* spr3;
-
 int end;
 void init_fire() {
     end = 0;
@@ -191,7 +188,7 @@ void init_fire() {
     DMA_setBufferSize(2048);
     MEM_pack();    
 
-    //rands = MEM_alloc(NUM_RANDS*2);
+    rands = MEM_alloc(NUM_RANDS*2);
 	BMP_init(0, BG_A, PAL1, 0, 0);
 	//SPR_init();
 	//SYS_enableInts();
@@ -299,6 +296,6 @@ void cleanup_fire() {
     MEM_free(lookup_table_base);
     BMP_end();
     VDP_clearPlane(BG_B, 1);
-    //MEM_free(rands);
+    MEM_free(rands);
     MEM_pack();
 }

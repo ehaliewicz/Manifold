@@ -2,15 +2,17 @@
 #include "portal_map.h"
 #include "maps.h"
 
+#include "empty_maps.h"
 #include "map_table.h"
 
 
-
-const u32 map_table[NUM_MAPS+2] = {
+/*
+const __UINTPTR_TYPE__ map_table[NUM_MAPS+3] = {
     0xDEADBEEF,
-    1, // number of maps
-    (u32)&overlapping_map, 0, 0, 0, 0, 0, 0, 0, // &editor_test_map
-    0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0,
+    4, // number of maps
+    NUM_MAPS,
+    &overlapping_map, 0, 0, 0//&empty_map_1, //&empty_map_2, &empty_map_3,
 };
+*/
+
+//const uint8_t map_data_bank[128*1024] = { 0 };

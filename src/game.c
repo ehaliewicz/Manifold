@@ -86,6 +86,9 @@ void showFPS(u16 float_display)
     sprintf(str, "%i ", vints);
     vints = 0;
     VDP_drawTextBG(BG_B, str, 1, 6);
+
+    sprintf(str, "s: %i ", cur_player_pos.cur_sector);
+    VDP_drawTextBG(BG_B, str, 1, 7);
 }
 
 
@@ -351,11 +354,10 @@ void handle_input() {
 
         //collision_result collision = check_for_collision(curx, cury, newx, newy, cur_player_pos.cur_sector);
         collision_result collision = check_for_collision_radius(curx, cury, newx, newy, PLAYER_COLLISION_DISTANCE, cur_player_pos.cur_sector);
-
         cur_player_pos.x = collision.pos.x;
         cur_player_pos.y = collision.pos.y;
         cur_player_pos.cur_sector = collision.new_sector;
-        s16 cur_sector_height = sector_floor_height(cur_player_pos.cur_sector, (portal_map*)cur_portal_map);
+        s16 cur_sector_height = get_sector_floor_height(cur_player_pos.cur_sector);
 
         
         cur_player_pos.z = (cur_sector_height<<(FIX32_FRAC_BITS-4)) + FIX32(50);
@@ -533,8 +535,27 @@ void init_game() {
 	VDP_setBackgroundColor(1);
 
 
-    load_portal_map((portal_map*)map_table[2]);
+    //load_portal_map(&overlapping_map);
+    load_portal_map(&editor_test_map);
 
+    //load_portal_map((portal_map*)map_table[3]);
+    /*
+    KLog_U1("map table address: ", map_table);
+    KLog_U1("portal map pointer: ", map_table[3]);
+    portal_map* map = (portal_map*)map_table[3];
+    KLog_U1("num_sectors address: ", &map->num_sectors);
+    KLog_U1("num_walls address: ", &map->num_walls);
+    KLog_U1("num_verts address: ", &map->num_verts);
+    KLog_U1("sectors address: ", &map->sectors);
+    KLog_U1("sector_types address: ", &map->sector_types);
+    KLog_U1("sector_params address: ", &map->sector_params);
+    KLog_U1("walls address: ", &map->walls);
+    KLog_U1("portals address: ", &map->portals);
+    KLog_U1("wall_colors address: ", &map->wall_colors);
+    KLog_U1("vertexes address: ", &map->vertexes);
+    KLog_U1("wall_norm_quadrants address: ", &map->wall_norm_quadrants);
+    //while(1) {}
+    */
 
 
 
@@ -548,7 +569,7 @@ void init_game() {
         cur_player_pos.y = sector_centers[0].y; 
         cur_player_pos.cur_sector = 0;
 
-        cur_player_pos.z = (sector_floor_height(cur_player_pos.cur_sector, (portal_map*)cur_portal_map)<<(FIX32_FRAC_BITS-4)) + FIX32(50);
+        cur_player_pos.z = (get_sector_floor_height(cur_player_pos.cur_sector)<<(FIX32_FRAC_BITS-4)) + FIX32(50);
 
         cur_player_pos.ang = 0;
     }
@@ -568,8 +589,8 @@ void init_game() {
 
     u16 skybox_gradient_basetile = TILE_ATTR_FULL(PAL3, 0, 0, 0, free_tile_loc);
 	VDP_drawImageEx(BG_B, &skybox_gradient, skybox_gradient_basetile, 4, 4, 0, 1);
-    //VDP_setTileMapEx(BG_B, skybox_gradient.tilemap, skybox_gradient_basetile, 4, 4, 0, 0, skybox_gradient.tilemap->w, skybox_gradient.tilemap->h, CPU);
-    //VDP_setTileMapData(VDP_BG_B, skybox_gradient.tileset->tiles, skybox_gradient_basetile, 0x0390, skybox_gradient.tileset->numTile, 2);
+    
+    
     PAL_setPalette(PAL3, skybox_gradient.palette->data);
 
     free_tile_loc += skybox_gradient.tileset->numTile;

@@ -63,7 +63,7 @@ static const wall_col wall_colors[16] ={
 };
 
 
-static sector_type sector_types[3] = {
+static u8 sector_types[3] = {
     NO_TYPE,
     NO_TYPE,
     NO_TYPE,
