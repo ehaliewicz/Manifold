@@ -55,19 +55,20 @@ typedef struct {
 #define PVS_SHIFT 1
 
 typedef struct {
-    u16 num_sectors;
-     u16 num_walls;
-     u16 num_verts;
-     s16* sectors;
-     u8* sector_types;
-     s16* sector_params;
-     u16* walls;
-     s16* portals;
-     u8* wall_colors;
-     vertex* vertexes;
-     u8* wall_norm_quadrants;
-     s16* pvs;
-     u16* raw_pvs;
+    const u16 num_sectors;
+    const u16 num_walls;
+    const u16 num_verts;
+    const s16* sectors;
+    const u8* sector_types;
+    const s16* sector_params;
+    const u16* walls;
+    const s16* portals;
+    const u8* wall_colors;
+    const vertex* vertexes;
+    const u8* wall_norm_quadrants;
+    const u8 has_pvs;
+    const u16* pvs;
+    const u16* raw_pvs;
 } portal_map;
 
 s16* sector_data_start(s16 sector_idx, portal_map* mp);

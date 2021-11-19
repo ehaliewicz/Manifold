@@ -17,6 +17,8 @@ typedef struct {
     Bitmap *bmp;
 } col_params;
 
+extern int debug_draw_cleared;
+
 void run_texture_test();
 
 //void draw_native_vertical_line_unrolled(s16 y0, s16 y1, u8 col, u8* col_ptr);

@@ -233,6 +233,7 @@ void init_fire() {
 int end = 0;
 
 game_mode run_fire() {
+    BMP_showFPS(1);
     fire_frame++;
     //return SAME_MODE;
     if(fire_running) {
@@ -284,17 +285,8 @@ game_mode run_fire() {
 }
 
 void cleanup_fire() {
-    //KLog("cleaning up up fire");
-    //SPR_releaseSprite(fire_spr);
-    //KLog("cleaning up up fire 2");
-    //SPR_releaseSprite(spr2);
-    //KLog("cleaning up up fire 3");
-    //SPR_releaseSprite(spr3);
-    //KLog("cleaning up up fire 5");
-    //SPR_end();
     MEM_free(lookup_table_base);
     BMP_end();
     VDP_clearPlane(BG_B, 1);
-    //MEM_free(rands);
     MEM_pack();
 }

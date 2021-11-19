@@ -70,8 +70,8 @@ void init_2d_buffers() {
 void clear_2d_buffers() {
     for(int i = 0; i < RENDER_WIDTH; i++) { //SCREEN_WIDTH; i++) {
         yclip[i*2] = 0;
-        //yclip[i*2+1] = SCREEN_HEIGHT;
-        yclip[i*2+1] = SCREEN_HEIGHT-8; 
+        yclip[i*2+1] = SCREEN_HEIGHT;
+        //yclip[i*2+1] = SCREEN_HEIGHT-8; 
         drawn_buf[i] = 0;
     }
 }
@@ -602,14 +602,16 @@ movel_draw_table_%=:\t\n\
 
 #define FLAT_COLOR
 
-int cleared = 0;
+int debug_draw_cleared = 0;
 
 int last_pressed_a = 0;
 void flip() {  
   //u8* dst_buf = (bmp_buffer_write == bmp_buffer_0) ? bmp_buffer_1 : bmp_buffer_0;
-  return;
+  //return;
   if(JOY_readJoypad(JOY_1) & BUTTON_A) {
     if(!last_pressed_a) {
+        if(!debug_draw_cleared) { return; }
+        BMP_vertical_clear();
         // just copy written buffer to next buffer
         //memcpy(bmp_buffer_read, bmp_buffer_write, 256*144/2);
         request_flip(); // draw buffer with one wall

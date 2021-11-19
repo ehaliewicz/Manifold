@@ -87,8 +87,8 @@ void showFPS(u16 float_display)
     vints = 0;
     VDP_drawTextBG(BG_B, str, 1, 6);
 
-    sprintf(str, "s: %i ", cur_player_pos.cur_sector);
-    VDP_drawTextBG(BG_B, str, 1, 7);
+    //sprintf(str, "s: %i ", cur_player_pos.cur_sector);
+    //VDP_drawTextBG(BG_B, str, 1, 7);
 }
 
 
@@ -227,8 +227,9 @@ void request_flip() {
 
 void draw_3d_view(u32 cur_frame) {
 
-    BMP_vertical_clear();
-
+    if(JOY_readJoypad(JOY_1) & BUTTON_A) {
+        BMP_vertical_clear();
+    }
     // clear clipping buffers
     clear_2d_buffers();
 
@@ -244,6 +245,7 @@ void draw_3d_view(u32 cur_frame) {
 
     // request a flip when vsync process is idle (almost always, as the software renderer is much slower than the framebuffer DMA process)
     request_flip();
+    debug_draw_cleared = 1;
 
     return;
 }
@@ -536,9 +538,9 @@ void init_game() {
 
 
     //load_portal_map(&overlapping_map);
-    load_portal_map(&editor_test_map);
+    //load_portal_map(&editor_test_map);
 
-    //load_portal_map((portal_map*)map_table[3]);
+    load_portal_map((portal_map*)map_table[4]);
     /*
     KLog_U1("map table address: ", map_table);
     KLog_U1("portal map pointer: ", map_table[3]);

@@ -38,26 +38,30 @@ class Mode(Enum):
 
 
 class Map():
-    def __init__(self, name="placeholder name", sectors=None, vertexes=None):
-        if not sectors:
-            self.sectors = []
-        else:
-            self.sectors = sectors
-        #self.walls = []
-
-        if not vertexes:
-            self.vertexes = []
-        else:
-            self.vertexes = vertexes
-
+    def __init__(self, name="placeholder name"):
         self.name = name
+        self.num_sectors = 0
+        self.num_walls = 0
+        self.num_verts = 0
+        self.sectors = []
+        self.sector_types = []
+        self.sector_params = []
+        self.walls = []
+        self.portals = []
+        self.wall_colors = []
+        self.vertexes = []
+        self.wall_norm_quadrants = []
+        self.has_pvs = 0
+        self.pvs = []
+        self.raw_pvs = []
+
+
 
     def generate_c_from_map(self):
         num_sectors = len(self.sectors)
         num_vertexes = len(self.vertexes)
         num_walls = sum(len(sect.walls) for sect in self.sectors)
 
-        NUM_SECTOR_ATTRIBUTES = 8
 
         res = """#include <genesis.h>
 #include "colors.h"
@@ -245,9 +249,9 @@ class State(object):
     def __init__(self):
         self.mode = Mode.SECTOR
         self.map_data = Map()
-        self.cur_sector = None
-        self.cur_wall = None
-        self.cur_vertex = None
+        self.cur_sector = -1
+        self.cur_wall = -1
+        self.cur_vertex = -1
 
         self.camera_x = 0
         self.camera_y = 0
@@ -261,17 +265,27 @@ cur_state = State()
 
         
 def add_new_wall(v1, v2):
-    num_walls = len(cur_state.cur_sector.walls)
-    new_wall = line.Wall(v1=v1, v2=v2, sector_idx=cur_state.cur_sector.index, adj_sector_idx=-1)
-    cur_state.cur_sector.walls.append(new_wall)
-    return new_wall
+    sect = cur_state.cur_sector
+    if sect == cur_state.map_data.num_sectors-1:
+        num_walls = cur_state.map_data.num_walls
+        cur_state.map_data.walls.append(v1)
+        cur_state.map_data.walls.append(v2)
+        cur_state.map_data.num_walls += 1
+        cur_state.map_data.portals.append(-1)
+        num_walls_idx = sect * sector.NUM_SECTOR_ATTRIBUTES + sector.NUM_WALLS_IDX
+        cur_state.map_data.sectors[num_walls_idx] += 1
+        return num_walls
+    else:
+        raise Exception("Adding walls to non-last sectors Unsupported")
     
 def add_new_vertex(x,y):
-    num_verts = len(cur_state.map_data.vertexes)
-    new_vert = vertex.Vertex(x, y, index=num_verts)
+    num_verts = cur_state.map_data.num_verts
+    new_vert = vertex.Vertex(x, y)
     cur_state.map_data.vertexes.append(new_vert)
-    return new_vert
-    
+    cur_state.map_data.num_verts += 1
+    print(cur_state.map_data.vertexes)
+    return num_verts
+
 
 
 
@@ -328,8 +342,10 @@ def draw_map_vert(draw_list, vert, highlight=False):
 
 
     
-def draw_map_wall(draw_list, wall, highlight=False):
-    is_portal = wall.adj_sector_idx != -1
+def draw_map_wall(draw_list, wall_idx, portal_idx, highlight=False):
+    adj_sector_idx = cur_state.map_data.portals[portal_idx]
+
+    is_portal = adj_sector_idx != -1
     tbl = [
         # not highlighted
         wall_default,
@@ -341,10 +357,12 @@ def draw_map_wall(draw_list, wall, highlight=False):
     
     color = tbl[(highlight<<1 | is_portal)]
 
-        
-    v1 = wall.v1
-    v2 = wall.v2
+    v1_idx = cur_state.map_data.walls[wall_idx*2]
+    v2_idx = cur_state.map_data.walls[wall_idx*2+1]
+    v1 = cur_state.map_data.vertexes[v1_idx]
+    v2 = cur_state.map_data.vertexes[v2_idx]
 
+    wall = line.Wall(v1, v2)
     ((n1x,n1y),(n2x,n2y)) = wall.centered_normal()
     
     cam_x = cur_state.camera_x
@@ -354,12 +372,21 @@ def draw_map_wall(draw_list, wall, highlight=False):
     draw_list.add_line(n1x-cam_x, n1y-cam_y, n2x-cam_x, n2y-cam_y, imgui.get_color_u32_rgba(*color), 1.0)
     
 
-def draw_sector(draw_list, sector, highlight=False):
-    for wall in sector.walls:
-        wall_selected = cur_state.mode == Mode.LINE and cur_state.cur_wall == wall
-        wall_hovered = cur_state.hovered_item == wall
+def draw_sector(draw_list, draw_sect, highlight=False):
+    base_idx = draw_sect * sector.NUM_SECTOR_ATTRIBUTES
+    print("draw sect {}".format(draw_sect))
+    print("base idx {}".format(base_idx))
+    wall_base_idx = cur_state.map_data.sectors[base_idx + sector.WALL_OFFSET_IDX]
+    portal_base_idx = cur_state.map_data.sectors[base_idx + sector.PORTAL_OFFSET_IDX]
+    num_walls = cur_state.map_data.sectors[base_idx + sector.NUM_WALLS_IDX]
+    for idx in range(num_walls):
+        cur_wall_idx = wall_base_idx + idx
+        cur_portal_idx = portal_base_idx + idx
+        wall_selected = cur_state.mode == Mode.LINE and cur_state.cur_wall == cur_wall_idx
+        wall_hovered = cur_state.hovered_item == cur_wall_idx
 
-        draw_map_wall(draw_list, wall, (highlight or wall_selected or wall_hovered))
+        draw_map_wall(draw_list, cur_wall_idx, cur_portal_idx, (highlight or wall_selected or wall_hovered))
+
         
 
 # returns true if hovered
@@ -375,14 +402,15 @@ def draw_map():
     #for wall in cur_state.map_data.walls:
     #    draw_map_wall(draw_list, wall, highlight = ((cur_state.mode == Mode.LINE and wall==cur_state.cur_wall) or wall == cur_state.hovered_item))
     
-    for sect in cur_state.map_data.sectors:
+    for sect in range(cur_state.map_data.num_sectors):
         is_selected = cur_state.mode == Mode.SECTOR and sect == cur_state.cur_sector
         is_hovered = cur_state.hovered_item == sect
         draw_sector(draw_list, sect, highlight = is_selected or is_hovered)
 
-    if (cur_state.mode == Mode.SECTOR and cur_state.cur_sector is not None):
+    if (cur_state.mode == Mode.SECTOR and cur_state.cur_sector != -1):
         draw_sector(draw_list, cur_state.cur_sector, highlight=True)
-    if cur_state.hovered_item and isinstance(cur_state.hovered_item, sector.Sector):
+    if cur_state.hovered_item and cur_state.mode == Mode.SECTOR:
+    #if cur_state.hovered_item and isinstance(cur_state.hovered_item, sector.Sector):
         draw_sector(draw_list, cur_state.hovered_item, highlight=True)
 
 LEFT_BUTTON = 0
@@ -398,44 +426,47 @@ def interpret_click(x,y,button):
 
     
     prev_cur = cur_state.cur_vertex
-    clicked_vertex = None
-    for vert in cur_state.map_data.vertexes:
+    clicked_vertex = -1
+    for idx,vert in enumerate(cur_state.map_data.vertexes):
         if vert.point_collides(x, y):
-            cur_state.cur_vertex = vert
+            cur_state.cur_vertex = idx
             
             if button == LEFT_BUTTON:
                 cur_state.mode = Mode.VERTEX
                 return
             elif button == RIGHT_BUTTON:
-                clicked_vertex = vert
+                clicked_vertex = idx
             
     # then walls
     if button == LEFT_BUTTON:
-        for sector in cur_state.map_data.sectors:
-            for wall in sector.walls:
+        for sect_idx in sector.get_sector_indexes(cur_state):
+            for wall_v1_idx in sector.get_wall_vertex_indexes(cur_state, sect_idx):
+                wall_v2_idx = wall_v1_idx+1
+                wall = line.Wall(wall_v1_idx, wall_v2_idx)
+
                 if wall.point_collides(x, y, collide_with_normal=True):
-                    cur_state.cur_wall = wall
+                    cur_state.cur_wall = wall_v1_idx
                     cur_state.mode = Mode.LINE
                     # find sector
-                    cur_state.cur_sector = cur_state.map_data.sectors[cur_state.cur_wall.sector_idx]
+                    cur_state.cur_sector = sect_idx
                     return
         return
 
         
-    if not cur_state.cur_sector:
+    if cur_state.cur_sector == -1:
         return
 
 
     # add a new vertex and line to the sector
     
 
-    if clicked_vertex is None:
+    if clicked_vertex == -1:
         ix -= ix%10
         iy -= iy%10
         cur_state.cur_vertex = add_new_vertex(ix, iy)
         
 
-    if prev_cur is not None and prev_cur != cur_state.cur_vertex:
+    if prev_cur != -1 and prev_cur != cur_state.cur_vertex:
         cur_state.cur_wall = add_new_wall(prev_cur, cur_state.cur_vertex)
         
 
@@ -552,7 +583,7 @@ def load_map_from_file(f):
     #cur_state = old_state
     old_map = old_state.map_data
 
-    new_sectors = [sector.Sector(index=s.index, walls=s.walls,
+    new_sectors = [sector.Sector(walls=s.walls,
                                  floor_height=s.floor_height, ceil_height=s.ceil_height,
                                  type=getattr(s, 'type', 0), params=getattr(s,'params', sector.SectorParams(0,0,0,0)))
                    for s in old_map.sectors]

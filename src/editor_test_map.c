@@ -4,7 +4,7 @@
 #include "portal_map.h"
 #include "vertex.h"
 
-static s16 sectors[4*14] ={
+static const s16 sectors[4*14] ={
     0, 0, 4, 0,
     5, 4, 4, 0,
     10, 8, 4,0,
@@ -21,7 +21,7 @@ static s16 sectors[4*14] ={
     71, 58, 4, 0,
 };
 
-static u16 walls[76] = {
+static const u16 walls[76] = {
     //  0  0
     0, 1, 2, 3, 0, 
     //  1  5
@@ -53,7 +53,7 @@ static u16 walls[76] = {
     26, 28, 29, 27, 26, 
 };
 
-static s16 portals[62] = {
+static const s16 portals[62] = {
     // 0
     -1, 1, -1, -1, 
     // 1
@@ -84,7 +84,7 @@ static s16 portals[62] = {
     -1, -1, -1, 12, 
 };
 
-static u8 wall_normal_quadrants[62] ={
+static const u8 wall_normal_quadrants[62] ={
     FACING_DOWN,
     QUADRANT_1,
     QUADRANT_0,
@@ -151,7 +151,7 @@ static u8 wall_normal_quadrants[62] ={
 
 
 // texture_idx, high_color, low_color, wall_color (deprecated)
-static u8 wall_colors[62 * WALL_COLOR_NUM_PARAMS] = {
+static const u8 wall_colors[62 * WALL_COLOR_NUM_PARAMS] = {
     0,0,0,0,
     0,1,1,0,
     0,0,0,0,
@@ -217,7 +217,7 @@ static u8 wall_colors[62 * WALL_COLOR_NUM_PARAMS] = {
 };
 
 #define VERT(x1,y1) { .x = (x1 * 2), .y = ((-y1) * 2) } 
-static vertex vertexes[30] = {
+static const vertex vertexes[30] = {
     VERT(140,120),
     VERT(270,120),
     VERT(240,200),
@@ -250,10 +250,10 @@ static vertex vertexes[30] = {
     VERT(450,460),
 };
 
-static u8 sector_types[14] = {
+static const u8 sector_types[14] = {
 0,0,0,0,0,0,0,1,1,0,0,0,0,1,};
 
-static s16 sector_params[NUM_SECTOR_PARAMS*14] = {
+static const s16 sector_params[NUM_SECTOR_PARAMS*14] = {
     // light orig_height, ticks_left, state, floor_height, ceil_height, floor_color, ceil_color
     0, 0<<4, 0, 0, 0<<4, 100<<4, 3, 3,
     0, 0<<4, 0, 0, 0<<4, 100<<4, 3, 3, 
@@ -274,41 +274,27 @@ static s16 sector_params[NUM_SECTOR_PARAMS*14] = {
 // pvs is an index for each sector, plus length
 // raw pvs is wall lists
 
-// TODO
-// sector 2
-// sector 3
-// sector 4
-// sector 5
-// sector 6
-// sector 7
-// sector 8
-// sector 9
-// sector 10
-// sector 11
-// sector 12
-// sector 13
 
-
-static s16 pvs[14 * 2] = {
+static const u16 pvs[14 * 2] = {
      0, 10,
     40, 14,
    100, 14,
-   162, 16,
-   233,  2,
-     0, 10,
-     0, 10,
-     0, 10,
-     0, 10,
-     0, 10,
-     0, 10,
-     0, 10,
-     0, 10,
-     0, 10,
+   162, 15,
+   227, 15,
+   287, 16,
+   351, 15,
+   412, 12,
+   460, 11,
+   504, 14,
+   566, 13,
+   625, 16,
+   698, 16,
+   767, 12,
 };
 
-static u16 raw_pvs[512] = {
+static const u16 raw_pvs[1024] = {
     // sector 0 pvs
-    // sector index, num walls, N*2 wall + portal refs
+    // sector index, num walls, N walls
      0, 3,  0,2,3,
      1, 2,  5,7,
      2, 3,  10,11,12,
@@ -357,7 +343,6 @@ static u16 raw_pvs[512] = {
      2,2,    10,12,
      1,2,    5,7,
      0,3,    2,3,0,
-     3,4,   15,16,18,19,
      9,1,   48,
      4,2,   22,24,
      9,1,   50,
@@ -370,15 +355,173 @@ static u16 raw_pvs[512] = {
      8, 3,  42,43,44,
      13, 2, 71,72,
 
-     // sector 4 pvs, 233
-     4,1,   22,
+     // sector 4 pvs, 227
+     4,2,   22,24,
+     3,1,   18,
      9,2,   47,50,
+     3,3,   19,20,15,
+     2,1,   10,
+     1,1,   5,
+     0,1,   0,
+     11,2,  58,60,
+     5,1,   29,
+     10,3,  54,55,56,
+     6,2,   32,33,
+     12, 4, 64,65,66,67,
+     13, 2, 71,72,
+     7, 2,  37,39,
+     8, 3,  42,43,44,
+
+    // sector 5 pvs, 287
+    5,2,    27,29,
+    6,1,    34,
+    10,3,   54,55,56,
+    6,2,    32,33,
+    12,4,   64,65,66,67,
+    7,2,    37,39,
+    8,3,    42,43,44,
+    4,1,    22,
+    11,3,   58,61,62,
+    13,2,   71,72,
+    4,1,    24,
+    9,2,    47,50,
+    3,3,    19,20,15,
+    2,1,    10,
+    1,1,    5,
+    0,1,    0,
+
+    // sector 6 pvs, 351
+    6,3,    32,33,34,
+    5,1,    29,
+    10,3,   53,55,56,
+    5,1,    27,
+    12,4,   64,65,66,67,
+    7,2,    37,39,
+    13,2,   71,72,
+    8,3,    42,43,44,
+    11,3,   58,61,62,
+    4,1,    24,
+    9,2,    50,47,
+    3,3,    19,20,15,
+    2,1,    10,
+    1,1,    5,
+    0,1,    0,
+
+    // sector 7 pvs, 412
+    7,3,    37,39,40,
+    8,3,    42,43,44,
+    6,2,    32,34,
+    10,2,   56,53,
+    5,1,    27,
+    4,1,    24,
+    12,2,   64,65,
+    11,3,   58,61,62,
+    9,2,    47,50,
+    3,3,    19,20,15,
+    2,1,    10,
+    1,1,    5,
+
+    // sector 8 pvs, 460
+    8,3,    42,43,44,
+    7,3,    37,39,40,
+    6,2,    32,34,
+    10,2,   56,53,
+    5,1,    27,
+    4,1,    24,
+    11,3,   58,61,62,
+    9,2,    47,50,
+    3,3,    19,20,15,
+    2,1,    10,
+    1,1,    5,
+
+    // sector 9 pvs, 504
+    9,3,    47,48,50,
+    4,3,    22,23,25,
+    3,5,    15,16,17,19,20,
+    2,1,    10,
+    1,1,    5,
+    5,1,    29,
+    10,4,   53,54,55,56,
+    5,1,    27,
+    6,2,    32,33,
+    7,2,    37,39,
+    8,3,    42,43,44,
+    11,2,   58,60,
+    12,4,   64,65,66,67,
+    13,2,   71,72,
+
+    // sector 10 pvs, 566
+    10,4,   53,54,55,56,
+    5,3,    27,28,30,
+    6,2,    32,33,
+    7,2,    37,39,
+    8,3,    42,43,44,
+    12,4,   64,65,66,67,
+    13,2,   71,72,
+    9,3,    47,48,50,
+    4,2,    22,25,
+    11,3,   58,61,62,
+    3,3,    15,19,20,
+    2,1,    10,
+    1,1,    5,
+
+    // sector 11 pvs, 625
+    11,4,   58,60,61,62,
+    5,2,    28,30,
+    4,3,    23,24,25,
+    5,1,    29,
+    6,3,    32,33,34,
+    10,4,   52,54,55,56,
+    12,4,   64,65,66,67,
+    13,3,   71,72,73,
+    7,2,    37,39,
+    8,3,    42,43,44,
+    3,1,    18,
+    9,3,    47,49,50,
+    3,3,    15,19,20,
+    2,2,    10,12,
+    1,1,    5,
+    0,2,    0,3,
+
+    // sector 12 pvs, 696 
+    12,5,   64,65,66,67,68,
+    11,1,   60,
+    6,3,    33,34,35,
+    7,1,    39,
+    8,1,    44,
+    13,3,   71,72,73,
+    5,1,    27,
+    11,3,   58,61,62,
+    5,2,    28,29,
+    10,4,   52,53,55,56,
+    4,2,    24,25,
+    9,2,    47,50,
+    3,4,    15,18,19,20,
+    2,2,    10,12,
+    1,1,    5,
+    0,2,    0,3,
+
+    // sector 13 pvs, 765
+    13,4,   71,72,73,74,
+    12,4,   64,65,67,68,
+    6,3,    33,34,35,
+    10,4,   52,53,55,56,
+    5,1,    27,
+    4,1,    24,
+    11,3,   58,61,62,
+    9,2,    47,50,
+    3,3,    15,19,20,
+    2,1,    10,
+    1,1,    5,
+    0,1,    0,
+    
+    
 
 };
 
 
 
-portal_map editor_test_map  = {
+const portal_map editor_test_map  = {
     .num_sectors = 14,
     .num_walls = 62,
     .num_verts = 30,
@@ -390,6 +533,7 @@ portal_map editor_test_map  = {
     .wall_norm_quadrants = wall_normal_quadrants,
     .sector_params = sector_params,
     .sector_types = sector_types,
+    .has_pvs = 1,
     .pvs = pvs,
     .raw_pvs = raw_pvs
 };

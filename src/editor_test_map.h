@@ -4,6 +4,6 @@
 #include "portal_map.h"
 
 
-extern portal_map editor_test_map;
+extern const portal_map editor_test_map;
 
 #endif
