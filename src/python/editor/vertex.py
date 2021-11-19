@@ -3,10 +3,9 @@ import imgui
 
 
 class Vertex():
-    def __init__(self, x, y, index):
+    def __init__(self, x, y):
         self.x = x
         self.y = y
-        self.index = index
 
     def __str__(self):
         return "x: {} y: {}".format(self.x, self.y)
@@ -37,21 +36,22 @@ def draw_vert_mode(cur_state):
     
     if cur_state.cur_vertex is not None:
 
-        cur_vertex = cur_state.cur_vertex
-        imgui.text("Vertex {}".format(cur_vertex.index))
+        cur_vertex_index = cur_state.cur_vertex
+        imgui.text("Vertex {}".format(cur_vertex_index))
 
+        vert = cur_state.map_data.vertexes[cur_vertex_index]
         def set_xy(xy):
             (x,y) = xy
-            cur_state.cur_vertex.x = x
-            cur_state.cur_vertex.y = y
+            cur_state.map_data.vertexes[cur_vertex_index].x = x
+            cur_state.map_data.vertexes[cur_vertex_index].y = y
             
-        input_int2("x,y: ", "##vert{}_xy".format(cur_vertex.index), (cur_vertex.x, cur_vertex.y),
+        input_int2("x,y: ", "##vert{}_xy".format(cur_vertex_index), (vert.x, vert.y),
                    set_xy)                  
     
     
 
     def set_cur_vertex(idx):
-        cur_state.cur_vertex = cur_state.map_data.vertexes[idx]
+        cur_state.cur_vertex = idx
 
     draw_list(cur_state, "Vertexes", "Vertex list", cur_state.map_data.vertexes, set_cur_vertex)
 

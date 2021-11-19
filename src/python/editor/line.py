@@ -5,12 +5,9 @@ import math
 
 
 class Wall():
-    def __init__(self, v1, v2, sector_idx, adj_sector_idx): #, index):
+    def __init__(self, v1, v2):
         self.v1 = v1
         self.v2 = v2
-        self.sector_idx = sector_idx
-        self.adj_sector_idx = adj_sector_idx
-        #self.index = index
         self.up_color = 1
         self.low_color = 1
         self.mid_color = 1
@@ -114,26 +111,30 @@ def draw_line_mode(cur_state):
     #if imgui.button("New line") and cur_state.cur_sector is not None and len(cur_state.map_data.vertexes) >= 2:
     #    cur_state.cur_wall = add_new_wall()
             
-    if cur_state.cur_wall is not None:
-        cur_wall = cur_state.cur_wall
+    if cur_state.cur_wall != -1:
+        cur_wall = cur_state.map_data.walls[cur_state.cur_wall]
         #imgui.same_line()
         #imgui.text("Line {}".format(cur_wall.index))
         
         vert_opts = ["{}".format(idx) for idx in range(len(cur_state.map_data.vertexes))]
-        v1_idx = cur_wall.v1.index
-        v2_idx = cur_wall.v2.index
+
+        v1_idx = cur_wall*2
+        v2_idx = cur_wall*2+1
 
         
         color_opts = ["{}".format(col_names[idx]) for idx in range(16)]
         
         
-        v1_changed,new_v1_idx = imgui.core.combo("v1", cur_wall.v1.index, vert_opts)
+        v1_changed,new_v1_idx = imgui.core.combo("v1", v1_idx, vert_opts)
         
-        v2_changed,new_v2_idx = imgui.core.combo("v2", cur_wall.v2.index, vert_opts)
+        v2_changed,new_v2_idx = imgui.core.combo("v2", v2_idx, vert_opts)
         
         sector_opts = ["-1"] + ["{}".format(idx) for idx in range(len(cur_state.map_data.sectors))]
-        
-        adj_changed,new_adj_sector_idx = imgui.core.combo("adj sector", cur_wall.adj_sector_idx+1, sector_opts)
+
+        adj_sector_idx = cur_state.map_data.portals[cur_wall]
+        adj_changed,new_adj_sector_idx = imgui.core.combo("adj sector", adj_sector_idx+1, sector_opts)
+
+
 
         up_col_changed, new_up_col = imgui.core.combo("upper color", cur_wall.up_color, color_opts)
         mid_col_changed, new_mid_col = imgui.core.combo("middle color", cur_wall.mid_color, color_opts)
