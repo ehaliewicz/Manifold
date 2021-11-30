@@ -23,6 +23,8 @@ import vertex
 
 
 # commands
+from src.python.editor import map_db
+
 
 class Mode(Enum):
     SECTOR = 'Sector'
@@ -71,7 +73,7 @@ class Map():
 """
         
 
-        res += "static s16 sectors[{}] =".format(num_sectors * NUM_SECTOR_ATTRIBUTES) + "{\n"
+        res += "static s16 sectors[{}] =".format(num_sectors * sector.NUM_SECTOR_ATTRIBUTES) + "{\n"
 
         wall_offset = 0
         portal_offset = 0
@@ -248,7 +250,7 @@ def main_sdl2():
 class State(object):
     def __init__(self):
         self.mode = Mode.SECTOR
-        self.map_data = Map()
+        self.map_data = map_db.world_data
         self.cur_sector = -1
         self.cur_wall = -1
         self.cur_vertex = -1
@@ -263,7 +265,7 @@ class State(object):
         
 cur_state = State()
 
-        
+"""
 def add_new_wall(v1, v2):
     sect = cur_state.cur_sector
     if sect == cur_state.map_data.num_sectors-1:
@@ -285,7 +287,7 @@ def add_new_vertex(x,y):
     cur_state.map_data.num_verts += 1
     print(cur_state.map_data.vertexes)
     return num_verts
-
+"""
 
 
 
@@ -357,13 +359,15 @@ def draw_map_wall(draw_list, wall_idx, portal_idx, highlight=False):
     
     color = tbl[(highlight<<1 | is_portal)]
 
-    v1_idx = cur_state.map_data.walls[wall_idx*2]
-    v2_idx = cur_state.map_data.walls[wall_idx*2+1]
+
+
+    v1_idx = cur_state.map_data.lines[wall_idx*2]
+    v2_idx = cur_state.map_data.lines[wall_idx*2+1]
     v1 = cur_state.map_data.vertexes[v1_idx]
     v2 = cur_state.map_data.vertexes[v2_idx]
 
-    wall = line.Wall(v1, v2)
-    ((n1x,n1y),(n2x,n2y)) = wall.centered_normal()
+    wall = line.Line(v1_idx, v2_idx)
+    ((n1x,n1y),(n2x,n2y)) = wall.centered_normal(cur_state.map_data)
     
     cam_x = cur_state.camera_x
     cam_y = cur_state.camera_y
@@ -373,12 +377,12 @@ def draw_map_wall(draw_list, wall_idx, portal_idx, highlight=False):
     
 
 def draw_sector(draw_list, draw_sect, highlight=False):
-    base_idx = draw_sect * sector.NUM_SECTOR_ATTRIBUTES
+    base_idx = draw_sect * map_db.NUM_SECTOR_PARAMS
     print("draw sect {}".format(draw_sect))
     print("base idx {}".format(base_idx))
-    wall_base_idx = cur_state.map_data.sectors[base_idx + sector.WALL_OFFSET_IDX]
-    portal_base_idx = cur_state.map_data.sectors[base_idx + sector.PORTAL_OFFSET_IDX]
-    num_walls = cur_state.map_data.sectors[base_idx + sector.NUM_WALLS_IDX]
+    wall_base_idx = cur_state.map_data.sectors[base_idx + map_db.WALL_OFFSET_IDX]
+    portal_base_idx = cur_state.map_data.sectors[base_idx + map_db.PORTAL_OFFSET_IDX]
+    num_walls = cur_state.map_data.sectors[base_idx + map_db.NUM_WALLS_IDX]
     for idx in range(num_walls):
         cur_wall_idx = wall_base_idx + idx
         cur_portal_idx = portal_base_idx + idx
@@ -394,7 +398,10 @@ def draw_map():
         
     draw_list = imgui.get_window_draw_list()
 
-    for vertex in cur_state.map_data.vertexes:
+    vertexes = map_db.get_all_vertexes()
+
+    for vertex in vertexes:
+
         
         draw_map_vert(draw_list, vertex, highlight = ((cur_state.mode == Mode.VERTEX and vertex == cur_state.cur_vertex) or vertex == cur_state.hovered_item))
         
@@ -427,7 +434,7 @@ def interpret_click(x,y,button):
     
     prev_cur = cur_state.cur_vertex
     clicked_vertex = -1
-    for idx,vert in enumerate(cur_state.map_data.vertexes):
+    for idx,vert in enumerate(map_db.get_all_vertexes()):
         if vert.point_collides(x, y):
             cur_state.cur_vertex = idx
             
@@ -444,7 +451,7 @@ def interpret_click(x,y,button):
                 wall_v2_idx = wall_v1_idx+1
                 wall = line.Wall(wall_v1_idx, wall_v2_idx)
 
-                if wall.point_collides(x, y, collide_with_normal=True):
+                if wall.point_collides(cur_state.map_data, x, y, collide_with_normal=True):
                     cur_state.cur_wall = wall_v1_idx
                     cur_state.mode = Mode.LINE
                     # find sector
@@ -463,11 +470,11 @@ def interpret_click(x,y,button):
     if clicked_vertex == -1:
         ix -= ix%10
         iy -= iy%10
-        cur_state.cur_vertex = add_new_vertex(ix, iy)
+        cur_state.cur_vertex = map_db.add_new_vertex(ix, iy)
         
 
     if prev_cur != -1 and prev_cur != cur_state.cur_vertex:
-        cur_state.cur_wall = add_new_wall(prev_cur, cur_state.cur_vertex)
+        cur_state.cur_wall = map_db.add_line_to_sector(cur_state.cur_sector, prev_cur, cur_state.cur_vertex)
         
 
 last_frame_x = None
