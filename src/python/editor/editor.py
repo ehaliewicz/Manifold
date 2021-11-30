@@ -1,4 +1,4 @@
-#import glfw
+# import glfw
 import atexit
 import ctypes
 import pickle
@@ -21,7 +21,6 @@ import texture
 import trigger
 import vertex
 
-
 # commands
 from src.python.editor import map_db
 
@@ -34,9 +33,6 @@ class Mode(Enum):
     TRIGGER = 'Trigger'
     TEXTURE = 'Texture'
     PREVIEW = 'Preview'
-
-
-    
 
 
 class Map():
@@ -57,13 +53,10 @@ class Map():
         self.pvs = []
         self.raw_pvs = []
 
-
-
     def generate_c_from_map(self):
         num_sectors = len(self.sectors)
         num_vertexes = len(self.vertexes)
         num_walls = sum(len(sect.walls) for sect in self.sectors)
-
 
         res = """#include <genesis.h>
 #include "colors.h"
@@ -71,7 +64,6 @@ class Map():
 #include "vertex.h"
 
 """
-        
 
         res += "static s16 sectors[{}] =".format(num_sectors * sector.NUM_SECTOR_ATTRIBUTES) + "{\n"
 
@@ -80,18 +72,16 @@ class Map():
         for sect in self.sectors:
             sect_num_walls = len(sect.walls)
             res += "    {}, {}, {}, {}<<4, {}<<4, {}, {}, {},\n".format(wall_offset, portal_offset, sect_num_walls,
-                                                                    sect.floor_height, sect.ceil_height,
-                                                                    sect.floor_color, sect.ceil_color, sect.flags)
-            
-            wall_offset += sect_num_walls+1
+                                                                        sect.floor_height, sect.ceil_height,
+                                                                        sect.floor_color, sect.ceil_color, sect.flags)
+
+            wall_offset += sect_num_walls + 1
             portal_offset += sect_num_walls
-            
+
         res += "};\n\n"
-            
-        
 
         # we can have up to 65536 vertexes
-        res += "static const u16 walls[{}]".format(num_walls+num_sectors) + " = {\n"
+        res += "static const u16 walls[{}]".format(num_walls + num_sectors) + " = {\n"
         for sect in self.sectors:
             prev_v2 = None
             first_v1 = sect.walls[0].v1
@@ -113,17 +103,15 @@ class Map():
             res += "    "
             for wall in sect.walls:
                 res += "{}, ".format(wall.adj_sector_idx)
-                
+
             res += "\n"
         res += "};\n\n"
-
 
         res += "static const u8 wall_normal_quadrants[{}] =".format(num_walls) + "{\n"
         for sect in self.sectors:
             for wall in sect.walls:
                 res += "    {},\n".format(wall.normal_quadrant())
         res += "};\n\n"
-        
 
         res += "static const wall_col wall_colors[{}] =".format(num_walls) + "{\n"
         for sect in self.sectors:
@@ -135,11 +123,11 @@ class Map():
                     res += "    {" + ".mid_col = {}".format(mcol) + "},\n"
                 else:
                     res += "    {" + ".upper_col = {}, .lower_col = {}".format(ucol, dcol) + "},\n"
-                    
+
         res += "};\n\n"
 
         res += "#define VERT(x1,y1) { .x = (x1 * 2), .y = ((-y1) * 2) } \n"
-        
+
         res += "static const vertex vertexes[{}]".format(num_vertexes) + " = {\n"
         for vert in self.vertexes:
             res += "    VERT({},{}),\n".format(vert.x, vert.y)
@@ -159,7 +147,6 @@ class Map():
             res += "},\n"
         res += "};\n\n"
 
-        
         res += "const portal_map {} ".format(self.name.replace(" ", "_")) + " = {\n"
         res += "    .num_sectors = {},\n".format(num_sectors)
         res += "    .num_walls = {},\n".format(num_walls)
@@ -173,12 +160,10 @@ class Map():
         res += "    .sector_params = sector_params,\n"
         res += "    .sector_types = sector_types\n"
         res += "};"
-                
-        
+
         return res
 
 
-    
 def main_sdl2():
     def pysdl2_init():
         width, height = 1280, 800
@@ -199,9 +184,9 @@ def main_sdl2():
         SDL_SetHint(SDL_HINT_MAC_CTRL_CLICK_EMULATE_RIGHT_CLICK, b"1")
         SDL_SetHint(SDL_HINT_VIDEO_HIGHDPI_DISABLED, b"1")
         window = SDL_CreateWindow(window_name.encode('utf-8'),
-                                SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-                                width, height,
-                                SDL_WINDOW_OPENGL|SDL_WINDOW_RESIZABLE)
+                                  SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+                                  width, height,
+                                  SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE)
         if window is None:
             print("Error: Window could not be created! SDL Error: " + SDL_GetError())
             exit(1)
@@ -225,7 +210,6 @@ def main_sdl2():
 
     render_3d.init_sdl_window()
 
-    
     while running:
         while SDL_PollEvent(ctypes.byref(event)) != 0:
             if event.type == SDL_QUIT:
@@ -246,7 +230,6 @@ def main_sdl2():
     SDL_Quit()
 
 
-
 class State(object):
     def __init__(self):
         self.mode = Mode.SECTOR
@@ -258,11 +241,10 @@ class State(object):
         self.camera_x = 0
         self.camera_y = 0
         self.zoom = 0
-        
 
         self.hovered_item = None
 
-        
+
 cur_state = State()
 
 """
@@ -289,8 +271,6 @@ def add_new_vertex(x,y):
     return num_verts
 """
 
-
-
 MODE_DRAW_FUNCS = {
     Mode.SECTOR: sector.draw_sector_mode,
     Mode.PREVIEW: render_3d.draw_preview,
@@ -303,33 +283,29 @@ MODE_DRAW_FUNCS = {
 
 
 def draw_mode():
-    
     changed, text_val = imgui.input_text("Name: ", cur_state.map_data.name, buffer_length=64)
     if changed:
         cur_state.map_data.name = text_val
-        
-        
+
     imgui.text("{} mode".format(cur_state.mode.value))
 
     for k in MODE_DRAW_FUNCS.keys():
-        #if can_switch_to(k.value):
+        # if can_switch_to(k.value):
         if imgui.radio_button(k.value, cur_state.mode == k):
             cur_state.mode = k
-    
-        
+
     MODE_DRAW_FUNCS[cur_state.mode](cur_state)
 
 
-vert_default = (1,1,1,1)
-vert_highlight = (1,0,1,1)
-vert_select = (1,1,0,1)
+vert_default = (1, 1, 1, 1)
+vert_highlight = (1, 0, 1, 1)
+vert_select = (1, 1, 0, 1)
 
-portal_default = (1,0,0,0.3)
-portal_highlight = (1,1,0,0.3)
-wall_default = (1,0,0,1)
-wall_highlight = (1,0,1,1)
-wall_selected = (1,1,0,1)
-
+portal_default = (1, 0, 0, 0.3)
+portal_highlight = (1, 1, 0, 0.3)
+wall_default = (1, 0, 0, 1)
+wall_highlight = (1, 0, 1, 1)
+wall_selected = (1, 1, 0, 1)
 
 
 def draw_map_vert(draw_list, vert, highlight=False):
@@ -340,10 +316,9 @@ def draw_map_vert(draw_list, vert, highlight=False):
 
     cam_x = cur_state.camera_x
     cam_y = cur_state.camera_y
-    draw_list.add_circle_filled(vert.x-cam_x, vert.y-cam_y, 2, imgui.get_color_u32_rgba(*color), num_segments=12)
+    draw_list.add_circle_filled(vert.x - cam_x, vert.y - cam_y, 2, imgui.get_color_u32_rgba(*color), num_segments=12)
 
 
-    
 def draw_map_wall(draw_list, wall_idx, portal_idx, highlight=False):
     adj_sector_idx = cur_state.map_data.portals[portal_idx]
 
@@ -355,127 +330,115 @@ def draw_map_wall(draw_list, wall_idx, portal_idx, highlight=False):
         # highlighted
         wall_highlight,
         portal_highlight]
-           
-    
-    color = tbl[(highlight<<1 | is_portal)]
 
+    color = tbl[(highlight << 1 | is_portal)]
 
+    wall = map_db.get_line(wall_idx)
+    v1 = wall.v1
+    v2 = wall.v2
 
-    v1_idx = cur_state.map_data.lines[wall_idx*2]
-    v2_idx = cur_state.map_data.lines[wall_idx*2+1]
-    v1 = cur_state.map_data.vertexes[v1_idx]
-    v2 = cur_state.map_data.vertexes[v2_idx]
+    ((n1x, n1y), (n2x, n2y)) = wall.centered_normal(cur_state.map_data)
 
-    wall = line.Line(v1_idx, v2_idx)
-    ((n1x,n1y),(n2x,n2y)) = wall.centered_normal(cur_state.map_data)
-    
     cam_x = cur_state.camera_x
     cam_y = cur_state.camera_y
-     
-    draw_list.add_line(v1.x-cam_x, v1.y-cam_y, v2.x-cam_x, v2.y-cam_y, imgui.get_color_u32_rgba(*color), 1.0)
-    draw_list.add_line(n1x-cam_x, n1y-cam_y, n2x-cam_x, n2y-cam_y, imgui.get_color_u32_rgba(*color), 1.0)
-    
+
+    draw_list.add_line(v1.x - cam_x, v1.y - cam_y, v2.x - cam_x, v2.y - cam_y, imgui.get_color_u32_rgba(*color), 1.0)
+    draw_list.add_line(n1x - cam_x, n1y - cam_y, n2x - cam_x, n2y - cam_y, imgui.get_color_u32_rgba(*color), 1.0)
+
 
 def draw_sector(draw_list, draw_sect, highlight=False):
     base_idx = draw_sect * map_db.NUM_SECTOR_PARAMS
-    print("draw sect {}".format(draw_sect))
-    print("base idx {}".format(base_idx))
-    wall_base_idx = cur_state.map_data.sectors[base_idx + map_db.WALL_OFFSET_IDX]
     portal_base_idx = cur_state.map_data.sectors[base_idx + map_db.PORTAL_OFFSET_IDX]
-    num_walls = cur_state.map_data.sectors[base_idx + map_db.NUM_WALLS_IDX]
-    for idx in range(num_walls):
-        cur_wall_idx = wall_base_idx + idx
+
+    for idx, wall in enumerate(map_db.get_all_lines_for_sector(draw_sect)):
+        cur_wall_idx = wall.idx
         cur_portal_idx = portal_base_idx + idx
         wall_selected = cur_state.mode == Mode.LINE and cur_state.cur_wall == cur_wall_idx
         wall_hovered = cur_state.hovered_item == cur_wall_idx
 
         draw_map_wall(draw_list, cur_wall_idx, cur_portal_idx, (highlight or wall_selected or wall_hovered))
 
-        
 
 # returns true if hovered
 def draw_map():
-        
     draw_list = imgui.get_window_draw_list()
 
     vertexes = map_db.get_all_vertexes()
 
     for vertex in vertexes:
+        draw_map_vert(draw_list, vertex, highlight=((
+                                                                cur_state.mode == Mode.VERTEX and vertex == cur_state.cur_vertex) or vertex == cur_state.hovered_item))
 
-        
-        draw_map_vert(draw_list, vertex, highlight = ((cur_state.mode == Mode.VERTEX and vertex == cur_state.cur_vertex) or vertex == cur_state.hovered_item))
-        
-        
-    #for wall in cur_state.map_data.walls:
+    # for wall in cur_state.map_data.walls:
     #    draw_map_wall(draw_list, wall, highlight = ((cur_state.mode == Mode.LINE and wall==cur_state.cur_wall) or wall == cur_state.hovered_item))
-    
+
     for sect in range(cur_state.map_data.num_sectors):
         is_selected = cur_state.mode == Mode.SECTOR and sect == cur_state.cur_sector
         is_hovered = cur_state.hovered_item == sect
-        draw_sector(draw_list, sect, highlight = is_selected or is_hovered)
+        draw_sector(draw_list, sect, highlight=is_selected or is_hovered)
 
     if (cur_state.mode == Mode.SECTOR and cur_state.cur_sector != -1):
         draw_sector(draw_list, cur_state.cur_sector, highlight=True)
     if cur_state.hovered_item and cur_state.mode == Mode.SECTOR:
-    #if cur_state.hovered_item and isinstance(cur_state.hovered_item, sector.Sector):
+        # if cur_state.hovered_item and isinstance(cur_state.hovered_item, sector.Sector):
         draw_sector(draw_list, cur_state.hovered_item, highlight=True)
+
 
 LEFT_BUTTON = 0
 RIGHT_BUTTON = 1
 
 
-
-
-def interpret_click(x,y,button):
-    #global cur_vertex, cur_wall, cur_mode
+def interpret_click(x, y, button):
+    # global cur_vertex, cur_wall, cur_mode
     ix = int(x)
     iy = int(y)
 
-    
     prev_cur = cur_state.cur_vertex
     clicked_vertex = -1
-    for idx,vert in enumerate(map_db.get_all_vertexes()):
+    for idx, vert in enumerate(map_db.get_all_vertexes()):
         if vert.point_collides(x, y):
             cur_state.cur_vertex = idx
-            
+
             if button == LEFT_BUTTON:
                 cur_state.mode = Mode.VERTEX
                 return
             elif button == RIGHT_BUTTON:
                 clicked_vertex = idx
-            
+
     # then walls
     if button == LEFT_BUTTON:
-        for sect_idx in sector.get_sector_indexes(cur_state):
-            for wall_v1_idx in sector.get_wall_vertex_indexes(cur_state, sect_idx):
-                wall_v2_idx = wall_v1_idx+1
-                wall = line.Wall(wall_v1_idx, wall_v2_idx)
+        for sect_idx in map_db.get_all_sectors():
+            for wall in map_db.get_all_lines_for_sector(sect_idx):
+
+            #num_walls = map_db.get_sector_param(sect_idx, map_db.NUM_WALLS_IDX)
+            #wall_offset = map_db.get_sector_param(sect_idx, map_db.WALL_OFFSET_IDX)
+
+            #for i in range(num_walls):
+            #    wall_v1_idx = wall_offset + i
+            #    wall_v2_idx = wall_v1_idx + 1
+            #    wall = line.Wall(wall_v1_idx, wall_v2_idx)
 
                 if wall.point_collides(cur_state.map_data, x, y, collide_with_normal=True):
-                    cur_state.cur_wall = wall_v1_idx
+                    cur_state.cur_wall = wall.idx #wall_v1_idx
                     cur_state.mode = Mode.LINE
                     # find sector
                     cur_state.cur_sector = sect_idx
                     return
         return
 
-        
     if cur_state.cur_sector == -1:
         return
 
-
     # add a new vertex and line to the sector
-    
 
     if clicked_vertex == -1:
-        ix -= ix%10
-        iy -= iy%10
+        ix -= ix % 10
+        iy -= iy % 10
         cur_state.cur_vertex = map_db.add_new_vertex(ix, iy)
-        
 
     if prev_cur != -1 and prev_cur != cur_state.cur_vertex:
         cur_state.cur_wall = map_db.add_line_to_sector(cur_state.cur_sector, prev_cur, cur_state.cur_vertex)
-        
+
 
 last_frame_x = None
 last_frame_y = None
@@ -489,13 +452,13 @@ def on_frame():
     io = imgui.get_io()
     imgui.set_next_window_size(io.display_size.x, io.display_size.y)
     imgui.begin("Map",
-                flags=imgui.WINDOW_NO_TITLE_BAR|imgui.WINDOW_NO_RESIZE|imgui.WINDOW_NO_COLLAPSE|imgui.WINDOW_NO_BRING_TO_FRONT_ON_FOCUS)
+                flags=imgui.WINDOW_NO_TITLE_BAR | imgui.WINDOW_NO_RESIZE | imgui.WINDOW_NO_COLLAPSE | imgui.WINDOW_NO_BRING_TO_FRONT_ON_FOCUS)
 
     map_hovered = imgui.is_window_hovered()
-        
+
     draw_map()
     imgui.end()
-    
+
     if imgui.begin_main_menu_bar():
         if imgui.begin_menu("File", True):
             clicked_quit, selected_quit = imgui.menu_item(
@@ -503,20 +466,19 @@ def on_frame():
             )
             if clicked_quit:
                 exit(1)
-                
+
             clicked_load, selected_load = imgui.menu_item(
                 "Load", "", False, True
             )
             if selected_load:
                 load_map()
 
-                
             clicked_save, selected_save = imgui.menu_item(
                 "Save", "", False, True
             )
             if selected_save:
                 save_map()
-                
+
             clicked_export, selected_export = imgui.menu_item(
                 "Export", "", False, True
             )
@@ -528,52 +490,45 @@ def on_frame():
             )
             if selected_reset:
                 cur_state = State()
-            
-            
+
             imgui.end_menu()
         imgui.end_main_menu_bar()
 
     imgui.begin("Tools", False)
     tools_hovered = imgui.is_window_hovered()
     draw_mode()
-    
 
     left_button_clicked = imgui.is_mouse_clicked(button=0)
     right_button_clicked = imgui.is_mouse_clicked(button=1)
-
-    
 
     mouse_button_clicked = (left_button_clicked or right_button_clicked)
     left_button_down = imgui.is_mouse_down(button=0)
     if mouse_button_clicked:
         print("clicked left {} right {}".format(left_button_clicked, right_button_clicked))
 
-    #else:
+    # else:
     #    print("clearing down_x and down_y")
     #    start_down_x = None
     #    start_down_y = None
-        
+
     if got_hold_last_frame:
-        cur_x,cur_y = imgui.get_mouse_pos()
+        cur_x, cur_y = imgui.get_mouse_pos()
         moved_cam_x = last_frame_x - cur_x
         moved_cam_y = last_frame_y - cur_y
         cur_state.camera_x += moved_cam_x
         cur_state.camera_y += moved_cam_y
 
-
-    
     if map_hovered and not tools_hovered and mouse_button_clicked:
-        x,y = imgui.get_mouse_pos()
-        print("interpreting click at {},{}".format(x,y))
-        interpret_click(x+cur_state.camera_x,y+cur_state.camera_y, LEFT_BUTTON if left_button_clicked else RIGHT_BUTTON)
+        x, y = imgui.get_mouse_pos()
+        print("interpreting click at {},{}".format(x, y))
+        interpret_click(x + cur_state.camera_x, y + cur_state.camera_y,
+                        LEFT_BUTTON if left_button_clicked else RIGHT_BUTTON)
     elif map_hovered and left_button_down:
         got_hold_last_frame = True
         last_frame_x, last_frame_y = imgui.get_mouse_pos()
     elif not left_button_down:
         got_hold_last_frame = False
 
-        
-    
     imgui.end()
 
 
@@ -582,22 +537,23 @@ def load_map():
     if f is not None:
         load_map_from_file(f)
         f.close()
-        
-        
+
+
 def load_map_from_file(f):
     global cur_state
     old_state = pickle.load(f)
-    #cur_state = old_state
+    # cur_state = old_state
     old_map = old_state.map_data
 
     new_sectors = [sector.Sector(walls=s.walls,
                                  floor_height=s.floor_height, ceil_height=s.ceil_height,
-                                 type=getattr(s, 'type', 0), params=getattr(s,'params', sector.SectorParams(0,0,0,0)))
+                                 type=getattr(s, 'type', 0),
+                                 params=getattr(s, 'params', sector.SectorParams(0, 0, 0, 0)))
                    for s in old_map.sectors]
 
     new_map = Map(name=old_map.name,
                   sectors=new_sectors,
-                  vertexes=old_map.vertexes)                          
+                  vertexes=old_map.vertexes)
 
     cur_state = old_state
     cur_state.map_data = new_map
@@ -605,8 +561,7 @@ def load_map_from_file(f):
     cur_state.cur_sector = None
     cur_state.cur_vertex = None
     cur_state.cur_wall = None
-    
-        
+
 
 def save_map():
     f = filedialog.asksaveasfile(mode="wb")
@@ -615,12 +570,13 @@ def save_map():
         f.close()
     print(f)
 
-    
+
 def export_map():
     f = filedialog.asksaveasfile(mode="w")
     if f is not None:
         f.write(cur_state.map_data.generate_c_from_map())
         f.close()
+
 
 def export_map_to_rom():
     f = filedialog.asksaveasfile(mode="rwb")
@@ -631,9 +587,9 @@ def export_map_to_rom():
         f.write(cur_state.map_data.generate_c_from_map())
         f.close()
 
-        
+
 if __name__ == '__main__':
-    
+
     root = tk.Tk()
     root.withdraw()
 
@@ -646,5 +602,5 @@ if __name__ == '__main__':
             f.close()
 
     main_sdl2()
-    
+
     atexit.register(root.destroy)

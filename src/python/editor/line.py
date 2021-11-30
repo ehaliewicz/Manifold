@@ -1,4 +1,6 @@
 import imgui
+
+from src.python.editor import map_db
 from utils import circle_on_line, draw_list
 import math
 
@@ -6,19 +8,21 @@ import math
 
 
 class Line():
-    def __init__(self, v1_idx, v2_idx):
-        self.v1_idx = v1_idx
-        self.v2_idx = v2_idx
+    def __init__(self, v1, v2, idx, params=[]):
+        self.v1 = v1
+        self.v2 = v2
         self.up_color = 1
         self.low_color = 1
         self.mid_color = 1
+        self.idx = idx
+        self.params = params
         
     def __str__(self):
         return "v1: {} v2: {}".format(self.v1_idx, self.v2_idx)
 
     def rough_mid_point(self, map_data):
-        v1 = map_data.vertexes[self.v1_idx]
-        v2 = map_data.vertexes[self.v2_idx]
+        v1 = self.v1
+        v2 = self.v2
         x1 = v1.x
         y1 = v1.y
         x2 = v2.x
@@ -30,8 +34,8 @@ class Line():
         return (midx, midy)
         
     def normal(self, map_data):
-        v1 = map_data.vertexes[self.v1_idx]
-        v2 = map_data.vertexes[self.v2_idx]
+        v1 = self.v1
+        v2 = self.v2
         x1 = v1.x
         y1 = v1.y
         x2 = v2.x
@@ -77,8 +81,8 @@ class Line():
     def point_collides(self, map_data, cx, cy, collide_with_normal=False):
         radius = 10
 
-        v1 = map_data.vertexes[self.v1_idx]
-        v2 = map_data.vertexes[self.v2_idx]
+        v1 = self.v1
+        v2 = self.v2
         x1 = v1.x
         y1 = v1.y
         x2 = v2.x
@@ -132,9 +136,11 @@ def draw_line_mode(cur_state):
         wall_v1_idx = cur_wall*2
         wall_v2_idx = cur_wall*2+1
         portal_idx = cur_wall
+        wall = map_db.get_line(cur_wall)
 
-        cur_v1 = cur_state.map_data.walls[wall_v1_idx]
-        cur_v2 = cur_state.map_data.walls[wall_v2_idx]
+        cur_v1 = wall.v1 # cur_state.map_data.walls[wall_v1_idx]
+        cur_v2 = wall.v2 # cur_state.map_data.walls[wall_v2_idx]
+
         def v1_setter(v1_idx):
             cur_state.map_data.walls[wall_v1_idx] = v1_idx
         def v2_setter(v2_idx):

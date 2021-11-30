@@ -1,4 +1,4 @@
-from src.python.editor import vertex
+from src.python.editor import vertex, line
 
 NUM_SECTOR_CONSTANTS = 4
 NUM_SECTOR_PARAMS = 8
@@ -69,7 +69,8 @@ def add_line_to_sector(sector_index, v1, v2):  # needs to increment all later se
 
     set_sector_constant(sector_index, NUM_WALLS_IDX)(num_walls + 1)
     ret = wall_idx
-    world_data.lines.insert(wall_idx, v1)
+    if num_walls == 0:
+        world_data.lines.insert(wall_idx, v1)
     world_data.lines.insert(wall_idx + 1, v2)
     world_data.portals.insert(portal_idx, -1)
     for i in range(NUM_LINE_PARAMS):
@@ -126,15 +127,17 @@ get_vertex_attr, set_vertex_attr = gen_funcs('vertexes', NUM_VERTEX_PARAMS)
 
 def get_all_lines_for_sector(sector_idx):
     lines = []
-    base = get_sector_constant(sector_idx, WALL_OFFSET_IDX)
+    base_offset = get_sector_constant(sector_idx, WALL_OFFSET_IDX)
     num_walls = get_sector_constant(sector_idx, NUM_WALLS_IDX)
 
     for i in range(num_walls):
-        idx = base + i
+        idx = base_offset + i
         params = []
+        v1_idx = world_data.lines[idx]
+        v2_idx = world_data.lines[idx + 1]
         for param_idx in range(NUM_LINE_PARAMS):
             params.append(get_line_param(idx, param_idx))
-        lines.append(params)
+        lines.append(line.Line(world_data.vertexes[v1_idx], world_data.vertexes[v2_idx], idx, params))
     return lines
 
 
@@ -146,8 +149,31 @@ def get_all_lines():
     return res
 
 
+def get_line(wall_idx):
+    v1_idx = world_data.lines[wall_idx]
+    v2_idx = world_data.lines[wall_idx + 1]
+    return line.Line(world_data.vertexes[v1_idx], world_data.vertexes[v2_idx], wall_idx)
+
+
 def get_all_sectors():
     return list(range(world_data.num_sectors))
 
+
+def get_all_vertexes_for_sector(sector_idx):
+    verts = []
+    base_offset = get_sector_constant(sector_idx, WALL_OFFSET_IDX)
+    num_walls = get_sector_constant(sector_idx, NUM_WALLS_IDX)
+    if num_walls == 0:
+        return []
+    for i in range(num_walls + 1):
+        v_idx = world_data.lines[base_offset + i]
+        vert = world_data.vertexes[v_idx]
+        verts.append(vert.copy_to_new_sector(sector_idx))
+    return verts
+
+
 def get_all_vertexes():
     return world_data.vertexes
+    for i in range(world_data.num_sectors):
+        res += get_all_vertexes_for_sector(i)
+    return res

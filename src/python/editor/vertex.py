@@ -3,9 +3,10 @@ import imgui
 
 
 class Vertex():
-    def __init__(self, x, y):
+    def __init__(self, x, y, sector_idx = None):
         self.x = x
         self.y = y
+        self.sector_idx = None
 
     def __str__(self):
         return "x: {} y: {}".format(self.x, self.y)
@@ -25,6 +26,8 @@ class Vertex():
 
         return point_in_circle(x1,y1,x2,y2,radius)
 
+    #def copy_to_new_sector(self, sector_idx):
+    #    return Vertex(self.x, self.y, sector_idx)
 
 
     
