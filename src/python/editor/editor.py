@@ -212,7 +212,11 @@ def main_sdl2():
 
     while running:
         while SDL_PollEvent(ctypes.byref(event)) != 0:
+            print(event.type)
             if event.type == SDL_QUIT:
+                running = False
+                break
+            elif event.type == SDL_WINDOWEVENT and event.window.event == SDL_WINDOWEVENT_CLOSE:
                 running = False
                 break
             renderer.process_event(event)
@@ -243,6 +247,7 @@ class State(object):
         self.zoom = 0
 
         self.hovered_item = None
+        self.hovered_item_type = None
 
 
 cur_state = State()
@@ -365,16 +370,18 @@ def draw_map():
 
     vertexes = map_db.get_all_vertexes()
 
-    for vertex in vertexes:
-        draw_map_vert(draw_list, vertex, highlight=((
-                                                                cur_state.mode == Mode.VERTEX and vertex == cur_state.cur_vertex) or vertex == cur_state.hovered_item))
+    for idx, vertex in enumerate(vertexes):
+        is_selected =  cur_state.mode == Mode.VERTEX and idx == cur_state.cur_vertex
+        is_hovered = vertex == cur_state.hovered_item and cur_state.hovered_item_type == "Vertex"
+        draw_map_vert(draw_list, vertex, highlight=(is_selected or is_hovered))
+
 
     # for wall in cur_state.map_data.walls:
     #    draw_map_wall(draw_list, wall, highlight = ((cur_state.mode == Mode.LINE and wall==cur_state.cur_wall) or wall == cur_state.hovered_item))
 
     for sect in range(cur_state.map_data.num_sectors):
         is_selected = cur_state.mode == Mode.SECTOR and sect == cur_state.cur_sector
-        is_hovered = cur_state.hovered_item == sect
+        is_hovered = cur_state.hovered_item == sect and cur_state.hovered_item_type == "Sector"
         draw_sector(draw_list, sect, highlight=is_selected or is_hovered)
 
     if (cur_state.mode == Mode.SECTOR and cur_state.cur_sector != -1):

@@ -72,9 +72,9 @@ def circle_on_line(x1,y1, x2,y2, cx, cy, r):
 
 
 def draw_list(cur_state, id_str, label, items, select_item, delete_callback = None):
-    
+    plural_label = "{}s".format(label)
     imgui.begin_child(id_str)
-    imgui.text(label)
+    imgui.text(plural_label)
 
     cur_state.hovered_item = None
     
@@ -101,6 +101,7 @@ def draw_list(cur_state, id_str, label, items, select_item, delete_callback = No
 
         if imgui.is_item_hovered():
             cur_state.hovered_item = item
+            cur_state.hovered_item_type = id_str
             
     imgui.end_child()
 

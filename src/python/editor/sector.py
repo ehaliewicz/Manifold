@@ -149,4 +149,4 @@ def draw_sector_mode(cur_state):
     def set_cur_sector(idx):
         cur_state.cur_sector = idx
 
-    draw_list(cur_state, "Sectors", "Sector list", map_db.get_all_sectors(), set_cur_sector)
+    draw_list(cur_state, "Sector", "Sector list", map_db.get_all_sectors(), set_cur_sector)

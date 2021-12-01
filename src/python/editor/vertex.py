@@ -3,10 +3,10 @@ import imgui
 
 
 class Vertex():
-    def __init__(self, x, y, sector_idx = None):
+    def __init__(self, x, y, idx):
         self.x = x
         self.y = y
-        self.sector_idx = None
+        self.idx = idx
 
     def __str__(self):
         return "x: {} y: {}".format(self.x, self.y)
@@ -25,10 +25,6 @@ class Vertex():
         y2 = y
 
         return point_in_circle(x1,y1,x2,y2,radius)
-
-    #def copy_to_new_sector(self, sector_idx):
-    #    return Vertex(self.x, self.y, sector_idx)
-
 
     
 def draw_vert_mode(cur_state):
@@ -56,5 +52,5 @@ def draw_vert_mode(cur_state):
     def set_cur_vertex(idx):
         cur_state.cur_vertex = idx
 
-    draw_list(cur_state, "Vertexes", "Vertex list", cur_state.map_data.vertexes, set_cur_vertex)
+    draw_list(cur_state, "Vertex", "Vertex list", cur_state.map_data.vertexes, set_cur_vertex)
 

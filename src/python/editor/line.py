@@ -133,8 +133,6 @@ def draw_line_mode(cur_state):
         
         vert_opts = ["{}".format(idx) for idx in range(len(cur_state.map_data.vertexes))]
 
-        wall_v1_idx = cur_wall*2
-        wall_v2_idx = cur_wall*2+1
         portal_idx = cur_wall
         wall = map_db.get_line(cur_wall)
 
@@ -142,16 +140,16 @@ def draw_line_mode(cur_state):
         cur_v2 = wall.v2 # cur_state.map_data.walls[wall_v2_idx]
 
         def v1_setter(v1_idx):
-            cur_state.map_data.walls[wall_v1_idx] = v1_idx
+            map_db.set_line_v1(cur_wall, v1_idx)
         def v2_setter(v2_idx):
-            cur_state.map_data.walls[wall_v2_idx] = v2_idx
-        
+            map_db.set_line_v2(cur_wall, v2_idx)
+
         #color_opts = ["{}".format(col_names[idx]) for idx in range(16)]
         
         
-        v1_changed,new_v1_idx = imgui.core.combo("v1", cur_v1, vert_opts)
+        v1_changed,new_v1_idx = imgui.core.combo("v1", cur_v1.idx, vert_opts)
         
-        v2_changed,new_v2_idx = imgui.core.combo("v2", cur_v2, vert_opts)
+        v2_changed,new_v2_idx = imgui.core.combo("v2", cur_v2.idx, vert_opts)
         
         sector_opts = ["-1"] + ["{}".format(idx) for idx in range(len(cur_state.map_data.sectors))]
 
@@ -184,26 +182,19 @@ def draw_line_mode(cur_state):
             
         
     def set_cur_wall(idx):
-        cur_state.cur_wall = cur_state.cur_sector.walls[idx]
+        cur_state.cur_wall = idx
 
         
     def delete_line(wall):
-        # find wall in sectors
-        # delete it from that sector
-        # if this is the currently selected wall, unselect the wall
+        map_db.delete_line(cur_state.cur_sector, wall)
         if cur_state.cur_wall == wall:
-            cur_state.cur_wall = None
-
-    
-        for sector in cur_state.map_data.sectors:
-            for idx,cur_wall in enumerate(sector.walls):
-                if cur_wall is wall:
-                    del sector.walls[idx]
-                    break
+            cur_state.cur_wall = -1
 
 
     if cur_state.cur_sector != -1:
-        pass
-        #draw_list(cur_state, "Lines", "Line list", cur_state.cur_sector.walls, set_cur_wall,
-        #          delete_callback=delete_line)
+        wall_off = map_db.get_sector_constant(cur_state.cur_sector, map_db.WALL_OFFSET_IDX)
+        num_walls = map_db.get_sector_constant(cur_state.cur_sector, map_db.NUM_WALLS_IDX)
+        line_list = range(wall_off, wall_off+num_walls, 1)
+
+        draw_list(cur_state, "Line", "Line list", line_list, set_cur_wall, delete_line)
     

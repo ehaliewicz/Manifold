@@ -52,7 +52,7 @@ world_data = WorldData()
 
 
 def add_new_vertex(x, y):
-    world_data.vertexes.append(vertex.Vertex(x, y))
+    world_data.vertexes.append(vertex.Vertex(x, y, world_data.num_vertexes))
     ret = world_data.num_vertexes
     world_data.num_vertexes += 1
     return ret
@@ -153,6 +153,17 @@ def get_line(wall_idx):
     v1_idx = world_data.lines[wall_idx]
     v2_idx = world_data.lines[wall_idx + 1]
     return line.Line(world_data.vertexes[v1_idx], world_data.vertexes[v2_idx], wall_idx)
+
+def delete_line(sect_idx, wall_idx):
+    del world_data.lines[wall_idx+1]
+    nwalls = get_sector_constant(sect_idx, NUM_WALLS_IDX)
+    set_sector_constant(sect_idx, NUM_WALLS_IDX)(nwalls-1)
+
+def set_line_v1(wall_idx, v1):
+    world_data.lines[wall_idx] = v1
+
+def set_line_v2(wall_idx, v2):
+    world_data.lines[wall_idx + 1] = v2
 
 
 def get_all_sectors():
