@@ -352,8 +352,9 @@ def draw_map_wall(draw_list, wall_idx, portal_idx, highlight=False):
 
 
 def draw_sector(draw_list, draw_sect, highlight=False):
-    base_idx = draw_sect * map_db.NUM_SECTOR_PARAMS
-    portal_base_idx = cur_state.map_data.sectors[base_idx + map_db.PORTAL_OFFSET_IDX]
+    #base_idx = draw_sect * map_db.NUM_SECTOR_PARAMS
+    portal_base_idx = map_db.get_sector_constant(draw_sect, map_db.PORTAL_OFFSET_IDX)
+    #portal_base_idx = cur_state.map_data.sectors[base_idx + map_db.PORTAL_OFFSET_IDX]
 
     for idx, wall in enumerate(map_db.get_all_lines_for_sector(draw_sect)):
         cur_wall_idx = wall.idx

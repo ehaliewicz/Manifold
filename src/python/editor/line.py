@@ -133,7 +133,7 @@ def draw_line_mode(cur_state):
         
         vert_opts = ["{}".format(idx) for idx in range(len(cur_state.map_data.vertexes))]
 
-        portal_idx = cur_wall
+        portal_idx = cur_wall - cur_state.cur_sector
         wall = map_db.get_line(cur_wall)
 
         cur_v1 = wall.v1 # cur_state.map_data.walls[wall_v1_idx]
@@ -151,13 +151,13 @@ def draw_line_mode(cur_state):
         
         v2_changed,new_v2_idx = imgui.core.combo("v2", cur_v2.idx, vert_opts)
         
-        sector_opts = ["-1"] + ["{}".format(idx) for idx in range(len(cur_state.map_data.sectors))]
+        sector_opts = ["-1"] + ["{}".format(idx) for idx in range(cur_state.map_data.num_sectors)]
 
         adj_sector_idx = cur_state.map_data.portals[portal_idx]
         adj_changed,new_adj_sector_idx = imgui.core.combo("adj sector", adj_sector_idx+1, sector_opts)
 
         def portal_setter(adj_sect_idx):
-            cur_state.map_data.portals[portal_idx] = adj_sect_idx
+            cur_state.map_data.portals[portal_idx] = adj_sect_idx-1
 
 
         #up_col_changed, new_up_col = imgui.core.combo("upper color", cur_wall.up_color, color_opts)

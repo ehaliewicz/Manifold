@@ -87,9 +87,14 @@ def add_line_to_sector(sector_index, v1, v2):  # needs to increment all later se
 
 
 def add_new_sector():
-    world_data.sectors.append(world_data.num_walls)
+    if world_data.num_sectors == 0:
+        world_data.sectors.append(0)
+    else:
+        world_data.sectors.append(world_data.num_walls+world_data.num_sectors)
     world_data.sectors.append(world_data.num_walls)
     world_data.sectors.append(0)
+    world_data.sectors.append(0)
+
     world_data.sector_types.append(0)
     for i in range(NUM_SECTOR_PARAMS):
         world_data.sector_params.append(0)
@@ -130,13 +135,14 @@ def get_all_lines_for_sector(sector_idx):
     base_offset = get_sector_constant(sector_idx, WALL_OFFSET_IDX)
     num_walls = get_sector_constant(sector_idx, NUM_WALLS_IDX)
 
+
     for i in range(num_walls):
         idx = base_offset + i
         params = []
         v1_idx = world_data.lines[idx]
         v2_idx = world_data.lines[idx + 1]
         for param_idx in range(NUM_LINE_PARAMS):
-            params.append(get_line_param(idx, param_idx))
+            params.append(get_line_param(idx-sector_idx, param_idx))
         lines.append(line.Line(world_data.vertexes[v1_idx], world_data.vertexes[v2_idx], idx, params))
     return lines
 
