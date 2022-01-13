@@ -5,9 +5,8 @@ Uses a "2.5D", doom or build engine-style rendering pipeline, but with convex se
 
 Graphics features
 - Arbitrary angled walls, ala doom and build-engine. 
-- Affine texture mapping (might be possible to get perspective without too much performance loss)
-- Sector-based lighting levels (might be possible to improve this to per-column lighting)
-- Sloped floors and ceilings
+- Perspective-correct texture mapping
+- Sector-based lighting levels with per-column distance lighting.
 - Overlapping "non-euclidean" geometry
 - Transparent surfaces.
 
