@@ -58,4 +58,9 @@ out/
 *.pyc
 *.cache
 
+.vscode* 
 .vscode/
+.vscode/*
+.idea
+.idea*
+.idea/*
