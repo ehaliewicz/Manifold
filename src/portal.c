@@ -577,32 +577,34 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
         //nwalls++;
         // after this point, draw some sprites :^)
 
-        if (render_forcefield) {
-            uint16_t col = (RED_IDX<<4)|LIGHT_GREEN_IDX;
-            draw_forcefield(x1, x2, window_min, window_max, clipping_buffer, col);
-            free_clip_buffer(clipping_buffer);
-        }
+        
+        //if (render_forcefield) {
+        //    uint16_t col = (RED_IDX<<4)|LIGHT_GREEN_IDX;
+        //    draw_forcefield(x1, x2, window_min, window_max, clipping_buffer, col);
+        //    free_clip_buffer(clipping_buffer);
+        //}
     }
 
 
-    /*
+    
     if(objects_in_sect != NULL) {
         object* cur_obj = objects_in_sect;
         while(cur_obj != NULL) {
             object_pos pos = cur_obj->pos;
             s16 flr_height = get_sector_floor_height(sector);
             Vect2D_s16 trans_pos = transform_map_vert_16(fix32ToInt(pos.x), fix32ToInt(pos.y));
-            s16 z_recip = z_recip_table[trans_pos.y];
+            
+            u16 z_recip = z_recip_table_16[trans_pos.y>>TRANS_Z_FRAC_BITS];
 
             if(trans_pos.y > 0) {
 
-                s16 left_x = project_and_adjust_x(trans_pos.x-6, trans_pos.y, z_recip);
-                s16 right_x = project_and_adjust_x(trans_pos.x+6, trans_pos.y, z_recip);
+                s16 left_x = project_and_adjust_x(trans_pos.x-6, z_recip);
+                s16 right_x = project_and_adjust_x(trans_pos.x+6, z_recip);
 
                 object_template type = object_types[cur_obj->object_type];
 
-                s16 top_y = project_and_adjust_y_fix(pos.z+type.from_floor_draw_offset+type.height, trans_pos.y, z_recip);
-                s16 bot_y = project_and_adjust_y_fix(pos.z+type.from_floor_draw_offset, trans_pos.y, z_recip);
+                s16 top_y = project_and_adjust_y_fix(pos.z+type.from_floor_draw_offset+type.height, z_recip);
+                s16 bot_y = project_and_adjust_y_fix(pos.z+type.from_floor_draw_offset, z_recip);
 
                 draw_masked(left_x,top_y, bot_y,
                         right_x, top_y, bot_y,
@@ -615,11 +617,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
         }
         free_clip_buffer(obj_clip_buf);
     }
-    */
-
-    sector_visited_cache[sector]++;
-    sectors_scanned++;
-
+    
 }
 
 
@@ -629,9 +627,6 @@ void pvs_scan(u16 src_sector, s16 window_min, s16 window_max, u32 cur_frame) {
     u16 raw_pvs_offset = map->pvs[src_sector<<PVS_SHIFT];
     u16 num_sect_pvs_groups = map->pvs[(src_sector<<PVS_SHIFT)+1];
 
-
-    s16 intPx = fix32ToInt(cur_player_pos.x);
-    s16 intPy = fix32ToInt(cur_player_pos.y);
 
     for(int i = 0; i < num_sect_pvs_groups; i++) {
         u16 sector = map->raw_pvs[raw_pvs_offset++];
@@ -652,7 +647,6 @@ void pvs_scan(u16 src_sector, s16 window_min, s16 window_max, u32 cur_frame) {
         for(int j = 0; j < num_walls; j++) {
             u16 wall_idx = map->raw_pvs[raw_pvs_offset++];
             u16 portal_idx = wall_idx - sector;
-            normal_quadrant normal_dir = map->wall_norm_quadrants[portal_idx];
             s16 portal_sector = map->portals[portal_idx];
 
             u8 is_portal = (portal_sector != -1);
@@ -662,43 +656,6 @@ void pvs_scan(u16 src_sector, s16 window_min, s16 window_max, u32 cur_frame) {
 
             vertex v1 = map->vertexes[v1_idx];
             vertex v2 = map->vertexes[v2_idx];
-
-            /*
-            // coarse backface culling doesn't seem to be very helpful with PVS
-
-            u8 backfacing = 0;
-
-            switch(normal_dir) {
-                case QUADRANT_0:
-                    backfacing = (intPx < v2.x && intPy < v1.y);
-                    break;
-                case QUADRANT_1:
-                    backfacing = (intPx > v1.x && intPy < v2.y);
-                    break;
-                case QUADRANT_2:
-                    backfacing = (intPx > v2.x && intPy > v1.y);
-                    break;
-                case QUADRANT_3:
-                    backfacing = (intPx < v1.x && intPy > v2.y);
-                    break;
-
-                case FACING_UP:
-                    backfacing = (intPy < v1.y);
-                    break;
-                case FACING_DOWN:
-                    backfacing = (intPy > v1.y);
-                    break;
-                case FACING_LEFT:
-                    backfacing = (intPx > v1.x);
-                    break;
-                case FACING_RIGHT:
-                    backfacing = (intPx < v1.x);
-                    break;
-            }
-            if(backfacing) {
-                continue;
-            }
-            */
 
             u32 wall_len = getApproximatedDistance(v2.x - v1.x, v2.y - v1.y);
             Vect2D_s16 trans_v1 = transform_map_vert_16(v1.x, v1.y);
@@ -849,8 +806,235 @@ void pvs_scan(u16 src_sector, s16 window_min, s16 window_max, u32 cur_frame) {
             }
         }
     }
-
 }
+
+
+
+void pvs_scan_with_objects(u16 src_sector, s16 window_min, s16 window_max, u32 cur_frame) {
+    portal_map* map = (portal_map*)cur_portal_map;
+    u16 raw_pvs_offset = map->pvs[src_sector<<PVS_SHIFT];
+    u16 num_sect_pvs_groups = map->pvs[(src_sector<<PVS_SHIFT)+1];
+
+    typedef enum {
+        WALL,
+        SPRITE,
+    } draw_obj_type;
+
+    typedef struct {
+        u16 sector;
+        u16 wall_idx;
+    } draw_line;
+
+    typedef struct {
+        object* obj;
+    } draw_spr;
+
+    typedef struct {
+        draw_obj_type typ;
+        union {
+            draw_spr spr;
+            draw_line wall;
+        };
+    } draw_obj;
+
+    draw_obj draw_objs[128];
+    int num_draw_objs;
+
+    for(int i = 0; i < num_sect_pvs_groups; i++) {
+        u16 sector = map->raw_pvs[raw_pvs_offset++];
+        u16 num_walls = map->raw_pvs[raw_pvs_offset++];
+        
+        for(int j = 0; j < num_walls && num_draw_objs < 128; j++) {
+            u16 wall_idx = map->raw_pvs[raw_pvs_offset++];
+            draw_objs[num_draw_objs].typ = WALL;
+            draw_objs[num_draw_objs].wall.sector = sector;
+            draw_objs[num_draw_objs].wall.wall_idx = wall_idx;
+            num_draw_objs++;
+        }
+    }
+
+    for(int i = 0; i < num_draw_objs; i++) {
+        draw_obj obj = draw_objs[i];
+        if(obj.typ == SPRITE) { 
+            continue;
+        }
+
+        u16 sector = obj.wall.sector;
+
+        s8 light_level = get_sector_light_level(sector);
+        s16 floor_height = get_sector_floor_height(sector);
+        s16 ceil_height = get_sector_ceil_height(sector);
+        s16 floor_col = get_sector_floor_color(sector);
+        s16 ceil_col = get_sector_ceil_color(sector);
+        s16 rel_floor_height = (floor_height>>4) - (cur_player_pos.z>>(FIX32_FRAC_BITS));
+        s16 rel_ceil_height = (ceil_height>>4) - (cur_player_pos.z>>(FIX32_FRAC_BITS));
+        light_params ceil_params, floor_params;
+        cache_ceil_light_params(rel_ceil_height, ceil_col, light_level, &ceil_params);
+        cache_floor_light_params(rel_floor_height, floor_col, light_level, &floor_params);
+
+
+        u16 wall_idx = obj.wall.wall_idx;
+        u16 portal_idx = wall_idx - sector;
+        s16 portal_sector = map->portals[portal_idx];
+
+        u8 is_portal = (portal_sector != -1);
+
+        u16 v1_idx = map->walls[wall_idx];
+        u16 v2_idx = map->walls[wall_idx+1];
+
+        vertex v1 = map->vertexes[v1_idx];
+        vertex v2 = map->vertexes[v2_idx];
+
+        u32 wall_len = getApproximatedDistance(v2.x - v1.x, v2.y - v1.y);
+        Vect2D_s16 trans_v1 = transform_map_vert_16(v1.x, v1.y);
+        Vect2D_s16 trans_v2 = transform_map_vert_16(v2.x, v2.y);
+
+
+        texmap_params tmap_info = {.needs_perspective = 1, .tex = &sci_fi_wall_texture};
+
+        clip_result clipped = clip_map_vertex_16(&trans_v1, &trans_v2, &tmap_info, wall_len);
+
+        if(clipped == OFFSCREEN) {
+            continue;
+        }
+
+        s16 trans_v1_z_fix = trans_v1.y;
+        s16 trans_v2_z_fix = trans_v2.y;
+        u16 z_recip_v1 = z_recip_table_16[trans_v1.y>>TRANS_Z_FRAC_BITS];
+        u16 z_recip_v2 = z_recip_table_16[trans_v2.y>>TRANS_Z_FRAC_BITS];
+
+        s16 x1 = project_and_adjust_x(trans_v1.x, z_recip_v1);
+        s16 x2 = project_and_adjust_x(trans_v2.x, z_recip_v2);
+
+        s16 x1_ytop, x1_ybot;
+        s16 x2_ytop, x2_ybot;
+
+        x1_ybot = project_and_adjust_y_fix(floor_height, z_recip_v1);
+        x2_ybot = project_and_adjust_y_fix(floor_height, z_recip_v2);
+
+
+        x1_ytop = project_and_adjust_y_fix(ceil_height, z_recip_v1);
+        x2_ytop = project_and_adjust_y_fix(ceil_height, z_recip_v2);
+
+        if(x1 > window_max) {
+            continue;
+        } else if (x2 <= window_min) {
+            continue;
+        }
+
+        if(x1 >= x2) {
+            continue;
+        }
+
+
+        if(is_portal) {
+            u8 neighbor_sector_type = cur_portal_map->sector_types[portal_sector];
+            s16 neighbor_ceil_color = get_sector_floor_color(portal_sector);
+            s16 neighbor_floor_color = get_sector_floor_color(portal_sector);
+
+            s16 neighbor_floor_height = get_sector_floor_height(portal_sector);
+            s16 neighbor_ceil_height = get_sector_ceil_height(portal_sector);
+
+
+            // draw step down from ceiling
+
+            if(neighbor_ceil_height < ceil_height) {
+
+                s16 nx1_ytop = project_and_adjust_y_fix(neighbor_ceil_height, z_recip_v1);
+                s16 nx2_ytop = project_and_adjust_y_fix(neighbor_ceil_height, z_recip_v2);
+
+                u8 upper_color = map->wall_colors[(portal_idx<<WALL_COLOR_NUM_PARAMS_SHIFT)+WALL_HIGH_COLOR_IDX];
+                if(neighbor_sector_type == DOOR) {
+                    tmap_info.tex = &sci_fi_door_texture;
+
+                    s16 orig_door_height = get_sector_orig_height(portal_sector);
+                    s16 orig_height_diff = orig_door_height - neighbor_floor_height;
+                    s16 x1_pegged = project_and_adjust_y_fix(neighbor_ceil_height+orig_height_diff, z_recip_v1);
+                    s16 x2_pegged = project_and_adjust_y_fix(neighbor_ceil_height+orig_height_diff, z_recip_v2);
+
+                    draw_top_pegged_textured_upper_step(x1, x1_ytop, nx1_ytop, x2, x2_ytop, nx2_ytop,
+                                                        trans_v1_z_fix, trans_v2_z_fix,
+                                                        z_recip_v1, z_recip_v2,
+                                                        window_min, window_max,
+                                                        light_level, &tmap_info,
+                                                        &ceil_params, x1_pegged, x2_pegged);
+                } else {
+                    draw_upper_step(x1, x1_ytop, nx1_ytop, x2, x2_ytop, nx2_ytop,
+                                    z_recip_v1, z_recip_v2,
+                                    window_min, window_max, upper_color, light_level, &ceil_params);
+
+                }
+            } else {
+                draw_ceiling_update_clip(x1, x1_ytop, x2, x2_ytop,
+                                        min(z_recip_v1, z_recip_v2),
+                                        window_min, window_max, &ceil_params);
+            }
+
+            // not sure if this logic is correct
+            // if the neighbor's floor is higher than our ceiling we should still draw the lower step, right?
+            if(neighbor_floor_height > floor_height) { //} && neighbor_floor_height <= ceil_height) {
+                s16 nx1_ybot = project_and_adjust_y_fix(neighbor_floor_height, z_recip_v1);
+                s16 nx2_ybot = project_and_adjust_y_fix(neighbor_floor_height, z_recip_v2);
+                u8 neighbor_sector_type = cur_portal_map->sector_types[portal_sector];
+
+                u8 lower_color = map->wall_colors[(portal_idx<<WALL_COLOR_NUM_PARAMS_SHIFT)+WALL_LOW_COLOR_IDX];
+                if(neighbor_sector_type == LIFT) {
+                    tmap_info.tex = &sci_fi_door_texture;
+
+                    s16 orig_lift_height = get_sector_orig_height(portal_sector);
+                    s16 orig_height_diff = neighbor_ceil_height - orig_lift_height;
+                    s16 x1_pegged = project_and_adjust_y_fix(neighbor_floor_height-orig_height_diff, z_recip_v1);
+                    s16 x2_pegged = project_and_adjust_y_fix(neighbor_floor_height-orig_height_diff, z_recip_v2);
+
+                    draw_bottom_pegged_textured_lower_step(x1, x1_ybot, nx1_ybot, x2, x2_ybot, nx2_ybot,
+                                                        trans_v1_z_fix, trans_v2_z_fix,
+                                                        z_recip_v1, z_recip_v2,
+                                                        window_min, window_max,
+                                                        light_level, &tmap_info,
+                                                        &floor_params, x1_pegged, x2_pegged);
+                } else {
+                    // draw step from floor
+                    draw_lower_step(x1, x1_ybot, nx1_ybot, x2, x2_ybot, nx2_ybot,
+                                    z_recip_v1, z_recip_v2,
+                                    window_min, window_max, lower_color, light_level, &floor_params);
+                }
+            } else {
+                draw_floor_update_clip(x1, x1_ybot, x2, x2_ybot,
+                                    min(z_recip_v1, z_recip_v2),
+                                    window_min, window_max, &floor_params);
+            }
+
+
+        } else {
+
+
+            draw_wall(x1, x1_ytop, x1_ybot,
+                x2, x2_ytop, x2_ybot,
+                trans_v1_z_fix, trans_v2_z_fix, z_recip_v1, z_recip_v2,
+                window_min, window_max,
+                light_level, &tmap_info, &floor_params, &ceil_params);
+
+            if(x1 <= window_min && x2 > window_min) {
+                window_min = max(0, x2);
+                if(window_min > RENDER_WIDTH) {
+                    return;
+                }
+            }
+            if(x2 >= window_max && x1 < window_max) {
+                window_max = min(x1, RENDER_WIDTH);
+                if(window_max < 0) {
+                    return;
+                }
+            }
+            if(window_min >= window_max) {
+                return;
+            }
+
+        }
+    }
+}
+
+
 
 void portal_rend(u16 src_sector, u32 cur_frame) {
     #ifdef DEBUG_PORTAL_CLIP
@@ -864,8 +1048,12 @@ void portal_rend(u16 src_sector, u32 cur_frame) {
     //visit_graph(src_sector, src_sector, 7, RENDER_WIDTH-7-1, cur_frame, 0);
     #else
     sectors_scanned = 0;
+    //clear_light_cache();
+
     if(cur_portal_map->has_pvs) {
         pvs_scan(src_sector, 0, RENDER_WIDTH, cur_frame);
+
+        //pvs_scan_with_objects(src_sector, 0, RENDER_WIDTH, cur_frame);
     } else {
         visit_graph(src_sector, src_sector, 0, RENDER_WIDTH, cur_frame, 0);
     }
