@@ -10,11 +10,6 @@ Graphics features
 - Overlapping "non-euclidean" geometry
 - Transparent surfaces.
 
-
-![Portals, Transparent texture, and Lighting screenshot](./screen0.png)
-
-![Slopes and Transparent patterned surface screenshot](./screen1.png)
-
 ![Textures and lighting](./screen2.png)
 
 ![Moving sectors with clipped textures](./screen3.png)
