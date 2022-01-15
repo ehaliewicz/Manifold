@@ -94,19 +94,19 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
     s16 intPy = fix32ToInt(cur_player_pos.y);
 
     //int render_red_ball = (sector == 10);
-    object* objects_in_sect = objects_in_sector(sector);
-    int needs_object_clip_buffer = 0; //(objects_in_sect != NULL);
+    //object* objects_in_sect = objects_in_sector(sector);
+    //int needs_object_clip_buffer = 0; //(objects_in_sect != NULL);
     //int needs_object_clip_buffer = render_red_ball;
 
-    clip_buf* obj_clip_buf;
-    if(needs_object_clip_buffer) {
-        //KLog_U1("allocating object clip buffer in sector: ", sector);
-        obj_clip_buf = alloc_clip_buffer();
-        if(obj_clip_buf == NULL) {
-            die("no more clip bufs");
-        }
-        copy_2d_buffer(window_min, window_max, obj_clip_buf);
-    }
+    //clip_buf* obj_clip_buf;
+    //if(needs_object_clip_buffer) {
+    //    //KLog_U1("allocating object clip buffer in sector: ", sector);
+    //    obj_clip_buf = alloc_clip_buffer();
+    //    if(obj_clip_buf == NULL) {
+    //        die("no more clip bufs");
+    //    }
+    //    copy_2d_buffer(window_min, window_max, obj_clip_buf);
+    //}
 
 
     s16 floor_height = get_sector_floor_height(sector);
@@ -533,9 +533,9 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
                                     window_min, window_max, &floor_params);
             }
 
-            if(render_forcefield || render_glass) {
-                copy_2d_buffer(window_min, window_max, clipping_buffer);
-            }
+            //if(render_forcefield || render_glass) {
+            //    copy_2d_buffer(window_min, window_max, clipping_buffer);
+            //}
 
             if(recur) {
                 visit_graph(src_sector, portal_sector,
@@ -586,7 +586,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
     }
 
 
-    
+    /*
     if(objects_in_sect != NULL) {
         object* cur_obj = objects_in_sect;
         while(cur_obj != NULL) {
@@ -617,7 +617,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
         }
         free_clip_buffer(obj_clip_buf);
     }
-    
+    */
 }
 
 
