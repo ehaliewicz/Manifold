@@ -85,7 +85,7 @@ void showFPS(u16 float_display)
 
     sprintf(str, "%i ", vints);
     vints = 0;
-    VDP_drawTextBG(BG_B, str, 1, 6);
+    VDP_drawTextBG(BG_B, str, 1, 6); 
 
     //sprintf(str, "s: %i ", cur_player_pos.cur_sector);
     //VDP_drawTextBG(BG_B, str, 1, 7);
@@ -494,6 +494,7 @@ void copy_texture_tables() {
 u16 free_tile_loc = 0x390;
 
 
+selected_level init_load_level = SLIME_ROOM;
 
 void init_game() {
     copy_texture_tables();
@@ -540,7 +541,15 @@ void init_game() {
     //load_portal_map(&overlapping_map);
     //load_portal_map(&editor_test_map);
 
-    load_portal_map((portal_map*)map_table[4]);
+    switch(init_load_level) {
+        case SLIME_ROOM:
+            load_portal_map((portal_map*)map_table[4]);
+            break;
+        case OVERLAPPING_ROOMS:
+            load_portal_map((portal_map*)map_table[3]);
+            break;
+    }
+    //load_portal_map((portal_map*)map_table[3]);
     /*
     KLog_U1("map table address: ", map_table);
     KLog_U1("portal map pointer: ", map_table[3]);
@@ -607,7 +616,7 @@ void init_game() {
 
     init_object_lists(cur_portal_map->num_sectors);
 
-    //object* red_cube = alloc_object_in_sector(cur_player_pos, 10, sector_centers[10].x, sector_centers[10].y, sector_floor_height(10, cur_portal_map), 0);
+    //object* red_cube = alloc_object_in_sector(cur_player_pos, 0, sector_centers[0].x, sector_centers[0].y, get_sector_floor_height(0), 0);
     
 
 
@@ -627,7 +636,7 @@ game_mode run_game() {
 
 
     u32 start_ticks = getTick();
-    process_all_objects(cur_frame);
+    //process_all_objects(cur_frame);
 
     
     run_sector_processes();
