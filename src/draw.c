@@ -787,9 +787,9 @@ void cache_floor_light_params(s16 rel_floor_height, u8 floor_col, s8 light_level
     //   light_level == cached_floor_light_level) {
     //    return;      
     //}
-    cached_rel_floor_height = rel_floor_height;
-    cached_floor_col = floor_col;
-    cached_floor_light_level = light_level;
+    //cached_rel_floor_height = rel_floor_height;
+    //cached_floor_col = floor_col;
+    //cached_floor_light_level = light_level;
 
     
     // shift, lookup, lookup
