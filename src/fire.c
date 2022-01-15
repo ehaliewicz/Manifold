@@ -203,8 +203,7 @@ void init_fire() {
 	//SPR_setVisibility(spr3, VISIBLE);
 
 
-    // side effect: loads palette!
-	VDP_drawImageEx(BG_B, &doom_logo, 0x0360, 8, 0, 1, 1);
+    VDP_setBackgroundColor(0);
 
 	//const int fire_fix_vram_addr = 0x300;
 	//const int bkgd_cover_vram_addr = 0x304;
