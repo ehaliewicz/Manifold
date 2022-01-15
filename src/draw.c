@@ -68,12 +68,86 @@ void init_2d_buffers() {
 
 
 void clear_2d_buffers() {
-    for(int i = 0; i < RENDER_WIDTH; i++) { //SCREEN_WIDTH; i++) {
-        yclip[i*2] = 0;
-        yclip[i*2+1] = SCREEN_HEIGHT;
-        //yclip[i*2+1] = SCREEN_HEIGHT-8; 
-        drawn_buf[i] = 0;
-    }
+    u8* yclip_ptr = yclip;
+    u8* drawn_buf_ptr = drawn_buf;
+
+    u32 u32val = (SCREEN_HEIGHT << 16) | SCREEN_HEIGHT;
+    u32 u32zero = 0;
+
+    // 128 bytes need to be moved
+    
+    // these are slightly faster than the memset calls below.
+    __asm volatile(
+        "move.l %1, (%0)+\t\n\
+        move.l %1, (%0)+\t\n\
+        move.l %1, (%0)+\t\n\
+        move.l %1, (%0)+\t\n\
+        move.l %1, (%0)+\t\n\
+        move.l %1, (%0)+\t\n\
+        move.l %1, (%0)+\t\n\
+        move.l %1, (%0)+\t\n\
+        move.l %1, (%0)+\t\n\
+        move.l %1, (%0)+\t\n\
+        move.l %1, (%0)+\t\n\
+        move.l %1, (%0)+\t\n\
+        move.l %1, (%0)+\t\n\
+        move.l %1, (%0)+\t\n\
+        move.l %1, (%0)+\t\n\
+        move.l %1, (%0)+\t\n\
+        move.l %1, (%0)+\t\n\
+        move.l %1, (%0)+\t\n\
+        move.l %1, (%0)+\t\n\
+        move.l %1, (%0)+\t\n\
+        move.l %1, (%0)+\t\n\
+        move.l %1, (%0)+\t\n\
+        move.l %1, (%0)+\t\n\
+        move.l %1, (%0)+\t\n\
+        move.l %1, (%0)+\t\n\
+        move.l %1, (%0)+\t\n\
+        move.l %1, (%0)+\t\n\
+        move.l %1, (%0)+\t\n\
+        move.l %1, (%0)+\t\n\
+        move.l %1, (%0)+\t\n\
+        move.l %1, (%0)+\t\n\
+        move.l %1, (%0)+\t\n\
+         "
+        : "+a" (yclip_ptr)
+        : "d" (u32val)
+    ); 
+
+
+    __asm volatile(
+        "move.l %1, (%0)+\t\n\
+        move.l %1, (%0)+\t\n\
+        move.l %1, (%0)+\t\n\
+        move.l %1, (%0)+\t\n\
+        move.l %1, (%0)+\t\n\
+        move.l %1, (%0)+\t\n\
+        move.l %1, (%0)+\t\n\
+        move.l %1, (%0)+\t\n\
+        move.l %1, (%0)+\t\n\
+        move.l %1, (%0)+\t\n\
+        move.l %1, (%0)+\t\n\
+        move.l %1, (%0)+\t\n\
+        move.l %1, (%0)+\t\n\
+        move.l %1, (%0)+\t\n\
+        move.l %1, (%0)+\t\n\
+        move.l %1, (%0)+\t\n\
+        "
+        : "+a" (drawn_buf_ptr)
+        : "d" (u32zero)
+    );
+    
+    //memsetU32(yclip_ptr_u32, u32val, RENDER_WIDTH>>1);
+    //memsetU32(drawn_buf_ptr, u32zero, RENDER_WIDTH>>2);
+
+
+    //while(cnt--) {
+    //    *yclip_ptr_u16++ = val;
+        //*yclip_ptr++ = 0;
+        //*yclip_ptr++ = SCREEN_HEIGHT;
+        //*drawn_buf_ptr++ = 0;
+    //}
 }
 
 void copy_2d_buffer(u16 left, u16 right, clip_buf* dest) {
