@@ -39,6 +39,13 @@ extern s16 angleCosFrac12;
 extern s16 playerXInt;
 extern s16 playerYInt;
 
+typedef enum {
+    SLIME_ROOM,
+    OVERLAPPING_ROOMS,
+} selected_level;
+
+selected_level init_load_level;
+
 void init_game();
 game_mode run_game();
 void cleanup_game();
