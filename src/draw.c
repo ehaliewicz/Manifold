@@ -77,6 +77,7 @@ void clear_2d_buffers() {
     // 128 bytes need to be moved
     
     // these are slightly faster than the memset calls below.
+    
     __asm volatile(
         "move.l %1, (%0)+\t\n\
         move.l %1, (%0)+\t\n\
@@ -138,16 +139,20 @@ void clear_2d_buffers() {
         : "d" (u32zero)
     );
     
+
     //memsetU32(yclip_ptr_u32, u32val, RENDER_WIDTH>>1);
     //memsetU32(drawn_buf_ptr, u32zero, RENDER_WIDTH>>2);
 
+    /*
+    int cnt = RENDER_WIDTH;
 
-    //while(cnt--) {
-    //    *yclip_ptr_u16++ = val;
-        //*yclip_ptr++ = 0;
-        //*yclip_ptr++ = SCREEN_HEIGHT;
-        //*drawn_buf_ptr++ = 0;
-    //}
+    while(cnt--) {
+        //*yclip_ptr_u16++ = val;
+        *yclip_ptr++ = 0;
+        *yclip_ptr++ = SCREEN_HEIGHT;
+        *drawn_buf_ptr++ = 0;
+    }
+    */
 }
 
 void copy_2d_buffer(u16 left, u16 right, clip_buf* dest) {
@@ -1660,6 +1665,55 @@ void draw_floor_update_clip(s16 x1, s16 x1_ybot, s16 x2, s16 x2_ybot,
 }
 
 
+u32 tex_col_buffer[RENDER_WIDTH];
+
+void calculate_tex_coords_for_wall(
+    s16 beginx, s16 endx, s16 skip_x, s16 dx,
+    u16 z1_12_4,     u16 z2_12_4,
+    texmap_params* tmap_info) {
+        
+    u32 left_u_16 = tmap_info->left_u;
+    u32 right_u_16 = tmap_info->right_u;
+    persp_params persp = calc_perspective(z1_12_4, z2_12_4, left_u_16, right_u_16, dx);
+    
+    u32 one_over_z_26 = persp.one_over_z_26;
+    s32 d_one_over_z_dx_26 = persp.d_one_over_z_dx_26;
+    u32 u_over_z_23 = persp.u_over_z_23;
+    u32 d_u_over_z_dx_23 = persp.d_u_over_z_dx_23;
+
+    if(skip_x > 0) {
+        // always use perspective
+        one_over_z_26 += (skip_x * d_one_over_z_dx_26);
+        u_over_z_23 += skip_x * d_u_over_z_dx_23;
+
+    }
+
+    u32 z = (1<<26)/one_over_z_26;
+    u32 u_23 = u_over_z_23 * z;
+
+
+    const u8 tex_width_shift = MID_MIP_WIDTH_SHIFT;
+    const u8 tex_width = MID_MIP_WIDTH;
+
+    
+    u16 cnt = endx-beginx;
+    u32* tex_col_ptr = tex_col_buffer;
+    while(cnt--) {
+        
+        u32 z = (1<<26)/one_over_z_26;
+        u32 u_23 = u_over_z_23 * z;
+        u32 u_scaled_by_width = (u_23 >> (23-tex_width_shift));
+        u32 tex_col = u_scaled_by_width & (tex_width-1);
+        u32 tex_idx = tex_col<<TEX_HEIGHT_SHIFT;
+        *tex_col_ptr++ = tex_idx;
+
+        one_over_z_26 += d_one_over_z_dx_26;
+        u_over_z_23 += d_u_over_z_dx_23;
+    }
+
+}
+
+
 void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
               s16 x2, s16 x2_ytop, s16 x2_ybot,
               u16 z1_12_4,     u16 z2_12_4,
@@ -1681,7 +1735,7 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
     }
 
 
-    const u8 needs_perspective = tmap_info->needs_perspective;
+    //const u8 needs_perspective = tmap_info->needs_perspective;
 
     // 4 subpixel bits here
     s16 top_dy_fix, bot_dy_fix;
@@ -1722,6 +1776,7 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
 
     u32 du_over_dx_16 = (right_u_16-left_u_16)/dx; // 16.16
     
+    /*
     if(needs_perspective) {
         persp_params persp = calc_perspective(z1_12_4, z2_12_4, left_u_16, right_u_16, dx);
         one_over_z_26 = persp.one_over_z_26;
@@ -1731,33 +1786,27 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
     } else {
         u_fix_16 = left_u_16;
     }
+    */
 
     
-    lit_texture* lit_tex = tmap_info->tex;
-
-
-    
-    const u8 tex_width_shift = MID_MIP_WIDTH_SHIFT;
-    const u8 tex_width = MID_MIP_WIDTH;
-
 
     s16 beginx = max(x1, window_min);
     s16 endx = min(window_max, x2);
     s16 skip_x = beginx - x1;
+
     
 
     if(skip_x > 0) {
         top_y_fix += (skip_x * top_dy_per_dx);
         bot_y_fix += (skip_x * bot_dy_per_dx);
         cur_fix_inv_z += (skip_x * fix_inv_dz_per_dx);
-        if(needs_perspective) {
-            one_over_z_26 += (skip_x * d_one_over_z_dx_26);
-            u_over_z_23 += skip_x * d_u_over_z_dx_23;
-        } else {
-            u_fix_16 += skip_x * du_over_dx_16;
-        }
     }
 
+
+    calculate_tex_coords_for_wall(beginx, endx, skip_x, dx,
+        z1_12_4, z2_12_4, tmap_info);
+        
+    lit_texture* lit_tex = tmap_info->tex;
     u16* dark_tex;
     u16* mid_tex;
     u16* light_tex;
@@ -1772,62 +1821,53 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
     u8* yclip_ptr = &(yclip[(x<<1)]);
     u8* drawn_buf_ptr = &(drawn_buf[x]);
 
-    if(needs_perspective) {
-        while(cnt--) {
-            top_y_int = top_y_fix >> 16;
-            bot_y_int = bot_y_fix >> 16;
+    u32* tex_col_ptr = tex_col_buffer;
+    //if(needs_perspective) {
+    while(cnt--) {
+        top_y_int = top_y_fix >> 16;
+        bot_y_int = bot_y_fix >> 16;
 
-            u8 min_drawable_y = *yclip_ptr++;
-            u8 max_drawable_y = *yclip_ptr++;
-            //if(min_drawable_y >= max_drawable_y) { continue; }
-            u8 top_draw_y = clamp(top_y_int, min_drawable_y, max_drawable_y);
-            u8 bot_draw_y = clamp(bot_y_int, min_drawable_y, max_drawable_y);
+        u8 min_drawable_y = *yclip_ptr++;
+        u8 max_drawable_y = *yclip_ptr++;
+        //if(min_drawable_y >= max_drawable_y) { continue; }
+        u8 top_draw_y = clamp(top_y_int, min_drawable_y, max_drawable_y);
+        u8 bot_draw_y = clamp(bot_y_int, min_drawable_y, max_drawable_y);
 
-            
-            u8* col_ptr = *offset_ptr++;
-            u8 col_drawn = *drawn_buf_ptr;
-            if(min_drawable_y < top_draw_y && !col_drawn) {
-                ceil_func(min_drawable_y, top_draw_y, col_ptr, ceil_params);
-            }
-            if(top_draw_y < bot_draw_y && !col_drawn) {
-                s16 cur_inv_z = cur_fix_inv_z;
+        
+        u8* col_ptr = *offset_ptr++;
+        u8 col_drawn = *drawn_buf_ptr;
+        if(min_drawable_y < top_draw_y && !col_drawn) {
+            ceil_func(min_drawable_y, top_draw_y, col_ptr, ceil_params);
+        }
+        if(top_draw_y < bot_draw_y && !col_drawn) {
+            s16 cur_inv_z = cur_fix_inv_z;
 
-                u32 z = (1<<26)/one_over_z_26;
-                u32 u_23 = u_over_z_23 * z;
-                u32 u_scaled_by_width = (u_23 >> (23-tex_width_shift));
-                u32 tex_col = u_scaled_by_width & (tex_width-1);
 
-                
-                u32 tex_idx = tex_col<<TEX_HEIGHT_SHIFT;//*TEX_HEIGHT;
-            
+            u32 tex_idx = *tex_col_ptr++;
 
-                u16* tex_column;
-                if (cur_inv_z <= FIX_0_16_INV_DARK_DIST) {
-                    tex_column = &dark_tex[tex_idx];
-                } else if (cur_inv_z <= FIX_0_16_INV_MID_DIST) {
-                    tex_column = &mid_tex[tex_idx];
-                } else {
-                    tex_column = &light_tex[tex_idx];
-                }
-
-                draw_texture_vertical_line(top_y_int, top_draw_y, bot_y_int, bot_draw_y, col_ptr, tex_column);
-                //draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, 0x10203040, col_ptr);
-
-            }
-            if(bot_draw_y < max_drawable_y && !col_drawn) {
-                floor_func(bot_draw_y, max_drawable_y, col_ptr, floor_params);
+            u16* tex_column;
+            if (cur_inv_z <= FIX_0_16_INV_DARK_DIST) {
+                tex_column = &dark_tex[tex_idx];
+            } else if (cur_inv_z <= FIX_0_16_INV_MID_DIST) {
+                tex_column = &mid_tex[tex_idx];
+            } else {
+                tex_column = &light_tex[tex_idx];
             }
 
-            *drawn_buf_ptr++ = 1;
-            top_y_fix += top_dy_per_dx;
-            bot_y_fix += bot_dy_per_dx;
-            cur_fix_inv_z += fix_inv_dz_per_dx;
-            one_over_z_26 += d_one_over_z_dx_26;
-            u_over_z_23 += d_u_over_z_dx_23;
-
+            draw_texture_vertical_line(top_y_int, top_draw_y, bot_y_int, bot_draw_y, col_ptr, tex_column);
+            //draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, 0x10203040, col_ptr);
 
         }
+        if(bot_draw_y < max_drawable_y && !col_drawn) {
+            floor_func(bot_draw_y, max_drawable_y, col_ptr, floor_params);
+        }
 
+        *drawn_buf_ptr++ = 1;
+        top_y_fix += top_dy_per_dx;
+        bot_y_fix += bot_dy_per_dx;
+        cur_fix_inv_z += fix_inv_dz_per_dx;
+    }
+    /*
     } else {
         while(cnt--) {
             top_y_int = top_y_fix >> 16; // 16;
@@ -1878,7 +1918,7 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
         }
 
     }
-
+    */
     
 
     flip();

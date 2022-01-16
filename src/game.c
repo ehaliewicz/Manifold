@@ -87,8 +87,8 @@ void showFPS(u16 float_display)
     vints = 0;
     VDP_drawTextBG(BG_B, str, 1, 6); 
 
-    //sprintf(str, "s: %i ", cur_player_pos.cur_sector);
-    //VDP_drawTextBG(BG_B, str, 1, 7);
+    sprintf(str, "s: %i ", cur_player_pos.cur_sector);
+    VDP_drawTextBG(BG_B, str, 1, 7);
 }
 
 
@@ -241,7 +241,7 @@ void draw_3d_view(u32 cur_frame) {
 
 
     // display fps
-    //showFPS(1);
+    showFPS(1);
 
     // request a flip when vsync process is idle (almost always, as the software renderer is much slower than the framebuffer DMA process)
     request_flip();
