@@ -451,7 +451,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
             #endif
             // draw step down from ceiling
 
-            if(1) { //neighbor_ceil_height < ceil_height) {
+            if(neighbor_ceil_height < ceil_height) {
 
                 s16 nx1_ytop = project_and_adjust_y_fix(neighbor_ceil_height, z_recip_v1);
                 s16 nx2_ytop = project_and_adjust_y_fix(neighbor_ceil_height, z_recip_v2);
