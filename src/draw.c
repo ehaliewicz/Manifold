@@ -180,69 +180,6 @@ void draw_vertical_line(s16 y0, s16 y1, u8 col, u8* col_ptr) {
     }
 }
 
-/*
-void run_texture_test() {
-    BMP_vertical_clear();
-    static u16 last_input = 0;
-
-    //static s16 tex_col = 0;
-    static s16 top_clip = 0;
-    static s16 bot_clip = 0;
-    static u16 x0 = 0; //RENDER_WIDTH/2;
-    //static u16 x1 = 32;
-    static u16 y0 = 0; //(SCREEN_HEIGHT/2)-(32/2);
-    static u16 y1 = 128; //(SCREEN_HEIGHT/2)+(32/2);
-    //u16 tex_idx = tex_col * TEX_HEIGHT;
-    //u16* tex_column = &wall_light[tex_idx];
-
-    u8** offset_ptr = (bmp_buffer_write == bmp_buffer_0) ? (&buf_0_column_offset_table[x0]) : (&buf_1_column_offset_table[x0]);
-
-
-    u16 input = JOY_readJoypad(JOY_1); 
-    u16 new_input = (last_input ^ input) & input;
-    u8 pushed_up = (input & BUTTON_UP);
-    u8 pushed_down = (input & BUTTON_DOWN);
-    u8 pushed_left = (input & BUTTON_LEFT);
-    u8 pushed_right = (input & BUTTON_RIGHT);
-
-    s16 clipped_y0 = y0+top_clip;
-    s16 clipped_y1 = y1-bot_clip;
-    s16 dy = clipped_y1-clipped_y0;
-    if(input & BUTTON_A) {
-        if(pushed_up && top_clip != 0) {
-            top_clip--;
-        } else if (pushed_down && clipped_y0 < clipped_y1) {
-            top_clip++;
-        }
-    } else if(input & BUTTON_B)  {
-        if(pushed_up && clipped_y1 > clipped_y0) {
-            bot_clip++;
-        } else if (pushed_down && bot_clip != 0) {
-            bot_clip--;
-        }
-    
-    } else {
-        if(pushed_up && y0 != 0) {
-            y0--;
-            y1--; 
-        } else if (pushed_down && y1 != SCREEN_HEIGHT-1) {
-            y0++;
-            y1++;
-        }
-    }
-    last_input = input;
-    for(int i = 0; i < 32; i++) {
-        u8* col_ptr = *offset_ptr++;
-        u16 tex_idx = i * TEX_HEIGHT;
-        u16* tex_column = &wall_light[tex_idx];
-        draw_texture_vertical_line(y0, y0+top_clip, y1, y1-bot_clip, col_ptr, tex_column);
-    }
-    showFPS(1);
-    request_flip();
-}
-*/
-
-
 void draw_native_vertical_line_unrolled_inner(u16 jump_table_offset, u8 col, u8* col_ptr);
 void vline_native_dither_movep(u8* buf, u8 extra_pix, s16 jump_table_offset, u32 col1_col2);
 
@@ -686,7 +623,7 @@ int debug_draw_cleared = 0;
 int last_pressed_a = 0;
 void flip() {  
   //u8* dst_buf = (bmp_buffer_write == bmp_buffer_0) ? bmp_buffer_1 : bmp_buffer_0;
-  //return;
+  return;
   if(JOY_readJoypad(JOY_1) & BUTTON_A) {
     if(!last_pressed_a) {
         if(!debug_draw_cleared) { return; }
@@ -711,6 +648,7 @@ void flip() {
   }
 
 }
+
 
 
 /* for drawing moving objects */
@@ -1092,10 +1030,6 @@ void calculate_tex_coords_for_wall(
         one_over_z_26 = one_over_z_26_span_end;
         z_start = z_end;
         u_start = u_end;
-        //TEXMAP_ITER;
-        //TEXMAP_ITER;
-        //TEXMAP_ITER;
-        //TEXMAP_ITER;
     }
     cnt >>= 1;
 
@@ -1530,8 +1464,8 @@ void draw_lower_step(s16 x1, s16 x1_ybot, s16 nx1_ybot, s16 x2, s16 x2_ybot, s16
 
     u8** offset_ptr = (bmp_buffer_write == bmp_buffer_0) ? (&buf_0_column_offset_table[x]) : (&buf_1_column_offset_table[x]);
         
-
-    for(;x < endx; x++) {
+    int cnt = endx-x;
+    while(cnt--) {
         bot_y_int = bot_y_fix >> 16;
         nbot_y_int = nbot_y_fix >> 16;
         u8 min_drawable_y = *yclip_ptr;
@@ -1610,8 +1544,10 @@ void draw_ceiling_update_clip(s16 x1, s16 x1_ytop, s16 x2, s16 x2_ytop,
     u8* yclip_ptr = &(yclip[x<<1]);
     u8* drawn_buf_ptr = &(drawn_buf[x]);
 
+    int cnt = endx-beginx;
+
     u8** offset_ptr = (bmp_buffer_write == bmp_buffer_0) ? (&buf_0_column_offset_table[x]) : (&buf_1_column_offset_table[x]);
-    for(;x < endx; x++) { 
+    while(cnt--) {
         top_y_int = top_y_fix >> 16;
         u8 min_drawable_y = *yclip_ptr;
         u8 max_drawable_y = *(yclip_ptr+1);
