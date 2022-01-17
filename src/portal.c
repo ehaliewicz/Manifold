@@ -60,7 +60,6 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
     if(depth >= MAX_DEPTH) {
         return;
     }
-
     portal_map* map = (portal_map*)cur_portal_map;
 
     // if this sector has been visited 32 times, or is already being currently rendered, skip it
@@ -224,7 +223,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
         volatile Vect2D_s16 trans_v2 = transform_map_vert_16(v2.x, v2.y);
         prev_transformed_vert = trans_v2;
 
-        texmap_params tmap_info = {.needs_perspective = 0};;
+        texmap_params tmap_info = {};
         clip_result clipped = clip_map_vertex_16(&trans_v1, &trans_v2, &tmap_info, wall_len);
 
         u16 z_recip_v1 = z_recip_table_16[trans_v1.y>>TRANS_Z_FRAC_BITS];
@@ -452,7 +451,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
             #endif
             // draw step down from ceiling
 
-            if(neighbor_ceil_height < ceil_height) {
+            if(1) { //neighbor_ceil_height < ceil_height) {
 
                 s16 nx1_ytop = project_and_adjust_y_fix(neighbor_ceil_height, z_recip_v1);
                 s16 nx2_ytop = project_and_adjust_y_fix(neighbor_ceil_height, z_recip_v2);
@@ -662,7 +661,7 @@ void pvs_scan(u16 src_sector, s16 window_min, s16 window_max, u32 cur_frame) {
             Vect2D_s16 trans_v2 = transform_map_vert_16(v2.x, v2.y);
 
 
-            texmap_params tmap_info = {.needs_perspective = 1, .tex = &sci_fi_wall_texture};
+            texmap_params tmap_info = {.tex = &sci_fi_wall_texture};
 
             clip_result clipped = clip_map_vertex_16(&trans_v1, &trans_v2, &tmap_info, wall_len);
 
@@ -890,7 +889,7 @@ void pvs_scan_with_objects(u16 src_sector, s16 window_min, s16 window_max, u32 c
         Vect2D_s16 trans_v2 = transform_map_vert_16(v2.x, v2.y);
 
 
-        texmap_params tmap_info = {.needs_perspective = 1, .tex = &sci_fi_wall_texture};
+        texmap_params tmap_info = {.tex = &sci_fi_wall_texture};
 
         clip_result clipped = clip_map_vertex_16(&trans_v1, &trans_v2, &tmap_info, wall_len);
 

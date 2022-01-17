@@ -206,15 +206,12 @@ clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2, texma
     //s16 rz1 = rz1_fix >> TRANS_Z_FRAC_BITS;
     //s16 rz2 = rz2_fix >> TRANS_Z_FRAC_BITS;
 
-    if(rz1_12_4 < NEAR_Z_FIX && rz2_12_4 < NEAR_Z_FIX) {
-        tmap->needs_perspective = 0;
-    
+    if(rz1_12_4 < NEAR_Z_FIX && rz2_12_4 < NEAR_Z_FIX) {    
         return OFFSCREEN;
     }
 
     s16 dz_12_4 = rz2_12_4 - rz1_12_4;
 
-    tmap->needs_perspective = 0; //(dz_12_4 > (1<<4));
     #define TEX_REPEAT_DIST 64
     u16 repetitions = max(1, wall_len / TEX_REPEAT_DIST);
     tmap->repetitions = repetitions;
@@ -238,12 +235,10 @@ clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2, texma
         //);
         tmap->du_over_dz = du_over_dz_16;
 
-        tmap->needs_perspective = 1;
     } else {
         if(0) { //if(debug) {
             KLog("NO PERSPECTIVE NEEDED");
         }
-        tmap->needs_perspective = 0;
         tmap->left_u = base_left_u_16;
         tmap->right_u = base_right_u_16;
     }
