@@ -512,11 +512,11 @@ void init_game() {
     //SPR_init();
     //shotgun_spr = SPR_addSprite(&shotgun, BASE_GUN_X, BASE_GUN_Y, TILE_ATTR_FULL(PAL0, 0, 0, 0, free_tile_loc));
     //SPR_setVRAMTileIndex(shotgun_spr, free_tile_loc);
-    free_tile_loc += shotgun.maxNumTile;
-    reset_gun_bob();
+    //free_tile_loc += shotgun.maxNumTile;
+    //reset_gun_bob();
     
-    PAL_setPalette(PAL0, shotgun.palette->data);
-    SPR_update();
+    //PAL_setPalette(PAL0, shotgun.palette->data);
+    //SPR_update();
 
     //XGM_stopPlay();
     SYS_setVIntCallback(do_vint_flip);
