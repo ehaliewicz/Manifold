@@ -1142,26 +1142,29 @@ void draw_upper_step(s16 x1, s16 x1_ytop, s16 nx1_ytop, s16 x2, s16 x2_ytop, s16
 
         u8* col_ptr = *offset_ptr++;
         u8 col_drawn = *drawn_buf_ptr++;
-        if(top_draw_y < bot_draw_y && !col_drawn) {
-            s16 cur_inv_z = cur_fix_inv_z;
+        if(!col_drawn) {
+            if(top_draw_y < bot_draw_y) {
+                s16 cur_inv_z = cur_fix_inv_z;
 
-            if (cur_inv_z <= FIX_0_16_INV_DARK_DIST) { //(cur_z >= (DARK_DIST<<16))  {
-                //draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, wall_col, col_ptr);
-                draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, dark_full_col, col_ptr);
-            } else if (cur_inv_z <= FIX_0_16_INV_MID_DIST) { //(cur_z >= (MID_DIST<<16)) {
-                draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, mid_full_col, col_ptr);
+                if (cur_inv_z <= FIX_0_16_INV_DARK_DIST) { //(cur_z >= (DARK_DIST<<16))  {
+                    //draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, wall_col, col_ptr);
+                    draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, dark_full_col, col_ptr);
+                } else if (cur_inv_z <= FIX_0_16_INV_MID_DIST) { //(cur_z >= (MID_DIST<<16)) {
+                    draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, mid_full_col, col_ptr);
+                } else {
+                    draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, light_full_col, col_ptr);
+                }
+
+                //draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, upper_color, col_ptr);
+
+                *yclip_ptr++ = bot_draw_y;
+                yclip_ptr++;
             } else {
-                draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, light_full_col, col_ptr);
+                yclip_ptr += 2;
             }
-
-            //draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, upper_color, col_ptr);
-            *yclip_ptr++ = bot_draw_y;
-            yclip_ptr++;
-        } else {
-            yclip_ptr += 2;
-        }
-        if(min_drawable_y < top_draw_y && !col_drawn) {
-            ceil_func(min_drawable_y, top_draw_y, col_ptr, params);
+            if(min_drawable_y < top_draw_y) {
+                ceil_func(min_drawable_y, top_draw_y, col_ptr, params);
+            }
         }
 
         top_y_fix += top_dy_per_dx;
@@ -1257,31 +1260,32 @@ void draw_top_pegged_textured_upper_step(s16 x1, s16 x1_ytop, s16 nx1_ytop, s16 
         u8 col_drawn = *drawn_buf_ptr++;
 
         u8* col_ptr = *offset_ptr++;
-        if(top_draw_y < bot_draw_y && !col_drawn) {
-            s16 cur_inv_z = cur_fix_inv_z>>16;
-            s16 pegged_top_y_int = pegged_top_y_fix>>16;
+        if(!col_drawn) {
+            if(top_draw_y < bot_draw_y) {
+                s16 cur_inv_z = cur_fix_inv_z>>16;
+                s16 pegged_top_y_int = pegged_top_y_fix>>16;
 
-            u32 tex_idx = *tex_col_ptr++;
+                u32 tex_idx = *tex_col_ptr++;
 
-            u16* tex_column;
-            if (cur_inv_z <= FIX_0_16_INV_DARK_DIST) {
-                tex_column = &dark_tex[tex_idx];
-            } else if (cur_inv_z <= FIX_0_16_INV_MID_DIST) {
-                tex_column = &mid_tex[tex_idx];
+                u16* tex_column;
+                if (cur_inv_z <= FIX_0_16_INV_DARK_DIST) {
+                    tex_column = &dark_tex[tex_idx];
+                } else if (cur_inv_z <= FIX_0_16_INV_MID_DIST) {
+                    tex_column = &mid_tex[tex_idx];
+                } else {
+                    tex_column = &light_tex[tex_idx];
+                }
+                draw_texture_vertical_line(pegged_top_y_int, top_draw_y, ntop_y_int, bot_draw_y, col_ptr, tex_column);
+
+
+                *yclip_ptr++ = bot_draw_y;
+                yclip_ptr++;
             } else {
-                tex_column = &light_tex[tex_idx];
+                yclip_ptr += 2;
             }
-            draw_texture_vertical_line(pegged_top_y_int, top_draw_y, ntop_y_int, bot_draw_y, col_ptr, tex_column);
-            //draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, 0x10203040, col_ptr);
-
-
-            *yclip_ptr++ = bot_draw_y;
-            yclip_ptr++;
-        } else {
-            yclip_ptr += 2;
-        }
-        if(min_drawable_y < top_draw_y && !col_drawn) {
-            ceil_func(min_drawable_y, top_draw_y, col_ptr, params);
+            if(min_drawable_y < top_draw_y) {
+                ceil_func(min_drawable_y, top_draw_y, col_ptr, params);
+            }
         }
 
         top_y_fix += top_dy_per_dx;
@@ -1376,29 +1380,31 @@ void draw_bottom_pegged_textured_lower_step(
 
         u8* col_ptr = *offset_ptr++;
         u8 col_drawn = *drawn_buf_ptr++;
-        if(top_draw_y < bot_draw_y && !col_drawn) {
-            s16 cur_inv_z = cur_fix_inv_z>>16;
-            s16 pegged_bot_y_int = pegged_bot_y_fix>>16;
-            u32 tex_idx = *tex_col_ptr++;
-            
-            u16* tex_column;
-            if (cur_inv_z <= FIX_0_16_INV_DARK_DIST) {
-                tex_column = &dark_tex[tex_idx];
-            } else if (cur_inv_z <= FIX_0_16_INV_MID_DIST) {
-                tex_column = &mid_tex[tex_idx];
-            } else {
-                tex_column = &light_tex[tex_idx];
-            }
-            draw_texture_vertical_line(nbot_y_int, top_draw_y, pegged_bot_y_int, bot_draw_y, col_ptr, tex_column);
-            //draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, 0x10203040, col_ptr);
+        if(!col_drawn) {
+            if(top_draw_y < bot_draw_y) {
+                s16 cur_inv_z = cur_fix_inv_z>>16;
+                s16 pegged_bot_y_int = pegged_bot_y_fix>>16;
+                u32 tex_idx = *tex_col_ptr++;
+                
+                u16* tex_column;
+                if (cur_inv_z <= FIX_0_16_INV_DARK_DIST) {
+                    tex_column = &dark_tex[tex_idx];
+                } else if (cur_inv_z <= FIX_0_16_INV_MID_DIST) {
+                    tex_column = &mid_tex[tex_idx];
+                } else {
+                    tex_column = &light_tex[tex_idx];
+                }
+                draw_texture_vertical_line(nbot_y_int, top_draw_y, pegged_bot_y_int, bot_draw_y, col_ptr, tex_column);
+                //draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, 0x10203040, col_ptr);
 
-            yclip_ptr++;
-            *yclip_ptr++ = top_draw_y;
-        } else {
-            yclip_ptr += 2;
-        }
-        if(max_drawable_y > bot_draw_y && !col_drawn) {
-            floor_func(bot_draw_y, max_drawable_y, col_ptr, params);
+                yclip_ptr++;
+                *yclip_ptr++ = top_draw_y;
+            } else {
+                yclip_ptr += 2;
+            }
+            if(max_drawable_y > bot_draw_y) {
+                floor_func(bot_draw_y, max_drawable_y, col_ptr, params);
+            }
         }
 
         bot_y_fix += bot_dy_per_dx;
@@ -1476,25 +1482,27 @@ void draw_lower_step(s16 x1, s16 x1_ybot, s16 nx1_ybot, s16 x2, s16 x2_ybot, s16
 
         u8* col_ptr = *offset_ptr++;
         u8 col_drawn = *drawn_buf_ptr++;
-        if(top_draw_y < bot_draw_y && !col_drawn) {
-            s16 cur_inv_z = cur_fix_inv_z;
+        if(!col_drawn) {
+            if(top_draw_y < bot_draw_y) {
+                s16 cur_inv_z = cur_fix_inv_z;
 
-            if (cur_inv_z <= FIX_0_16_INV_DARK_DIST) { //(cur_z >= (DARK_DIST<<16))  {
-                //draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, wall_col, col_ptr);
-                draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, dark_full_col, col_ptr);
-            } else if (cur_inv_z <= FIX_0_16_INV_MID_DIST) { //(cur_z >= (MID_DIST<<16)) {
-                draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, mid_full_col, col_ptr);
+                if (cur_inv_z <= FIX_0_16_INV_DARK_DIST) { //(cur_z >= (DARK_DIST<<16))  {
+                    //draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, wall_col, col_ptr);
+                    draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, dark_full_col, col_ptr);
+                } else if (cur_inv_z <= FIX_0_16_INV_MID_DIST) { //(cur_z >= (MID_DIST<<16)) {
+                    draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, mid_full_col, col_ptr);
+                } else {
+                    draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, light_full_col, col_ptr);
+                }
+                //draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, lower_color, col_ptr);
+                yclip_ptr++;
+                *yclip_ptr++ = top_draw_y;
             } else {
-                draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, light_full_col, col_ptr);
+                yclip_ptr += 2;
             }
-            //draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, lower_color, col_ptr);
-            yclip_ptr++;
-            *yclip_ptr++ = top_draw_y;
-        } else {
-            yclip_ptr += 2;
-        }
-        if(max_drawable_y > bot_draw_y && !col_drawn) {
-            floor_func(bot_draw_y, max_drawable_y, col_ptr, params);
+            if(max_drawable_y > bot_draw_y) {
+                floor_func(bot_draw_y, max_drawable_y, col_ptr, params);
+            }
         }
 
         bot_y_fix += bot_dy_per_dx;
@@ -1721,32 +1729,36 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
         
         u8* col_ptr = *offset_ptr++;
         u8 col_drawn = *drawn_buf_ptr;
-        if(min_drawable_y < top_draw_y && !col_drawn) {
-            ceil_func(min_drawable_y, top_draw_y, col_ptr, ceil_params);
-        }
-        if(top_draw_y < bot_draw_y && !col_drawn) {
-            s16 cur_inv_z = cur_fix_inv_z;
-
-            u32 tex_idx = *tex_col_ptr++;
-
-            u16* tex_column;
-            if (cur_inv_z <= FIX_0_16_INV_DARK_DIST) {
-                tex_column = &dark_tex[tex_idx];
-            } else if (cur_inv_z <= FIX_0_16_INV_MID_DIST) {
-                tex_column = &mid_tex[tex_idx];
-            } else {
-                tex_column = &light_tex[tex_idx];
+        if(!col_drawn) {
+            if(min_drawable_y < top_draw_y) {
+                ceil_func(min_drawable_y, top_draw_y, col_ptr, ceil_params);
             }
+            if(top_draw_y < bot_draw_y) {
+                s16 cur_inv_z = cur_fix_inv_z;
 
-            draw_texture_vertical_line(top_y_int, top_draw_y, bot_y_int, bot_draw_y, col_ptr, tex_column);
-            //draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, 0x10203040, col_ptr);
+                u32 tex_idx = *tex_col_ptr++;
 
+                u16* tex_column;
+                if (cur_inv_z <= FIX_0_16_INV_DARK_DIST) {
+                    tex_column = &dark_tex[tex_idx];
+                } else if (cur_inv_z <= FIX_0_16_INV_MID_DIST) {
+                    tex_column = &mid_tex[tex_idx];
+                } else {
+                    tex_column = &light_tex[tex_idx];
+                }
+
+                draw_texture_vertical_line(top_y_int, top_draw_y, bot_y_int, bot_draw_y, col_ptr, tex_column);
+                //draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, 0x10203040, col_ptr);
+
+            }
+            if(bot_draw_y < max_drawable_y) {
+                floor_func(bot_draw_y, max_drawable_y, col_ptr, floor_params);
+            }
+            *drawn_buf_ptr++ = 1;
+        } else {
+            drawn_buf_ptr++;
         }
-        if(bot_draw_y < max_drawable_y && !col_drawn) {
-            floor_func(bot_draw_y, max_drawable_y, col_ptr, floor_params);
-        }
 
-        *drawn_buf_ptr++ = 1;
         top_y_fix += top_dy_per_dx;
         bot_y_fix += bot_dy_per_dx;
         cur_fix_inv_z += fix_inv_dz_per_dx;
@@ -1852,32 +1864,36 @@ void draw_top_pegged_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
 
         u8* col_ptr = *offset_ptr++;
         u8 col_drawn = *drawn_buf_ptr;
-        if(min_drawable_y < top_draw_y && !col_drawn) {
-            ceil_func(min_drawable_y, top_draw_y, col_ptr, ceil_params);
-        }
-        if(top_draw_y < bot_draw_y && !col_drawn) {
-            s16 cur_inv_z = cur_fix_inv_z >> 16;
-            s16 pegged_top_y_int = pegged_top_y_fix>>16;
-
-            u32 tex_idx = *tex_col_ptr++;
-
-            u16* tex_column;
-            if (cur_inv_z <= FIX_0_16_INV_DARK_DIST) {
-                tex_column = &dark_tex[tex_idx];
-            } else if (cur_inv_z <= FIX_0_16_INV_MID_DIST) {
-                tex_column = &mid_tex[tex_idx];
-            } else {
-                tex_column = &light_tex[tex_idx];
+        if(!col_drawn) {
+            if(min_drawable_y < top_draw_y) {
+                ceil_func(min_drawable_y, top_draw_y, col_ptr, ceil_params);
             }
+            if(top_draw_y < bot_draw_y) {
+                s16 cur_inv_z = cur_fix_inv_z >> 16;
+                s16 pegged_top_y_int = pegged_top_y_fix>>16;
 
-            draw_texture_vertical_line(pegged_top_y_int, top_draw_y, bot_y_int, bot_draw_y, col_ptr, tex_column);
-            //draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, 0x10203040, col_ptr);
-        }
-        if(bot_draw_y < max_drawable_y && !col_drawn) {
-            floor_func(bot_draw_y, max_drawable_y, col_ptr, floor_params);
+                u32 tex_idx = *tex_col_ptr++;
+
+                u16* tex_column;
+                if (cur_inv_z <= FIX_0_16_INV_DARK_DIST) {
+                    tex_column = &dark_tex[tex_idx];
+                } else if (cur_inv_z <= FIX_0_16_INV_MID_DIST) {
+                    tex_column = &mid_tex[tex_idx];
+                } else {
+                    tex_column = &light_tex[tex_idx];
+                }
+
+                draw_texture_vertical_line(pegged_top_y_int, top_draw_y, bot_y_int, bot_draw_y, col_ptr, tex_column);
+                //draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, 0x10203040, col_ptr);
+            }
+            if(bot_draw_y < max_drawable_y) {
+                floor_func(bot_draw_y, max_drawable_y, col_ptr, floor_params);
+            }
+            *drawn_buf_ptr++ = 1;
+        } else {
+            drawn_buf_ptr++;
         }
 
-        *drawn_buf_ptr++ = 1;
         top_y_fix += top_dy_per_dx;
         bot_y_fix += bot_dy_per_dx;
         pegged_top_y_fix += pegged_top_dy_per_dx;
@@ -1986,33 +2002,38 @@ void draw_bot_pegged_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
         
         u8* col_ptr = *offset_ptr++;
         u8 col_drawn = *drawn_buf_ptr;
-        if(min_drawable_y < top_draw_y && !col_drawn) {
-            ceil_func(min_drawable_y, top_draw_y, col_ptr, ceil_params);
-        }
-        if(top_draw_y < bot_draw_y && !col_drawn) {
-            s16 cur_inv_z = cur_fix_inv_z >> 16;
-            s16 pegged_bot_y_int = pegged_bot_y_fix>>16;
-        
-            u32 tex_idx = *tex_col_ptr++;
+        if(!col_drawn) {
+            if(min_drawable_y < top_draw_y) {
+                ceil_func(min_drawable_y, top_draw_y, col_ptr, ceil_params);
+            }
+            if(top_draw_y < bot_draw_y) {
+                s16 cur_inv_z = cur_fix_inv_z >> 16;
+                s16 pegged_bot_y_int = pegged_bot_y_fix>>16;
+            
+                u32 tex_idx = *tex_col_ptr++;
 
-            u16* tex_column;
-            if (cur_inv_z <= FIX_0_16_INV_DARK_DIST) {
-                tex_column = &dark_tex[tex_idx];
-            } else if (cur_inv_z <= FIX_0_16_INV_MID_DIST) {
-                tex_column = &mid_tex[tex_idx];
-            } else {
-                tex_column = &light_tex[tex_idx];
+                u16* tex_column;
+                if (cur_inv_z <= FIX_0_16_INV_DARK_DIST) {
+                    tex_column = &dark_tex[tex_idx];
+                } else if (cur_inv_z <= FIX_0_16_INV_MID_DIST) {
+                    tex_column = &mid_tex[tex_idx];
+                } else {
+                    tex_column = &light_tex[tex_idx];
+                }
+
+                draw_texture_vertical_line(top_y_int, top_draw_y, pegged_bot_y_int, bot_draw_y, col_ptr, tex_column);
+                //draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, 0x10203040, col_ptr);
+
+            }
+            if(bot_draw_y < max_drawable_y) {
+                floor_func(bot_draw_y, max_drawable_y, col_ptr, floor_params);
             }
 
-            draw_texture_vertical_line(top_y_int, top_draw_y, pegged_bot_y_int, bot_draw_y, col_ptr, tex_column);
-            //draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, 0x10203040, col_ptr);
-
+            *drawn_buf_ptr++ = 1;
+        } else {
+            drawn_buf_ptr++;
         }
-        if(bot_draw_y < max_drawable_y && !col_drawn) {
-            floor_func(bot_draw_y, max_drawable_y, col_ptr, floor_params);
-        }
-
-        *drawn_buf_ptr++ = 1;
+        
         top_y_fix += top_dy_per_dx;
         bot_y_fix += bot_dy_per_dx;
         pegged_bot_y_fix += pegged_bot_dy_per_dx;
