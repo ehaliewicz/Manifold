@@ -942,7 +942,8 @@ typedef void (*draw_lit_plane_fp)(s16 top_y, s16 bot_y, u8* col_ptr, light_param
 
 
 
-u32 tex_col_buffer[RENDER_WIDTH];
+//u32 tex_col_buffer[RENDER_WIDTH];
+u16 tex_col_buffer[RENDER_WIDTH];
 
 void calculate_tex_coords_for_wall(
     s16 beginx, s16 endx, s16 skip_x, s16 dx,
@@ -962,35 +963,52 @@ void calculate_tex_coords_for_wall(
         // always use perspective
         one_over_z_26 += (skip_x * d_one_over_z_dx_26);
         u_over_z_23 += skip_x * d_u_over_z_dx_23;
-
     }
 
 
     const u8 tex_width_shift = MID_MIP_WIDTH_SHIFT;
     const u8 tex_width = MID_MIP_WIDTH;
+    
 
     
     u16 cnt = endx-beginx;
-    u32* tex_col_ptr = tex_col_buffer;
+    u16* tex_col_ptr = tex_col_buffer;
+
     
+
     #define TEXMAP_ITER do { \
         u32 z = (1<<26)/one_over_z_26;\
         u32 u_23 = u_over_z_23 * z;\
-        u32 u_scaled_by_width = (u_23 >> (23-tex_width_shift));\
-        u32 tex_col = u_scaled_by_width & (tex_width-1);\
-        u32 tex_idx = tex_col<<TEX_HEIGHT_SHIFT;\
-        *tex_col_ptr++ = tex_idx;\
+        u32 u_scaled_by_width = 0; \
+        __asm volatile(                         \
+            "move.l %1, %2\t\n\
+            swap %2\t\n\
+            and.w #124, %2\t\n\
+            lsl.w #4, %2\t\n\
+            move.w %2, (%0)+"\
+            : "+a" (tex_col_ptr)\
+            : "d" (u_23), "d" (u_scaled_by_width)\
+        );\
         one_over_z_26 += d_one_over_z_dx_26;\
         u_over_z_23 += d_u_over_z_dx_23;\
     } while(0)
 
+
     #define AFFINE_TEXMAP_ITER do { \
-        u32 u_scaled_by_width = (u_23 >> (23-tex_width_shift));\
-        u32 tex_col = u_scaled_by_width & (tex_width-1);\
-        u32 tex_idx = tex_col<<TEX_HEIGHT_SHIFT;\
-        *tex_col_ptr++ = tex_idx;\
+        u32 u_scaled_by_width = 0;      \
+        __asm volatile(                         \
+            "move.l %1, %2\t\n\
+            swap %2\t\n\
+            and.w #124, %2\t\n\
+            lsl.w #4, %2\t\n\
+            move.w %2, (%0)+"\
+            : "+a" (tex_col_ptr)\
+            : "d" (u_23), "d" (u_scaled_by_width)\
+        );\
         u_23 += u_per_col;\
     } while(0)
+                                
+    
 
     if(cnt & 1) {
         TEXMAP_ITER;
@@ -1073,7 +1091,90 @@ void calculate_tex_coords_for_wall(
         z_start = z_end;
         u_start = u_end;
     }
+    
+}
 
+typedef enum {
+    DARK, MID, LIGHT
+} calc_light_level;
+
+u8 num_light_levels;
+u8 light_levels[3];
+u8 light_spans[3];
+
+void output_light_span(u8 light, u8 cnt) {
+    light_levels[num_light_levels] = light;
+    light_spans[num_light_levels++] = cnt;
+}
+
+
+
+void calculate_light_levels_for_wall(u32 clipped_dx, s32 inv_z1, s32 inv_z2, s32 fix_inv_dz_per_dx) {
+    num_light_levels = 0;
+    //if(clipped_dx <= 0) { return; }
+
+    u8 cur_light;
+    s16 cur_inv_z = inv_z1;
+    if (cur_inv_z <= FIX_0_16_INV_DARK_DIST) {
+        cur_light = DARK;
+    } else if (cur_inv_z <= FIX_0_16_INV_MID_DIST) {
+        cur_light = MID;
+    } else {
+        cur_light = LIGHT;
+    }
+
+    u16 cnt = clipped_dx;
+    s16 end_inv_z = inv_z2; // + (cnt * fix_inv_dz_per_dx);
+    u8 end_light;
+    if (end_inv_z <= FIX_0_16_INV_DARK_DIST) {
+        end_light = DARK;
+    } else if (end_inv_z <= FIX_0_16_INV_MID_DIST) {
+        end_light = MID;
+    } else {
+        end_light = LIGHT;
+    }
+
+
+    if(fix_inv_dz_per_dx == 0 || (cur_light == end_light)) {
+        // z stays the same
+        output_light_span(cur_light, cnt);
+        return;
+    }
+
+
+    u8 cur_span = 0;
+
+    while(cnt--) {
+        if (cur_inv_z <= FIX_0_16_INV_DARK_DIST) {
+            if(cur_light == DARK) {
+                cur_span++;
+            } else {
+                output_light_span(cur_light, cur_span);
+                cur_span = 1;
+                cur_light = DARK;
+            }
+        } else if (cur_inv_z <= FIX_0_16_INV_MID_DIST) {
+            if(cur_light == MID) {
+                cur_span++;
+            } else {
+                output_light_span(cur_light, cur_span);
+                cur_span = 1;
+                cur_light = MID;
+            }
+        } else {
+            if(cur_light == LIGHT) {
+                cur_span++;
+            } else {
+                output_light_span(cur_light, cur_span);
+                cur_span = 1;
+                cur_light = LIGHT;
+            }
+        }
+        cur_inv_z += fix_inv_dz_per_dx;
+    }
+    
+    output_light_span(cur_light, cur_span);
+    
 }
 
 
@@ -1214,9 +1315,9 @@ void draw_top_pegged_textured_upper_step(s16 x1, s16 x1_ytop, s16 nx1_ytop, s16 
     s16 endx = min(window_max, x2);
 
     s16 inv_dz = inv_z2 - inv_z1;
-    s32 fix_inv_dz_per_dx = (inv_dz << 16) / dx;
+    s32 fix_inv_dz_per_dx = (inv_dz) / dx;
 
-    s32 cur_fix_inv_z = inv_z1<<16;
+    s32 cur_fix_inv_z = inv_z1;
 
     s16 skip_x = beginx - x1;
 
@@ -1246,7 +1347,7 @@ void draw_top_pegged_textured_upper_step(s16 x1, s16 x1_ytop, s16 nx1_ytop, s16 
     u8* drawn_buf_ptr = &(drawn_buf[x]);
     
     u8** offset_ptr = (bmp_buffer_write == bmp_buffer_0) ? (&buf_0_column_offset_table[x]) : (&buf_1_column_offset_table[x]);
-    u32* tex_col_ptr = tex_col_buffer;
+    u16* tex_col_ptr = tex_col_buffer;
 
     while(cnt--) {
         top_y_int = top_y_fix >> 16;
@@ -1260,12 +1361,12 @@ void draw_top_pegged_textured_upper_step(s16 x1, s16 x1_ytop, s16 nx1_ytop, s16 
         u8 col_drawn = *drawn_buf_ptr++;
 
         u8* col_ptr = *offset_ptr++;
+        u16 tex_idx = *tex_col_ptr++;
         if(!col_drawn) {
             if(top_draw_y < bot_draw_y) {
-                s16 cur_inv_z = cur_fix_inv_z>>16;
+                s16 cur_inv_z = cur_fix_inv_z;
                 s16 pegged_top_y_int = pegged_top_y_fix>>16;
 
-                u32 tex_idx = *tex_col_ptr++;
 
                 u16* tex_column;
                 if (cur_inv_z <= FIX_0_16_INV_DARK_DIST) {
@@ -1335,9 +1436,9 @@ void draw_bottom_pegged_textured_lower_step(
     s16 endx = min(window_max, x2);
 
     s16 inv_dz = inv_z2 - inv_z1;
-    s16 fix_inv_dz_per_dx = (inv_dz<<16) / dx; //(inv_dz << 16) / dx;
+    s16 fix_inv_dz_per_dx = (inv_dz) / dx; //(inv_dz << 16) / dx;
 
-    s16 cur_fix_inv_z = inv_z1<<16; //inv_z1<<16;
+    s16 cur_fix_inv_z = inv_z1; //inv_z1<<16;
     
    
 
@@ -1367,7 +1468,7 @@ void draw_bottom_pegged_textured_lower_step(
     u8* drawn_buf_ptr = &(drawn_buf[x]);
 
     u8** offset_ptr = (bmp_buffer_write == bmp_buffer_0) ? (&buf_0_column_offset_table[x]) : (&buf_1_column_offset_table[x]);
-    u32* tex_col_ptr = tex_col_buffer;
+    u16* tex_col_ptr = tex_col_buffer;
 
     while(cnt--) {
         bot_y_int = bot_y_fix >> 16;
@@ -1380,11 +1481,11 @@ void draw_bottom_pegged_textured_lower_step(
 
         u8* col_ptr = *offset_ptr++;
         u8 col_drawn = *drawn_buf_ptr++;
+        u16 tex_idx = *tex_col_ptr++;
         if(!col_drawn) {
             if(top_draw_y < bot_draw_y) {
-                s16 cur_inv_z = cur_fix_inv_z>>16;
+                s16 cur_inv_z = cur_fix_inv_z;
                 s16 pegged_bot_y_int = pegged_bot_y_fix>>16;
-                u32 tex_idx = *tex_col_ptr++;
                 
                 u16* tex_column;
                 if (cur_inv_z <= FIX_0_16_INV_DARK_DIST) {
@@ -1652,15 +1753,14 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
 
 
     u16 far_inv_z = min(inv_z1, inv_z2);
- 
-    draw_lit_plane_fp floor_func = &draw_lit_floor_light_only;
-    if(far_inv_z <= FIX_0_16_INV_MID_DIST) {
-        floor_func = &draw_lit_floor;
-    }
-    draw_lit_plane_fp ceil_func = &draw_lit_ceil_light_only;
-    if(far_inv_z <= FIX_0_16_INV_MID_DIST) {
-        ceil_func = &draw_lit_ceiling;
-    }
+    
+    const u8 light_floor_ceil = (far_inv_z <= FIX_0_16_INV_MID_DIST);
+    //draw_lit_plane_fp floor_func = &draw_lit_floor_light_only;
+    //draw_lit_plane_fp ceil_func = &draw_lit_ceil_light_only;
+    //if(light_floor_ceil) {
+        //floor_func = &draw_lit_floor;
+        //ceil_func = &draw_lit_ceiling;
+    //}
 
 
     // 4 subpixel bits here
@@ -1714,8 +1814,118 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
     u8* yclip_ptr = &(yclip[(x<<1)]);
     u8* drawn_buf_ptr = &(drawn_buf[x]);
 
-    u32* tex_col_ptr = tex_col_buffer;
+    //u32* tex_col_ptr = tex_col_buffer;
+    u16* tex_col_ptr = tex_col_buffer;
 
+    calculate_light_levels_for_wall(cnt, cur_fix_inv_z, inv_z2, fix_inv_dz_per_dx);
+    
+    if(light_floor_ceil) {
+        for(int i = 0; i < num_light_levels; i++) {
+            u8 light_level = light_levels[i];
+            u8 light_cnt = light_spans[i];
+            u16* base_tex;
+            switch(light_level) {
+                case DARK:
+                    base_tex = dark_tex;
+                    break;
+                case MID:
+                    base_tex = mid_tex;
+                    break;
+                case LIGHT:
+                    base_tex = light_tex;
+                    break;
+            }
+            while(light_cnt--) {
+                top_y_int = top_y_fix >> 16;
+                bot_y_int = bot_y_fix >> 16;
+
+                u8 min_drawable_y = *yclip_ptr++;
+                u8 max_drawable_y = *yclip_ptr++;
+                //if(min_drawable_y >= max_drawable_y) { continue; }
+                u8 top_draw_y = clamp(top_y_int, min_drawable_y, max_drawable_y);
+                u8 bot_draw_y = clamp(bot_y_int, min_drawable_y, max_drawable_y);
+
+                
+                u8* col_ptr = *offset_ptr++;
+                u8 col_drawn = *drawn_buf_ptr;
+                u16 tex_idx = *tex_col_ptr++;
+                if(!col_drawn) {
+                    if(min_drawable_y < top_draw_y) {
+                        draw_lit_ceiling(min_drawable_y, top_draw_y, col_ptr, ceil_params);
+                    }
+                    if(top_draw_y < bot_draw_y) {
+                        u16* tex_column = &base_tex[tex_idx];
+                        draw_texture_vertical_line(top_y_int, top_draw_y, bot_y_int, bot_draw_y, col_ptr, tex_column);
+                    }
+                    if(bot_draw_y < max_drawable_y) {
+                        draw_lit_floor(bot_draw_y, max_drawable_y, col_ptr, floor_params);
+                    }
+                    *drawn_buf_ptr++ = 1;
+                } else {
+                    drawn_buf_ptr++;
+                }
+
+                top_y_fix += top_dy_per_dx;
+                bot_y_fix += bot_dy_per_dx;
+            }
+        }
+    } else {
+        for(int i = 0; i < num_light_levels; i++) {
+            u8 light_level = light_levels[i];
+            u8 light_cnt = light_spans[i];
+            u16* base_tex;
+            switch(light_level) {
+                case DARK:
+                    base_tex = dark_tex;
+                    break;
+                case MID:
+                    base_tex = mid_tex;
+                    break;
+                case LIGHT:
+                    base_tex = light_tex;
+                    break;
+            }
+            while(light_cnt--) {
+                top_y_int = top_y_fix >> 16;
+                bot_y_int = bot_y_fix >> 16;
+
+                u8 min_drawable_y = *yclip_ptr++;
+                u8 max_drawable_y = *yclip_ptr++;
+                //if(min_drawable_y >= max_drawable_y) { continue; }
+                u8 top_draw_y = clamp(top_y_int, min_drawable_y, max_drawable_y);
+                u8 bot_draw_y = clamp(bot_y_int, min_drawable_y, max_drawable_y);
+
+                
+                u8* col_ptr = *offset_ptr++;
+                u8 col_drawn = *drawn_buf_ptr;
+                u16 tex_idx = *tex_col_ptr++;
+                if(!col_drawn) {
+                    if(min_drawable_y < top_draw_y) {
+                        draw_lit_ceil_light_only(min_drawable_y, top_draw_y, col_ptr, ceil_params);
+                    }
+                    if(top_draw_y < bot_draw_y) {
+                        u16* tex_column = &base_tex[tex_idx];
+
+
+                        draw_texture_vertical_line(top_y_int, top_draw_y, bot_y_int, bot_draw_y, col_ptr, tex_column);
+                        //draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, 0x10203040, col_ptr);
+
+                    }
+                    if(bot_draw_y < max_drawable_y) {
+                        draw_lit_floor_light_only(bot_draw_y, max_drawable_y, col_ptr, floor_params);
+                        //floor_func(bot_draw_y, max_drawable_y, col_ptr, floor_params);
+                    }
+                    *drawn_buf_ptr++ = 1;
+                } else {
+                    drawn_buf_ptr++;
+                }
+
+                top_y_fix += top_dy_per_dx;
+                bot_y_fix += bot_dy_per_dx;
+            }
+        }
+    }
+    /*
     while(cnt--) {
         top_y_int = top_y_fix >> 16;
         bot_y_int = bot_y_fix >> 16;
@@ -1763,7 +1973,7 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
         bot_y_fix += bot_dy_per_dx;
         cur_fix_inv_z += fix_inv_dz_per_dx;
     }
-    
+    */
 
     flip();
 
@@ -1815,9 +2025,9 @@ void draw_top_pegged_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
 
     s16 inv_dz = inv_z2 - inv_z1;
     
-    s32 fix_inv_dz_per_dx = (inv_dz << 16) / dx;
+    s32 fix_inv_dz_per_dx = (inv_dz) / dx;
 
-    s32 cur_fix_inv_z = inv_z1<<16;
+    s32 cur_fix_inv_z = inv_z1;
     
 
     s16 beginx = max(x1, window_min);
@@ -1850,7 +2060,7 @@ void draw_top_pegged_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
     u8* yclip_ptr = &(yclip[(x<<1)]);
     u8* drawn_buf_ptr = &(drawn_buf[x]);
 
-    u32* tex_col_ptr = tex_col_buffer;
+    u16* tex_col_ptr = tex_col_buffer;
 
     while(cnt--) {
         top_y_int = top_y_fix >> 16;
@@ -1864,15 +2074,14 @@ void draw_top_pegged_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
 
         u8* col_ptr = *offset_ptr++;
         u8 col_drawn = *drawn_buf_ptr;
+        u16 tex_idx = *tex_col_ptr++;
         if(!col_drawn) {
             if(min_drawable_y < top_draw_y) {
                 ceil_func(min_drawable_y, top_draw_y, col_ptr, ceil_params);
             }
             if(top_draw_y < bot_draw_y) {
-                s16 cur_inv_z = cur_fix_inv_z >> 16;
+                s16 cur_inv_z = cur_fix_inv_z;
                 s16 pegged_top_y_int = pegged_top_y_fix>>16;
-
-                u32 tex_idx = *tex_col_ptr++;
 
                 u16* tex_column;
                 if (cur_inv_z <= FIX_0_16_INV_DARK_DIST) {
@@ -1953,9 +2162,9 @@ void draw_bot_pegged_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
     //s16 dz_12_4 = z2_12_4-z1_12_4;
     s16 inv_dz = inv_z2 - inv_z1;
     
-    s32 fix_inv_dz_per_dx = (inv_dz << 16) / dx;
+    s32 fix_inv_dz_per_dx = (inv_dz) / dx;
 
-    s32 cur_fix_inv_z = inv_z1<<16;
+    s32 cur_fix_inv_z = inv_z1;
 
 
     s16 beginx = max(x1, window_min);
@@ -1987,7 +2196,7 @@ void draw_bot_pegged_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
     u8* yclip_ptr = &(yclip[(x<<1)]);
     u8* drawn_buf_ptr = &(drawn_buf[x]);
 
-    u32* tex_col_ptr = tex_col_buffer;
+    u16* tex_col_ptr = tex_col_buffer;
 
     while(cnt--) {
         top_y_int = top_y_fix >> 16;
@@ -2002,15 +2211,15 @@ void draw_bot_pegged_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
         
         u8* col_ptr = *offset_ptr++;
         u8 col_drawn = *drawn_buf_ptr;
+        u16 tex_idx = *tex_col_ptr++;
         if(!col_drawn) {
             if(min_drawable_y < top_draw_y) {
                 ceil_func(min_drawable_y, top_draw_y, col_ptr, ceil_params);
             }
             if(top_draw_y < bot_draw_y) {
-                s16 cur_inv_z = cur_fix_inv_z >> 16;
+                s16 cur_inv_z = cur_fix_inv_z;
                 s16 pegged_bot_y_int = pegged_bot_y_fix>>16;
             
-                u32 tex_idx = *tex_col_ptr++;
 
                 u16* tex_column;
                 if (cur_inv_z <= FIX_0_16_INV_DARK_DIST) {
