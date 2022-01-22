@@ -352,22 +352,22 @@ void handle_input() {
 
     cur_player_pos.ang = newang;
 
+    u16 sect_group = sector_group(cur_player_pos.cur_sector, cur_portal_map);
     if(moved) {
 
         //collision_result collision = check_for_collision(curx, cury, newx, newy, cur_player_pos.cur_sector);
         collision_result collision = check_for_collision_radius(curx, cury, newx, newy, PLAYER_COLLISION_DISTANCE, cur_player_pos.cur_sector);
         cur_player_pos.x = collision.pos.x;
         cur_player_pos.y = collision.pos.y;
-        cur_player_pos.cur_sector = collision.new_sector;
-        s16 cur_sector_height = get_sector_floor_height(cur_player_pos.cur_sector);
-
-        
-        cur_player_pos.z = (cur_sector_height<<(FIX32_FRAC_BITS-4)) + FIX32(50);
-        
-
-
+        if(collision.new_sector != cur_player_pos.cur_sector) {
+            cur_player_pos.cur_sector = collision.new_sector;
+            sect_group = sector_group(collision.new_sector, cur_portal_map);
+            activate_sector_group_enter_trigger(sect_group);
+        }
     }
 
+    s16 cur_sector_height = get_sector_group_floor_height(sect_group);
+    cur_player_pos.z = (cur_sector_height<<(FIX32_FRAC_BITS-4)) + FIX32(50);
     //cur_player_pos.z += bobs[bob_idx>>1]/2;
     //bob_idx++;
     //if(bob_idx >= 64) {
@@ -580,7 +580,9 @@ void init_game() {
         cur_player_pos.y = sector_centers[0].y; 
         cur_player_pos.cur_sector = 0;
 
-        cur_player_pos.z = (get_sector_floor_height(cur_player_pos.cur_sector)<<(FIX32_FRAC_BITS-4)) + FIX32(50);
+        u16 sect_group = sector_group(cur_player_pos.cur_sector, cur_portal_map);
+
+        cur_player_pos.z = (get_sector_group_floor_height(sect_group)<<(FIX32_FRAC_BITS-4)) + FIX32(50);
 
         cur_player_pos.ang = 0;
     }
@@ -590,20 +592,13 @@ void init_game() {
     cur_palette = pal.data;
     VDP_setPalette(PAL1, cur_palette);
     
-
     clear_menu();
 
-
     BMP_init(1, BG_A, PAL1, 0, 1);
-    
-
 
     u16 skybox_gradient_basetile = TILE_ATTR_FULL(PAL3, 0, 0, 0, free_tile_loc);
 	VDP_drawImageEx(BG_B, &skybox_gradient, skybox_gradient_basetile, 4, 4, 0, 1);
-    
-    
     PAL_setPalette(PAL3, skybox_gradient.palette->data);
-
     free_tile_loc += skybox_gradient.tileset->numTile;
 
     //u16 hud_base_tile = TILE_ATTR_FULL(PAL2, 1, 0, 0, free_tile_loc);
@@ -639,7 +634,7 @@ game_mode run_game() {
     //process_all_objects(cur_frame);
 
     
-    run_sector_processes();
+    run_sector_group_processes();
     calc_movement_speeds();
     handle_input();
 

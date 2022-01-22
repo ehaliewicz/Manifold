@@ -22,23 +22,34 @@ typedef enum {
 
 
 
-extern s16* live_sector_parameters;
+extern s16* live_sector_group_parameters;
 //extern sector_param* live_sector_parameters;
 
 
-s16 get_sector_orig_height(u16 sect_idx);
-s8 get_sector_light_level(u16 sect_idx);
-u16 get_sector_ticks_left(u16 sect_idx);
-u16 get_sector_state(u16 sect_idx);
+s16 get_sector_group_orig_height(u16 sect_idx);
+s8 get_sector_group_light_level(u16 sect_idx);
+u16 get_sector_group_ticks_left(u16 sect_idx);
+u16 get_sector_group_state(u16 sect_idx);
 
-s16 get_sector_floor_height(u16 sect_idx);
-void set_sector_floor_height(u16 sector_idx, s16 height);
+s16 get_sector_group_floor_height(u16 sect_idx);
+void set_sector_group_floor_height(u16 sector_idx, s16 height);
 
-s16 get_sector_ceil_height(u16 sector_idx);
-void set_sector_ceil_height(u16 sector_idx, s16 height);
-s16 get_sector_floor_color(u16 sector_idx);
-s16 get_sector_ceil_color(u16 sector_idx);
+s16 get_sector_group_ceil_height(u16 sector_idx);
+void set_sector_group_ceil_height(u16 sector_idx, s16 height);
+s16 get_sector_group_floor_color(u16 sector_idx);
+s16 get_sector_group_ceil_color(u16 sector_idx);
 
-void run_sector_processes();
+void run_sector_group_processes();
+
+typedef enum {
+    NO_TRIGGER=0,
+    SET_SECTOR_DARK=1,
+    SET_SECTOR_LIGHT=2,
+} trigger_type;
+
+s16 get_sector_group_trigger_type(u16 sect_group);
+s16 get_sector_group_trigger_target(u16 sect_group, u8 tgt_idx);
+
+void activate_sector_group_enter_trigger(u16 sect_group);
 
 #endif

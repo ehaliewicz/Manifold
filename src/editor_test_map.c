@@ -5,22 +5,22 @@
 #include "vertex.h"
 
 // 9-12 are slime sectors
-// wall offset, portal offset, number of walls, flag
+// wall offset, portal offset, number of walls, sector group
 static const s16 sectors[4*14] ={
     0, 0, 4, 0,
     5, 4, 4, 0,
     10, 8, 4,0,
-    15, 12, 6, 0,
-    22, 18, 4, 0,
-    27, 22, 4, 0,
-    32, 26, 4, 0,
-    37, 30, 4, 0,
-    42, 34, 4, 0,
-    47, 38, 4, 0, // slime sector
-    52, 42, 5, 0,// slime sector
-    58, 47, 5, 0,// slime sector
-    64, 52, 6, 0,// slime sector
-    71, 58, 4, 0,
+    15, 12, 6, 1, 
+    22, 18, 4, 1,
+    27, 22, 4, 1,
+    32, 26, 4, 1,
+    37, 30, 4, 2,
+    42, 34, 4, 2,
+    47, 38, 4, 3, // slime sector
+    52, 42, 5, 3,// slime sector
+    58, 47, 5, 3,// slime sector
+    64, 52, 6, 3,// slime sector
+    71, 58, 4, 4,
 };
 
 static const u16 walls[76] = {
@@ -253,25 +253,61 @@ static const vertex vertexes[30] = {
     VERT(450,460),
 };
 
-static const u8 sector_types[14] = {
-0,0,0,0,0,0,0,1,1,0,0,0,0,1,};
+//static const u8 sector_types[14] = {
+//0,0,0,0,0,0,0,1,1,0,0,0,0,1,
+//};
 
+static const u8 sector_group_types[5] = {
+    0, // group 0
+    0, // group 1
+    1, // group 2
+    0, // group 3
+    1, // group 4
+};
+
+/*
 static const s16 sector_params[NUM_SECTOR_PARAMS*14] = {
     // light orig_height, ticks_left, state, floor_height, ceil_height, floor_color, ceil_color
     0, 0<<4, 0, 0, 0<<4, 100<<4, 3, 3,
     0, 0<<4, 0, 0, 0<<4, 100<<4, 3, 3, 
     0, 0<<4, 0, 0, 0<<4, 100<<4, 3, 3, 
+
     0, 0<<4, 0, 0, 0<<4, 240<<4, 3, 3, 
     0, 0<<4, 0, 0, 0<<4, 240<<4, 3, 3,
     0, 0<<4, 0, 0, 0<<4, 240<<4, 3, 3,
     0, 0<<4, 0, 0, 0<<4, 240<<4, 3, 3,
+
     -2, 0<<4, 0, 0, 0<<4, 100<<4, 3, 3,
     -2, 0<<4, 0, 0, 0<<4, 100<<4, 3, 3,
+
     0, 0<<4, 0, 0, -30<<4, 240<<4, 1, 3, // slime sector
     0, 0<<4, 0, 0, -30<<4, 240<<4, 1, 3, // slime sector
     0, 0<<4, 0, 0, -30<<4, 240<<4, 1, 3, // slime sector
     0, 0<<4, 0, 0, -30<<4, 240<<4, 1, 3, // slime sector
+
     -2, 0<<4, 0, 0, 80<<4, 240<<4, 3, 3,
+};
+*/
+
+static const s16 sector_group_params[NUM_SECTOR_PARAMS*5] = {
+    // group 0 params
+    0, 0<<4, 0, 0, 0<<4, 100<<4, 3, 3,
+    // group 1 params
+    0, 0<<4, 0, 0, 0<<4, 240<<4, 3, 3, // walkway group?
+    // group 2 params
+    -2, 0<<4, 0, 0, 0<<4, 100<<4, 3, 3, // hallway group
+    // group 3 params
+    0, 0<<4, 0, 0, -30<<4, 240<<4, 1, 3, // slime sector group
+    // group 4 params
+    -2, 0<<4, 0, 0, 80<<4, 240<<4, 3, 3, // upper room group
+};
+
+static const s16 sector_group_triggers[5*8] = {
+    0,0,0,0,0,0,0,0,
+    1,3,1,-1,0,0,0,0,
+    2,3,1,-1,0,0,0,0,
+    0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,
 };
 
 // pvs is an index for each sector, plus length
@@ -525,6 +561,7 @@ static const u16 raw_pvs[1024] = {
 
 
 const portal_map editor_test_map  = {
+    .num_sector_groups = 5,
     .num_sectors = 14,
     .num_walls = 62,
     .num_verts = 30,
@@ -534,8 +571,9 @@ const portal_map editor_test_map  = {
     .vertexes = vertexes,
     .wall_colors = wall_colors,
     .wall_norm_quadrants = wall_normal_quadrants,
-    .sector_params = sector_params,
-    .sector_types = sector_types,
+    .sector_group_params = sector_group_params,
+    .sector_group_types = sector_group_types,
+    .sector_group_triggers = sector_group_triggers,
     .has_pvs = 1,
     .pvs = pvs,
     .raw_pvs = raw_pvs

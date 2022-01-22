@@ -5,47 +5,85 @@
 #include "vertex.h"
 
 
+
+
 // wall offset, portal offset, number of walls, flag
 static const s16 sectors[17*SECTOR_SIZE] = {
     0, 0, 6, 0, // floor normally 100 here
-    7, 6, 5, 0,
-    13, 11, 4, 0, //SECTOR_FLOOR_SLOPED|SECTOR_CEIL_SLOPED, // floor normally 100 here
-    18, 15, 4, 0, //SECTOR_FLOOR_SLOPED|SECTOR_CEIL_SLOPED,
-    23, 19, 4, 0, //SECTOR_FLOOR_SLOPED|SECTOR_CEIL_SLOPED,
-    28, 23, 4, 0, //SECTOR_FLOOR_SLOPED|SECTOR_CEIL_SLOPED,
-    33, 27, 4, 0, //SECTOR_FLOOR_SLOPED|SECTOR_CEIL_SLOPED,
-    38, 31, 5, 0,
-    44, 36, 4, 0,
-    49, 40, 4, 0,
-    54, 44, 4, 0,
-    59, 48, 4, 0,
-    64, 52, 4, 0,
-    69, 56, 4, 0,
-    74, 60, 4, 0,
-    79, 64, 5, 0,
-    85, 69, 4, 0,
+    7, 6, 5, 1,
+    13, 11, 4, 2, //SECTOR_FLOOR_SLOPED|SECTOR_CEIL_SLOPED, // floor normally 100 here
+    18, 15, 4, 3, //SECTOR_FLOOR_SLOPED|SECTOR_CEIL_SLOPED,
+    23, 19, 4, 4, //SECTOR_FLOOR_SLOPED|SECTOR_CEIL_SLOPED,
+    28, 23, 4, 5, //SECTOR_FLOOR_SLOPED|SECTOR_CEIL_SLOPED,
+    33, 27, 4, 6, //SECTOR_FLOOR_SLOPED|SECTOR_CEIL_SLOPED,
+    38, 31, 5, 7,
+    44, 36, 4, 8,
+    49, 40, 4, 9,
+    54, 44, 4, 10,
+    59, 48, 4, 11,
+    64, 52, 4, 12,
+    69, 56, 4, 13,
+    74, 60, 4, 14,
+    79, 64, 5, 15,
+    85, 69, 4, 16,
 };
 
 
-static const s16 sector_params[NUM_SECTOR_PARAMS*17] = {
+static const s16 sector_group_params[NUM_SECTOR_PARAMS*17] = {
     // light, orig_height, ticks_left, state, floor_height, ceil_height, floor_color, ceil_color
     0, 0, 0, 0,  60<<4, 200<<4, BLUE_IDX, BLUE_IDX, // only LIGHT is relevant here
+
     0, 200<<4, CLOSED, 30, 60<<4, 60<<4,  BLUE_IDX, BLUE_IDX, 
+    
     0, 60<<4, CLOSED, 30, 200<<4, 200<<4, BLUE_IDX, BLUE_IDX,
+    
     -1, 0, 0, 0, 120<<4, 240<<4, BLUE_IDX, LIGHT_BLUE_IDX,
+    
     -1, 0, 0, 0, 140<<4, 280<<4, BLUE_IDX, BLUE_IDX,
+    
     -1, 0, 0, 0, 160<<4, 320<<4, BLUE_IDX, LIGHT_BLUE_IDX,
+    
     -1, 0, 0, 0, 180<<4, 350<<4, BLUE_IDX, BLUE_IDX,
+    
     -1, 0, 0, 0, 200<<4, 350<<4, BLUE_IDX, LIGHT_BLUE_IDX,
+    
     -1, 0, 0, 0,  60<<4, 200<<4, BLUE_IDX, BLUE_IDX,
+    
     -2, 0, 0, 0, 100<<4, 200<<4, BLUE_IDX, BLUE_IDX,
+    
     -2, 0, 0, 0, 200<<4, 350<<4, BLUE_IDX, TRANSPARENT_IDX,
+    
     -1, 0, 0, 0,  60<<4, 180<<4, RED_IDX,  LIGHT_RED_IDX, 
+    
     -1, 0, 0, 0,  60<<4, 160<<4, BLUE_IDX, BLUE_IDX,
+    
     -1, 0, 0, 0,  40<<4, 140<<4, RED_IDX,  LIGHT_RED_IDX,
+    
     -1, 0, 0, 0,  20<<4, 120<<4, BLUE_IDX, BLUE_IDX,
+    
     -2, 0, 0, 0,   0<<4, 100<<4, RED_IDX,  LIGHT_RED_IDX,
+
     -2, 0, 0, 0,   0<<4, 100<<4, RED_IDX,  RED_IDX,
+};
+
+static const u16 sector_group_triggers[17*8] = {
+    0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,
 };
 
 
@@ -307,7 +345,7 @@ static const vertex vertexes[42] = {
 };
 
 
-static const u8 sector_types[17] = {
+static const u8 sector_group_types[17] = {
     NO_TYPE,
     DOOR,
     LIFT,
@@ -328,12 +366,14 @@ static const u8 sector_types[17] = {
 };
 
 const portal_map overlapping_map = {
+    .num_sector_groups = 17,
     .num_sectors = 17,
     .num_walls = 73,
     .num_verts = 42,
     .sectors = sectors,
-    .sector_types = sector_types,
-    .sector_params = sector_params,
+    .sector_group_types = sector_group_types,
+    .sector_group_params = sector_group_params,
+    .sector_group_triggers = sector_group_triggers,
     .walls = walls,
     .portals = portals,
     .vertexes = vertexes,

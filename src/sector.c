@@ -2,67 +2,68 @@
 #include "game.h"
 #include "level.h"
 #include "portal_map.h"
+#include "random.h"
 #include "sector.h"
 
-s16* live_sector_parameters;
+s16* live_sector_group_parameters;
 
 
-s8 get_sector_light_level(u16 sect_idx) {
-    return live_sector_parameters[(sect_idx<<NUM_SECTOR_PARAMS_SHIFT)+SECTOR_PARAM_LIGHT_IDX];
+s8 get_sector_group_light_level(u16 sect_group) {
+    return live_sector_group_parameters[(sect_group<<NUM_SECTOR_PARAMS_SHIFT)+SECTOR_PARAM_LIGHT_IDX];
 }
 
-void set_sector_light_level(u16 sect_idx, s8 light_level) {
-    live_sector_parameters[(sect_idx<<NUM_SECTOR_PARAMS_SHIFT)+SECTOR_PARAM_LIGHT_IDX] = light_level;
+void set_sector_group_light_level(u16 sect_group, s8 light_level) {
+    live_sector_group_parameters[(sect_group<<NUM_SECTOR_PARAMS_SHIFT)+SECTOR_PARAM_LIGHT_IDX] = light_level;
 }
 
 
-s16 get_sector_orig_height(u16 sect_idx) {
-    return live_sector_parameters[(sect_idx<<NUM_SECTOR_PARAMS_SHIFT)+SECTOR_PARAM_ORIG_HEIGHT_IDX];
+s16 get_sector_group_orig_height(u16 sect_group) {
+    return live_sector_group_parameters[(sect_group<<NUM_SECTOR_PARAMS_SHIFT)+SECTOR_PARAM_ORIG_HEIGHT_IDX];
 }
 
-u16 get_sector_ticks_left(u16 sect_idx) {
-    return live_sector_parameters[(sect_idx<<NUM_SECTOR_PARAMS_SHIFT)+SECTOR_PARAM_TICKS_LEFT_IDX];
+u16 get_sector_group_ticks_left(u16 sect_group) {
+    return live_sector_group_parameters[(sect_group<<NUM_SECTOR_PARAMS_SHIFT)+SECTOR_PARAM_TICKS_LEFT_IDX];
 }
 
-void set_sector_ticks_left(u16 sect_idx, u16 ticks_left) {
-    live_sector_parameters[(sect_idx<<NUM_SECTOR_PARAMS_SHIFT)+SECTOR_PARAM_TICKS_LEFT_IDX] = ticks_left;
+void set_sector_group_ticks_left(u16 sect_group, u16 ticks_left) {
+    live_sector_group_parameters[(sect_group<<NUM_SECTOR_PARAMS_SHIFT)+SECTOR_PARAM_TICKS_LEFT_IDX] = ticks_left;
 }
 
-u16 get_sector_state(u16 sect_idx) {
-    return live_sector_parameters[(sect_idx<<NUM_SECTOR_PARAMS_SHIFT)+SECTOR_PARAM_STATE_IDX];
+u16 get_sector_group_state(u16 sect_group) {
+    return live_sector_group_parameters[(sect_group<<NUM_SECTOR_PARAMS_SHIFT)+SECTOR_PARAM_STATE_IDX];
 }
 
-void set_sector_state(u16 sect_idx, u16 state) {
-    live_sector_parameters[(sect_idx<<NUM_SECTOR_PARAMS_SHIFT)+SECTOR_PARAM_STATE_IDX] = state;
+void set_sector_group_state(u16 sect_group, u16 state) {
+    live_sector_group_parameters[(sect_group<<NUM_SECTOR_PARAMS_SHIFT)+SECTOR_PARAM_STATE_IDX] = state;
 }
 
-s16 get_sector_floor_height(u16 sect_idx) {
-    return live_sector_parameters[(sect_idx<<NUM_SECTOR_PARAMS_SHIFT) + SECTOR_PARAM_FLOOR_HEIGHT_IDX];
+s16 get_sector_group_floor_height(u16 sect_group) {
+    return live_sector_group_parameters[(sect_group<<NUM_SECTOR_PARAMS_SHIFT) + SECTOR_PARAM_FLOOR_HEIGHT_IDX];
 }
 
-void set_sector_floor_height(u16 sect_idx, s16 height) {
-    live_sector_parameters[(sect_idx<<NUM_SECTOR_PARAMS_SHIFT) + SECTOR_PARAM_FLOOR_HEIGHT_IDX] = height;
+void set_sector_group_floor_height(u16 sect_group, s16 height) {
+    live_sector_group_parameters[(sect_group<<NUM_SECTOR_PARAMS_SHIFT) + SECTOR_PARAM_FLOOR_HEIGHT_IDX] = height;
 }
 
-s16 get_sector_ceil_height(u16 sect_idx) {
-    return live_sector_parameters[(sect_idx<<NUM_SECTOR_PARAMS_SHIFT) + SECTOR_PARAM_CEIL_HEIGHT_IDX];
+s16 get_sector_group_ceil_height(u16 sect_group) {
+    return live_sector_group_parameters[(sect_group<<NUM_SECTOR_PARAMS_SHIFT) + SECTOR_PARAM_CEIL_HEIGHT_IDX];
 }
 
-void set_sector_ceil_height(u16 sect_idx, s16 height) {
-    live_sector_parameters[(sect_idx<<NUM_SECTOR_PARAMS_SHIFT) + SECTOR_PARAM_CEIL_HEIGHT_IDX] = height;
+void set_sector_group_ceil_height(u16 sect_group, s16 height) {
+    live_sector_group_parameters[(sect_group<<NUM_SECTOR_PARAMS_SHIFT) + SECTOR_PARAM_CEIL_HEIGHT_IDX] = height;
 }
 
-s16 get_sector_floor_color(u16 sect_idx) {
-    return live_sector_parameters[(sect_idx<<NUM_SECTOR_PARAMS_SHIFT) + SECTOR_PARAM_FLOOR_COLOR_IDX];
+s16 get_sector_group_floor_color(u16 sect_group) {
+    return live_sector_group_parameters[(sect_group<<NUM_SECTOR_PARAMS_SHIFT) + SECTOR_PARAM_FLOOR_COLOR_IDX];
 }
 
-s16 get_sector_ceil_color(u16 sect_idx) {
-    return live_sector_parameters[(sect_idx<<NUM_SECTOR_PARAMS_SHIFT) + SECTOR_PARAM_CEIL_COLOR_IDX];
+s16 get_sector_group_ceil_color(u16 sect_group) {
+    return live_sector_group_parameters[(sect_group<<NUM_SECTOR_PARAMS_SHIFT) + SECTOR_PARAM_CEIL_COLOR_IDX];
 }
 
-void run_door(u16 sect_idx, s16* params) {
+void run_door(u16 sect_group, s16* params) {
     door_lift_state state = params[SECTOR_PARAM_STATE_IDX];
-    s16 cur_height = get_sector_ceil_height(sect_idx);
+    s16 cur_height = get_sector_group_ceil_height(sect_group);
     s16 orig_door_height = params[SECTOR_PARAM_ORIG_HEIGHT_IDX];
 
     switch(state) {
@@ -78,9 +79,9 @@ void run_door(u16 sect_idx, s16* params) {
 
         case GOING_UP: do {
             cur_height += 128;
-            set_sector_ceil_height(sect_idx, cur_height);
+            set_sector_group_ceil_height(sect_group, cur_height);
             if(cur_height >= orig_door_height) {
-                set_sector_ceil_height(sect_idx, orig_door_height);
+                set_sector_group_ceil_height(sect_group, orig_door_height);
                 params[SECTOR_PARAM_STATE_IDX] = OPEN;
                 params[SECTOR_PARAM_TICKS_LEFT_IDX] = 30;
             }
@@ -99,11 +100,11 @@ void run_door(u16 sect_idx, s16* params) {
             break;
 
         case GOING_DOWN: do {
-            s16 floor_height = get_sector_floor_height(sect_idx);
+            s16 floor_height = get_sector_group_floor_height(sect_group);
             cur_height -= 128;
-            set_sector_ceil_height(sect_idx, cur_height);
+            set_sector_group_ceil_height(sect_group, cur_height);
             if(cur_height <= floor_height) {
-                set_sector_ceil_height(sect_idx, floor_height);
+                set_sector_group_ceil_height(sect_group, floor_height);
                 params[SECTOR_PARAM_STATE_IDX] = CLOSED;
                 params[SECTOR_PARAM_TICKS_LEFT_IDX] = 30;
             }
@@ -113,10 +114,10 @@ void run_door(u16 sect_idx, s16* params) {
 }
 
 
-void run_lift(u16 sect_idx, s16* params) {
+void run_lift(u16 sect_group, s16* params) {
     door_lift_state state = params[SECTOR_PARAM_STATE_IDX];
-    s16 cur_height = get_sector_floor_height(sect_idx);
-    s16 ceil_height = get_sector_ceil_height(sect_idx);
+    s16 cur_height = get_sector_group_floor_height(sect_group);
+    s16 ceil_height = get_sector_group_ceil_height(sect_group);
     s16 orig_lift_height = params[SECTOR_PARAM_ORIG_HEIGHT_IDX];
     switch(state) {
         case CLOSED: do {
@@ -130,12 +131,12 @@ void run_lift(u16 sect_idx, s16* params) {
         break;
 
         case GOING_DOWN: do {
-                s16 cur_height = get_sector_floor_height(sect_idx);
+                s16 cur_height = get_sector_group_floor_height(sect_group);
 
                 cur_height -= 128;
-                set_sector_floor_height(sect_idx, cur_height);
+                set_sector_group_floor_height(sect_group, cur_height);
                 if(cur_height <= orig_lift_height) {
-                        set_sector_floor_height(sect_idx, orig_lift_height);
+                        set_sector_group_floor_height(sect_group, orig_lift_height);
                         params[SECTOR_PARAM_STATE_IDX] = OPEN;
                         params[SECTOR_PARAM_TICKS_LEFT_IDX] = 30;
                 }
@@ -154,9 +155,9 @@ void run_lift(u16 sect_idx, s16* params) {
 
         case GOING_UP: do {
                 cur_height += 128;
-                set_sector_floor_height(sect_idx, cur_height);
+                set_sector_group_floor_height(sect_group, cur_height);
                 if(cur_height >= ceil_height) {
-                    set_sector_floor_height(sect_idx, ceil_height);
+                    set_sector_group_floor_height(sect_group, ceil_height);
                     params[SECTOR_PARAM_STATE_IDX] = CLOSED;
                     params[SECTOR_PARAM_TICKS_LEFT_IDX] = 30;
                 }
@@ -201,32 +202,68 @@ void run_flash(u16 sect_idx, s16* params) {
     params[SECTOR_PARAM_TICKS_LEFT_IDX] = ticks_left;
 }
 
-void run_sector_processes() {
-    for(int sect_idx = 0; sect_idx < cur_portal_map->num_sectors; sect_idx++) {
+void run_sector_group_processes() {
+    for(int sect_group = 0; sect_group < cur_portal_map->num_sector_groups; sect_group++) {
 
-        u8 typ = cur_portal_map->sector_types[sect_idx];
-        s16* params = &live_sector_parameters[sect_idx<<NUM_SECTOR_PARAMS_SHIFT];
+        u8 typ = cur_portal_map->sector_group_types[sect_group];
+        s16* params = &live_sector_group_parameters[sect_group<<NUM_SECTOR_PARAMS_SHIFT];
 
         switch(typ) {
             case NO_TYPE:
                 continue;
 
             case DOOR: do {
-                run_door(sect_idx, params);
+                run_door(sect_group, params);
             } while(0);
             break;
 
             case FLASHING: do {
-                run_flash(sect_idx, params);  
+                run_flash(sect_group, params);  
             } while(0);
             break;
 
             case LIFT: do {
-                run_lift(sect_idx, params);
+                run_lift(sect_group, params);
             } while(0);
             break;
 
             break;
         }
+    }
+}
+
+#define SECTOR_TRIGGER_SIZE 8
+#define NUM_SECTOR_TRIGGER_TARGETS 7
+#define SECTOR_TRIGGER_SHIFT 3
+
+s16 get_sector_group_trigger_type(u16 sector_group) {
+    return cur_portal_map->sector_group_triggers[sector_group<<SECTOR_TRIGGER_SHIFT];
+}
+s16 get_sector_group_trigger_target(u16 sector_group, u8 tgt_idx) {
+    return cur_portal_map->sector_group_triggers[(sector_group<<SECTOR_TRIGGER_SHIFT)+1+tgt_idx];
+}
+
+void activate_sector_group_enter_trigger(u16 sector_group) {
+    s16 type = get_sector_group_trigger_type(sector_group);
+    switch(type) {
+        case NO_TRIGGER:
+            break;
+        case SET_SECTOR_DARK:
+            for(int i = 0; i < NUM_SECTOR_TRIGGER_TARGETS; i++) {
+                s16 tgt_sector_group = get_sector_group_trigger_target(sector_group, i);
+                if(tgt_sector_group == -1) { break; }
+                set_sector_group_light_level(tgt_sector_group, -2);
+                
+            }
+            break;
+        case SET_SECTOR_LIGHT:
+            for(int i = 0; i < NUM_SECTOR_TRIGGER_TARGETS; i++) {
+                s16 tgt_sector_group = get_sector_group_trigger_target(sector_group, i);
+                if(tgt_sector_group == -1) { break; }
+                set_sector_group_light_level(tgt_sector_group, 0);
+                
+            }
+            break;
+
     }
 }

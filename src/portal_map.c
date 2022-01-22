@@ -17,7 +17,7 @@ s16 sector_num_walls(s16 sector_idx, portal_map* mp) {
     return mp->sectors[sector_idx*SECTOR_SIZE+2];
 }
 
-u16 sector_flags(s16 sector_idx, portal_map* mp) {
+u16 sector_group(s16 sector_idx, portal_map* mp) {
     return mp->sectors[sector_idx*SECTOR_SIZE+3];
 }
 

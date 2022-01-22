@@ -55,12 +55,13 @@ typedef struct {
 #define PVS_SHIFT 1
 
 typedef struct {
+    const u16 num_sector_groups;
     const u16 num_sectors;
     const u16 num_walls;
     const u16 num_verts;
     const s16* sectors;
-    const u8* sector_types;
-    const s16* sector_params;
+    const u8* sector_group_types;
+    const s16* sector_group_params;
     const u16* walls;
     const s16* portals;
     const u8* wall_colors;
@@ -69,6 +70,7 @@ typedef struct {
     const u8 has_pvs;
     const u16* pvs;
     const u16* raw_pvs;
+    const u16* sector_group_triggers;
 } portal_map;
 
 s16* sector_data_start(s16 sector_idx, portal_map* mp);
@@ -79,6 +81,6 @@ s16 sector_portal_offset(s16 sector_idx, portal_map* mp);
 
 s16 sector_num_walls(s16 sector_idx, portal_map* mp);
 
-u16 sector_flags(s16 sector_idx, portal_map* mp);
+u16 sector_group(s16 sector_idx, portal_map* mp);
 
 #endif

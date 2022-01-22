@@ -110,57 +110,6 @@ void look_for_player(object* cur_obj, uint16_t cur_sector) {
     }
 }
 
-void follow_player(object* cur_obj, uint16_t cur_sector) {
-    object_pos pos = cur_obj->pos;
-    // follow player
-
-    int dx = fix32ToInt(cur_player_pos.x - pos.x);
-    int dy = fix32ToInt(cur_player_pos.y - pos.y);
-    //int dz = fix32ToInt(cur_player_pos.z - pos.z);
-
-    if(dx > 0) {
-        dx = min(3, dx);
-    } else if (dx < 0) {
-        dx = max(-3, dx);
-    }
-
-    if(dy > 0) {
-        dy = min(3, dy);
-    } else {
-        dy = max(-3, dy);
-    }
-
-    /*
-    int dist_sqr = (dx*dx)+(dy*dy);
-
-    while (dist_sqr > 2) {
-        dx >>= 1;
-        dy >>= 1;
-        dist_sqr = (dx*dx)+(dy*dy);
-        KLog_U1("dist sqr: ", dist_sqr);
-    }
-    */
-
-    fix32 dx32 = intToFix32(dx);
-    fix32 dy32 = intToFix32(dy);
-
-    collision_result move_res = check_for_collision_radius(pos.x, pos.y, pos.x+dx32, pos.y+dy32, 8, cur_sector);
-    
-    cur_obj->pos.x = move_res.pos.x;
-    cur_obj->pos.y = move_res.pos.y;
-
-
-    //if(dz > 0) {
-    //    cur_obj->pos.z -= FIX32(.1); // intToFix32(min(abs(dz), 4));
-    //} else if (dz < 0) {
-    //    cur_obj->pos.z += FIX32(.1); // intToFix32(min(abs(dz), 4));
-    //}
-
-    if(move_res.new_sector != cur_sector) {
-        move_object_to_sector(cur_obj, move_res.new_sector);
-    }
-    cur_obj->pos.z = get_sector_floor_height(cur_obj->pos.cur_sector);
-}
 
 
 const object_template object_types[2] = {
@@ -170,11 +119,6 @@ const object_template object_types[2] = {
     {.init_state = 1,
      .sprite_col = ((RED_IDX << 4) | RED_IDX), 
     .size = 20, .from_floor_draw_offset = 20<<4, .width=12, .height=20<<4},
-};
-
-obj_state object_state_machines[] = {
-    {.next_state = 0, .ticks = 3, &look_for_player, },
-    {.next_state = 1, .ticks = 1, &follow_player, }
 };
 
 fix32 dist_sqr(object_pos posa, object_pos origin) {
@@ -297,6 +241,68 @@ void free_object(object* obj) {
 object* objects_in_sector(int sector_num) {
     return sector_lists[sector_num];
 }
+
+
+void follow_player(object* cur_obj, uint16_t cur_sector) {
+    object_pos pos = cur_obj->pos;
+    // follow player
+
+    int dx = fix32ToInt(cur_player_pos.x - pos.x);
+    int dy = fix32ToInt(cur_player_pos.y - pos.y);
+    //int dz = fix32ToInt(cur_player_pos.z - pos.z);
+
+    if(dx > 0) {
+        dx = min(3, dx);
+    } else if (dx < 0) {
+        dx = max(-3, dx);
+    }
+
+    if(dy > 0) {
+        dy = min(3, dy);
+    } else {
+        dy = max(-3, dy);
+    }
+
+    /*
+    int dist_sqr = (dx*dx)+(dy*dy);
+
+    while (dist_sqr > 2) {
+        dx >>= 1;
+        dy >>= 1;
+        dist_sqr = (dx*dx)+(dy*dy);
+        KLog_U1("dist sqr: ", dist_sqr);
+    }
+    */
+
+    fix32 dx32 = intToFix32(dx);
+    fix32 dy32 = intToFix32(dy);
+
+    collision_result move_res = check_for_collision_radius(pos.x, pos.y, pos.x+dx32, pos.y+dy32, 8, cur_sector);
+    
+    cur_obj->pos.x = move_res.pos.x;
+    cur_obj->pos.y = move_res.pos.y;
+
+
+    //if(dz > 0) {
+    //    cur_obj->pos.z -= FIX32(.1); // intToFix32(min(abs(dz), 4));
+    //} else if (dz < 0) {
+    //    cur_obj->pos.z += FIX32(.1); // intToFix32(min(abs(dz), 4));
+    //}
+
+    if(move_res.new_sector != cur_sector) {
+        move_object_to_sector(cur_obj, move_res.new_sector);
+    }
+    u16 sect = cur_obj->pos.cur_sector;
+    u16 sect_group = sector_group(sect, cur_portal_map);
+    cur_obj->pos.z = get_sector_group_floor_height(sect_group);
+}
+
+
+obj_state object_state_machines[] = {
+    {.next_state = 0, .ticks = 3, &look_for_player, },
+    {.next_state = 1, .ticks = 1, &follow_player, }
+};
+
 
 void process_all_objects(uint32_t cur_frame) {
     for(int sect = 0; sect < num_sector_lists; sect++) {
