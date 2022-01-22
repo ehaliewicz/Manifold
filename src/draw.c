@@ -1054,7 +1054,6 @@ void calculate_tex_coords_for_wall(
     s32 d_one_over_z_dx_26_times_8 = d_one_over_z_dx_26<<3;
     s32 d_u_over_z_dx_23_times_8 = d_u_over_z_dx_23<<3;
 
-
     while(cnt--) {
         // 400 cycles per division, 200 cycles per multiply
         // 600 cycles per column
@@ -1091,7 +1090,6 @@ void calculate_tex_coords_for_wall(
         z_start = z_end;
         u_start = u_end;
     }
-    
 }
 
 typedef enum {
@@ -1099,19 +1097,10 @@ typedef enum {
 } calc_light_level;
 
 u8 num_light_levels;
-u8 light_levels[3];
-u8 light_spans[3];
-
-void output_light_span(u8 light, u8 cnt) {
-    light_levels[num_light_levels] = light;
-    light_spans[num_light_levels++] = cnt;
-}
-
-
+u8 light_levels[6];
 
 void calculate_light_levels_for_wall(u32 clipped_dx, s32 inv_z1, s32 inv_z2, s32 fix_inv_dz_per_dx) {
     num_light_levels = 0;
-    //if(clipped_dx <= 0) { return; }
 
     u8 cur_light;
     s16 cur_inv_z = inv_z1;
@@ -1123,7 +1112,7 @@ void calculate_light_levels_for_wall(u32 clipped_dx, s32 inv_z1, s32 inv_z2, s32
         cur_light = LIGHT;
     }
 
-    u16 cnt = clipped_dx;
+    u8 cnt = clipped_dx;
     s16 end_inv_z = inv_z2; // + (cnt * fix_inv_dz_per_dx);
     u8 end_light;
     if (end_inv_z <= FIX_0_16_INV_DARK_DIST) {
@@ -1133,47 +1122,72 @@ void calculate_light_levels_for_wall(u32 clipped_dx, s32 inv_z1, s32 inv_z2, s32
     } else {
         end_light = LIGHT;
     }
-
+    
+    //
+    u8* out_ptr = light_levels;
 
     if(fix_inv_dz_per_dx == 0 || (cur_light == end_light)) {
         // z stays the same
-        output_light_span(cur_light, cnt);
+        //output_light_span(cur_light, cnt);
+        *out_ptr++ = cur_light;
+        *out_ptr++ = cnt; //cur_light;
+        //*out_ptr++ = cnt;
+        num_light_levels = 1;
+
         return;
     }
 
 
+
+
+
     u8 cur_span = 0;
 
+
     while(cnt--) {
+        u8 next_light; 
         if (cur_inv_z <= FIX_0_16_INV_DARK_DIST) {
-            if(cur_light == DARK) {
-                cur_span++;
-            } else {
-                output_light_span(cur_light, cur_span);
-                cur_span = 1;
-                cur_light = DARK;
-            }
+            next_light = DARK;
         } else if (cur_inv_z <= FIX_0_16_INV_MID_DIST) {
-            if(cur_light == MID) {
-                cur_span++;
-            } else {
-                output_light_span(cur_light, cur_span);
-                cur_span = 1;
-                cur_light = MID;
-            }
+            next_light = MID;
         } else {
-            if(cur_light == LIGHT) {
-                cur_span++;
-            } else {
-                output_light_span(cur_light, cur_span);
-                cur_span = 1;
-                cur_light = LIGHT;
+            next_light = LIGHT;
+        }
+
+        if(cur_light == next_light) {
+            cur_span++;
+        } else {
+            __asm volatile(
+                "move.b %1, (%0)+\t\n\
+                move.b %2, (%0)+"
+                : "+a" (out_ptr)
+                : "d" (cur_light), "d" (cur_span)
+            );
+            //*out_ptr++ = cur_light;
+            //*out_ptr++ = cur_span;
+            cur_light = next_light;
+            cur_span = 1;
+
+
+            if(end_light == cur_light) {
+                cur_span += cnt;
+                break;
             }
         }
         cur_inv_z += fix_inv_dz_per_dx;
+        
     }
     
-    output_light_span(cur_light, cur_span);
+    __asm volatile(
+        "move.b %1, (%0)+\t\n\
+        move.b %2, (%0)+"
+        : "+a" (out_ptr)
+        : "d" (cur_light), "d" (cur_span)
+    );
+    //*out_ptr++ = cur_light;
+    //*out_ptr++ = cur_span;
+
+    num_light_levels = (out_ptr-light_levels)>>1;
     
 }
 
@@ -1819,10 +1833,11 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
 
     calculate_light_levels_for_wall(cnt, cur_fix_inv_z, inv_z2, fix_inv_dz_per_dx);
     
+    u8* light_ptr = light_levels;
     if(light_floor_ceil) {
         for(int i = 0; i < num_light_levels; i++) {
-            u8 light_level = light_levels[i];
-            u8 light_cnt = light_spans[i];
+            u8 light_level = *light_ptr++;
+            u8 light_cnt = *light_ptr++;
             u16* base_tex;
             switch(light_level) {
                 case DARK:
@@ -1871,8 +1886,8 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
         }
     } else {
         for(int i = 0; i < num_light_levels; i++) {
-            u8 light_level = light_levels[i];
-            u8 light_cnt = light_spans[i];
+            u8 light_level = *light_ptr++;
+            u8 light_cnt = *light_ptr++;
             u16* base_tex;
             switch(light_level) {
                 case DARK:
