@@ -92,9 +92,7 @@ const u16 fire_cols[16] = {
 
 
 
-void fire_native(u8* src_ptr, u8* dst_ptr, u8* bmp_ptr, u16* rand_ptr, u8* byte_fire_lut_ptr);
 
-void fire_native_dbl(u8* src_ptr, u8* dst_ptr, u16* rand_ptr, u8* table_0_ptr, u8* table_1_ptr, u8* table_2_ptr);
 void fire_native_quad(u8* src_ptr, u8* dst_ptr, u16* rand_ptr, u8* table_0_ptr, u8* table_1_ptr, u8* table_2_ptr);
 
 void copy_fire_native(u32* src_ptr, u32* dst_ptr);
@@ -103,17 +101,6 @@ void copy_fire_buffer_portion() {
     u32* src_ptr = (u32*)BMP_getReadPointer(0, BASE_FRAMEBUFFER_OFFSET);
     u32* dst_ptr = (u32*)BMP_getWritePointer(0, BASE_FRAMEBUFFER_OFFSET);
     copy_fire_native(src_ptr, dst_ptr);
-    return;
-    for(int i = 0; i < FIRE_HEIGHT*(FIRE_WIDTH>>2); i+=8) {
-            *dst_ptr++ = *src_ptr++;
-            *dst_ptr++ = *src_ptr++;
-            *dst_ptr++ = *src_ptr++;
-            *dst_ptr++ = *src_ptr++;
-            *dst_ptr++ = *src_ptr++;
-            *dst_ptr++ = *src_ptr++;
-            *dst_ptr++ = *src_ptr++;
-            *dst_ptr++ = *src_ptr++;
-    }
 }
 
 
@@ -187,32 +174,12 @@ void init_fire() {
     DMA_setBufferSize(2048);
     MEM_pack();    
 
-    //rands = MEM_alloc(NUM_RANDS*2);
 	BMP_init(0, BG_A, PAL1, 0, 0);
-	//SPR_init();
-	//SYS_enableInts();
-    //return
 
-	//fire_spr = SPR_addSpriteEx(&fire_fixup,       256-32, 183, TILE_ATTR(1, 1, 0, 0), 0, (SPR_FLAG_FAST_AUTO_VISIBILITY | SPR_FLAG_AUTO_SPRITE_ALLOC | SPR_FLAG_AUTO_VRAM_ALLOC));
-	//SYS_enableInts();
-    //return;
-	//spr2 = SPR_addSpriteExSafe(&bottom_line_cover,    70, 184, TILE_ATTR(0, 1, 0, 0), 0, (SPR_FLAG_FAST_AUTO_VISIBILITY | SPR_FLAG_AUTO_SPRITE_ALLOC));
-	//spr3 = SPR_addSpriteExSafe(&bottom_line_cover, 70+96, 184, TILE_ATTR(0, 1, 0, 0), 0, (SPR_FLAG_FAST_AUTO_VISIBILITY | SPR_FLAG_AUTO_SPRITE_ALLOC));
-	//SPR_setVisibility(fire_spr, VISIBLE);
-	//SPR_setVisibility(spr2, VISIBLE);
-	//SPR_setVisibility(spr3, VISIBLE);
 
 
     VDP_setBackgroundColor(0);
 
-	//const int fire_fix_vram_addr = 0x300;
-	//const int bkgd_cover_vram_addr = 0x304;
-	//VDP_loadTileSet(fire_fixup.animations[0]->frames[0]->tileset, fire_fix_vram_addr, CPU);
-	//VDP_loadTileSet(bottom_line_cover.animations[0]->frames[0]->tileset, bkgd_cover_vram_addr, CPU);
-
-	//SPR_setVRAMTileIndex(fire_spr, fire_fix_vram_addr);
-	//SPR_setVRAMTileIndex(spr2, bkgd_cover_vram_addr);
-	//SPR_setVRAMTileIndex(spr3, bkgd_cover_vram_addr);
 
 	start_fire_source();
 	BMP_setBufferCopy(0);
@@ -234,12 +201,11 @@ int end = 0;
 game_mode run_fire() {
     BMP_showFPS(1);
     fire_frame++;
-    //return SAME_MODE;
     if(fire_running) {
-        BMP_waitWhileFlipRequestPending();
 
         spread_and_draw_fire_byte();
         BMP_flipPartial(1, 12, 0);
+        BMP_waitWhileFlipRequestPending();
         copy_fire_buffer_portion();
     }
 
@@ -258,25 +224,21 @@ game_mode run_fire() {
     if(cur_scroll < -45) {
         VDP_setVerticalScroll(BG_B, cur_scroll);
     } else if ((fire_running && !fire_hidden) || skip) {
-        //SPR_setVisibility(fire_spr, HIDDEN);
-        //SPR_update();
-        
         clear_fire_source();
         fire_hidden = 1;
     }
 
     if(fire_hidden && skip) {
         end = 1;
-        //fire_frame = 290;
     }
 
 
-    if(end == 1) { //fire_frame == 290) {
+    if(end == 1) {
         fire_running = 0;
         BMP_clear();
         BMP_flipPartial(0, 12, 0);
         end = 2;
-    } else if (end == 2) { //fire_frame == 291) {
+    } else if (end == 2) {
         return MAIN_MENU;
     }
 
