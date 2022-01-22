@@ -178,7 +178,7 @@ void run_flash(u16 sect_idx, s16* params) {
             ticks_left -= last_frame_ticks;
             if(ticks_left <= 0) {
                 s8 diff = abs(ticks_left);
-                u16 ticks_til_flash = random() & 63;
+                u8 ticks_til_flash = fxrandom();
                 ticks_left = ticks_til_flash - diff;
                 light_level = 0;
             }
@@ -188,7 +188,7 @@ void run_flash(u16 sect_idx, s16* params) {
             ticks_left -= last_frame_ticks;
             if(ticks_left <= 0) {
                 s8 diff = abs(ticks_left);
-                u16 flash_length = random() & 255;
+                u8 flash_length = fxrandom();
                 ticks_left = flash_length - diff;
                 light_level = 2;
             }
