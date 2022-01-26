@@ -17,6 +17,7 @@ import line
 import render_3d
 import script
 import sector
+import sector_group
 import texture
 import trigger
 import vertex
@@ -27,6 +28,7 @@ from src.python.editor import map_db
 
 class Mode(Enum):
     SECTOR = 'Sector'
+    SECTOR_GROUP = 'Sector Group'
     LINE = 'Line'
     VERTEX = 'Vertex'
     SCRIPT = 'Script'
@@ -212,7 +214,6 @@ def main_sdl2():
 
     while running:
         while SDL_PollEvent(ctypes.byref(event)) != 0:
-            print(event.type)
             if event.type == SDL_QUIT:
                 running = False
                 break
@@ -235,10 +236,11 @@ def main_sdl2():
 
 
 class State(object):
-    def __init__(self):
+    def __init__(self, map_data):
         self.mode = Mode.SECTOR
-        self.map_data = map_db.world_data
+        self.map_data = map_data
         self.cur_sector = -1
+        self.cur_sector_group = -1
         self.cur_wall = -1
         self.cur_vertex = -1
 
@@ -250,7 +252,7 @@ class State(object):
         self.hovered_item_type = None
 
 
-cur_state = State()
+cur_state = None
 
 """
 def add_new_wall(v1, v2):
@@ -278,6 +280,7 @@ def add_new_vertex(x,y):
 
 MODE_DRAW_FUNCS = {
     Mode.SECTOR: sector.draw_sector_mode,
+    Mode.SECTOR_GROUP: sector_group.draw_sector_group_mode,
     Mode.PREVIEW: render_3d.draw_preview,
     Mode.LINE: line.draw_line_mode,
     Mode.VERTEX: vertex.draw_vert_mode,
@@ -324,7 +327,7 @@ def draw_map_vert(draw_list, vert, highlight=False):
     draw_list.add_circle_filled(vert.x - cam_x, vert.y - cam_y, 2, imgui.get_color_u32_rgba(*color), num_segments=12)
 
 
-def draw_map_wall(draw_list, wall_idx, portal_idx, highlight=False):
+def draw_map_wall(draw_list, wall_idx, portal_idx, sect_idx, highlight=False):
     adj_sector_idx = cur_state.map_data.portals[portal_idx]
 
     is_portal = adj_sector_idx != -1
@@ -338,7 +341,7 @@ def draw_map_wall(draw_list, wall_idx, portal_idx, highlight=False):
 
     color = tbl[(highlight << 1 | is_portal)]
 
-    wall = map_db.get_line(wall_idx)
+    wall = map_db.get_line(cur_state.map_data, sect_idx, wall_idx)
     v1 = wall.v1
     v2 = wall.v2
 
@@ -353,23 +356,23 @@ def draw_map_wall(draw_list, wall_idx, portal_idx, highlight=False):
 
 def draw_sector(draw_list, draw_sect, highlight=False):
     #base_idx = draw_sect * map_db.NUM_SECTOR_PARAMS
-    portal_base_idx = map_db.get_sector_constant(draw_sect, map_db.PORTAL_OFFSET_IDX)
+    portal_base_idx = map_db.get_sector_constant(cur_state.map_data, draw_sect, map_db.PORTAL_OFFSET_IDX)
     #portal_base_idx = cur_state.map_data.sectors[base_idx + map_db.PORTAL_OFFSET_IDX]
 
-    for idx, wall in enumerate(map_db.get_all_lines_for_sector(draw_sect)):
+    for idx, wall in enumerate(map_db.get_all_lines_for_sector(cur_state.map_data, draw_sect)):
         cur_wall_idx = wall.idx
         cur_portal_idx = portal_base_idx + idx
         wall_selected = cur_state.mode == Mode.LINE and cur_state.cur_wall == cur_wall_idx
-        wall_hovered = cur_state.hovered_item == cur_wall_idx
+        wall_hovered = cur_state.hovered_item == cur_wall_idx and cur_state.hovered_item_type == "Line"
 
-        draw_map_wall(draw_list, cur_wall_idx, cur_portal_idx, (highlight or wall_selected or wall_hovered))
+        draw_map_wall(draw_list, cur_wall_idx, cur_portal_idx, draw_sect, (highlight or wall_selected or wall_hovered))
 
 
 # returns true if hovered
-def draw_map():
+def draw_map(cur_state):
     draw_list = imgui.get_window_draw_list()
 
-    vertexes = map_db.get_all_vertexes()
+    vertexes = map_db.get_all_vertexes(cur_state.map_data)
 
     for idx, vertex in enumerate(vertexes):
         is_selected =  cur_state.mode == Mode.VERTEX and idx == cur_state.cur_vertex
@@ -383,13 +386,18 @@ def draw_map():
     for sect in range(cur_state.map_data.num_sectors):
         is_selected = cur_state.mode == Mode.SECTOR and sect == cur_state.cur_sector
         is_hovered = cur_state.hovered_item == sect and cur_state.hovered_item_type == "Sector"
-        draw_sector(draw_list, sect, highlight=is_selected or is_hovered)
+
+        this_sectors_group = map_db.get_sector_constant(cur_state.map_data, sect, map_db.SECT_GROUP_IDX)
+        is_group_hovered = cur_state.hovered_item_type == "Sector Group" and cur_state.hovered_item == this_sectors_group
+
+        #is_hovered = cur_state.hovered_item == get_sector
+        draw_sector(draw_list, sect, highlight=is_selected or is_hovered or is_group_hovered)
 
     if (cur_state.mode == Mode.SECTOR and cur_state.cur_sector != -1):
         draw_sector(draw_list, cur_state.cur_sector, highlight=True)
-    if cur_state.hovered_item and cur_state.mode == Mode.SECTOR:
-        # if cur_state.hovered_item and isinstance(cur_state.hovered_item, sector.Sector):
-        draw_sector(draw_list, cur_state.hovered_item, highlight=True)
+    #if cur_state.hovered_item and cur_state.mode == Mode.SECTOR:
+    #    # if cur_state.hovered_item and isinstance(cur_state.hovered_item, sector.Sector):
+    #    draw_sector(draw_list, cur_state.hovered_item, highlight=True)
 
 
 LEFT_BUTTON = 0
@@ -403,7 +411,7 @@ def interpret_click(x, y, button):
 
     prev_cur = cur_state.cur_vertex
     clicked_vertex = -1
-    for idx, vert in enumerate(map_db.get_all_vertexes()):
+    for idx, vert in enumerate(map_db.get_all_vertexes(cur_state.map_data)):
         if vert.point_collides(x, y):
             cur_state.cur_vertex = idx
 
@@ -415,8 +423,8 @@ def interpret_click(x, y, button):
 
     # then walls
     if button == LEFT_BUTTON:
-        for sect_idx in map_db.get_all_sectors():
-            for wall in map_db.get_all_lines_for_sector(sect_idx):
+        for sect_idx in map_db.get_all_sectors(cur_state.map_data):
+            for wall in map_db.get_all_lines_for_sector(cur_state.map_data, sect_idx):
 
             #num_walls = map_db.get_sector_param(sect_idx, map_db.NUM_WALLS_IDX)
             #wall_offset = map_db.get_sector_param(sect_idx, map_db.WALL_OFFSET_IDX)
@@ -442,10 +450,10 @@ def interpret_click(x, y, button):
     if clicked_vertex == -1:
         ix -= ix % 10
         iy -= iy % 10
-        cur_state.cur_vertex = map_db.add_new_vertex(ix, iy)
+        cur_state.cur_vertex = map_db.add_new_vertex(cur_state.map_data, ix, iy)
 
     if prev_cur != -1 and prev_cur != cur_state.cur_vertex:
-        cur_state.cur_wall = map_db.add_line_to_sector(cur_state.cur_sector, prev_cur, cur_state.cur_vertex)
+        cur_state.cur_wall = map_db.add_line_to_sector(cur_state.map_data, cur_state.cur_sector, prev_cur, cur_state.cur_vertex)
 
 
 last_frame_x = None
@@ -464,7 +472,7 @@ def on_frame():
 
     map_hovered = imgui.is_window_hovered()
 
-    draw_map()
+    draw_map(cur_state)
     imgui.end()
 
     if imgui.begin_main_menu_bar():
@@ -497,7 +505,7 @@ def on_frame():
                 "Reset", "", False, True
             )
             if selected_reset:
-                cur_state = State()
+                cur_state = State(map_db.WorldData())
 
             imgui.end_menu()
         imgui.end_main_menu_bar()
@@ -582,7 +590,7 @@ def save_map():
 def export_map():
     f = filedialog.asksaveasfile(mode="w")
     if f is not None:
-        f.write(cur_state.map_data.generate_c_from_map())
+        f.write(cur_state.map_data.generate_c())
         f.close()
 
 
@@ -600,7 +608,7 @@ if __name__ == '__main__':
 
     root = tk.Tk()
     root.withdraw()
-
+    cur_state = State(map_db.WorldData())
     imgui.create_context()
     io = imgui.get_io()
 

@@ -90,63 +90,38 @@ def get_wall_vertex_indexes(cur_state, sector_idx):
     return [i+start_offset for i in range(num_walls)]
 """
 
+
 def draw_sector_mode(cur_state):
     if imgui.button("New sector"):
-        cur_state.cur_sector = map_db.add_new_sector()
+        cur_state.cur_sector = map_db.add_new_sector(cur_state.map_data)
 
-    if cur_state.cur_sector != -1:
-        cur_sect = cur_state.cur_sector
-
-
-        #type_getter = lambda: get_sector_type(cur_state, cur_sect)
-        #type_setter = lambda val: set_sector_type(cur_state, cur_sect, val)
-
-        #attr_getter = lambda attr: get_sector_attribute(cur_state, cur_sect, attr)
-        #attr_setter = lambda attr: lambda val: set_sector_attribute(cur_state, cur_sect, attr, val)
-
-        #param_getter = lambda param: get_sector_param(cur_state, cur_sect, param)
-        #param_setter = lambda param: lambda val: set_sector_param(cur_state, cur_sect, param, val)
-
-        imgui.same_line()
+    cur_sect = cur_state.cur_sector
+    if cur_sect != -1:
         imgui.text("Sector {}".format(cur_sect))
 
-        input_int("Floor height:   ", "##sector{}_floor_height".format(cur_sect),
-                  map_db.get_sector_param(cur_sect, map_db.FLOOR_HEIGHT_IDX),
-                  map_db.set_sector_param(cur_sect, map_db.FLOOR_HEIGHT_IDX))
+        set_sector_group = lambda val: map_db.set_sector_constant(cur_state.map_data, cur_sect, map_db.SECT_GROUP_IDX, val)
 
-        input_int("Floor color:    ", "##sector{}_floor_color".format(cur_sect),
-                  map_db.get_sector_param(cur_sect, map_db.FLOOR_COLOR_IDX),
-                  map_db.set_sector_param(cur_sect, map_db.FLOOR_COLOR_IDX))
+        input_int("Sector group:  ", "##sector{}_".format(cur_sect),
+                  map_db.get_sector_constant(cur_state.map_data, cur_sect, map_db.SECT_GROUP_IDX),
+                  set_sector_group)
 
-        input_int("Ceiling height: ", "##sector{}_ceil".format(cur_sect),
-                  map_db.get_sector_param(cur_sect, map_db.CEIL_HEIGHT_IDX),
-                  map_db.set_sector_param(cur_sect, map_db.CEIL_HEIGHT_IDX))
 
-        input_int("Ceiling color:  ", "##sector{}_ceil_color".format(cur_sect),
-                  map_db.get_sector_param(cur_sect, map_db.CEIL_COLOR_IDX),
-                  map_db.set_sector_param(cur_sect, map_db.CEIL_COLOR_IDX))
 
-        input_select("Sector Type:    ", "##Sector{}_type".format(cur_sect),
-                     map_db.SECTOR_TYPE_NAMES,
-                     map_db.get_sector_type(cur_sect, 0),
-                     map_db.set_sector_type(cur_sect, 0))
+    #type_getter = lambda: get_sector_type(cur_state, cur_sect)
+    #type_setter = lambda val: set_sector_type(cur_state, cur_sect, val)
 
-        SECTOR_LIGHTS = ["-2", "-1", "0", "1", "2"]
-        input_select("Light level:    ", "##sector{}_light".format(cur_sect), SECTOR_LIGHTS,
-                     map_db.get_sector_param(cur_sect, map_db.LIGHT_IDX)+2,
-                     lambda v: map_db.set_sector_param(cur_sect, map_db.LIGHT_IDX)(v-2))
+    #attr_getter = lambda attr: get_sector_attribute(cur_state, cur_sect, attr)
+    #attr_setter = lambda attr: lambda val: set_sector_attribute(cur_state, cur_sect, attr, val)
 
-        SECTOR_STATES = ["CLOSED", "GOING_UP", "OPEN", "GOING_DOWN"]
-        input_select("State:          ", "##sector{}_state".format(cur_sect), SECTOR_STATES,
-                     map_db.get_sector_param(cur_sect, map_db.STATE_IDX),
-                     map_db.set_sector_param(cur_sect, map_db.STATE_IDX))
+    #param_getter = lambda param: get_sector_param(cur_state, cur_sect, param)
+    #param_setter = lambda param: lambda val: set_sector_param(cur_state, cur_sect, param, val)
 
-        input_int("Orig height:    ", "##sector{}_orig_height".format(cur_sect),
-                  map_db.get_sector_param(cur_sect, map_db.ORIG_HEIGHT_IDX),
-                  map_db.set_sector_param(cur_sect, map_db.ORIG_HEIGHT_IDX))
+    imgui.same_line()
+    imgui.text("Sector {}".format(cur_sect))
+
 
 
     def set_cur_sector(idx):
         cur_state.cur_sector = idx
 
-    draw_list(cur_state, "Sector", "Sector list", map_db.get_all_sectors(), set_cur_sector)
+    draw_list(cur_state, "Sector", "Sector list", map_db.get_all_sectors(cur_state.map_data), set_cur_sector)

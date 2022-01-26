@@ -131,3 +131,9 @@ def input_select(label, id_str, input_choices, cur_value, set_val):
 
     if changed:
         set_val(new_val)
+
+
+def delay(setter, map_data, sect_group, idx):
+    def internal(val):
+        return setter(map_data, sect_group, idx, val)
+    return internal

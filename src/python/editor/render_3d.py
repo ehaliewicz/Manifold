@@ -33,6 +33,7 @@ cam_z = 20
 cam_ang = 0
 
 def init_sdl_window():
+    return
     global renderer, surf
     sdl2.ext.init()
 
@@ -49,6 +50,7 @@ def init_sdl_window():
 
 
 def draw_preview(current_state):
+    return
     global cam_ang
     renderer.clear((0,0,0))
     render_from_position(cam_x, cam_y, cam_z, cam_ang, 0, RENDER_WIDTH)

@@ -33,7 +33,7 @@ def draw_vert_mode(cur_state):
     #    cur_state.cur_vertex = add_new_vertex()
     
     
-    if cur_state.cur_vertex is not None:
+    if cur_state.cur_vertex != -1:
 
         cur_vertex_index = cur_state.cur_vertex
         imgui.text("Vertex {}".format(cur_vertex_index))
