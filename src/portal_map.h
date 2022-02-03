@@ -34,6 +34,7 @@ typedef struct {
 #define WALL_TEXTURE_IDX 0
 #define WALL_HIGH_COLOR_IDX 1
 #define WALL_LOW_COLOR_IDX 2
+#define WALL_SOLID_COLOR_IDX 3
 
 #define WALL_COLOR_NUM_PARAMS 4
 #define WALL_COLOR_NUM_PARAMS_SHIFT 2
@@ -70,7 +71,7 @@ typedef struct {
     const u8 has_pvs;
     const u16* pvs;
     const u16* raw_pvs;
-    const u16* sector_group_triggers;
+    const s16* sector_group_triggers;
 } portal_map;
 
 s16* sector_data_start(s16 sector_idx, portal_map* mp);

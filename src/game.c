@@ -613,6 +613,7 @@ void init_game() {
 
     //object* red_cube = alloc_object_in_sector(cur_player_pos, 0, sector_centers[0].x, sector_centers[0].y, get_sector_floor_height(0), 0);
     
+    object* cur_obj = alloc_object_in_sector(cur_player_pos, 10, sector_centers[10].x, sector_centers[10].y, get_sector_group_floor_height(10), 0);
 
 
     if(music_on) {

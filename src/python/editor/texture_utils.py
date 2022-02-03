@@ -107,10 +107,10 @@ def gen_mip_image(name, light_file, mid_file, dark_file):
 
     names = []
     for (key, tbl) in [('light', lconv), ('mid', conv), ('dark', dconv),
-                       ('light_near', near_lconv), ('mid_near', near_conv), ('dark_near', near_dconv),
-                       ('light_far', far_lconv), ('mid_far', far_conv), ('dark_far', far_dconv)
+                       #('light_near', near_lconv), ('mid_near', near_conv), ('dark_near', near_dconv),
+                       #('light_far', far_lconv), ('mid_far', far_conv), ('dark_far', far_dconv)
                        ]:
-        gen_name = "{}_{}".format(name, key)
+        gen_name = "raw_{}_{}".format(name, key)
         names.append(gen_name)
         print("const u16 {}[{}*{}]".format(gen_name, len(tbl) // 64, 64) + " = {")
         for i, col in enumerate(tbl):
@@ -119,11 +119,19 @@ def gen_mip_image(name, light_file, mid_file, dark_file):
                 print("")
         print("\n};\n\n")
 
-    print("texture_set {}_texture".format(name) + " = {")
-    print("    .mip_mid  = {" + "{}, {}, {}".format(names[0], names[1], names[2]) + "},")
-    print("    .mip_near = {" + "{}, {}, {}".format(names[3], names[4], names[5]) + "},")
-    print("    .mip_far  = {" + "{}, {}, {}".format(names[6], names[7], names[8]) + "},")
-    print("};")
+    dname = names[2]
+    mname = names[1]
+    lname = names[0]
+    for (level,d,m,l) in [("dark", dname, dname, dname),
+                          ("mid_dark", dname, dname, mname),
+                          ("mid", dname, mname, lname),
+                          ("mid_light", mname, lname, lname),
+                          ("light", lname, lname, lname)]:
+
+        print("const lit_texture {}_{} = {}".format(name, level, '{'))
+        print("  .dark = {}, .mid = {}, .light = {}".format(d, m, l))
+        print("};")
+
 
 
 def convert_image(name, file, extra_detail=False):
@@ -251,14 +259,38 @@ def gen_tables(max_scaled_y, tex_size, asm_file, c_file):
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    #norm_f = "C:\\Users\Erik\\Desktop\\sci-fi-wall.png"
-    #mid_f = "C:\\Users\Erik\\Desktop\\sci-fi-walldarker.png"
-    #dark_f = "C:\\Users\Erik\\Desktop\\sci-fi-walldarkest.png"
 
-    norm_f = "C:\\Users\\Erik\\code\\genesis\\DOOM\\res\\textures\\DOOR.png"
-    mid_f = norm_f
-    dark_f = mid_f
-    gen_mip_image("sci_fi_door", norm_f, mid_f, dark_f)
+    #norm_f = "C:\\Users\\Erik\\code\\genesis\\DOOM\\res\\textures\\WALL_A.png"
+    #mid_f = "C:\\Users\\Erik\\code\\genesis\\DOOM\\res\\textures\\WALL_A_DARKER.png"
+    #dark_f = "C:\\Users\\Erik\\code\\genesis\\DOOM\\res\\textures\\WALL_A_DARKEST.png"
+    #name = "wall_a"
+
+    #norm_f = "C:\\Users\\Erik\\code\\genesis\\DOOM\\res\\textures\\DOOR.png"
+    #mid_f = norm_f
+    #dark_f = mid_f
+    #name = "door"
+
+
+    #norm_f = "C:\\Users\\Erik\\code\\genesis\\DOOM\\res\\textures\\WALL_B.png"
+    #mid_f = "C:\\Users\\Erik\\code\\genesis\\DOOM\\res\\textures\\WALL_B_DARKER.png"
+    #dark_f = "C:\\Users\\Erik\\code\\genesis\\DOOM\\res\\textures\\WALL_B_DARKEST.png"
+    #name = "wall_b"
+    #norm_f = "C:\\Users\\Erik\\code\\genesis\\DOOM\\res\\textures\\WALL_C.png"
+    #mid_f = "C:\\Users\\Erik\\code\\genesis\\DOOM\\res\\textures\\WALL_C_DARKER.png"
+    #dark_f = "C:\\Users\\Erik\\code\\genesis\\DOOM\\res\\textures\\WALL_C_DARKEST.png"
+    #name = "wall_c"
+
+    norm_f = "C:\\Users\\Erik\\code\\genesis\\DOOM\\res\\textures\\WALL_A_FOG.png"
+    mid_f = "C:\\Users\\Erik\\code\\genesis\\DOOM\\res\\textures\\WALL_A_FOG_DARKER.png"
+    dark_f = "C:\\Users\\Erik\\code\\genesis\\DOOM\\res\\textures\\WALL_A_FOG_DARKEST.png"
+    name = "wall_a_fog"
+
+    norm_f = "C:\\Users\\Erik\\code\\genesis\\DOOM\\res\\textures\\KEY.png"
+    mid_f = "C:\\Users\\Erik\\code\\genesis\\DOOM\\res\\textures\\KEY.png"
+    dark_f = "C:\\Users\\Erik\\code\\genesis\\DOOM\\res\\textures\\KEY.png"
+    name = "key"
+
+    gen_mip_image(name, norm_f, mid_f, dark_f)
 
     # gen_tables(512, 64, "C:\\Users\\Erik\\Desktop\\tables.s", "C:\\Users\\Erik\\Desktop\\tables_table.c")
     # gen_byte_tables(512, 64, "C:\\Users\\Erik\\Desktop\\byte_tables.s", "C:\\Users\\Erik\\Desktop\\byte_tables_table.c")

@@ -169,37 +169,35 @@ void run_lift(u16 sect_group, s16* params) {
 
 void run_flash(u16 sect_idx, s16* params) {
     s8 light_level = params[SECTOR_PARAM_LIGHT_IDX];
+    s8 orig_light_level = params[SECTOR_PARAM_STATE_IDX];
     s16 ticks_left = params[SECTOR_PARAM_TICKS_LEFT_IDX];
 
     ticks_left -= last_frame_ticks;
+    s8 diff;
 
-    switch(light_level) {
-        case 2:
-            // figure out when to switch back
-            ticks_left -= last_frame_ticks;
-            if(ticks_left <= 0) {
-                s8 diff = abs(ticks_left);
+    if(ticks_left <= 0) {
+
+        switch(light_level) {
+            case 2:
+                // figure out when to switch back
+                diff = abs(ticks_left);
                 u8 ticks_til_flash = fxrandom();
                 ticks_left = ticks_til_flash - diff;
-                light_level = 0;
-            }
-            break;
-        default:
-            // figure out when to flash
-            ticks_left -= last_frame_ticks;
-            if(ticks_left <= 0) {
-                s8 diff = abs(ticks_left);
+                light_level = orig_light_level;
+                break;
+            default:
+                diff = abs(ticks_left);
                 u8 flash_length = fxrandom();
                 ticks_left = flash_length - diff;
+                orig_light_level = light_level;
                 light_level = 2;
-            }
-
-            break;
-
+                break;
+        }
     }
 
     params[SECTOR_PARAM_LIGHT_IDX] = light_level;
     params[SECTOR_PARAM_TICKS_LEFT_IDX] = ticks_left;
+    params[SECTOR_PARAM_STATE_IDX] = orig_light_level;
 }
 
 void run_sector_group_processes() {

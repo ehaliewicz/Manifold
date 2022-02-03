@@ -114,8 +114,8 @@ void look_for_player(object* cur_obj, uint16_t cur_sector) {
 
 const object_template object_types[2] = {
     {.init_state = 0,
-     .sprite_col = ((BLUE_IDX << 4) | BLUE_IDX), 
-    .size = 20, .from_floor_draw_offset = 20<<4, .width=12, .height=20<<4},
+     .sprite_col = ((1 << 4) | 1), 
+    .size = 20, .from_floor_draw_offset = 35<<4, .width=20, .height=26<<4},
     {.init_state = 1,
      .sprite_col = ((RED_IDX << 4) | RED_IDX), 
     .size = 20, .from_floor_draw_offset = 20<<4, .width=12, .height=20<<4},

@@ -45,7 +45,7 @@ static const s16 sector_group_params[NUM_SECTOR_PARAMS*17] = {
     
     -1, 0, 0, 0, 180<<4, 350<<4, BLUE_IDX, BLUE_IDX,
     
-    -1, 0, 0, 0, 200<<4, 350<<4, BLUE_IDX, LIGHT_BLUE_IDX,
+    0, 0, 0, 0, 200<<4, 350<<4, BLUE_IDX, LIGHT_BLUE_IDX,
     
     -1, 0, 0, 0,  60<<4, 200<<4, BLUE_IDX, BLUE_IDX,
     
@@ -63,7 +63,7 @@ static const s16 sector_group_params[NUM_SECTOR_PARAMS*17] = {
     
     -2, 0, 0, 0,   0<<4, 100<<4, RED_IDX,  LIGHT_RED_IDX,
 
-    -2, 0, 0, 0,   0<<4, 100<<4, RED_IDX,  RED_IDX,
+    -2, 0, 0, 0,   0<<4, 100<<4, TRANSPARENT_IDX,  RED_IDX,
 };
 
 static const u16 sector_group_triggers[17*8] = {
@@ -204,65 +204,66 @@ static const u8 wall_normal_quadrants[73] ={
     QUADRANT_2,
 };
 
+
 static const u8 wall_colors[73 * WALL_COLOR_NUM_PARAMS] = {
     0, 0, 0, 0,
     0, 0, 0, 0,
-    0, LIGHT_GREEN_IDX, GREEN_IDX, 0,
+    1, LIGHT_GREEN_IDX, GREEN_IDX, 0,
     0, 0, 0, 0,
-    0, LIGHT_GREEN_IDX, LIGHT_GREEN_IDX, 0,
+    1, LIGHT_GREEN_IDX, LIGHT_GREEN_IDX, 0,
     0, 0, 0, 0,
     // sector 1 walls
-    0, 0, 0, 0,
-    0, GREEN_IDX, GREEN_IDX, 0,
-    0, 0, 0, 0,
-    0, GREEN_IDX, GREEN_IDX, 0,
-    0, GREEN_IDX, GREEN_IDX, 0,
+    2, 0, 0, 0,
+    2, GREEN_IDX, GREEN_IDX, 0,
+    2, 0, 0, 0,
+    2, GREEN_IDX, GREEN_IDX, 0,
+    2, GREEN_IDX, GREEN_IDX, 0,
     // sector 2 walls
-    0, 0, 0, 0,
-    0, LIGHT_GREEN_IDX, LIGHT_GREEN_IDX, 0,
-    0, 0, 0, 0,
-    0, LIGHT_GREEN_IDX, LIGHT_GREEN_IDX, 0,
+    2, 0, 0, 0,
+    2, LIGHT_GREEN_IDX, LIGHT_GREEN_IDX, 0,
+    2, 0, 0, 0,
+    2, LIGHT_GREEN_IDX, LIGHT_GREEN_IDX, 0,
     // sector 3 walls
-    0, 0, 0, 0,
-    0, LIGHT_GREEN_IDX, LIGHT_GREEN_IDX, 0,
-    0, 0, 0, 0,
-    0, GREEN_IDX, GREEN_IDX, 0,
+    4, 0, 0, 0,
+    4, LIGHT_GREEN_IDX, LIGHT_GREEN_IDX, 0,
+    4, 0, 0, 0,
+    4, GREEN_IDX, GREEN_IDX, 0,
     // sector 4 walls
-    0, 0, 0, 0,
-    0, LIGHT_GREEN_IDX, LIGHT_GREEN_IDX, 0,
-    0, 0, 0, 0,
-    0, GREEN_IDX, GREEN_IDX, 0,
+    4, 0, 0, 0,
+    4, LIGHT_GREEN_IDX, LIGHT_GREEN_IDX, 0,
+    4, 0, 0, 0,
+    4, GREEN_IDX, GREEN_IDX, 0,
     // sector 5 walls
-    0, 0, 0, 0,
-    0, LIGHT_GREEN_IDX, LIGHT_GREEN_IDX, 0,
-    0, 0, 0, 0,
-    0, GREEN_IDX, GREEN_IDX, 0,
+    4, 0, 0, 0,
+    4, LIGHT_GREEN_IDX, LIGHT_GREEN_IDX, 0,
+    4, 0, 0, 0,
+    4, GREEN_IDX, GREEN_IDX, 0,
     // sector 6 walls
-    0, 0, 0, 0,
-    0, GREEN_IDX, GREEN_IDX, 0,
-    0, 0, 0, 0,
-    0, GREEN_IDX, GREEN_IDX, 0,
+    4, 0, 0, 0,
+    4, GREEN_IDX, GREEN_IDX, 0,
+    4, 0, 0, 0,
+    4, GREEN_IDX, GREEN_IDX, 0,
     // sector 7 walls
-    0, 0, 0, 0,
-    0, GREEN_IDX, GREEN_IDX, 0,
-    0, 0, 0, 0,
-    0, 0, 0, 0,
-    0, GREEN_IDX, GREEN_IDX, 0,
+    4, 0, 0, 0,
+    4, GREEN_IDX, GREEN_IDX, 0,
+    4, 0, 0, 0,
+    4, 0, 0, 0,
+    4, GREEN_IDX, GREEN_IDX, 0,
     // sector 8 walls
-    0, 0, 0, 0,
-    0, LIGHT_GREEN_IDX, LIGHT_GREEN_IDX, 0,
-    0, 0, 0, 0,
-    0, GREEN_IDX, GREEN_IDX, 0,
+    2, 0, 0, 0,
+    2, LIGHT_GREEN_IDX, LIGHT_GREEN_IDX, 0,
+    2, 0, 0, 0,
+    2, GREEN_IDX, GREEN_IDX, 0,
     // sector 9 walls
-    0, 0, 0, 0,
-    0, 0, 0, 0,
-    0, 0, 0, 0,
-    0, GREEN_IDX, GREEN_IDX, 0,
+    3, 0, 0, 0,
+    3, 0, 0, 0,
+    3, 0, 0, 0,
+    3, GREEN_IDX, GREEN_IDX, 0,
     // sector 10 walls
-    0, 0, 0, 0,
-    0, 0, 0, 0,
-    0, 0, 0, 0,
-    0, GREEN_IDX, GREEN_IDX, 0,
+    3, 0, 0, 0,
+    3, 0, 0, 0,
+    3, 0, 0, 0,
+    3, GREEN_IDX, GREEN_IDX, 0,
     // sector 11 walls
     0, 0, 0, 0,
     0, GREEN_IDX, GREEN_IDX, 0,
@@ -290,10 +291,10 @@ static const u8 wall_colors[73 * WALL_COLOR_NUM_PARAMS] = {
     0, 0, 0, 0,
     0, GREEN_IDX, GREEN_IDX, 0,
     // sector 16
-    0, 0, 0, 0,
-    0, 0, 0, 0,
-    0, 0, 0, 0,
-    0, GREEN_IDX, GREEN_IDX, 0,
+    3, 0, 0, 0,
+    3, 0, 0, 0,
+    3, 0, 0, 0,
+    3, GREEN_IDX, GREEN_IDX, 0,
 };
 
 // #define VERT(x1,y1) { .x = (x1 * 6), .y = ((-y1) * 6) } 

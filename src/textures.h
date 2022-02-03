@@ -4,12 +4,11 @@
 #include <genesis.h>
 #include "texture.h"
 
-extern const lit_texture wall_texture;
-extern const lit_texture sci_fi_wall_texture;
-extern const lit_texture sci_fi_door_texture;
-//extern const texture_set wall_texture;
-//extern const texture_set sci_fi_wall_texture;
-//extern const texture_set sci_fi_door_texture;
-extern lit_texture* textures[2];
+//extern const lit_texture wall_texture;
+//extern const lit_texture sci_fi_wall_texture;
+extern const lit_texture door_mid;
+extern lit_texture* textures[5][5];
+
+const u16 raw_key_mid[2048];
 
 #endif

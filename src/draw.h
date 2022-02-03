@@ -40,12 +40,20 @@ void clear_light_cache();
 void cache_floor_light_params(s16 rel_floor_height, u8 floor_col, s8 light_level, light_params* params);
 void cache_ceil_light_params(s16 rel_ceil_height, u8 ceil_col, s8 light_level, light_params* params);
 
+void draw_solid_color_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
+              s16 x2, s16 x2_ytop, s16 x2_ybot,
+              u16 z1_12_4,     u16 z2_12_4,
+              u16 inv_z1, u16 inv_z2,
+              u16 window_min, u16 window_max,
+              u8 wall_color, s8 light_level, 
+              light_params* floor_params, light_params* ceil_params);
+
 void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
               s16 x2, s16 x2_ytop, s16 x2_ybot,
               u16 z1,     u16 z2,
               u16 inv_z1, u16 inv_z2,
               u16 window_min, u16 window_max,
-              s8 light_level, texmap_params* tmap_info, 
+              texmap_params* tmap_info, 
               light_params* floor_params, light_params* ceil_params);
 
 void draw_top_pegged_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
@@ -53,7 +61,7 @@ void draw_top_pegged_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
                           u16 z1,     u16 z2,
                           u16 inv_z1, u16 inv_z2,
                           u16 window_min, u16 window_max,
-                          s8 light_level, texmap_params* tmap_info, 
+                          texmap_params* tmap_info, 
                           light_params* floor_params, light_params* ceil_params,
                           s16 x1_pegged_top, s16 x2_pegged_top);
 
@@ -62,7 +70,7 @@ void draw_bot_pegged_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
                           u16 z1,     u16 z2,
                           u16 inv_z1, u16 inv_z2,
                           u16 window_min, u16 window_max,
-                          s8 light_level, texmap_params* tmap_info, 
+                          texmap_params* tmap_info, 
                           light_params* floor_params, light_params* ceil_params,
                           s16 x1_pegged_top, s16 x2_pegged_top);
 
@@ -70,7 +78,7 @@ void draw_top_pegged_textured_upper_step(s16 x1, s16 x1_ytop, s16 nx1_ytop, s16 
                                          u16 z1_12_4,     u16 z2_12_4,
                                          u16 inv_z1, u16 inv_z2,
                                          u16 window_min, u16 window_max,
-                                         s8 light_level, texmap_params* tmap_info, light_params* params,
+                                         texmap_params* tmap_info, light_params* params,
                                          s16 x1_pegged_top, s16 x2_pegged_top);
 
 void draw_upper_step(s16 x1, s16 x1_ytop, s16 nx1_ytop, s16 x2, s16 x2_ytop, s16 nx2_ytop, 
@@ -86,7 +94,7 @@ void draw_bottom_pegged_textured_lower_step(s16 x1, s16 x1_ybot, s16 nx1_ybot, s
                                             u16 z1_12_4,     u16 z2_12_4,
                                             u16 inv_z1, u16 inv_z2,
                                             u16 window_min, u16 window_max,
-                                            s8 light_level, texmap_params* tmap_info, light_params* params,
+                                            texmap_params* tmap_info, light_params* params,
                                             s16 x1_pegged_bot, s16 x2_pegged_bot);
 
 void draw_lower_step(s16 x1, s16 x1_ybot, s16 nx1_ybot, s16 x2, s16 x2_ybot, s16 nx2_ybot, 
