@@ -1,5 +1,6 @@
 #include <genesis.h>
 #include <kdebug.h>
+#include "bmp.h"
 #include "colors.h"
 #include "clip_buf.h"
 #include "div_lut.h"
@@ -587,7 +588,7 @@ void flip() {
   if(JOY_readJoypad(JOY_1) & BUTTON_A) {
     if(!last_pressed_a) {
         if(!debug_draw_cleared) { return; }
-        BMP_vertical_clear();
+        bmp_vertical_clear();
         // just copy written buffer to next buffer
         //memcpy(bmp_buffer_read, bmp_buffer_write, 256*144/2);
         request_flip(); // draw buffer with one wall
@@ -618,7 +619,7 @@ void draw_masked(s16 x1, s16 x1_ytop, s16 x1_ybot,
                             clip_buf* clipping_buffer,
                             u8 wall_col) {
 
-
+    return;
     // 4 subpixel bits here
     s16 top_dy_fix = x2_ytop - x1_ytop;
     s16 bot_dy_fix = x2_ybot - x1_ybot;
@@ -630,20 +631,21 @@ void draw_masked(s16 x1, s16 x1_ytop, s16 x1_ybot,
 
     fix32 top_y_fix = x1_ytop<<12; 
     fix32 bot_y_fix = x1_ybot<<12;
-    s16 top_y_int;
-    s16 bot_y_int;
+    s16 top_y_int = top_y_fix >> 16;
+    s16 bot_y_int = bot_y_fix >> 16;
+    u16 height = bot_y_int-top_y_int;
+    u16 half_height = height>>1;
+    top_y_int -= half_height;
+    bot_y_int += half_height;
 
     s16 beginx = max(x1, window_min);
 
     s16 skip_x = beginx - x1;
 
-    s32 tex_per_pix_fix = (32<<16)/dx;
-    s32 tex_col_fix = 0;
-
 
 
     s16 endx = min(window_max, x2);
-    u32 u_per_x = (1<<16)/dx;
+    u32 u_per_x = ((1<<16)>>1)/dx;
     u32 u_fix = 0;
 
     if(skip_x > 0) {
@@ -660,10 +662,10 @@ void draw_masked(s16 x1, s16 x1_ytop, s16 x1_ybot,
 
     u8** offset_ptr = (bmp_buffer_write == bmp_buffer_0) ? (&buf_0_column_offset_table[x]) : (&buf_1_column_offset_table[x]);
     
-    top_y_int = top_y_fix >> 16;
-    bot_y_int = bot_y_fix >> 16;
 
-    u16* tex = raw_key_mid;
+
+    //u16* tex = raw_key_mid;
+    u16* tex = raw_key_32_32_mid;
     u32 y_per_texels_fix = ((bot_y_int - top_y_int)<<16)/ 64;
     //u32 texels_per_y_fix = (64<<16) / (bot_y_int-top_y_int);
 
@@ -682,8 +684,10 @@ void draw_masked(s16 x1, s16 x1_ytop, s16 x1_ybot,
             u8 top_draw_y = clamp(top_y_int, min_drawable_y, max_drawable_y);
             u8 bot_draw_y = clamp(bot_y_int, min_drawable_y, max_drawable_y);
             
-            u32 clipped_y_pix;
-            u32 skipped_texels;
+            u32 clipped_y_pix_top, clipped_y_pix_bot;
+            u8 skipped_texels;
+            u8 skipped_bot_texels = 33;
+            clipped_y_pix_bot = (y_per_texels_fix * skipped_bot_texels) >> 16;
 
             // if there are visible pixels in this column
             if(top_draw_y < bot_draw_y) {
@@ -694,27 +698,28 @@ void draw_masked(s16 x1, s16 x1_ytop, s16 x1_ybot,
                 u16* tex_column = &tex[tex_idx];
 
                 // this sprite only has 28 columns of non-transparent pixels :)
-                if(tex_col >= 28) { 
+                if(tex_col >= 27) { 
                     break;
                 } else if (tex_col >= 24) {
                     // last few columns skip 29 texels
                     skipped_texels = 29;
 
-                    clipped_y_pix = (y_per_texels_fix * skipped_texels)>>16;
-                } else if (tex_col <= 3) {
+                    clipped_y_pix_top = (y_per_texels_fix * skipped_texels)>>16;
+                } else if (tex_col < 2) {
                     // first few columns skip 9 texels
                     skipped_texels = 9;
-                    clipped_y_pix = (y_per_texels_fix * skipped_texels)>>16;
+                    clipped_y_pix_top = (y_per_texels_fix * skipped_texels)>>16;
                 } else {
                     skipped_texels = 0;
-                    clipped_y_pix = 0;
+                    clipped_y_pix_top = 0;
                 }
                 //KLog_S1("top y int: ", top_y_int);
                 //KLog_U1("top_draw_y: ", top_draw_y);
                 //KLog_U1("top_draw_y+clipped_y_pix: ", top_draw_y+clipped_y_pix);
                 //KLog_S1("bot_y_int: ", bot_y_int);
                 //KLog_U1("bot_draw_y: ", bot_draw_y);
-                draw_texture_vertical_line(top_y_int, top_draw_y+clipped_y_pix, bot_y_int, bot_draw_y, col_ptr, tex_column);
+                draw_texture_vertical_line(top_y_int, top_draw_y+clipped_y_pix_top, bot_y_int, bot_draw_y-clipped_y_pix_bot, col_ptr, tex_column);
+
             }
 
             u_fix += u_per_x;
