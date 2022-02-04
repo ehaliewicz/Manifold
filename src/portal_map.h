@@ -9,11 +9,12 @@
 #define SECTOR_SIZE 4
 #define VERT_SIZE 2
 
-#define MAX_SECTORS   128  // 4kB max
-#define MAX_WALLS     256  // 4kB max
-#define MAX_VERTEXES  256  // 8kB max
-#define MAX_PORTALS   128  // 1kB max
-#define MAX_TEXTURES   16  // 64 bytes, pointers into shared texture list
+#define MAX_SECTORS      1024  // 4kB max
+#define MAX_SECTOR_GROUPS 512
+#define MAX_WALLS        1024  // 4kB max
+#define MAX_VERTEXES     1024  // 8kB max
+#define MAX_PORTALS       512  // 1kB max
+#define MAX_TEXTURES       32  // 64 bytes, pointers into shared texture list
 typedef enum {
     QUADRANT_0,
     QUADRANT_1,

@@ -675,7 +675,6 @@ void pvs_scan(u16 src_sector, s16 window_min, s16 window_max, u32 cur_frame) {
     u16 raw_pvs_offset = map->pvs[src_sector<<PVS_SHIFT];
     u16 num_sect_pvs_groups = map->pvs[(src_sector<<PVS_SHIFT)+1];
 
-    u8 cols = RENDER_WIDTH;
 
     for(int i = 0; i < num_sect_pvs_groups; i++) {
 
@@ -768,7 +767,7 @@ void pvs_scan(u16 src_sector, s16 window_min, s16 window_max, u32 cur_frame) {
                 lit_texture *tex = textures[tex_idx][light_level+2];
                 tmap_info.tex = tex;
             }
-
+ 
 
             if(is_portal) {
                 u16 neighbor_sector_group = sector_group(portal_sector, map);
