@@ -1,5 +1,5 @@
 #include <genesis.h>
-#include "bmp.h"
+#include "my_bmp.h"
 #include "fire.h"
 #include "game_mode.h"
 #include "graphics_res.h"
@@ -206,9 +206,7 @@ game_mode run_fire() {
 
         spread_and_draw_fire_byte();
         bmp_flip_partial(1, 12);
-        //BMP_flipPartial(1, 12);
         bmp_wait_while_flip_request_pending();
-        //BMP_waitWhileFlipRequestPending();
         copy_fire_buffer_portion();
     }
 

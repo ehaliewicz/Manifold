@@ -3,9 +3,7 @@
 
 #include <genesis.h>
 #include "texture.h"
-
-#define SCREEN_WIDTH BMP_PITCH
-#define SCREEN_HEIGHT 144 // BMP_HEIGHT   // H
+#include "utils.h"
 
 // .888
 #define ASPECT_RATIO (SCREEN_WIDTH / SCREEN_HEIGHT) // 0.44

@@ -1,5 +1,5 @@
 #include <genesis.h>
-
+#include "utils.h"
 /*
 
     **---- bitmap mode module ----**
@@ -17,6 +17,8 @@ u8 bmp_doublebuffer;
 
 u8* bmp_buffer_0;
 u8* bmp_buffer_1;
+//u8* bmp_buffer_read;
+//u8* bmp_buffer_write;
 
 static vu16 state;
 static vs16 phase;
@@ -30,6 +32,9 @@ static u8 start_blit_cell;
 #define BMP_FBTILEMAP_OFFSET    (((BMP_PLANWIDTH * BMP_CELLYOFFSET) + BMP_CELLXOFFSET) * 2)
 #define GET_YOFFSET             ((bmp_doublebuffer && READ_IS_FB1)?((BMP_PLANHEIGHT / 2) + 4):4)
 
+
+#define BMP_FB1TILEINDEX        (BMP_BASETILEINDEX + (BMP_CELLWIDTH * BMP_CELLHEIGHT / 2))
+
 #define READ_IS_FB0             (bmp_buffer_read == bmp_buffer_0)
 #define READ_IS_FB1             (bmp_buffer_read == bmp_buffer_1)
 #define WRITE_IS_FB0            (bmp_buffer_write == bmp_buffer_0)
@@ -42,6 +47,10 @@ static u8 start_blit_cell;
 
 #define NTSC_TILES_BW           7
 #define PAL_TILES_BW            10
+
+
+#define BMP_VERTICAL_CELLHEIGHT     18
+#define BMP_VERTICAL_HEIGHT         (BMP_VERTICAL_CELLHEIGHT * BMP_YPIXPERTILE)
 
 u8* bmp_get_write_pointer(u16 x, u16 y) {
     const u16 off = (y * BMP_PITCH) + (x >> 1);
@@ -171,7 +180,6 @@ static void bmp_init_tilemap_vertical(u16 num) {
     pwdata = (u16 *) GFX_DATA_PORT;
 
     i = BMP_VERTICAL_CELLHEIGHT;
-
 
     u16 base_tile_ind = tile_ind;
 
@@ -380,8 +388,53 @@ static void do_flip()
     }
 }
 
-void bmp_do_hblank_process()
-{
+void bmp_do_hblank_process_vertical() {
+    // vborder low
+    if (phase == 0)
+    {
+        const u16 vcnt = GET_VCOUNTER;
+        const u16 scrh = screenHeight;
+		
+		
+		const u16 vborder = (scrh - 177) >> 1; 
+        //const u16 vborder = (scrh - BMP_HEIGHT) >> 1; //BMP_HEIGHT) >> 1;
+
+		//KLog_U1("vborder: ", vborder);
+		//KLog_U1("vborder 2: ", vborder2);
+        // enable VDP
+        VDP_setEnable(1);
+        // prepare hint to disable VDP and doing blit process
+		//u8 hint_counter = VDP_getHIntCounter();
+		//KLog_U1("next target to disabled: ", (scrh - vborder) - (hint_counter + vcnt + 3));
+        VDP_setHIntCounter((scrh - vborder) - (VDP_getHIntCounter() + vcnt + 3));
+        // update phase
+        phase = 1;
+    }
+    // in active screen
+    else if (phase == 1)
+    {
+        phase = 2;
+    }
+    // vborder high
+    else if (phase == 2)
+    {
+        // disable VDP
+        VDP_setEnable(0);
+        // prepare hint to re enable VDP
+		//KLog_U1("enabled vdp, next target: ", ((screenHeight-144)>>1) - 1);
+		//KLog_U1("enabled vdp, old next target: ", ((screenHeight-BMP_HEIGHT)>>1) - 1);
+        //VDP_setHIntCounter(((screenHeight - 180) >> 1) - 1);
+        VDP_setHIntCounter(((screenHeight - BMP_HEIGHT) >> 1) - 1);
+        //VDP_setHIntCounter(((screenHeight - BMP_VERTICAL_HEIGHT) >> 1) - 1);
+        // update phase
+        phase = 3;
+
+        // flip requested or not complete ? --> start / continu flip
+        //if (state & BMP_STAT_FLIPPING) do_flip();
+    }
+}
+
+void bmp_do_hblank_process_horizontal() {
     // vborder low
     if (phase == 0)
     {
@@ -426,7 +479,9 @@ void bmp_do_hblank_process()
     }
 }
 
-void bmp_reset_vertical(VoidCallback *vintcallback) {
+void do_vint_flip();
+
+void bmp_reset_vertical() {
     // better to disable ints here
     // FIXME: for some reason disabling interrupts generally break BMP init :-/
 //    SYS_disableInts();
@@ -486,20 +541,20 @@ void bmp_reset_vertical(VoidCallback *vintcallback) {
     VDP_setVerticalScroll(bmp_plane, 0);
 	
     // prepare hint for extended blank on next frame
-    VDP_setHIntCounter(((screenHeight - BMP_HEIGHT) >> 1) - 1);
+    VDP_setHIntCounter(((screenHeight - BMP_VERTICAL_HEIGHT) >> 1) - 1);
     // enabled bitmap interrupt processing
     
     //HIntProcess |= PROCESS_BITMAP_TASK;
     //VIntProcess |= PROCESS_BITMAP_TASK;
-    SYS_setHIntCallback(bmp_do_hblank_process);
-    SYS_setVIntCallback(vintcallback);
+    SYS_setHIntCallback(bmp_do_hblank_process_vertical);
+    SYS_setVIntCallback(do_vint_flip);
 
     VDP_setHInterrupt(1);
 }
 
 
 
-void bmp_reset(VoidCallback *vintcallback) {
+void bmp_reset_horizontal() {
     // better to disable ints here
     // FIXME: for some reason disabling interrupts generally break BMP init :-/
 //    SYS_disableInts();
@@ -562,13 +617,13 @@ void bmp_reset(VoidCallback *vintcallback) {
     
     //HIntProcess |= PROCESS_BITMAP_TASK;
     //VIntProcess |= PROCESS_BITMAP_TASK;
-    SYS_setHIntCallback(bmp_do_hblank_process);
-    SYS_setVIntCallback(vintcallback);
+    SYS_setHIntCallback(bmp_do_hblank_process_horizontal);
+    SYS_setVIntCallback(bmp_reset_phase);
 
     VDP_setHInterrupt(1);
 }
 
-void bmp_init(u16 double_buffer, VDPPlane plane, u16 palette, u16 priority, u8 vertical, VoidCallback *vintcallback) {
+void bmp_init(u16 double_buffer, VDPPlane plane, u16 palette, u16 priority, u8 vertical) {
     bmp_doublebuffer = double_buffer;
     bmp_plane = plane;
     bmp_pal = palette & 3;
@@ -594,18 +649,24 @@ void bmp_init(u16 double_buffer, VDPPlane plane, u16 palette, u16 priority, u8 v
     bmp_buffer_1 = NULL;
 
     if(vertical) {
-        bmp_reset_vertical(vintcallback);
+        bmp_reset_vertical();
     } else {
-        bmp_reset(vintcallback);
+        bmp_reset_horizontal();
     }
 }
 
 
-void bmp_init_vertical(u16 double_buffer, VDPPlane plane, u16 palette, u16 priority, VoidCallback *vintcallback) {
-    bmp_init(double_buffer, plane, palette, priority, 1, vintcallback);
+vu8 vint_flipping;
+vu8 vint_flip_requested;
+
+void bmp_init_vertical(u16 double_buffer, VDPPlane plane, u16 palette, u16 priority) {
+    
+    vint_flip_requested = 0;
+    vint_flipping = 0;
+    bmp_init(double_buffer, plane, palette, priority, 1);
 }
 void bmp_init_horizontal(u16 double_buffer, VDPPlane plane, u16 palette, u16 priority) {
-    bmp_init(double_buffer, plane, palette, priority, 0, bmp_reset_phase);
+    bmp_init(double_buffer, plane, palette, priority, 0);
 }
 
 
@@ -675,7 +736,6 @@ void bmp_wait_flip_complete()
 {
     while (bmp_has_flip_in_progress());
 }
-
 
 
 
@@ -768,4 +828,140 @@ void bmp_show_fps(u16 float_display) {
 
     // display FPS
     VDP_drawTextBG(bmp_plane, str, 1, y);
+}
+
+
+volatile u32 vram_copy_dst;
+volatile u8* vram_copy_src;
+
+
+volatile u32 in_use_vram_copy_dst;
+volatile u8* in_use_vram_copy_src;
+
+#define FULL_BYTES (SCREEN_WIDTH*SCREEN_HEIGHT)
+#define FULL_WORDS (FULL_BYTES/2)
+#define HALF_WORDS (FULL_WORDS/2)
+#define HALF_BYTES (FULL_BYTES/2)
+#define QUARTER_WORDS (HALF_WORDS/2)
+#define QUARTER_BYTES (HALF_BYTES/2)
+
+u8* bmp_buffer_0;
+u8* bmp_buffer_1;
+
+void after_flip_vscroll_adjustment() {
+    u16 vscr;
+    if(vram_copy_src == bmp_buffer_1) {
+        vscr = (BMP_PLANHEIGHT * 8) / 2;
+    } else {
+        vscr = 0;
+    }
+    VDP_setVerticalScroll(BG_A, vscr);
+}
+
+void copy_quarter_words(u8* src, u32 dst) {
+    DMA_doDma(DMA_VRAM,
+        src,
+        dst,
+        QUARTER_WORDS, 4);
+}
+
+u32 vints = 0;
+void do_vint_flip() {
+    phase = 0;
+    vints++;
+    if(vint_flipping == 1) {
+
+        // not finished
+        // complete second half here
+
+        // second half for framebuffer 0
+        // first half for framebuffer 1
+
+        
+        if(in_use_vram_copy_src == bmp_buffer_0) {
+            // draw second quarter of framebuffer to third quarter of VRAM framebuffer
+
+            copy_quarter_words(
+                (u8*)in_use_vram_copy_src+QUARTER_BYTES, 
+                in_use_vram_copy_dst+HALF_BYTES);
+            copy_quarter_words(
+                (u8*)in_use_vram_copy_src+QUARTER_BYTES + HALF_BYTES,
+                in_use_vram_copy_dst+2+HALF_BYTES);
+            //copy_quarter_words(
+            //    (u8*)in_use_vram_copy_src+QUARTER_BYTES,
+            //    in_use_vram_copy_dst+2+HALF_BYTES);
+        } else {
+            copy_quarter_words( 
+                (u8*)in_use_vram_copy_src, 
+                in_use_vram_copy_dst);
+            //copy_quarter_words(
+            //    (u8*)in_use_vram_copy_src,
+            //    in_use_vram_copy_dst+2);
+            copy_quarter_words(
+                (u8*)in_use_vram_copy_src+HALF_BYTES,
+                in_use_vram_copy_dst+2);
+        }
+        
+
+        after_flip_vscroll_adjustment();
+
+        vint_flipping = 0;
+    } else if(vint_flip_requested) {
+        vint_flipping = 1;
+        vint_flip_requested = 0;
+        in_use_vram_copy_dst = vram_copy_dst;
+        in_use_vram_copy_src = vram_copy_src;
+
+
+        // first half for framebuffer 1
+        // second half for framebuffer 0
+        if(in_use_vram_copy_src == bmp_buffer_0) {
+            copy_quarter_words(
+                (u8*)in_use_vram_copy_src, 
+                in_use_vram_copy_dst);
+            //copy_quarter_words(
+            //    (u8*)in_use_vram_copy_src,
+            //    in_use_vram_copy_dst+2);
+            copy_quarter_words(
+                (u8*)in_use_vram_copy_src+HALF_BYTES,
+                in_use_vram_copy_dst+2);
+        } else { 
+            copy_quarter_words(
+                (u8*)in_use_vram_copy_src+QUARTER_BYTES, 
+                in_use_vram_copy_dst+HALF_BYTES);
+            //copy_quarter_words(
+            //    (u8*)in_use_vram_copy_src+QUARTER_BYTES, 
+            //    in_use_vram_copy_dst+2+HALF_BYTES);
+            copy_quarter_words(
+                (u8*)in_use_vram_copy_src+QUARTER_BYTES+HALF_BYTES,
+                in_use_vram_copy_dst+2+HALF_BYTES);
+        }
+    }
+
+
+}
+
+
+#define FB0MIDDLEINDEX (BMP_BASETILEINDEX + (BMP_CELLWIDTH/2 * BMP_CELLHEIGHT))
+#define FB0MIDDLE (FB0MIDDLEINDEX*32)
+
+void request_flip() {
+    while(vint_flip_requested || vint_flipping) {
+        // vblank is behind one request
+        // wait until it has started, and then we can safely flip to the next framebuffer
+        //return;
+    }
+
+    if(bmp_buffer_write == bmp_buffer_0) {
+        vram_copy_src = bmp_buffer_0;
+        vram_copy_dst = BMP_FB0TILE;
+        bmp_buffer_write = bmp_buffer_1;
+        bmp_buffer_read = bmp_buffer_0;
+    } else {
+        vram_copy_src = bmp_buffer_1;
+        vram_copy_dst = FB0MIDDLE; 
+        bmp_buffer_write = bmp_buffer_0;
+        bmp_buffer_read = bmp_buffer_1;
+    }
+    vint_flip_requested = 1;
 }

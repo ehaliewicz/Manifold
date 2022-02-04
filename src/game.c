@@ -1,5 +1,5 @@
 #include <genesis.h>
-#include "bmp.h"
+#include "my_bmp.h"
 #include "cart_ram.h"
 #include "collision.h"
 #include "colors.h"
@@ -65,7 +65,6 @@ void calc_movement_speeds() {
 int cur_frame;
 
 
-u32 vints = 0;
 void showFPS(u16 float_display)
 {
     char str[32];
@@ -94,142 +93,6 @@ void showFPS(u16 float_display)
 }
 
 
-
-volatile u32 vram_copy_dst;
-volatile u8* vram_copy_src;
-
-vu8 vint_flipping;
-vu8 vint_flip_requested;
-
-volatile u32 in_use_vram_copy_dst;
-volatile u8* in_use_vram_copy_src;
-
-#define FULL_BYTES (SCREEN_WIDTH*SCREEN_HEIGHT)
-#define FULL_WORDS (FULL_BYTES/2)
-#define HALF_WORDS (FULL_WORDS/2)
-#define HALF_BYTES (FULL_BYTES/2)
-#define QUARTER_WORDS (HALF_WORDS/2)
-#define QUARTER_BYTES (HALF_BYTES/2)
-
-
-
-
-void after_flip_vscroll_adjustment() {
-    u16 vscr;
-    if(vram_copy_src == bmp_buffer_1) {
-        vscr = (BMP_PLANHEIGHT * 8) / 2;
-    } else {
-        vscr = 0;
-    }
-    VDP_setVerticalScroll(BG_A, vscr);
-}
-
-void copy_quarter_words(u8* src, u32 dst) {
-    DMA_doDma(DMA_VRAM,
-        src,
-        dst,
-        QUARTER_WORDS, 4);
-}
-
-void do_vint_flip() {
-    bmp_reset_phase();
-    vints++;
-    if(vint_flipping == 1) {
-
-        // not finished
-        // complete second half here
-
-        // second half for framebuffer 0
-        // first half for framebuffer 1
-
-        
-        if(in_use_vram_copy_src == bmp_buffer_0) {
-            // draw second quarter of framebuffer to third quarter of VRAM framebuffer
-
-            copy_quarter_words(
-                (u8*)in_use_vram_copy_src+QUARTER_BYTES, 
-                in_use_vram_copy_dst+HALF_BYTES);
-            copy_quarter_words(
-                (u8*)in_use_vram_copy_src+QUARTER_BYTES + HALF_BYTES,
-                in_use_vram_copy_dst+2+HALF_BYTES);
-            //copy_quarter_words(
-            //    (u8*)in_use_vram_copy_src+QUARTER_BYTES,
-            //    in_use_vram_copy_dst+2+HALF_BYTES);
-        } else {
-            copy_quarter_words( 
-                (u8*)in_use_vram_copy_src, 
-                in_use_vram_copy_dst);
-            //copy_quarter_words(
-            //    (u8*)in_use_vram_copy_src,
-            //    in_use_vram_copy_dst+2);
-            copy_quarter_words(
-                (u8*)in_use_vram_copy_src+HALF_BYTES,
-                in_use_vram_copy_dst+2);
-        }
-        
-
-        after_flip_vscroll_adjustment();
-
-        vint_flipping = 0;
-    } else if(vint_flip_requested) {
-        vint_flipping = 1;
-        vint_flip_requested = 0;
-        in_use_vram_copy_dst = vram_copy_dst;
-        in_use_vram_copy_src = vram_copy_src;
-
-
-        // first half for framebuffer 1
-        // second half for framebuffer 0
-        if(in_use_vram_copy_src == bmp_buffer_0) {
-            copy_quarter_words(
-                (u8*)in_use_vram_copy_src, 
-                in_use_vram_copy_dst);
-            //copy_quarter_words(
-            //    (u8*)in_use_vram_copy_src,
-            //    in_use_vram_copy_dst+2);
-            copy_quarter_words(
-                (u8*)in_use_vram_copy_src+HALF_BYTES,
-                in_use_vram_copy_dst+2);
-        } else { 
-            copy_quarter_words(
-                (u8*)in_use_vram_copy_src+QUARTER_BYTES, 
-                in_use_vram_copy_dst+HALF_BYTES);
-            //copy_quarter_words(
-            //    (u8*)in_use_vram_copy_src+QUARTER_BYTES, 
-            //    in_use_vram_copy_dst+2+HALF_BYTES);
-            copy_quarter_words(
-                (u8*)in_use_vram_copy_src+QUARTER_BYTES+HALF_BYTES,
-                in_use_vram_copy_dst+2+HALF_BYTES);
-        }
-    }
-
-
-}
-
-
-#define FB0MIDDLEINDEX (BMP_BASETILEINDEX + (BMP_CELLWIDTH/2 * BMP_CELLHEIGHT))
-#define FB0MIDDLE (FB0MIDDLEINDEX*32)
-
-void request_flip() {
-    while(vint_flip_requested || vint_flipping) {
-        // vblank is behind one request
-        // wait until it has started, and then we can safely flip to the next framebuffer
-        //return;
-    }
-
-    if(bmp_buffer_write == bmp_buffer_0) {
-        vram_copy_src = bmp_buffer_0;
-        vram_copy_dst = BMP_FB0TILE;
-        bmp_buffer_write = bmp_buffer_1;
-        bmp_buffer_read = bmp_buffer_0;
-    } else {
-        vram_copy_src = bmp_buffer_1;
-        vram_copy_dst = FB0MIDDLE; 
-        bmp_buffer_write = bmp_buffer_0;
-        bmp_buffer_read = bmp_buffer_0;
-    }
-    vint_flip_requested = 1;
-}
 
 
 void draw_3d_view(u32 cur_frame) {
@@ -344,7 +207,6 @@ void handle_input() {
             }
         }
     }   
-
 
 
     if(joy_button_pressed(BUTTON_DOWN)) {   
@@ -514,8 +376,6 @@ void init_game() {
     VDP_fillTileData(0x00, 0x0390, 0x170, 1);
     
     //ram_set(100, 0);
-    vint_flip_requested = 0;
-    vint_flipping = 0;
     
 
     //SPR_init();
@@ -603,7 +463,9 @@ void init_game() {
     
     clear_menu();
 
-    bmp_init_vertical(1, BG_A, PAL1, 0, do_vint_flip);
+    bmp_init_vertical(1, BG_A, PAL1, 0);
+    //bmp_buffer_0 = bmp_buffer_read;
+    //bmp_buffer_1 = bmp_buffer_write;
 
     u16 skybox_gradient_basetile = TILE_ATTR_FULL(PAL3, 0, 0, 0, free_tile_loc);
 	VDP_drawImageEx(BG_B, &skybox_gradient, skybox_gradient_basetile, 4, 4, 0, 1);
@@ -638,7 +500,6 @@ void maybe_set_palette(u16* new_palette) {
 }
 
 game_mode run_game() {
-
 
     u32 start_ticks = getTick();
     //process_all_objects(cur_frame);

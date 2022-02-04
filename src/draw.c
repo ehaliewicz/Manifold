@@ -1,6 +1,6 @@
 #include <genesis.h>
 #include <kdebug.h>
-#include "bmp.h"
+#include "my_bmp.h"
 #include "colors.h"
 #include "clip_buf.h"
 #include "div_lut.h"
