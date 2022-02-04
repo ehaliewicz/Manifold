@@ -1,4 +1,5 @@
 #include <genesis.h>
+#include "bmp.h"
 #include "fire.h"
 #include "game_mode.h"
 #include "graphics_res.h"
@@ -61,12 +62,12 @@ void init_fire_lut() {
 
 
 void start_fire_source() {	
-    u8* ptr = BMP_getWritePointer(0, BASE_FRAMEBUFFER_OFFSET+FIRE_HEIGHT-1);
+    u8* ptr = bmp_get_write_pointer(0, BASE_FRAMEBUFFER_OFFSET+FIRE_HEIGHT-1);
     memset(ptr, 0xFF, 128);
 }
 
 void clear_fire_source() {	
-    u8* ptr = BMP_getWritePointer(0, BASE_FRAMEBUFFER_OFFSET+FIRE_HEIGHT-1);
+    u8* ptr = bmp_get_write_pointer(0, BASE_FRAMEBUFFER_OFFSET+FIRE_HEIGHT-1);
     memset(ptr, 0x00, 128);
 }
 
@@ -98,8 +99,8 @@ void fire_native_quad(u8* src_ptr, u8* dst_ptr, u16* rand_ptr, u8* table_0_ptr, 
 void copy_fire_native(u32* src_ptr, u32* dst_ptr);
 
 void copy_fire_buffer_portion() {
-    u32* src_ptr = (u32*)BMP_getReadPointer(0, BASE_FRAMEBUFFER_OFFSET);
-    u32* dst_ptr = (u32*)BMP_getWritePointer(0, BASE_FRAMEBUFFER_OFFSET);
+    u32* src_ptr = (u32*)bmp_get_read_pointer(0, BASE_FRAMEBUFFER_OFFSET);
+    u32* dst_ptr = (u32*)bmp_get_write_pointer(0, BASE_FRAMEBUFFER_OFFSET);
     copy_fire_native(src_ptr, dst_ptr);
 }
 
@@ -115,8 +116,8 @@ void spread_and_draw_fire_byte() {
     }
 
     
-    u8* src_ptr = BMP_getReadPointer(0,  BASE_FRAMEBUFFER_OFFSET+1); //&fire_buf[FIRE_WIDTH];
-    u8* dst_ptr = BMP_getWritePointer(0,  BASE_FRAMEBUFFER_OFFSET+0); //&fire_buf[0]-1;
+    u8* src_ptr = bmp_get_read_pointer(0,  BASE_FRAMEBUFFER_OFFSET+1); //&fire_buf[FIRE_WIDTH];
+    u8* dst_ptr = bmp_get_write_pointer(0,  BASE_FRAMEBUFFER_OFFSET+0); //&fire_buf[0]-1;
 
 
     u16* rptr = rands;  
@@ -174,7 +175,7 @@ void init_fire() {
     DMA_setBufferSize(2048);
     MEM_pack();    
 
-	BMP_init(0, BG_A, PAL1, 0, 0);
+	bmp_init_horizontal(0, BG_A, PAL1, 0);
 
 
 
@@ -182,7 +183,7 @@ void init_fire() {
 
 
 	start_fire_source();
-	BMP_setBufferCopy(0);
+	//BMP_setBufferCopy(0);
 	reset_scroll();
 
 	VDP_setPalette(PAL1, fire_cols);
@@ -199,13 +200,15 @@ void init_fire() {
 int end = 0;
 
 game_mode run_fire() {
-    BMP_showFPS(1);
+    bmp_show_fps(1);
     fire_frame++;
     if(fire_running) {
 
         spread_and_draw_fire_byte();
-        BMP_flipPartial(1, 12, 0);
-        BMP_waitWhileFlipRequestPending();
+        bmp_flip_partial(1, 12);
+        //BMP_flipPartial(1, 12);
+        bmp_wait_while_flip_request_pending();
+        //BMP_waitWhileFlipRequestPending();
         copy_fire_buffer_portion();
     }
 
@@ -235,8 +238,8 @@ game_mode run_fire() {
 
     if(end == 1) {
         fire_running = 0;
-        BMP_clear();
-        BMP_flipPartial(0, 12, 0);
+        bmp_clear();
+        bmp_flip_partial(0, 12);
         end = 2;
     } else if (end == 2) {
         return MAIN_MENU;
@@ -247,7 +250,7 @@ game_mode run_fire() {
 
 void cleanup_fire() {
     MEM_free(lookup_table_base);
-    BMP_end();
+    bmp_end();
     VDP_clearPlane(BG_B, 1);
     MEM_pack();
 }

@@ -1,4 +1,5 @@
 #include <genesis.h>
+#include "bmp.h"
 #include "cart_ram.h"
 #include "collision.h"
 #include "colors.h"
@@ -20,6 +21,7 @@
 #include "portal.h"
 #include "portal_map.h"
 #include "sector.h"
+#include "sys.h"
 
 object_pos cur_player_pos;
 
@@ -109,6 +111,9 @@ volatile u8* in_use_vram_copy_src;
 #define QUARTER_WORDS (HALF_WORDS/2)
 #define QUARTER_BYTES (HALF_BYTES/2)
 
+
+
+
 void after_flip_vscroll_adjustment() {
     u16 vscr;
     if(vram_copy_src == bmp_buffer_1) {
@@ -127,6 +132,7 @@ void copy_quarter_words(u8* src, u32 dst) {
 }
 
 void do_vint_flip() {
+    bmp_reset_phase();
     vints++;
     if(vint_flipping == 1) {
 
@@ -225,10 +231,11 @@ void request_flip() {
     vint_flip_requested = 1;
 }
 
+
 void draw_3d_view(u32 cur_frame) {
 
     if(JOY_readJoypad(JOY_1) & BUTTON_A) {
-        BMP_vertical_clear();
+        bmp_vertical_clear();
     }
     // clear clipping buffers
     clear_2d_buffers();
@@ -496,6 +503,8 @@ u16 free_tile_loc = 0x390;
 
 selected_level init_load_level = SLIME_ROOM;
 
+
+
 void init_game() {
     copy_texture_tables();
     
@@ -519,7 +528,7 @@ void init_game() {
     //SPR_update();
 
     //XGM_stopPlay();
-    SYS_setVIntCallback(do_vint_flip);
+    //SYS_setVIntCallback(do_vint_flip);
     VDP_setVerticalScroll(BG_B, 0);
     
     #ifdef H32_MODE
@@ -594,7 +603,7 @@ void init_game() {
     
     clear_menu();
 
-    BMP_init(1, BG_A, PAL1, 0, 1);
+    bmp_init_vertical(1, BG_A, PAL1, 0, do_vint_flip);
 
     u16 skybox_gradient_basetile = TILE_ATTR_FULL(PAL3, 0, 0, 0, free_tile_loc);
 	VDP_drawImageEx(BG_B, &skybox_gradient, skybox_gradient_basetile, 4, 4, 0, 1);
@@ -662,7 +671,7 @@ game_mode run_game() {
 
 
 void cleanup_game() { 
-    BMP_end();
+    bmp_end();
     //SPR_releaseSprite(shotgun_spr);
     //SPR_end();
     MEM_free(sector_centers);

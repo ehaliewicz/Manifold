@@ -13,6 +13,8 @@ extern u32 last_frame_ticks;
 extern u16 rot_speed;
 extern u32 move_speed;
 
+extern u8* bmp_buffer_0;
+extern u8* bmp_buffer_1;
 
 extern Vect2D_f32 *sector_centers;
 
