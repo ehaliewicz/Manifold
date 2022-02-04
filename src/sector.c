@@ -202,31 +202,32 @@ void run_flash(u16 sect_idx, s16* params) {
 
 void run_sector_group_processes() {
     for(int sect_group = 0; sect_group < cur_portal_map->num_sector_groups; sect_group++) {
+        run_sector_group_process(sect_group);
+    }
+}
 
-        u8 typ = cur_portal_map->sector_group_types[sect_group];
-        s16* params = &live_sector_group_parameters[sect_group<<NUM_SECTOR_PARAMS_SHIFT];
+void run_sector_group_process(u16 sect_group) {
+    u8 typ = cur_portal_map->sector_group_types[sect_group];
+    s16* params = &live_sector_group_parameters[sect_group<<NUM_SECTOR_PARAMS_SHIFT];
 
-        switch(typ) {
-            case NO_TYPE:
-                continue;
-
-            case DOOR: do {
-                run_door(sect_group, params);
-            } while(0);
+    switch(typ) {
+        case NO_TYPE:
             break;
 
-            case FLASHING: do {
-                run_flash(sect_group, params);  
-            } while(0);
+        case DOOR: do {
+            run_door(sect_group, params);
+        } while(0);
             break;
 
-            case LIFT: do {
-                run_lift(sect_group, params);
-            } while(0);
+        case FLASHING: do {
+            run_flash(sect_group, params);  
+        } while(0);
             break;
 
+        case LIFT: do {
+            run_lift(sect_group, params);
+        } while(0);
             break;
-        }
     }
 }
 
