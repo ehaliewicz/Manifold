@@ -290,6 +290,11 @@ if __name__ == '__main__':
     dark_f = "C:\\Users\\Erik\\code\\genesis\\DOOM\\res\\textures\\KEY.png"
     name = "key"
 
+    norm_f = "C:\\Users\\Erik\\code\\genesis\\DOOM\\res\\textures\\KEY_32_32.png"
+    mid_f = "C:\\Users\\Erik\\code\\genesis\\DOOM\\res\\textures\\KEY_32_32.png"
+    dark_f = "C:\\Users\\Erik\\code\\genesis\\DOOM\\res\\textures\\KEY_32_32.png"
+    name = "key_32_32"
+
     gen_mip_image(name, norm_f, mid_f, dark_f)
 
     # gen_tables(512, 64, "C:\\Users\\Erik\\Desktop\\tables.s", "C:\\Users\\Erik\\Desktop\\tables_table.c")
