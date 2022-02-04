@@ -10,5 +10,6 @@ extern const lit_texture door_mid;
 extern lit_texture* textures[5][5];
 
 const u16 raw_key_mid[2048];
+const u16 raw_key_32_32_mid[2048];
 
 #endif
