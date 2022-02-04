@@ -14,6 +14,9 @@ void init_clip_buffer_list() {
     clip_buffers = MEM_alloc(sizeof(clip_buf) * NUM_CLIP_BUFS);
     sp = 0;
     clip_buf_list_head = &clip_buffers[0];
+    for(int i = 0; i < NUM_CLIP_BUFS; i++) {
+        clip_buffers[i].id = i;
+    }
 }
 
 void free_clip_buffer_list() {
@@ -31,7 +34,11 @@ clip_buf* alloc_clip_buffer() {
 
 
 void free_clip_buffer(clip_buf* buf) {
-    if(&(clip_buffers[--sp]) != buf) {
-        die("Freed wrong clip buffer!");
+    clip_buf* freed = &clip_buffers[--sp];
+
+    if(freed != buf) {
+        char sbuf[32];
+        sprintf("Freed clip buffer %i but expected %i", buf->id, freed->id);
+        die(sbuf);
     }
 }

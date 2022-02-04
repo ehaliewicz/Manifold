@@ -12,6 +12,7 @@ typedef struct clip_buf clip_buf;
 struct clip_buf {
     u8 y_clip_buffer[128];
     u8 drawn_buffer[64]; 
+    u8 id;
 };
 
 
