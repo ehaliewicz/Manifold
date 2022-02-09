@@ -4,6 +4,7 @@
 #include "colors.h"
 #include "common.h"
 #include "config.h"
+#include "counter.h"
 #include "debug.h"
 #include "div_lut.h"
 #include "ball.h"
@@ -60,7 +61,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
     if(depth >= MAX_DEPTH) {
         return;
     }
-    portal_map* map = (portal_map*)cur_portal_map;
+    portal_map* map = cur_portal_map;
 
     // if this sector has been visited 32 times, or is already being currently rendered, skip it
     if(sector_visited_cache[sector] & 0b1) { //} & 0b101) { //0x21) {
@@ -153,7 +154,6 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
 
         vertex v1 = map->vertexes[old_prev_v2_idx];
         vertex v2 = map->vertexes[v2_idx];
-        u32 wall_len = getApproximatedDistance(v2.x - v1.x, v2.y - v1.y);
 
         volatile Vect2D_s16 trans_v1;
 
@@ -168,7 +168,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
 
         prev_v2_idx = v2_idx;
 
-
+        
         normal_quadrant normal_dir = map->wall_norm_quadrants[portal_idx];
 
         u8 backfacing = 0;
@@ -202,12 +202,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
         }
 
         if(backfacing) {
-            #ifdef DEBUG_PORTAL_CLIP
-            pre_transform_backfacing_walls++;
-            if(is_portal) {
-                KLog_S1("pre-transform portal cull: ", portal_idx);
-            }
-            #endif
+            inc_counter(COARSE_BACKFACE_CULL_COUNTER, 1);
             continue;
         } else {
         }
@@ -222,6 +217,19 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
         volatile Vect2D_s16 trans_v2 = transform_map_vert_16(v2.x, v2.y);
         prev_transformed_vert = trans_v2;
 
+        // reverse transform frustum lines
+
+        u8 frustum_culled_portal;
+        if(!within_frustum(trans_v1.x, trans_v1.y>>TRANS_Z_FRAC_BITS, trans_v2.x, trans_v2.y>>TRANS_Z_FRAC_BITS)) {
+            //if(is_portal) {
+            //    goto dont_skip;
+            //}
+            continue;
+        }
+        dont_skip:;
+
+        u32 wall_len = getApproximatedDistance(v2.x - v1.x, v2.y - v1.y);
+
         texmap_params tmap_info = {};
         clip_result clipped = clip_map_vertex_16(&trans_v1, &trans_v2, &tmap_info, wall_len);
 
@@ -231,6 +239,8 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
         s16 neighbor_ceil_height;
 
         if(clipped == OFFSCREEN) {
+            
+            //inc_counter(NEAR_Z_CULL_COUNTER, 1);
             if(sector == src_sector && is_portal) {
                 #ifdef DEBUG_PORTAL_CLIP
                 if(is_portal) {
@@ -289,6 +299,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
             continue;
         }
 
+        //KLog("potentially on-screen");
         s16 trans_v1_z_fix = trans_v1.y;
         s32 trans_v1_z_int = trans_v1_z_fix>>TRANS_Z_FRAC_BITS;
         s16 trans_v2_z_fix = trans_v2.y;
@@ -303,6 +314,8 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
             KLog("debug project v2 x");
         }
         s16 x2 = project_and_adjust_x(trans_v2.x, z_recip_v2);
+        //KLog_S2("px1: ", x1, "px2: ", x2);
+
         s16 beginx = x1;
         if(beginx <= window_min) {
             beginx = window_min;
@@ -315,57 +328,23 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
 
 
         if (x1 > window_max) {
-                #ifdef DEBUG_PORTAL_CLIP
-                walls_frustum_culled++;
-                if(is_portal) {
-                    KLog_S1("portal right frustum culled: ", portal_idx);
-                }
-                #endif
                 if(is_portal && clipped == LEFT_CLIPPED && x2 >= window_min) {
-                    #ifdef DEBUG_PORTAL_CLIP
-                        KLog_S1("portal right frustum culled but still enqueued: ", portal_idx);
-                    #endif
                     visit_graph(src_sector, portal_sector, window_min, endx, cur_frame, depth+1);
                 }
                 continue;
             } else if (x2 <= window_min) {
-                #ifdef DEBUG_PORTAL_CLIP
-                    walls_frustum_culled++;
-                    if(is_portal) {
-                        KLog_S1("portal left frustum culled: ", portal_idx);
-                    }
-                #endif
                 if(is_portal && clipped == RIGHT_CLIPPED && x1 < window_max) {
-                    #ifdef DEBUG_PORTAL_CLIP
-                        KLog_S2("portal left frustum culled but still enqueued: ", portal_idx, " to sector: ", portal_sector);
-                    #endif
                     visit_graph(src_sector, portal_sector, beginx, window_max, cur_frame, depth+1);
                 }
 
                 continue;
             } else {
-                #ifdef DEBUG_PORTAL_CLIP
-                if(is_portal) {
-                    KLog_S2("portal not frustum culled: ", portal_idx, " to sector: ", portal_sector);
-                }
-                #endif
             }
 
         if(x1 >= x2) {
-            #ifdef DEBUG_PORTAL_CLIP
-            post_project_backfacing_walls++;
-            if(is_portal) {
-                KLog_S1("portal backface culled: ", portal_idx);
-                KLog_S2("coords x1: ", x1, "x2: ", x2);
-            }
-            #endif
+            //inc_counter(POST_PROJ_BACKFACE_CULL_COUNTER, 1);
             continue;
         } else {
-            #ifdef DEBUG_PORTAL_CLIP
-            if(is_portal) {
-                KLog_S1("portal not backface culled: ", portal_idx);
-            }
-            #endif
         }
 
         int recur = 0;
@@ -553,7 +532,6 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
 
                draw_solid_color_wall(
                    x1, x1_ytop, x1_ybot, x2, x2_ytop, x2_ybot,
-                    trans_v1_z_fix, trans_v2_z_fix, 
                     z_recip_v1, z_recip_v2, 
                     window_min, window_max,
                     light_level, wall_col,
@@ -580,7 +558,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
                     draw_wall(x1, x1_ytop, x1_ybot, x2, x2_ytop, x2_ybot,
                                 trans_v1_z_fix, trans_v2_z_fix,
                                 z_recip_v1, z_recip_v2,
-                                window_min, window_max,
+                                window_min, window_max, light_level,
                                 &tmap_info,
                                 &floor_params, &ceil_params);
                 }
@@ -671,7 +649,7 @@ void copy_clipping_state_to_buffer() {
 */
 
 void pvs_scan(u16 src_sector, s16 window_min, s16 window_max, u32 cur_frame) {
-    portal_map* map = (portal_map*)cur_portal_map;
+    portal_map* map = cur_portal_map;
     u16 raw_pvs_offset = map->pvs[src_sector<<PVS_SHIFT];
     u16 num_sect_pvs_groups = map->pvs[(src_sector<<PVS_SHIFT)+1];
 
@@ -719,16 +697,21 @@ void pvs_scan(u16 src_sector, s16 window_min, s16 window_max, u32 cur_frame) {
             vertex v1 = map->vertexes[v1_idx];
             vertex v2 = map->vertexes[v2_idx];
 
-            u32 wall_len = getApproximatedDistance(v2.x - v1.x, v2.y - v1.y);
             Vect2D_s16 trans_v1 = transform_map_vert_16(v1.x, v1.y);
             Vect2D_s16 trans_v2 = transform_map_vert_16(v2.x, v2.y);
 
+            if(!within_frustum(trans_v1.x, trans_v1.y>>TRANS_Z_FRAC_BITS, trans_v2.x, trans_v2.y>>TRANS_Z_FRAC_BITS)) {
+                continue;
+            }
 
+            //KLog("potentially on-screen");
             texmap_params tmap_info = {};
+            u32 wall_len = getApproximatedDistance(v2.x - v1.x, v2.y - v1.y);
 
             clip_result clipped = clip_map_vertex_16(&trans_v1, &trans_v2, &tmap_info, wall_len);
 
             if(clipped == OFFSCREEN) {
+                //inc_counter(NEAR_Z_CULL_COUNTER, 1);
                 continue;
             }
 
@@ -739,6 +722,19 @@ void pvs_scan(u16 src_sector, s16 window_min, s16 window_max, u32 cur_frame) {
 
             s16 x1 = project_and_adjust_x(trans_v1.x, z_recip_v1);
             s16 x2 = project_and_adjust_x(trans_v2.x, z_recip_v2);
+            //KLog_S2("px1: ", x1, "px2: ", x2);
+
+            
+            if(x1 > window_max) {
+                continue;
+            } else if (x2 <= window_min) {
+                continue;
+            }
+
+            if(x1 >= x2) {
+                //inc_counter(POST_PROJ_BACKFACE_CULL_COUNTER, 1);
+                continue;
+            }
 
             s16 x1_ytop, x1_ybot;
             s16 x2_ytop, x2_ybot;
@@ -750,23 +746,14 @@ void pvs_scan(u16 src_sector, s16 window_min, s16 window_max, u32 cur_frame) {
             x1_ytop = project_and_adjust_y_fix(ceil_height, z_recip_v1);
             x2_ytop = project_and_adjust_y_fix(ceil_height, z_recip_v2);
 
-            if(x1 > window_max) {
-                continue;
-            } else if (x2 <= window_min) {
-                continue;
-            }
-
-            if(x1 >= x2) {
-                continue;
-            }
 
             u8 tex_idx = map->wall_colors[(portal_idx<<WALL_COLOR_NUM_PARAMS_SHIFT)+WALL_TEXTURE_IDX];
-            u8 is_solid_color = map->wall_colors[(portal_idx<<WALL_COLOR_NUM_PARAMS_SHIFT)+WALL_SOLID_COLOR_IDX];
-            u8 wall_col = tex_idx;
-            if(!is_solid_color) {
+            //u8 is_solid_color = map->wall_colors[(portal_idx<<WALL_COLOR_NUM_PARAMS_SHIFT)+WALL_SOLID_COLOR_IDX];
+            //u8 wall_col = tex_idx;
+            //if(!is_solid_color) {
                 lit_texture *tex = textures[tex_idx][light_level+2];
                 tmap_info.tex = tex;
-            }
+            //}
  
 
             if(is_portal) {
@@ -852,7 +839,7 @@ void pvs_scan(u16 src_sector, s16 window_min, s16 window_max, u32 cur_frame) {
                     x1, x1_ytop, x1_ybot,
                     x2, x2_ytop, x2_ybot,
                     trans_v1_z_fix, trans_v2_z_fix, z_recip_v1, z_recip_v2,
-                    window_min, window_max,
+                    window_min, window_max, light_level, 
                     &tmap_info, &floor_params, &ceil_params);
 
                 // update window based on drawn opaque walls for easy out
@@ -880,7 +867,7 @@ void pvs_scan(u16 src_sector, s16 window_min, s16 window_max, u32 cur_frame) {
 
 /*
 void pvs_scan_with_objects(u16 src_sector, s16 window_min, s16 window_max, u32 cur_frame) {
-    portal_map* map = (portal_map*)cur_portal_map;
+    portal_map* map = cur_portal_map;
     u16 raw_pvs_offset = map->pvs[src_sector<<PVS_SHIFT];
     u16 num_sect_pvs_groups = map->pvs[(src_sector<<PVS_SHIFT)+1];
 
