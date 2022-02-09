@@ -23,9 +23,9 @@ void tick_texture();
 
 
 typedef struct {
-    const uint16_t* dark;
-    const uint16_t* mid;
-    const uint16_t* light;
+    const uint16_t* const dark;
+    const uint16_t* const mid;
+    const uint16_t* const light;
 } lit_texture;
 
 typedef struct {
@@ -46,7 +46,7 @@ typedef struct {
     u32 d_u_over_z_dx_23;
 } persp_params;
 
-persp_params calc_perspective(u16 z1_12_4, u16 z2_12_4, u32 left_u_16, u32 right_u_16, s16 dx);
+persp_params calc_perspective(u16 z1_12_4, u16 z2_12_4, u32 left_u_16, u32 right_u_16, u16 dx);
 
 #define FAR_MIP_WIDTH 16
 #define FAR_MIP_WIDTH_SHIFT 4
@@ -70,8 +70,7 @@ persp_params calc_perspective(u16 z1_12_4, u16 z2_12_4, u32 left_u_16, u32 right
 //} texture_set;
 
 
-void draw_texture_vertical_line(s16 unclipped_y0, s16 y0, s16 unclipped_y1, s16 y1, u8* col_ptr, u16* tex_column);
-void calc_textures_for_light_level(s8 light_level, lit_texture* lit_tex, u16** dark_tex, u16** mid_tex, u16** light_tex);
-
+void draw_texture_vertical_line(s16 unclipped_y0, u16 y0, s16 unclipped_y1, u8* col_ptr, u16* tex_column);
+void draw_bottom_clipped_texture_vertical_line(s16 unclipped_y0, u16 y0, s16 unclipped_y1, u16 y1, u8* col_ptr, u16* tex_column);
 
 #endif
