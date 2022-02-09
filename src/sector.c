@@ -61,9 +61,10 @@ s16 get_sector_group_ceil_color(u16 sect_group) {
     return live_sector_group_parameters[(sect_group<<NUM_SECTOR_PARAMS_SHIFT) + SECTOR_PARAM_CEIL_COLOR_IDX];
 }
 
-void run_door(u16 sect_group, s16* params) {
+void run_door(s16* params) {
     door_lift_state state = params[SECTOR_PARAM_STATE_IDX];
-    s16 cur_height = get_sector_group_ceil_height(sect_group);
+    s16 cur_height = params[SECTOR_PARAM_CEIL_HEIGHT_IDX];
+        s16 floor_height = params[SECTOR_PARAM_FLOOR_HEIGHT_IDX];
     s16 orig_door_height = params[SECTOR_PARAM_ORIG_HEIGHT_IDX];
 
     switch(state) {
@@ -79,9 +80,9 @@ void run_door(u16 sect_group, s16* params) {
 
         case GOING_UP: do {
             cur_height += 128;
-            set_sector_group_ceil_height(sect_group, cur_height);
+            params[SECTOR_PARAM_CEIL_HEIGHT_IDX] = cur_height;
             if(cur_height >= orig_door_height) {
-                set_sector_group_ceil_height(sect_group, orig_door_height);
+                params[SECTOR_PARAM_CEIL_HEIGHT_IDX] = orig_door_height;
                 params[SECTOR_PARAM_STATE_IDX] = OPEN;
                 params[SECTOR_PARAM_TICKS_LEFT_IDX] = 30;
             }
@@ -100,11 +101,10 @@ void run_door(u16 sect_group, s16* params) {
             break;
 
         case GOING_DOWN: do {
-            s16 floor_height = get_sector_group_floor_height(sect_group);
             cur_height -= 128;
-            set_sector_group_ceil_height(sect_group, cur_height);
+            params[SECTOR_PARAM_CEIL_HEIGHT_IDX] = cur_height;
             if(cur_height <= floor_height) {
-                set_sector_group_ceil_height(sect_group, floor_height);
+                params[SECTOR_PARAM_CEIL_HEIGHT_IDX] = floor_height;
                 params[SECTOR_PARAM_STATE_IDX] = CLOSED;
                 params[SECTOR_PARAM_TICKS_LEFT_IDX] = 30;
             }
@@ -114,10 +114,11 @@ void run_door(u16 sect_group, s16* params) {
 }
 
 
-void run_lift(u16 sect_group, s16* params) {
+void run_lift(s16* params) {
     door_lift_state state = params[SECTOR_PARAM_STATE_IDX];
-    s16 cur_height = get_sector_group_floor_height(sect_group);
-    s16 ceil_height = get_sector_group_ceil_height(sect_group);
+
+    s16 cur_height = params[SECTOR_PARAM_FLOOR_HEIGHT_IDX];
+    s16 ceil_height = params[SECTOR_PARAM_CEIL_HEIGHT_IDX];
     s16 orig_lift_height = params[SECTOR_PARAM_ORIG_HEIGHT_IDX];
     switch(state) {
         case CLOSED: do {
@@ -131,12 +132,11 @@ void run_lift(u16 sect_group, s16* params) {
         break;
 
         case GOING_DOWN: do {
-                s16 cur_height = get_sector_group_floor_height(sect_group);
 
                 cur_height -= 128;
-                set_sector_group_floor_height(sect_group, cur_height);
+                params[SECTOR_PARAM_FLOOR_HEIGHT_IDX] = cur_height;
                 if(cur_height <= orig_lift_height) {
-                        set_sector_group_floor_height(sect_group, orig_lift_height);
+                        params[SECTOR_PARAM_FLOOR_HEIGHT_IDX] = orig_lift_height;
                         params[SECTOR_PARAM_STATE_IDX] = OPEN;
                         params[SECTOR_PARAM_TICKS_LEFT_IDX] = 30;
                 }
@@ -155,9 +155,9 @@ void run_lift(u16 sect_group, s16* params) {
 
         case GOING_UP: do {
                 cur_height += 128;
-                set_sector_group_floor_height(sect_group, cur_height);
+                params[SECTOR_PARAM_FLOOR_HEIGHT_IDX] = cur_height;
                 if(cur_height >= ceil_height) {
-                    set_sector_group_floor_height(sect_group, ceil_height);
+                    params[SECTOR_PARAM_FLOOR_HEIGHT_IDX] = ceil_height;
                     params[SECTOR_PARAM_STATE_IDX] = CLOSED;
                     params[SECTOR_PARAM_TICKS_LEFT_IDX] = 30;
                 }
@@ -167,7 +167,42 @@ void run_lift(u16 sect_group, s16* params) {
 }
 
 
-void run_flash(u16 sect_idx, s16* params) {
+void run_stairs(s16* params) {
+    stair_state state = params[SECTOR_PARAM_STATE_IDX];
+
+    s16 cur_height = params[SECTOR_PARAM_FLOOR_HEIGHT_IDX];
+    s16 orig_stairs_height = params[SECTOR_PARAM_ORIG_HEIGHT_IDX];
+    s16 ticks = params[SECTOR_PARAM_TICKS_LEFT_IDX]++;
+    switch(state) {
+        case STAIRS_LOWERED: do {
+        } while(0);
+            break;
+
+        case STAIRS_RAISING: do {
+                cur_height += 32;
+                //ticks++;
+                //params[SECTOR_PARAM_TICKS_LEFT_IDX] = ticks;
+                params[SECTOR_PARAM_FLOOR_COLOR_IDX] = 3;
+                params[SECTOR_PARAM_FLOOR_HEIGHT_IDX] = cur_height;
+                if(cur_height >= orig_stairs_height) {
+                    params[SECTOR_PARAM_FLOOR_HEIGHT_IDX] = orig_stairs_height;
+                    params[SECTOR_PARAM_STATE_IDX] = STAIRS_RAISED;
+                }
+            } while(0);
+            break;
+        
+
+        case STAIRS_RAISED: do {
+        } while(0);
+        break;
+
+
+
+    }
+}
+
+
+void run_flash(s16* params) {
     s8 light_level = params[SECTOR_PARAM_LIGHT_IDX];
     s8 orig_light_level = params[SECTOR_PARAM_STATE_IDX];
     s16 ticks_left = params[SECTOR_PARAM_TICKS_LEFT_IDX];
@@ -200,12 +235,6 @@ void run_flash(u16 sect_idx, s16* params) {
     params[SECTOR_PARAM_STATE_IDX] = orig_light_level;
 }
 
-void run_sector_group_processes() {
-    for(int sect_group = 0; sect_group < cur_portal_map->num_sector_groups; sect_group++) {
-        run_sector_group_process(sect_group);
-    }
-}
-
 void run_sector_group_process(u16 sect_group) {
     u8 typ = cur_portal_map->sector_group_types[sect_group];
     s16* params = &live_sector_group_parameters[sect_group<<NUM_SECTOR_PARAMS_SHIFT];
@@ -215,19 +244,29 @@ void run_sector_group_process(u16 sect_group) {
             break;
 
         case DOOR: do {
-            run_door(sect_group, params);
+            run_door(params);
         } while(0);
             break;
 
         case FLASHING: do {
-            run_flash(sect_group, params);  
+            run_flash(params);  
         } while(0);
             break;
 
         case LIFT: do {
-            run_lift(sect_group, params);
+            run_lift(params);
         } while(0);
             break;
+        case STAIRS: do {
+            run_stairs(params);
+        } while(0);
+        break;
+    }
+}
+
+void run_sector_group_processes() {
+    for(int sect_group = 0; sect_group < cur_portal_map->num_sector_groups; sect_group++) {
+        run_sector_group_process(sect_group);
     }
 }
 
@@ -235,7 +274,7 @@ void run_sector_group_process(u16 sect_group) {
 #define NUM_SECTOR_TRIGGER_TARGETS 7
 #define SECTOR_TRIGGER_SHIFT 3
 
-s16 get_sector_group_trigger_type(u16 sector_group) {
+u16 get_sector_group_trigger_type(u16 sector_group) {
     return cur_portal_map->sector_group_triggers[sector_group<<SECTOR_TRIGGER_SHIFT];
 }
 s16 get_sector_group_trigger_target(u16 sector_group, u8 tgt_idx) {
@@ -261,6 +300,13 @@ void activate_sector_group_enter_trigger(u16 sector_group) {
                 if(tgt_sector_group == -1) { break; }
                 set_sector_group_light_level(tgt_sector_group, 0);
                 
+            }
+            break;
+        case START_STAIRS:
+            for(int i = 0; i < NUM_SECTOR_TRIGGER_TARGETS; i++) {
+                s16 tgt_sector_group = get_sector_group_trigger_target(sector_group, i);
+                if(tgt_sector_group == -1) { break; }
+                set_sector_group_state(tgt_sector_group, STAIRS_RAISING);
             }
             break;
 

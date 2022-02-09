@@ -10,6 +10,7 @@
 #define FLASHING 1
 #define DOOR 2
 #define LIFT 3
+#define STAIRS 4
 
 
 
@@ -20,7 +21,11 @@ typedef enum {
     GOING_DOWN
 } door_lift_state;
 
-
+typedef enum {
+    STAIRS_LOWERED = 0,
+    STAIRS_RAISING = 1,
+    STAIRS_RAISED = 2
+} stair_state;
 
 extern s16* live_sector_group_parameters;
 //extern sector_param* live_sector_parameters;
@@ -45,9 +50,10 @@ typedef enum {
     NO_TRIGGER=0,
     SET_SECTOR_DARK=1,
     SET_SECTOR_LIGHT=2,
+    START_STAIRS=3,
 } trigger_type;
 
-s16 get_sector_group_trigger_type(u16 sect_group);
+u16 get_sector_group_trigger_type(u16 sect_group);
 s16 get_sector_group_trigger_target(u16 sect_group, u8 tgt_idx);
 
 void activate_sector_group_enter_trigger(u16 sect_group);
