@@ -63,7 +63,7 @@ static const s16 sector_group_params[NUM_SECTOR_PARAMS*17] = {
     
     -2, 0, 0, 0,   0<<4, 100<<4, RED_IDX,  LIGHT_RED_IDX,
 
-    -2, 0, 0, 0,   0<<4, 100<<4, TRANSPARENT_IDX,  RED_IDX,
+    -2, 0, 0, 0,   0<<4, 100<<4, TRANSPARENT_IDX,  BLUE_IDX,
 };
 
 static const u16 sector_group_triggers[17*8] = {
