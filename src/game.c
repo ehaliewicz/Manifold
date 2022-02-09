@@ -2,9 +2,10 @@
 #include "my_bmp.h"
 #include "cart_ram.h"
 #include "collision.h"
+#include "clip_buf.h"
 #include "colors.h"
 #include "config.h"
-#include "clip_buf.h"
+#include "counter.h"
 #include "debug.h"
 #include "game.h"
 #include "game_mode.h"
@@ -65,7 +66,7 @@ void calc_movement_speeds() {
 int cur_frame;
 
 
-void showFPS(u16 float_display)
+void showStats(u16 float_display)
 {
     char str[32];
     const u16 y = 5;
@@ -84,12 +85,37 @@ void showFPS(u16 float_display)
     // display FPS
     VDP_drawTextBG(BG_B, str, 1, y);
 
-    sprintf(str, "%i ", vints);
-    vints = 0;
-    VDP_drawTextBG(BG_B, str, 1, 6); 
+    //sprintf(str, "%i ", vints);
+    //vints = 0;
+    //VDP_drawTextBG(BG_B, str, 1, 6); 
 
-    sprintf(str, "s: %i ", cur_player_pos.cur_sector);
+    //sprintf(str, "s: %i ", cur_player_pos.cur_sector);
+    //VDP_drawTextBG(BG_B, str, 1, 7);
+
+    //sprintf(str, "sg: %i", sector_group(cur_player_pos.cur_sector, cur_portal_map));
+    //VDP_drawTextBG(BG_B, str, 1, 8);
+
+    
+    
+    sprintf(str, "coarse back. cull: %i ", get_counter(COARSE_BACKFACE_CULL_COUNTER));
     VDP_drawTextBG(BG_B, str, 1, 7);
+    reset_counter(COARSE_BACKFACE_CULL_COUNTER);
+    /*
+    sprintf(str, "frus. cull: %i ", get_counter(PRE_PROJ_FRUSTUM_CULL_COUNTER));
+    VDP_drawTextBG(BG_B, str, 1, 8);
+    reset_counter(PRE_PROJ_FRUSTUM_CULL_COUNTER);
+    
+    sprintf(str, "near cull: %i ", get_counter(NEAR_Z_CULL_COUNTER));
+    VDP_drawTextBG(BG_B, str, 1, 9);
+    reset_counter(NEAR_Z_CULL_COUNTER);
+
+    
+    sprintf(str, "post-proj. back. cull: %i ", get_counter(POST_PROJ_BACKFACE_CULL_COUNTER));
+    VDP_drawTextBG(BG_B, str, 1, 10);
+    reset_counter(POST_PROJ_BACKFACE_CULL_COUNTER);
+    */
+
+
 }
 
 
@@ -111,7 +137,7 @@ void draw_3d_view(u32 cur_frame) {
 
 
     // display fps
-    showFPS(1);
+    showStats(1);
 
     // request a flip when vsync process is idle (almost always, as the software renderer is much slower than the framebuffer DMA process)
     request_flip();
@@ -129,12 +155,18 @@ Vect2D_f32 *sector_centers = NULL;
 static int last_pressed_b = 0;
 //u8 do_collision = 0;
 
-int bob_idx;
+int run_bob_idx;
+int wait_idle_bob_idx;
+int idle_bob_idx;
 u8 gun_bob_idx;
-const fix32 bobs[32] = {FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), 
-                        FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), FIX32(0.1), 
-                        FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1),
-                        FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1), FIX32(-0.1)};
+const fix32 bobs[28] = { // 32
+    -1,-2,-3,-4,-5,-6,-7,//-8,
+    //-7,
+    -6,-5,-4,-3,-2,-1,-0,
+    1,2,3,4,5,6,7,//8,
+    //7,
+    6,5,4,3,2,1,0,
+};
 
 
 const Vect2D_s16 gun_bobs[16] = {
@@ -233,15 +265,38 @@ void handle_input() {
             sect_group = sector_group(collision.new_sector, cur_portal_map);
             activate_sector_group_enter_trigger(sect_group);
         }
+     
+        idle_bob_idx = 27;
+        wait_idle_bob_idx = 16;
+
+        run_bob_idx++;
+        if(run_bob_idx >= 28) {
+            run_bob_idx = 0;
+        }
+    } else {
+        run_bob_idx = 27;
+        
+        if(wait_idle_bob_idx == 0) {
+            idle_bob_idx++;
+            if(idle_bob_idx >= 28) {
+                idle_bob_idx = 0;
+            }
+        } else {
+            wait_idle_bob_idx--;
+        }
     }
 
     s16 cur_sector_height = get_sector_group_floor_height(sect_group);
-    cur_player_pos.z = (cur_sector_height<<(FIX32_FRAC_BITS-4)) + FIX32(50);
-    //cur_player_pos.z += bobs[bob_idx>>1]/2;
-    //bob_idx++;
-    //if(bob_idx >= 64) {
-    //    bob_idx = 0;
-    //}
+    cur_player_pos.z = (cur_sector_height<<(FIX32_FRAC_BITS-4)) + FIX32(50);   
+
+    fix32 run_bob_amt = bobs[run_bob_idx] * FIX32(1.5);
+    fix32 idle_bob_amt = bobs[idle_bob_idx] * FIX32(.2);
+
+    cur_player_pos.z += run_bob_amt;
+    cur_player_pos.z += idle_bob_amt;
+    
+    //fix32 bob_amount = (bob_idx>16) ? FIX32(0.7) : FIX32(0.7);
+
 
     u8 move_button = joy_button_pressed(BUTTON_UP) ? BUTTON_UP : (joy_button_pressed(BUTTON_DOWN) ? BUTTON_DOWN : 0);
 
