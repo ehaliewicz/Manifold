@@ -1126,9 +1126,21 @@ typedef enum {
 u8 num_light_levels;
 u8 light_levels[6];
 
-void calculate_light_levels_for_wall(u32 clipped_dx, s32 inv_z1, s32 inv_z2, s32 fix_inv_dz_per_dx) {
+void calculate_light_levels_for_wall(u32 clipped_dx, s32 inv_z1, s32 inv_z2, s32 fix_inv_dz_per_dx, s8 light_level) {
     num_light_levels = 0;
+    u8* out_ptr = light_levels;
+    u8 cnt = clipped_dx;
 
+    if(light_level == -2 || light_level == 2) {
+        // z stays the same
+        //output_light_span(cur_light, cnt);
+        *out_ptr++ = MID;
+        *out_ptr++ = cnt; //cur_light;
+        //*out_ptr++ = cnt;
+        num_light_levels = 1;
+
+        return;
+    }
     u8 cur_light;
     s16 cur_inv_z = inv_z1;
     if (cur_inv_z <= FIX_0_16_INV_DARK_DIST) {
@@ -1138,22 +1150,7 @@ void calculate_light_levels_for_wall(u32 clipped_dx, s32 inv_z1, s32 inv_z2, s32
     } else {
         cur_light = LIGHT;
     }
-
-    u8 cnt = clipped_dx;
-    s16 end_inv_z = inv_z2; // + (cnt * fix_inv_dz_per_dx);
-    u8 end_light;
-    if (end_inv_z <= FIX_0_16_INV_DARK_DIST) {
-        end_light = DARK;
-    } else if (end_inv_z <= FIX_0_16_INV_MID_DIST) {
-        end_light = MID;
-    } else {
-        end_light = LIGHT;
-    }
-    
-    //
-    u8* out_ptr = light_levels;
-
-    if(fix_inv_dz_per_dx == 0 || (cur_light == end_light)) {
+    if(fix_inv_dz_per_dx == 0) {
         // z stays the same
         //output_light_span(cur_light, cnt);
         *out_ptr++ = cur_light;
@@ -1164,12 +1161,19 @@ void calculate_light_levels_for_wall(u32 clipped_dx, s32 inv_z1, s32 inv_z2, s32
         return;
     }
 
-
+    s16 end_inv_z = inv_z2; // + (cnt * fix_inv_dz_per_dx);
+    u8 end_light;
+    if (end_inv_z <= FIX_0_16_INV_DARK_DIST) {
+        end_light = DARK;
+    } else if (end_inv_z <= FIX_0_16_INV_MID_DIST) {
+        end_light = MID;
+    } else {
+        end_light = LIGHT;
+    }
 
 
 
     u8 cur_span = 0;
-
 
     while(cnt--) {
         u8 next_light; 

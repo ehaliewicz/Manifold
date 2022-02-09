@@ -42,17 +42,16 @@ void cache_ceil_light_params(s16 rel_ceil_height, u8 ceil_col, s8 light_level, l
 
 void draw_solid_color_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
               s16 x2, s16 x2_ytop, s16 x2_ybot,
-              u16 z1_12_4,     u16 z2_12_4,
               u16 inv_z1, u16 inv_z2,
-              u16 window_min, u16 window_max,
-              u8 wall_color, s8 light_level, 
+              u16 window_min, u16 window_max,  s8 light_level,
+              u8 wall_color, 
               light_params* floor_params, light_params* ceil_params);
 
 void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
               s16 x2, s16 x2_ytop, s16 x2_ybot,
               u16 z1,     u16 z2,
               u16 inv_z1, u16 inv_z2,
-              u16 window_min, u16 window_max,
+              u16 window_min, u16 window_max, s8 light_level, 
               texmap_params* tmap_info, 
               light_params* floor_params, light_params* ceil_params);
 
