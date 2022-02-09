@@ -66,4 +66,7 @@ s16 project_and_adjust_y_fix(s16 y, s16 z_recip);
 
 s16 project_and_adjust_y_fix_c(s16 y, s16 z);
 
+s8 point_sign_int_vert(fix32 x, fix32 y, s16 v1_x, s16 v1_y, s16 v2_x, s16 v2_y);
+u8 within_frustum(s16 x1, s16 y1, s16 x2, s16 y2);
+
 #endif

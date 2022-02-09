@@ -2,6 +2,7 @@
 #include "game.h"
 #include "collision.h"
 #include "level.h"
+#include "math3d.h"
 
 fix32 vxs16(fix16 x0, fix16 y0, fix16 x1, fix16 y1) {
     return x0*y1 - x1*y0;
@@ -16,13 +17,6 @@ fix32 vxs32(fix32 x0, fix32 y0, fix32 x1, fix32 y1) {
 
 #define Overlap(a0,a1,b0,b1) (min(a0,a1) <= max(b0,b1) && min(b0,b1) <= max(a0,a1))
 #define IntersectBox(x0,y0, x1,y1, x2,y2, x3,y3) (Overlap(x0,x1,x2,x3) && Overlap(y0,y1,y2,y3))
-
-s8 point_sign_int_vert(fix32 x, fix32 y, s16 v1_x, s16 v1_y, s16 v2_x, s16 v2_y) {
-    fix32 left = (v2_x-v1_x)*(y-intToFix32(v1_y));
-    fix32 right = (v2_y-v1_y)*(x-intToFix32(v1_x));
-    fix32 res = left - right;
-    return (res > 0 ? 1 : (res < 0 ? -1 : 0));
-}
 
 
 

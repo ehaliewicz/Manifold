@@ -1,4 +1,5 @@
 #include <genesis.h>
+#include "counter.h"
 #include "div_lut.h"
 #include "math3d.h"
 #include "game.h"
@@ -32,8 +33,6 @@ Vect2D_s16 transform_map_vert_16(s16 x, s16 y) {
 */
 
 Vect2D_s16 transform_map_vert_16(s16 x, s16 y) {
-
-    
     s16 tlx = x - playerXInt; // 16-bit integer
     s16 tly = y - playerYInt; // 16-bit integer
 
@@ -42,7 +41,7 @@ Vect2D_s16 transform_map_vert_16(s16 x, s16 y) {
     s16 res_x = rx>>(FIX16_FRAC_BITS);
     s16 res_y = ry>>(FIX16_FRAC_BITS-TRANS_Z_FRAC_BITS); // 12.4
 
-    
+    /*
     if(0) { //if(debug) {
         KLog_S1("playerXInt: ", playerXInt);
         KLog_S1("playerYInt: ", playerYInt);
@@ -58,55 +57,125 @@ Vect2D_s16 transform_map_vert_16(s16 x, s16 y) {
         KLog_S1("res_x int: ", res_x);
         KLog_S1("res_y_fix_4: ", res_y);
     }
-    
+    */
 
     return (Vect2D_s16){.x = res_x, .y = res_y};
 }
 
 
+s8 point_sign_int_vert(fix32 x, fix32 y, s16 v1_x, s16 v1_y, s16 v2_x, s16 v2_y) {
+    fix32 left = (v2_x-v1_x)*(y-intToFix32(v1_y));
+    fix32 right = (v2_y-v1_y)*(x-intToFix32(v1_x));
+    fix32 res = left - right;
+    return (res > 0 ? 1 : (res < 0 ? -1 : 0));
+}
+
+
+s8 sign(s16 ax, s16 ay, s16 bx, s16 by, s16 cx, s16 cy) {
+    s32 p1 = bx-ax;
+    s32 val = ((bx - ax)*(cy - ay) - (by - ay)*(cx - ax));
+    //KLog_S2("ax: ", ax, "ay: ", ay);
+    //KLog_S2("bx: ", bx, "by: ", by);
+    //KLog_S2("cx: ", cx, "cy: ", cy);
+    //KLog_S1("val: ", val);
+    //return val;
+    
+    return (val > 0 ? 1 : (val < 0 ? -1 : 0));
+}
+
+
+s16 sign_left_frustum(s16 cx, s16 cy) {
+    s16 val = (-cy - cx);
+    return val; //(val > 0 ? 1 : (val < 0 ? -1 : 0));
+}
+
+s16 sign_right_frustum(s16 cx, s16 cy) {
+    s16 val = (cy- cx); 
+    return val; //(val > 0 ? 1 : (val < 0 ? -1 : 0));
+}
+
+u8 point_within_frustum(s16 x, s16 y) {
+    u8 within = ((sign(0,0, -1,1, x, y) <= 0) && (sign(0,0,1,1,x,y) >= 0));
+
+    return within;
+}
+
+u8 within_frustum(s16 x1, s16 y1, s16 x2, s16 y2) {
+    //s8 p1_left_sign = sign_left_frustum(x1, y1) <= 0;
+    //if(p1_left_sign) { return 1; }
+    //s8 p1_right_sign = sign_right_frustum(x1,y1) >= 0;
+    //if(p1_right_sign) { return 1; }
+    //s8 p2_left_sign = sign_left_frustum(x2,y2) <= 0;
+    //if(p2_left_sign) { return 1; }
+    //s8 p2_right_sign = sign_right_frustum(x2,y2) >= 0;
+    //if(p2_right_sign) { return 1; }
+    
+    s16 tmp; u8 ret=0;
+    __asm volatile(
+        "move.w %2, %5\t\n\
+         sub.w %1, %5\t\n\
+         bge.b second_half_%=\t\n\
+         move.w %4, %5\t\n\
+         sub.w %3, %5\t\n\
+         bge.b second_half_%=\t\n\
+         bra.b exit_%=\t\n\
+        second_half_%=:\t\n\
+         neg.w %2\t\n\
+         sub.w %1, %2\t\n\
+         ble.b within_%=\t\n\
+         neg.w %4\t\n\
+         sub.w %3, %4\t\n\
+         ble.b within_%=\t\n\
+         bra.b exit_%=\t\n\
+        within_%=:\t\n\
+         moveq #1, %0\t\n\
+        exit_%=:"
+        : "+d" (ret)
+        : "d" (x1), "d" (y1), "d" (x2), "d" (y2), "d" (tmp));
+        
+    inc_counter(PRE_PROJ_FRUSTUM_CULL_COUNTER, ret);
+    return ret;
+}
+
 
 s16 project_and_adjust_x(s16 x, s16 z_recip) {
-    //fix32 rx = trans_map_vert.x;
-    //fix32 rz = trans_map_vert.y;
+
     
-    if(0) { //if(debug) {
-        KLog_S1("x to project: ", x);
-        KLog_S1("z_recip: ", z_recip);
-    }
+    //s16 const2Rx = x; //<<5; //(32 * x);
+
     
-    
-    s16 const2Rx = x; //<<5; //(32 * x);
+    //s16 transX; // = 32;
+    /*
+    __asm volatile(
+        "asl.w #5, %0\t\n\
+        muls.w %1, %0\t\n\
+        swap %0\t\n\
+        add.w #32, %0"
+        : "+d" (x)
+        : "d" (z_recip)
+    );
+    return x;
+    */
+
     __asm volatile(
             "lsl.w #5, %0"
-            : "+d" (const2Rx)
+            : "+d" (x)
     );
-    
-    if(0) { //if(debug) {
-        KLog_S1("rx_5: ", const2Rx);
-    }
-    
-    //s16 const2RxDivZ = const2Rx / z;
-    //s16 z_recip = z_recip_table_16[z];
-    s32 const2RXMulZRecip = const2Rx; // * x_project_z_recip_table[z];
+    s16 const2RXMulZRecip = x;
+
     __asm volatile(
-            "muls.w %1, %0"
+            "muls.w %1, %0\t\n\
+             swap %0"
             :  "+d" (const2RXMulZRecip), "+d" (z_recip) // output
             : // input
     );
 
     
-    if(0) { //if(debug) {
-        KLog_S1("CONST2*rx*(1/z): ", const2RXMulZRecip);
-    }
-    
 
-    s16 transX = 32 + (const2RXMulZRecip>>16);
-    
-    if(0) { //if(debug) {
-        KLog_S1("transX: ", transX);
-    }
+    s16 transX = 32 + const2RXMulZRecip; //(const2RXMulZRecip>>16);
     
     return transX;
+    //return transX;
 }
 
 
