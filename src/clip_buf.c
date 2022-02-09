@@ -38,7 +38,7 @@ void free_clip_buffer(clip_buf* buf) {
 
     if(freed != buf) {
         char sbuf[32];
-        sprintf("Freed clip buffer %i but expected %i", buf->id, freed->id);
+        sprintf(sbuf, "Freed clip buffer %i but expected %i", buf->id, freed->id);
         die(sbuf);
     }
 }
