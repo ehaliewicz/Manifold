@@ -28,12 +28,15 @@ static u8 start_blit_cell;
 #define BMP_PLAN_ADR            (*bmp_plane_addr)
 
 #define BMP_FB0TILEMAP_BASE     BMP_PLAN_ADR
+
 #define BMP_FB1TILEMAP_BASE     (BMP_PLAN_ADR + ((BMP_PLANWIDTH * (BMP_PLANHEIGHT / 2)) * 2))
+
 #define BMP_FBTILEMAP_OFFSET    (((BMP_PLANWIDTH * BMP_CELLYOFFSET) + BMP_CELLXOFFSET) * 2)
 #define GET_YOFFSET             ((bmp_doublebuffer && READ_IS_FB1)?((BMP_PLANHEIGHT / 2) + 4):4)
 
 
-#define BMP_FB1TILEINDEX        (BMP_BASETILEINDEX + (BMP_CELLWIDTH * BMP_CELLHEIGHT / 2))
+// !! this is divided by 2 because our vertical framebuffer buffer #2 reuses half of the tiles of the first framebuffer!
+#define BMP_VERTICAL_FB1TILEINDEX        (BMP_BASETILEINDEX + (BMP_CELLWIDTH * BMP_CELLHEIGHT / 2))
 
 #define READ_IS_FB0             (bmp_buffer_read == bmp_buffer_0)
 #define READ_IS_FB1             (bmp_buffer_read == bmp_buffer_1)
@@ -172,7 +175,7 @@ static void bmp_init_tilemap_vertical(u16 num) {
     else
     {
         addr_tilemap = BMP_FB1TILEMAP_BASE + offset;
-        tile_ind = TILE_ATTR_FULL(bmp_pal, bmp_prio, 0, 0, BMP_FB1TILEINDEX);
+        tile_ind = TILE_ATTR_FULL(bmp_pal, bmp_prio, 0, 0, BMP_VERTICAL_FB1TILEINDEX);
     }
 
     // point to vdp port
@@ -865,7 +868,7 @@ void copy_quarter_words(u8* src, u32 dst) {
         QUARTER_WORDS, 4);
 }
 
-u32 vints = 0;
+u16 vints = 0;
 void do_vint_flip() {
     phase = 0;
     vints++;
