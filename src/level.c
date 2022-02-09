@@ -3,7 +3,7 @@
 #include "sector.h"
 
 //const level* cur_level = NULL;
-const portal_map* cur_portal_map = NULL;
+portal_map* cur_portal_map = NULL;
 
 
  void init_sector_parameters(portal_map* map) {

@@ -3,7 +3,7 @@
 
 #include "portal_map.h"
 
-extern const portal_map* cur_portal_map;
+extern portal_map* cur_portal_map;
 
 
 
