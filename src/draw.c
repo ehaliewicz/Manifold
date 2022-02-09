@@ -1,8 +1,9 @@
 #include <genesis.h>
 #include <kdebug.h>
 #include "my_bmp.h"
-#include "colors.h"
 #include "clip_buf.h"
+#include "colors.h"
+#include "counter.h"
 #include "div_lut.h"
 #include "draw.h"
 #include "game.h"
@@ -148,7 +149,6 @@ void clear_2d_buffers() {
     int cnt = RENDER_WIDTH;
 
     while(cnt--) {
-        //*yclip_ptr_u16++ = val;
         *yclip_ptr++ = 0;
         *yclip_ptr++ = SCREEN_HEIGHT;
         *drawn_buf_ptr++ = 0;
@@ -626,17 +626,14 @@ void draw_masked(s16 x1, s16 x1_ytop, s16 x1_ybot,
 
     s16 dx = x2-x1;
 
-    fix32 top_dy_per_dx = (top_dy_fix<<12) / dx; // (dy_fix<<4) / dx; // 22.10
-    fix32 bot_dy_per_dx = (bot_dy_fix<<12) / dx;
+    //fix32 top_dy_per_dx = (top_dy_fix<<12) / dx; // (dy_fix<<4) / dx; // 22.10
+    //fix32 bot_dy_per_dx = (bot_dy_fix<<12) / dx;
 
     fix32 top_y_fix = x1_ytop<<12; 
     fix32 bot_y_fix = x1_ybot<<12;
     s16 top_y_int = top_y_fix >> 16;
     s16 bot_y_int = bot_y_fix >> 16;
-    u16 height = bot_y_int-top_y_int;
-    u16 half_height = height>>1;
-    top_y_int -= half_height;
-    bot_y_int += half_height;
+    //u16 height = bot_y_int-top_y_int;
 
     s16 beginx = max(x1, window_min);
 
@@ -645,7 +642,7 @@ void draw_masked(s16 x1, s16 x1_ytop, s16 x1_ybot,
 
 
     s16 endx = min(window_max, x2);
-    u32 u_per_x = ((1<<16)>>1)/dx;
+    u32 u_per_x = (1<<16)/dx;
     u32 u_fix = 0;
 
     if(skip_x > 0) {
@@ -655,7 +652,7 @@ void draw_masked(s16 x1, s16 x1_ytop, s16 x1_ybot,
         u_fix += (skip_x * u_per_x);
     }
 
-    u32 full_col = long_color_table[wall_col];
+    //u32 full_col = long_color_table[wall_col];
 
     s16 x = beginx;
     u8* yclip_ptr = &(clipping_buffer->y_clip_buffer[x<<1]);
@@ -665,7 +662,7 @@ void draw_masked(s16 x1, s16 x1_ytop, s16 x1_ybot,
 
 
     //u16* tex = raw_key_mid;
-    u16* tex = raw_key_32_32_mid;
+    const u16* tex = raw_key_32_32_mid;
     u32 y_per_texels_fix = ((bot_y_int - top_y_int)<<16)/ 64;
     //u32 texels_per_y_fix = (64<<16) / (bot_y_int-top_y_int);
 
@@ -718,7 +715,7 @@ void draw_masked(s16 x1, s16 x1_ytop, s16 x1_ybot,
                 //KLog_U1("top_draw_y+clipped_y_pix: ", top_draw_y+clipped_y_pix);
                 //KLog_S1("bot_y_int: ", bot_y_int);
                 //KLog_U1("bot_draw_y: ", bot_draw_y);
-                draw_texture_vertical_line(top_y_int, top_draw_y+clipped_y_pix_top, bot_y_int, bot_draw_y-clipped_y_pix_bot, col_ptr, tex_column);
+                draw_bottom_clipped_texture_vertical_line(top_y_int, top_draw_y+clipped_y_pix_top, bot_y_int, bot_draw_y-clipped_y_pix_bot, col_ptr, tex_column);
 
             }
 
