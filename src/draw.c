@@ -1022,18 +1022,38 @@ void calculate_tex_coords_for_wall(
     }
     cnt >>= 1;
 
-    if(cnt & 1) {
-        TEXMAP_ITER;
-        TEXMAP_ITER;
-    }
-    cnt >>= 1;
-
     u32 z_start = z_start = (1<<26)/one_over_z_26;
     u32 u_start = u_over_z_23 * z_start;
 
+    s32 d_one_over_z_dx_26_times_2 = d_one_over_z_dx_26<<1;
+    s32 d_u_over_z_dx_23_times_2 = d_u_over_z_dx_23<<1;
+    
     if(cnt & 1) {
-        s32 d_one_over_z_dx_26_times_4 = d_one_over_z_dx_26<<2;
-        s32 d_u_over_z_dx_23_times_4 = d_u_over_z_dx_23<<2;
+        // 4 divisions and 4 multiplies
+        // could be 2 divisions and 2 multiplies
+        
+        // for small texture strips this can help performance a bit probably
+        u32 one_over_z_26_span_end = one_over_z_26 + d_one_over_z_dx_26_times_2;
+        u32 u_over_z_23_span_end = u_over_z_23 + d_u_over_z_dx_23_times_2;
+        u32 z_end = (1<<26)/one_over_z_26_span_end;
+        
+        u32 u_end = u_over_z_23_span_end * z_end;
+
+        u32 u_per_col = (u_end - u_start)>>1;
+        u32 u_23 = u_start;
+
+        AFFINE_TEXMAP_ITER;
+        AFFINE_TEXMAP_ITER;
+        u_over_z_23 = u_over_z_23_span_end;
+        one_over_z_26 = one_over_z_26_span_end;
+        z_start = z_end;
+        u_start = u_end;
+    }
+    cnt >>= 1;
+
+    s32 d_one_over_z_dx_26_times_4 = d_one_over_z_dx_26_times_2<<1;
+    s32 d_u_over_z_dx_23_times_4 = d_u_over_z_dx_23_times_2<<1;
+    if(cnt & 1) {
         // 4 divisions and 4 multiplies
         // could be 2 divisions and 2 multiplies
         
@@ -1058,8 +1078,8 @@ void calculate_tex_coords_for_wall(
     }
     cnt >>= 1;
 
-    s32 d_one_over_z_dx_26_times_8 = d_one_over_z_dx_26<<3;
-    s32 d_u_over_z_dx_23_times_8 = d_u_over_z_dx_23<<3;
+    s32 d_one_over_z_dx_26_times_8 = d_one_over_z_dx_26_times_4<<1;
+    s32 d_u_over_z_dx_23_times_8 = d_u_over_z_dx_23_times_4<<1;
 
     while(cnt--) {
         // 400 cycles per division, 200 cycles per multiply
