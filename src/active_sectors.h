@@ -14,6 +14,6 @@ void register_sect_group_as_active(u16 sect_group);
 
 void register_sect_group_as_inactive(u16 sect_group);
 
-void iterate_active_sectors(u16 num_sector_groups, active_sector_callback cb);
+void iterate_active_sectors(active_sector_callback cb);
 
 #endif

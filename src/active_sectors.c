@@ -28,10 +28,7 @@ void register_sect_group_as_inactive(u16 sect_group) {
 }
 
 
-void iterate_active_sectors(u16 num_sector_groups, active_sector_callback cb) {
-    int b = 0;
-
-    int bit_index = 0;
+void iterate_active_sectors(active_sector_callback cb) {
     for(u16 lw_index = 0; lw_index < num_longwords; lw_index++) {
         u32 lw = active_sectors[lw_index];
         if(lw == 0) { continue; }
