@@ -997,6 +997,31 @@ void calculate_tex_coords_for_wall(
         u_over_z_23 += d_u_over_z_dx_23;\
     } while(0)
 
+    //divu_32_by_16((1<<16),one_over_z_16);
+// = u_over_z_16 * z;
+        // u32 tmp = 1<<16; 
+
+
+    #define TEXMAP_16_ITER do { \
+        u32 tmp;\
+    __asm volatile(\
+        "moveq #1, %3\t\n\
+        swap %3\t\n\
+        divu.w %1, %3\t\n\
+        muls.w %2, %3\t\n\
+        and.w #63488, %3\t\n\
+        lsr.w #5, %3\t\n\
+        move.w %3, (%0)+\t\n\
+        add.w %4, %1\t\n\
+        add.w %5, %2"\
+        : "+a" (tex_col_ptr), "+d" (one_over_z_16), "+d" (u_over_z_16)\
+        : "d" (tmp), "d" (d_one_over_z_dx_16), "d" (d_u_over_z_dx_16)\
+    );\
+    } while(0)
+
+
+    //one_over_z_16 += d_one_over_z_dx_16;
+    //u_over_z_16 += d_u_over_z_dx_16;
 
     #define AFFINE_TEXMAP_ITER do { \
         u32 u_scaled_by_width = 0;      \
