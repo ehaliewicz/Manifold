@@ -21,3 +21,31 @@ u16 divu_32_by_16(u32 num, u16 denom) {
     s16 res = num;
     return res;
 }
+
+
+u32 mulu_16_by_16(u16 a, u16 b) {
+     __asm volatile(
+        "mulu.w %1, %0"
+        : "+d" (a) // output
+        : "d" (b)
+    );
+    return a;
+}
+
+#define SUB_16_16(a, b) do {    \
+    __asm volatile(             \
+        "sub.w %1, %0"          \
+        : "+d" (a)              \
+        : "d" (b)               \
+    );                          \
+} while(0);
+
+
+ u16 sub_16_16(u16 a, u16 b) {
+    __asm volatile(             
+        "sub.w %1, %0"          
+        : "+d" (a)              
+        : "d" (b)               
+    );                          
+    return a;
+}

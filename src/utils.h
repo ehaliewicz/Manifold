@@ -7,6 +7,8 @@
 
 s16 divs_32_by_16(s32 num, s16 denom);
 u16 divu_32_by_16(u32 num, u16 denom);
+u32 mulu_16_by_16(u16 a, u16 b);
+u16 sub_16_16(u16 a, u16 b);
 
 void die(char* s);
 
