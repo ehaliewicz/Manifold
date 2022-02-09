@@ -34,7 +34,7 @@ void bmp_init_horizontal(u16 double_buffer, VDPPlane plane, u16 palette, u16 pri
 void bmp_init_vertical(u16 double_buffer, VDPPlane plane, u16 palette, u16 priority);
 
 
-u32 vints;
+u16 vints;
 void bmp_end();
 
 u16 bmp_flip_partial(u16 async, u8 start_cell);
