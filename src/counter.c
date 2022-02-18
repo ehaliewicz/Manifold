@@ -11,6 +11,6 @@ void reset_counter(u8 cnt_idx) {
     counters[cnt_idx] = 0;
 }
 
-void inc_counter(u8 cnt_idx, u16 inc) {
-    counters[cnt_idx] += inc;
+void inc_counter(u8 cnt_idx) {
+    counters[cnt_idx] += 1;
 }

@@ -14,6 +14,6 @@
 
 u16 get_counter(u8 cnt_idx);
 void reset_counter(u8 cnt_idx);
-void inc_counter(u8 cnv_idx, u16 inc);
+void inc_counter(u8 cnv_idx);
 
 #endif
