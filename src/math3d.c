@@ -86,45 +86,61 @@ s8 sign(s16 ax, s16 ay, s16 bx, s16 by, s16 cx, s16 cy) {
 
 s16 sign_left_frustum(s16 cx, s16 cy) {
     s16 val = (-cy - cx);
-    return val; //(val > 0 ? 1 : (val < 0 ? -1 : 0));
+    return (val > 0 ? 1 : (val < 0 ? -1 : 0));
 }
 
 s16 sign_right_frustum(s16 cx, s16 cy) {
     s16 val = (cy- cx); 
-    return val; //(val > 0 ? 1 : (val < 0 ? -1 : 0));
-}
-
-u8 point_within_frustum(s16 x, s16 y) {
-    u8 within = ((sign(0,0, -1,1, x, y) <= 0) && (sign(0,0,1,1,x,y) >= 0));
-
-    return within;
+    return (val > 0 ? 1 : (val < 0 ? -1 : 0));
 }
 
 u8 within_frustum(s16 x1, s16 y1, s16 x2, s16 y2) {
-    //s8 p1_left_sign = sign_left_frustum(x1, y1) <= 0;
-    //if(p1_left_sign) { return 1; }
-    //s8 p1_right_sign = sign_right_frustum(x1,y1) >= 0;
-    //if(p1_right_sign) { return 1; }
-    //s8 p2_left_sign = sign_left_frustum(x2,y2) <= 0;
-    //if(p2_left_sign) { return 1; }
-    //s8 p2_right_sign = sign_right_frustum(x2,y2) >= 0;
-    //if(p2_right_sign) { return 1; }
+    //KLog_S4("x1: ", x1, " y1: ", y1, " x2: ", x2, " y2: ", y2);
+    u8 ret = 0;
+    //if((y1-x1 >= 0) || (y2-x2 >= 0)) {
+    //    ret = (-y1-x1 <= 0) || (-y2-x2 <= 0);
+    //}
+    //return ret;
+    u8 p1_out_on_left = -x1 > y1;
+    u8 p2_out_on_left = -x2 > y2;
+    u8 p1_out_on_right = x1 > y1;
+    u8 p2_out_on_right = x2 > y2;
+    if(p1_out_on_left && p2_out_on_left) {
+        return 0;
+    }
+    if(p1_out_on_right && p2_out_on_right) {
+        return 0;
+    }
+    return 1;
+    //ret = ((!p1_out_on_left) || (!p2_out_on_left)) && ((!p1_out_on_right) || (!p2_out_on_right));
+
     
-    s16 tmp; u8 ret=0;
+    //s8 p1_left_sign = sign_left_frustum(x1, y1) <= 0;
+    //if(p1_left_sign) { ret = 1; }
+    //s8 p1_right_sign = sign_right_frustum(x1,y1) >= 0;
+    //if(p1_right_sign) { ret = 1; }
+    //s8 p2_left_sign = sign_left_frustum(x2,y2) <= 0;
+    //if(p2_left_sign) { ret =  1; }
+    //s8 p2_right_sign = sign_right_frustum(x2,y2) >= 0;
+    //if(p2_right_sign) { ret =  1; }
+    
+    
+    s16 tmp;
+    //  first check against right frustum (cy-cx) >= 0 for both points
+    //  if either are valid, go to second check
+    //  if neither are valid, exit with failure
+    //  second, check against left frustum (-cy-cx) <= 0
+    
+    /*
     __asm volatile(
-        "move.w %2, %5\t\n\
-         sub.w %1, %5\t\n\
+        "cmp.w %1, %2\t\n\
          bge.b second_half_%=\t\n\
-         move.w %4, %5\t\n\
-         sub.w %3, %5\t\n\
-         bge.b second_half_%=\t\n\
-         bra.b exit_%=\t\n\
+         cmp.w %3, %4\t\n\
+         blt.b exit_%=\t\n\
         second_half_%=:\t\n\
-         neg.w %2\t\n\
-         sub.w %1, %2\t\n\
+         cmp.w %2, %1\t\n\
          ble.b within_%=\t\n\
-         neg.w %4\t\n\
-         sub.w %3, %4\t\n\
+         cmp.w %4, %3\t\n\
          ble.b within_%=\t\n\
          bra.b exit_%=\t\n\
         within_%=:\t\n\
@@ -132,50 +148,39 @@ u8 within_frustum(s16 x1, s16 y1, s16 x2, s16 y2) {
         exit_%=:"
         : "+d" (ret)
         : "d" (x1), "d" (y1), "d" (x2), "d" (y2), "d" (tmp));
-        
-    inc_counter(PRE_PROJ_FRUSTUM_CULL_COUNTER, ret);
+    */
+
+    if(!ret) {
+        //inc_counter(PRE_PROJ_FRUSTUM_CULL_COUNTER);
+    }
+    //KLog_U1("within frustum: ", ret);
     return ret;
+    
 }
 
 
 s16 project_and_adjust_x(s16 x, s16 z_recip) {
 
-    
-    //s16 const2Rx = x; //<<5; //(32 * x);
-
-    
-    //s16 transX; // = 32;
-    /*
-    __asm volatile(
-        "asl.w #5, %0\t\n\
-        muls.w %1, %0\t\n\
-        swap %0\t\n\
-        add.w #32, %0"
-        : "+d" (x)
-        : "d" (z_recip)
-    );
-    return x;
-    */
 
     __asm volatile(
             "lsl.w #5, %0"
             : "+d" (x)
     );
     s16 const2RXMulZRecip = x;
-
+    
+    
     __asm volatile(
             "muls.w %1, %0\t\n\
              swap %0"
             :  "+d" (const2RXMulZRecip), "+d" (z_recip) // output
             : // input
     );
+    
 
     
 
     s16 transX = 32 + const2RXMulZRecip; //(const2RXMulZRecip>>16);
-    
     return transX;
-    //return transX;
 }
 
 
@@ -221,7 +226,7 @@ s16 project_and_adjust_y_fix_c(Vect2D_f32 trans_map_vert, s16 y) {
 }
 */
 
-s16 project_and_adjust_y_fix(s16 y, s16 z_recip) {    
+s16 project_and_adjust_y_fix(s16 y, s16 z_recip) {  
     s16 yMinusPosZ = y - playerZ12Frac4;      // 12.4
     s32 const4Ry = yMinusPosZ; //CONST4 * yMinusPosZ;
 
@@ -262,6 +267,13 @@ s16 project_and_adjust_y_fix_c(s16 y, s16 z) {
 
 #define CLIP_DIVISION
 
+s16 line_slope(s16 x1, s16 y1_4, s16 x2, s16 y2_4) {
+    if((x1-x2) == 0) {
+        return 0;
+    }
+    return (y1_4-y2_4)/(x1-x2);
+}
+
 clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2, texmap_params* tmap, u32 wall_len) {
     // TODO: adjust texture coordinates here as well
     
@@ -275,8 +287,11 @@ clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2, texma
     //s16 rz1 = rz1_fix >> TRANS_Z_FRAC_BITS;
     //s16 rz2 = rz2_fix >> TRANS_Z_FRAC_BITS;
 
-    if(rz1_12_4 < NEAR_Z_FIX && rz2_12_4 < NEAR_Z_FIX) {    
-        return OFFSCREEN;
+    clip_result clip_status = UNCLIPPED;
+
+    if(rz1_12_4 < NEAR_Z_FIX && rz2_12_4 < NEAR_Z_FIX) {  
+        clip_status = OFFSCREEN;
+        return clip_status;  
     }
 
     s16 dz_12_4 = rz2_12_4 - rz1_12_4;
@@ -287,15 +302,26 @@ clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2, texma
     //KLog_U1("repetitions: ", repetitions);
 
     s32 base_left_u_16 = 0;
-    s32 base_right_u_16 = (repetitions)<<16;
+    s32 base_right_u_16 = (1)<<16;
     s32 fix_du_16 = (base_right_u_16-base_left_u_16);
+    s16 du_per_len_16 = base_right_u_16/wall_len; 
+    s16 du_per_len_sq_16 = base_left_u_16/(wall_len*wall_len);
+
 
     s32 du_over_dz_16; // = fix_du; // 16.16
+    //s32 du_over_dz_7;
+    //u16 dist_sqr = wall_len * wall_len;
+    //s32 du_over_dist_sq_16 = fix_du_16 / dist_sqr;
+    //s32 du_over_dist_16 = fix_du_16/ wall_len;
 
-    if((dz_12_4>>4) != 0) {
+    if(dz_12_4 != 0) {
+        //KLog("calculated du_over_dz_16");
+        
         du_over_dz_16 = (fix_du_16<<TRANS_Z_FRAC_BITS) / dz_12_4; // fix 16
+        
+        //du_over_dz_7 = (fix_du_16>>5)/dz_12_4;
         if(0) { //if(debug) {
-            KLog_S1("du_over_dz_20: ", du_over_dz_16);
+            //KLog_S1("du_over_dz_20: ", du_over_dz_16);
         }
         //__asm volatile(
         //    "divs.w %1, %0"
@@ -303,13 +329,202 @@ clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2, texma
         //    : "d" (dz)
         //);
         tmap->du_over_dz = du_over_dz_16;
+        //tmap->du_over_dz = (du_over_dz_7<<9);
 
     } else {
+        //KLog("skipped du_over_dz_16");
         if(0) { //if(debug) {
             KLog("NO PERSPECTIVE NEEDED");
         }
         tmap->left_u = base_left_u_16;
         tmap->right_u = base_right_u_16;
+    }
+
+    
+    const u8 left_vert_outside_left_frustum = (-rx1 > (rz1_12_4>>4));
+    const u8 right_vert_outside_left_frustum = (-rx2 > (rz2_12_4>>4));
+    const u8 left_vert_outside_right_frustum = (rx1 > (rz1_12_4>>4));
+    const u8 right_vert_outside_right_frustum = (rx2 > (rz2_12_4>>4));
+    if(left_vert_outside_left_frustum && right_vert_outside_left_frustum) {
+        clip_status = OFFSCREEN;
+        return clip_status;
+    }
+    if(left_vert_outside_right_frustum && right_vert_outside_right_frustum) {
+        clip_status = OFFSCREEN;
+        return clip_status;
+    }
+
+    if(0) { //left_vert_outside_left_frustum) {
+        //KLog("left frustum clipping");
+        //die("LEFT FRUSTUM CLIPPING");
+
+        //s16 frustum_left_x = -16384;
+        //s16 frustum_left_y = 16384;
+
+        s16 intersection_z_4;
+        s16 intersection_x;
+
+
+        if(rx1 == rx2) {
+            intersection_x = rx1;
+            intersection_z_4 = -rx1<<4;
+            
+            s16 z_adjust_4 = intersection_z_4 - rz1_12_4;
+            s32 u_adjust_20 = du_over_dz_16 * z_adjust_4;
+            base_left_u_16 += (u_adjust_20>>4);
+
+        } else {
+            
+            //s16 slope_a_4 = (rz2_12_4-rz1_12_4)/(rx2-rx1);            
+            s16 dx = rx2-rx1;
+            s32 tmp = rz2_12_4-rz1_12_4; 
+            s16 slope_a_4;
+            __asm volatile(
+                "divs.w %2, %0\t\n\
+                move.w %0, %1"
+
+                : "+d" (tmp), "=d" (slope_a_4)
+                : "d" (dx)
+            );
+
+            if(slope_a_4 == 0) {
+                intersection_x = -rz1_12_4>>4;
+                intersection_z_4 = rz1_12_4;
+                
+                // is this correct? 
+                //if(intersection_z_4 & 0b1111) {
+                //    intersection_x+=1;
+                //}
+                // need to adjust texture here
+                s32 du_over_dx_16 = (fix_du_16) / (rx2-rx1);
+                s16 x_adjust = intersection_x - rx1;
+                s32 u_adjust_16 = x_adjust * du_over_dx_16;
+                base_left_u_16 += u_adjust_16;
+            } else {
+ 
+                const s16 slope_b_4 = -1<<4;
+                //intersection_x = ((slope_a_4*rx1) - rz1_12_4)/(slope_a_4-slope_b_4);
+                //intersection_x = divs_32_by_16((slope_a_4*rx1) - rz1_12_4,(slope_a_4-slope_b_4));
+                s16 dslope = slope_a_4-slope_b_4;
+                s32 tmp = slope_a_4; //*rx1;
+                __asm volatile(
+                    "muls.w %1, %0"
+                    : "+d" (tmp)
+                    : "d" (rx1)
+                );
+                tmp -= rz1_12_4;
+                __asm volatile(
+                    "divs.w %2, %0\t\n\
+                    move.w %0, %1"
+                    : "+d" (tmp), "=d" (intersection_x)
+                    : "d" (dslope)
+                );
+
+                intersection_z_4 = -intersection_x<<4; 
+  
+
+                s16 z_adjust_4 = intersection_z_4 - rz1_12_4;
+                s16 x_adjust = intersection_x - rx1;
+
+                
+                //    kinda working!
+                if((z_adjust_4>>4) > x_adjust) {
+                    s32 u_adjust_20 = du_over_dz_16 * z_adjust_4;
+                    base_left_u_16 += (u_adjust_20>>4);
+
+                } else {
+                    
+                    s32 du_over_dx_16 = (fix_du_16) / (rx2-rx1);
+
+                    s32 u_adjust_16 = x_adjust * du_over_dx_16;
+                    base_left_u_16 += u_adjust_16;
+                }
+
+            }
+        }
+
+        rz1_12_4 = intersection_z_4;
+        trans_v1->y = rz1_12_4;
+        rx1 = intersection_x;
+        trans_v1->x = rx1;
+        clip_status |= LEFT_FRUSTUM_CLIPPED;
+        
+    }
+
+    if(0) { //right_vert_outside_right_frustum) {
+        s16 intersection_z_4;
+        s16 intersection_x;
+        if(rx1 == rx2) {
+            intersection_x = rx2;
+            intersection_z_4 = rx2<<4;
+
+            s16 z_adjust_4 = intersection_z_4 - rz2_12_4;
+            s32 u_adjust_20 = du_over_dz_16 * z_adjust_4;
+            base_right_u_16 += (u_adjust_20>>4);
+        } else {
+            //s16 slope_a_4 = (rz2_12_4-rz1_12_4)/(rx2-rx1);
+            s16 dx = rx2-rx1;
+            s32 tmp = rz2_12_4-rz1_12_4; 
+            s16 slope_a_4;
+            __asm volatile(
+                "divs.w %2, %0\t\n\
+                move.w %0, %1"
+
+                : "+d" (tmp), "=d" (slope_a_4)
+                : "d" (dx)
+            );
+
+            if(slope_a_4 == 0) {
+                intersection_x = rz2_12_4>>4;
+                intersection_z_4 = rz2_12_4;
+
+                s32 du_over_dx_16 = (fix_du_16) / (rx2-rx1);
+                s16 x_adjust = intersection_x - rx2;
+                s32 u_adjust_16 = x_adjust * du_over_dx_16;
+                base_right_u_16 += u_adjust_16;
+            } else {
+                const s16 slope_b_4 = 1<<4;
+                //intersection_x = ((slope_a_4*rx2) - rz2_12_4)/(slope_a_4-slope_b_4);
+                //intersection_x = divs_32_by_16((slope_a_4*rx2) - rz2_12_4,(slope_a_4-slope_b_4));
+                s16 dslope = slope_a_4-slope_b_4;
+                s32 tmp = slope_a_4; // * rx2
+                __asm volatile(
+                    "muls.w %1, %0"
+                    : "+d" (tmp)
+                    : "d" (rx2)
+                );
+                tmp -= rz2_12_4;
+                __asm volatile(
+                    "divs.w %2, %0\t\n\
+                    move.w %0, %1"
+                    : "+d" (tmp), "=d" (intersection_x)
+                    : "d" (dslope)
+                );
+
+                intersection_z_4 = intersection_x<<4;
+
+                s16 z_adjust_4 = intersection_z_4 - rz2_12_4;
+                s16 x_adjust = intersection_x - rx2;
+
+                //    kinda working!
+                if((z_adjust_4>>4) > x_adjust) {
+                    s32 u_adjust_20 = du_over_dz_16 * z_adjust_4;
+                    base_right_u_16 += (u_adjust_20>>4);
+
+                } else {
+                    
+                    s32 du_over_dx_16 = (fix_du_16) / (rx2-rx1);
+                    s32 u_adjust_16 = x_adjust * du_over_dx_16;
+                    base_right_u_16 += u_adjust_16;
+                }
+
+            }
+        }
+        rz2_12_4 = intersection_z_4;
+        trans_v2->y = rz2_12_4;
+        rx2 = intersection_x;
+        trans_v2->x = rx2;
+        clip_status |= RIGHT_FRUSTUM_CLIPPED;
     }
 
     if(rz1_12_4 >= NEAR_Z_FIX && rz2_12_4 >= NEAR_Z_FIX) {
@@ -326,7 +541,8 @@ clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2, texma
         tmap->left_u = base_left_u_16;
         tmap->right_u = base_right_u_16;
 
-        return UNCLIPPED;
+        clip_status |= UNCLIPPED;
+        return clip_status;
     }
     
     s16 dx = rx2-rx1;
@@ -356,7 +572,9 @@ clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2, texma
    s16 inv_dz = (dz < 0) ? -(z_recip_table[-dz]>>10) : (z_recip_table[dz]>>10);
    s16 dx_over_dz = dx * inv_dz; //dx_over_dz_32 >> 10;
    #endif 
-    
+
+
+
 
     if(rz1_12_4 < NEAR_Z_FIX) { 
         if(0) { //if(debug) {
@@ -375,6 +593,7 @@ clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2, texma
         }
 
         s32 u_adjust_20 = (du_over_dz_16 * z_adjust_12_4); // 12.20 // 12.4 fixed point
+        //s32 u_adjust_11 = (du_over_dz_7 * z_adjust_12_4);
 
         if(0) { //if(debug) {
             //KLog_S1("u_adjust_22: ", u_adjust_20);
@@ -389,12 +608,14 @@ clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2, texma
         //KLog_S1("u adjust: ", u_adjust);
         //KLog_S1("u result: ", base_left_u + u_adjust);
         tmap->left_u = base_left_u_16 + (u_adjust_20>>4);
+        //tmap->left_u = base_left_u_16 + (u_adjust_11<<5);
         if(0) { //if(debug) {
             KLog_S1("clipped left u: ", tmap->left_u);
         }
         tmap->right_u = base_right_u_16;
 
-        return LEFT_CLIPPED;
+        clip_status |= LEFT_Z_CLIPPED;
+        clip_status &= (~LEFT_FRUSTUM_CLIPPED);
     } else {
         if(0) { //if(debug) {
             KLog("RIGHT CLIPPED");
@@ -409,11 +630,15 @@ clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2, texma
         trans_v2->y = rz1_12_4;
 
         s32 u_adjust_20 = du_over_dz_16 * z_adjust_12_4;
+        //s32 u_adjust_11 = (du_over_dz_7 * z_adjust_12_4);
+
         tmap->left_u = base_left_u_16;
         tmap->right_u = base_right_u_16 + (u_adjust_20>>4);
-        return RIGHT_CLIPPED;
+        //tmap->right_u = base_right_u_16 + (u_adjust_11<<5);
+        clip_status |= RIGHT_Z_CLIPPED;
+        clip_status &= (~RIGHT_FRUSTUM_CLIPPED);
     }
-    
+    return clip_status;
 }
 
 

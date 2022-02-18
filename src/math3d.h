@@ -31,10 +31,12 @@ typedef struct {
 
 
 typedef enum {
-    UNCLIPPED,
-    LEFT_CLIPPED,
-    RIGHT_CLIPPED,
-    OFFSCREEN
+    UNCLIPPED             = 0b00000000,
+    OFFSCREEN             = 0b00000001,
+    LEFT_Z_CLIPPED        = 0b00000010,
+    RIGHT_Z_CLIPPED       = 0b00000100,
+    LEFT_FRUSTUM_CLIPPED  = 0b00001000,
+    RIGHT_FRUSTUM_CLIPPED = 0b00010000,
 } clip_result;
 
 //#define NEAR_Z_32 (20 << FIX32_FRAC_BITS)
