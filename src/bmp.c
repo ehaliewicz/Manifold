@@ -68,6 +68,20 @@ u8* bmp_get_read_pointer(u16 x, u16 y) {
 }
 
 
+u16 bmp_get_dma_write_offset(u16 x, u16 y) {
+  u16 x_col_offset = x & 1;
+  u16 base_offset = 0;
+  if(x & 0b10) {
+    // use right half of framebuffer
+    base_offset = (SCREEN_WIDTH/2)*BMP_VERTICAL_HEIGHT;
+  }
+  u16 y_offset = y * 2;
+  u16 x_num_pair_cols_offset = x >> 2;
+  u16 x_cols_offset = x_num_pair_cols_offset * BMP_VERTICAL_HEIGHT * 2;
+  return base_offset + y_offset + x_col_offset + x_cols_offset; // + 16;
+}
+
+
 void bmp_reset_phase() {
     phase = 0;
 }

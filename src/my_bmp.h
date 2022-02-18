@@ -21,6 +21,7 @@
 
 u8* bmp_get_write_pointer(u16 x, u16 y);
 u8* bmp_get_read_pointer(u16 x, u16 y);
+u16 bmp_get_dma_write_offset(u16 x, u16 y);
 
 void bmp_reset_phase();
 

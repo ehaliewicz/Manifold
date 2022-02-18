@@ -15,34 +15,10 @@
 #include "utils.h"
 
 
-
-
 u8* yclip;
 u8* drawn_buf;
+u8** bmp_ptr_buf;
 
-
-#define PIXEL_RIGHT_STEP 1
-#define PIXEL_DOWN_STEP 4
-//#define PIXEL_DOWN_STEP 2
-#define TILE_RIGHT_STEP 4*SCREEN_HEIGHT //640
-
-u16 get_index(u16 x, u16 y) {
-  u16 x_col_offset = x & 1;
-  u16 base_offset = 0;
-  if(x & 0b10) {
-    // use right half of framebuffer
-    base_offset = (SCREEN_WIDTH/2)*SCREEN_HEIGHT;
-  }
-  u16 y_offset = y * 2;
-  u16 x_num_pair_cols_offset = x >> 2;
-  u16 x_cols_offset = x_num_pair_cols_offset * SCREEN_HEIGHT * 2;
-  return base_offset + y_offset + x_col_offset + x_cols_offset; // + 16;
-}
-
-
-inline u16 getDMAWriteOffset(u16 x, u16 y) {
-    return get_index(x, y);
-}
 
 u8** buf_0_column_offset_table;
 u8** buf_1_column_offset_table;
@@ -51,7 +27,7 @@ void init_column_offset_table() {
   // offset from last column
 
   for(int x = 0; x < SCREEN_WIDTH/2; x++) {  
-    u16 cur_off = getDMAWriteOffset(x<<1, 0);
+    u16 cur_off = bmp_get_dma_write_offset(x<<1, 0);
     buf_0_column_offset_table[x] = bmp_buffer_0 + cur_off;
     buf_1_column_offset_table[x] = bmp_buffer_1 + cur_off;
   }
