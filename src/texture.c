@@ -155,7 +155,7 @@ u16 unclipped_dy_fix10_recip_table[512] = {
 (TEX_HEIGHT<<10)/511,
 };
 
-void draw_texture_vertical_line(s16 unclipped_y0, u16 y0, s16 unclipped_y1, u8* col_ptr, u16* tex_column) {
+u8* draw_texture_vertical_line(s16 unclipped_y0, u16 y0, s16 unclipped_y1, u8* col_ptr, u16* tex_column) {
     //return ;
 
     //u16 unclipped_dy = unclipped_y1 - unclipped_y0;
@@ -165,7 +165,7 @@ void draw_texture_vertical_line(s16 unclipped_y0, u16 y0, s16 unclipped_y1, u8* 
         : "+d" (unclipped_dy)              
         : "d" (unclipped_y0)               
     );      
-    if(unclipped_dy > 512) { return; }
+    if(unclipped_dy > 512) { return col_ptr; }
 
     u16 y0_x2 = y0+y0;
     col_ptr = col_ptr + y0_x2;
@@ -189,12 +189,12 @@ void draw_texture_vertical_line(s16 unclipped_y0, u16 y0, s16 unclipped_y1, u8* 
     );
 
 
-    return; 
+    return col_ptr;
     
 }
 
 
-void draw_bottom_clipped_texture_vertical_line(s16 unclipped_y0, u16 y0, s16 unclipped_y1, u16 y1, u8* col_ptr, u16* tex_column) {
+u8* draw_bottom_clipped_texture_vertical_line(s16 unclipped_y0, u16 y0, s16 unclipped_y1, u16 y1, u8* col_ptr, u16* tex_column) {
     //return ;
 
     //u16 unclipped_dy = unclipped_y1 - unclipped_y0;    
@@ -204,7 +204,7 @@ void draw_bottom_clipped_texture_vertical_line(s16 unclipped_y0, u16 y0, s16 unc
         : "+d" (unclipped_dy)              
         : "d" (unclipped_y0)               
     );      
-    if(unclipped_dy > 512) { return; }
+    if(unclipped_dy > 512) { return col_ptr; }
 
     u16 y0_x2 = y0+y0;
     col_ptr = col_ptr + y0_x2;
@@ -249,7 +249,7 @@ void draw_bottom_clipped_texture_vertical_line(s16 unclipped_y0, u16 y0, s16 unc
     );
 
 
-    return; 
+    return col_ptr;
     
 }
     
