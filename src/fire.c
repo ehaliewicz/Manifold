@@ -6,6 +6,10 @@
 #include "joy_helper.h"
 #include "music_res.h"
 
+//#define FIRE_WIDTH 64
+#define FIRE_WIDTH 128 //64
+#define FIRE_HEIGHT 55
+#define BASE_FRAMEBUFFER_OFFSET (160-FIRE_HEIGHT)-1
 
 static u8* lookup_table_base;
 static u8* table_0;
@@ -72,7 +76,7 @@ void clear_fire_source() {
 }
 
 
-const u16 fire_cols[16] = {
+static const u16 fire_cols[16] = {
 	RGB24_TO_VDPCOLOR(0x000000),
 	RGB24_TO_VDPCOLOR(0x2F0F07),
 	RGB24_TO_VDPCOLOR(0x470F07),
@@ -224,7 +228,9 @@ game_mode run_fire() {
 
     if(cur_scroll < -45) {
         VDP_setVerticalScroll(BG_B, cur_scroll);
-    } else if ((fire_running && !fire_hidden) || skip) {
+    } 
+    
+    if (skip) { //(fire_running && !fire_hidden) || skip) {
         clear_fire_source();
         fire_hidden = 1;
     }
