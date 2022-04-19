@@ -71,6 +71,7 @@ persp_params calc_perspective(u16 z1_12_4, u16 z2_12_4, u32 left_u_16, u32 right
 
 
 u8* draw_texture_vertical_line(s16 unclipped_y0, u16 y0, s16 unclipped_y1, u8* col_ptr, u16* tex_column);
+
 u8* draw_bottom_clipped_texture_vertical_line(s16 unclipped_y0, u16 y0, s16 unclipped_y1, u16 y1, u8* col_ptr, u16* tex_column);
 
 #endif

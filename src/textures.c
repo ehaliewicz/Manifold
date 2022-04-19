@@ -623,43 +623,63 @@ const lit_texture wall_a_fog_light = {
 };
 
 
-lit_texture* textures[5][5] = {
-    {
+
+lit_texture* textures[8*5] = {
+    //{
         &wall_a_dark, 
         &wall_a_mid_dark,
         &wall_a_mid,
         &wall_a_mid_light,
         &wall_a_light,
-    },
-    {
+        NULL,
+        NULL,
+        NULL,
+    //},
+    //{
         &door_dark, 
         &door_mid_dark,
         &door_mid,
         &door_mid_light,
         &door_light,
-    },
-    {
+        NULL,
+        NULL,
+        NULL,
+    //},
+    //{
         &wall_b_dark, 
         &wall_b_mid_dark,
         &wall_b_mid,
         &wall_b_mid_light,
         &wall_b_light,
-    },
-    {
+        NULL,
+        NULL,
+        NULL,
+    //},
+    //{
         &wall_c_dark, 
         &wall_c_mid_dark,
         &wall_c_mid,
         &wall_c_mid_light,
         &wall_c_light,
-    },
-    {
+        NULL,
+        NULL,
+        NULL,
+    //},
+    //{
         &wall_a_fog_dark, 
         &wall_a_fog_mid_dark,
         &wall_a_fog_mid,
         &wall_a_fog_mid_light,
         &wall_a_fog_light,
-    },
+        NULL,
+        NULL,
+        NULL,
+    //},
 };
+
+lit_texture* get_texture(u8 tex_idx, s8 light_level) {
+  return textures[(tex_idx<<3)+light_level+2];
+}
 
 const u16 raw_key_light[32*64] = {
 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaaaa, 0xaaaa, 0xaaaa, 0xaaaa, 0x6666, 0x6666, 0x6666, 0x6666, 0x6666, 0x6666, 0x6666, 0x6666, 0x6666, 0x6666, 0x6666, 0x6666, 0x6666, 0x6666, 0x6666, 0x6666, 0xaaaa, 0xaaaa, 0xaaaa, 0xaaaa, 0xaaaa, 0xaaaa, 0xaaaa, 0xaaaa, 0xaaaa, 0xaaaa, 0xaaaa, 0xaaaa, 0xaaaa, 0xaaaa, 0xaaaa, 0xaaaa, 0xaaaa, 0xaaaa, 0xaaaa, 0xaaaa, 0xaaaa, 0xaaaa, 0xaaaa, 0xaaaa, 0xaaaa, 0xaaaa, 0xaaaa, 0xaaaa, 0xaaaa, 0xaaaa, 0xaaaa, 0xaaaa, 0xaaaa, 0xaaaa, 0xaaaa, 0xaaaa, 0x00, 

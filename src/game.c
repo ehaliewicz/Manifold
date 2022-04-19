@@ -97,9 +97,9 @@ void showStats(u16 float_display)
 
     
     
-    sprintf(str, "coarse back. cull: %i ", get_counter(COARSE_BACKFACE_CULL_COUNTER));
-    VDP_drawTextBG(BG_B, str, 1, 7);
-    reset_counter(COARSE_BACKFACE_CULL_COUNTER);
+    //sprintf(str, "coarse back. cull: %i ", get_counter(COARSE_BACKFACE_CULL_COUNTER));
+    //VDP_drawTextBG(BG_B, str, 1, 7);
+    //reset_counter(COARSE_BACKFACE_CULL_COUNTER);
     /*
     sprintf(str, "frus. cull: %i ", get_counter(PRE_PROJ_FRUSTUM_CULL_COUNTER));
     VDP_drawTextBG(BG_B, str, 1, 8);
@@ -539,6 +539,8 @@ void init_game() {
 
     //object* red_cube = alloc_object_in_sector(cur_player_pos, 0, sector_centers[0].x, sector_centers[0].y, get_sector_floor_height(0), 0);
     
+    init_swizzled_color_calc_table();
+
     object* cur_obj = alloc_object_in_sector(cur_player_pos, 10, sector_centers[10].x, sector_centers[10].y, get_sector_group_floor_height(10), 0);
 
 

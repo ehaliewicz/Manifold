@@ -160,27 +160,16 @@ u8 within_frustum(s16 x1, s16 y1, s16 x2, s16 y2) {
 
 
 s16 project_and_adjust_x(s16 x, s16 z_recip) {
-
-
     __asm volatile(
-            "lsl.w #5, %0"
+            "lsl.w #5, %0\t\n\
+             muls.w %1, %0\t\n\
+             swap %0\t\n\
+             add.w #32, %0\t\n\
+            "
             : "+d" (x)
+            : "d" (z_recip)
     );
-    s16 const2RXMulZRecip = x;
-    
-    
-    __asm volatile(
-            "muls.w %1, %0\t\n\
-             swap %0"
-            :  "+d" (const2RXMulZRecip), "+d" (z_recip) // output
-            : // input
-    );
-    
-
-    
-
-    s16 transX = 32 + const2RXMulZRecip; //(const2RXMulZRecip>>16);
-    return transX;
+    return x;
 }
 
 
@@ -233,8 +222,34 @@ s16 project_and_adjust_y_fix(s16 y, s16 z_recip) {
     //s32 const4RyMulRecipZ = const4Ry * z_recip_table[z];
     //s16 z_recip = z_recip_table[z];
 
-    
-    s32 const4RyMulRecipZ = const4Ry * z_recip * CONST4;
+    s32 const4RyMulRecipZ = const4Ry * z_recip;
+    s32 highConst4RyMulRecipZ;
+
+    // shifts are 28 cycles
+
+    // vs load 3 and shift with register
+    // thats 4 cycles to load
+
+    //u8 shift = 3;
+    __asm volatile(
+        "move.l %0, %1\t\n\
+        lsl.l #3, %1\t\n\
+        add.l %1, %0\t\n\
+        lsl.l #3, %0\t\n\
+        swap %0\t\n\
+        sub.w #1136, %0\t\n\
+        neg.w %0\t\n\
+        "
+        : "+d" (const4RyMulRecipZ), "=&d" (highConst4RyMulRecipZ)
+        : //"d" (shift)
+    );
+
+    return const4RyMulRecipZ;
+
+    //s32 const4RyMulRecipZ = (const4Ry * z_recip);// * CONST4);
+    //const4RyMulRecipZ += (const4RyMulRecipZ<<3);
+    //const4RyMulRecipZ <<= 3;
+
     /*
     s32 const4RyMulRecipZ = const4Ry; // * x_project_z_recip_table[z];
     __asm volatile(
@@ -244,10 +259,13 @@ s16 project_and_adjust_y_fix(s16 y, s16 z_recip) {
     );
     const4RyMulRecipZ = (const4RyMulRecipZ<<3) + (const4RyMulRecipZ<<6); // <<= 6;
     */
-    s16 yproj = (CONST3<<4) + (const4RyMulRecipZ>>16);
-    return ((SCREEN_HEIGHT-1)<<4)-yproj;
-    //fix32 rx = trans_map_vert.x;
-    //fix32 rz = trans_map_vert.y;
+
+    //s16 highConst4RyMulRecipZ = const4RyMulRecipZ>>16;
+
+
+
+    //s16 yproj = (CONST3<<4) + highConst4RyMulRecipZ;//(const4RyMulRecipZ>>16);
+    //return -(yproj-((SCREEN_HEIGHT-1)<<4));
 }
 
 /*
@@ -318,6 +336,8 @@ clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2, texma
         //KLog("calculated du_over_dz_16");
         
         du_over_dz_16 = (fix_du_16<<TRANS_Z_FRAC_BITS) / dz_12_4; // fix 16
+        
+
         
         //du_over_dz_7 = (fix_du_16>>5)/dz_12_4;
         if(0) { //if(debug) {

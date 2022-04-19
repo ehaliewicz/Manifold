@@ -327,7 +327,11 @@ def draw_map_vert(draw_list, vert, highlight=False):
     draw_list.add_circle_filled(vert.x - cam_x, vert.y - cam_y, 2, imgui.get_color_u32_rgba(*color), num_segments=12)
 
 
-def draw_map_wall(draw_list, wall_idx, portal_idx, sect_idx, highlight=False):
+
+def draw_map_wall(draw_list, wall_idx, highlight=False):
+    sect_idx = map_db.get_sect_for_wall(cur_state.map_data, wall_idx)
+    portal_idx = map_db.get_portal_for_wall(cur_state.map_data, wall_idx)
+
     adj_sector_idx = cur_state.map_data.portals[portal_idx]
 
     is_portal = adj_sector_idx != -1
@@ -365,7 +369,7 @@ def draw_sector(draw_list, draw_sect, highlight=False):
         wall_selected = cur_state.mode == Mode.LINE and cur_state.cur_wall == cur_wall_idx
         wall_hovered = cur_state.hovered_item == cur_wall_idx and cur_state.hovered_item_type == "Line"
 
-        draw_map_wall(draw_list, cur_wall_idx, cur_portal_idx, draw_sect, (highlight or wall_selected or wall_hovered))
+        draw_map_wall(draw_list, cur_wall_idx, (highlight or wall_selected or wall_hovered))
 
 
 # returns true if hovered
@@ -395,6 +399,9 @@ def draw_map(cur_state):
 
     if (cur_state.mode == Mode.SECTOR and cur_state.cur_sector != -1):
         draw_sector(draw_list, cur_state.cur_sector, highlight=True)
+
+    if (cur_state.mode == Mode.LINE and cur_state.cur_wall != -1):
+        draw_map_wall(draw_list, cur_state.cur_wall, True)
     #if cur_state.hovered_item and cur_state.mode == Mode.SECTOR:
     #    # if cur_state.hovered_item and isinstance(cur_state.hovered_item, sector.Sector):
     #    draw_sector(draw_list, cur_state.hovered_item, highlight=True)

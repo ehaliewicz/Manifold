@@ -43,30 +43,14 @@
 #define DARK_BROWN_IDX  0xE
 #define DARK_STEEL_IDX  0xF
 
-/*
-#define LIGHT_RED_IDX 0x11
-#define RED_IDX 0x22
-#define DARK_RED_IDX 0x33
-#define LIGHT_GREEN_IDX 0x44
-#define GREEN_IDX 0x55
-#define DARK_GREEN_IDX 0x66
-#define LIGHT_BLUE_IDX 0x77
-#define BLUE_IDX 0x88
-#define DARK_BLUE_IDX 0x99
-#define BLUE_BLACK_IDX 0x9F
-#define BROWN_IDX 0xAA
-#define DARK_BROWN_IDX 0xBB
-#define BLACK_IDX 0xFF
-*/
 
-//extern const u16 threeDPalette[16];
-
-u8 calculate_color(u8 col_idx, u32 dist, s8 light_level);
-
-u8 get_dark_color(u8 col_idx, s8 light_level);
-u8 get_mid_dark_color(u8 col_idx, s8 light_level);
-u8 get_light_color(u8 col_idx, s8 light_level);
+u32 get_dark_color(u8 col_idx, s8 light_level);
+u32 get_mid_dark_color(u8 col_idx, s8 light_level);
+u32 get_light_color(u8 col_idx, s8 light_level);
 
 u8 needs_dither(u32 dist);
+void init_swizzled_color_calc_table();
+u32* get_color_ptr(u16 color, s16 light_level);
+extern u32 swizzled_color_calc_table[16*5*4];
 
 #endif

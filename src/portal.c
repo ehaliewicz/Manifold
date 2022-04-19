@@ -421,7 +421,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
         u8 is_solid_color = map->wall_colors[(portal_idx<<WALL_COLOR_NUM_PARAMS_SHIFT)+WALL_SOLID_COLOR_IDX];
         u8 wall_col = tex_idx;
         if(!is_solid_color) {
-            lit_texture *tex = textures[tex_idx][light_level+2];
+            lit_texture *tex = get_texture(tex_idx, light_level);
             tmap_info.tex = tex;
         }
 
@@ -759,7 +759,8 @@ void pvs_scan(u16 src_sector, s16 window_min, s16 window_max, u32 cur_frame) {
             //u8 is_solid_color = map->wall_colors[(portal_idx<<WALL_COLOR_NUM_PARAMS_SHIFT)+WALL_SOLID_COLOR_IDX];
             //u8 wall_col = tex_idx;
             //if(!is_solid_color) {
-                lit_texture *tex = textures[tex_idx][light_level+2];
+
+                lit_texture *tex = get_texture(tex_idx, light_level);
                 tmap_info.tex = tex;
             //}
  

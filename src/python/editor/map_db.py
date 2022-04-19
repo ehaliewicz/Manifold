@@ -200,8 +200,8 @@ def get_all_sector_groups(world_data):
 
 def get_all_vertexes_for_sector(world_data, sector_idx):
     verts = []
-    base_offset = get_sector_constant(sector_idx, WALL_OFFSET_IDX)
-    num_walls = get_sector_constant(sector_idx, NUM_WALLS_IDX)
+    base_offset = get_sector_constant(world_data, sector_idx, WALL_OFFSET_IDX)
+    num_walls = get_sector_constant(world_data, sector_idx, NUM_WALLS_IDX)
     if num_walls == 0:
         return []
     for i in range(num_walls + 1):
@@ -213,3 +213,16 @@ def get_all_vertexes_for_sector(world_data, sector_idx):
 
 def get_all_vertexes(world_data):
     return world_data.vertexes
+
+
+def get_sect_for_wall(world_data, wall_idx):
+    for sect in range(1, world_data.num_sectors):
+
+        walls_up_to = get_sector_constant(world_data, sect, WALL_OFFSET_IDX)
+        if wall_idx < walls_up_to:
+            return sect-1
+    return world_data.num_sectors-1
+
+def get_portal_for_wall(world_data, wall_idx):
+    sect = get_sect_for_wall(world_data, wall_idx)
+    return wall_idx - sect
