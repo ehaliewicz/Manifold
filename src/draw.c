@@ -384,16 +384,220 @@ void draw_native_vertical_transparent_line_unrolled(s16 y0, s16 y1, u8 col, u8* 
 void vline_native_movel(s16 dy, u32 col, u8* col_ptr);
 
 
+
+u8* draw_native_double_vertical_line_unrolled(s16 y0, s16 y1, s16 y2, u32 full_col1, u32 full_col2, u8* col_ptr) {
+    col_ptr = col_ptr + (y0 << 1);
+    u16 dy1 = (y1-y0);
+    u16 dy2 = (y2-y1);
+
+    u16 word_col = full_col1;
+
+    if(dy1 & 0b1) {
+        __asm volatile(
+            "move.w %1, (%0)+"
+            : "+a" (col_ptr)
+            : "d" (word_col)
+        );
+        dy1--;
+    }
+
+    
+    __asm volatile(
+        "sub.w #158, %1\t\n\
+         neg.w %1\t\n\
+         jmp movel_draw_table_%=(%%pc, %1.W)\t\n\
+movel_draw_table_%=:\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+"
+      : "+a" (col_ptr)
+      : "d" (dy1), "d" (full_col1)
+    );
+
+    
+    word_col = full_col2;
+
+    if(dy2 & 0b1) {
+        __asm volatile(
+            "move.w %1, (%0)+"
+            : "+a" (col_ptr)
+            : "d" (word_col)
+        );
+        dy2--;
+    }
+
+    __asm volatile(
+        "sub.w #158, %1\t\n\
+         neg.w %1\t\n\
+         jmp movel_draw_table_%=(%%pc, %1.W)\t\n\
+movel_draw_table_%=:\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+\t\n\
+      move.l %2, (%0)+"
+      : "+a" (col_ptr)
+      : "d" (dy2), "d" (full_col2)
+    );
+
+}
+
 u8* draw_native_vertical_line_unrolled(s16 y0, s16 y1, u32 full_col,  u8* col_ptr) {
 
 
     col_ptr = col_ptr + (y0<<1);
 
-    //u32 full_col = long_color_table[col];
-    u16 word_col = full_col;// & 0xFFFF; 
-    //u16* word_col_ptr = (u16*)col_ptr;
-
-    //u16 word_col = (col<<8) | col;    
+    u16 word_col = full_col;
 
     u16 dy = (y1-y0);
     if(dy & 0b1) {
@@ -402,11 +606,9 @@ u8* draw_native_vertical_line_unrolled(s16 y0, s16 y1, u32 full_col,  u8* col_pt
             : "+a" (col_ptr)
             : "d" (word_col)
         );
-        //*word_col_ptr++ = word_col;
         dy--;
     }
 
-    //u32* lw_col_ptr = (u32*)word_col_ptr;
 
     __asm volatile(
         "sub.w #158, %1\t\n\
@@ -557,6 +759,8 @@ void draw_masked(s16 x1, s16 x1_ytop, s16 x1_ybot,
     fix32 bot_y_fix = x1_ybot<<12;
     s16 top_y_int = top_y_fix >> 16;
     s16 bot_y_int = bot_y_fix >> 16;
+    KLog_S1("top_y_int: ", top_y_int);
+    KLog_S1("bot_y_int: ", bot_y_int);
     //u16 height = bot_y_int-top_y_int;
 
     s16 beginx = max(x1, window_min);
@@ -576,13 +780,14 @@ void draw_masked(s16 x1, s16 x1_ytop, s16 x1_ybot,
         u_fix += (skip_x * u_per_x);
     }
 
+    //while(1) { }
     //u32 full_col = long_color_table[wall_col];
 
     s16 x = beginx;
     u8* yclip_ptr = &(clipping_buffer->y_clip_buffer[x<<1]);
 
     //u8** offset_ptr = (bmp_buffer_write == bmp_buffer_0) ? (&buf_0_column_offset_table[x]) : (&buf_1_column_offset_table[x]);
-    u8** offset_ptr = bmp_ptr_buf;
+    u8** offset_ptr = bmp_ptr_buf[x];
 
 
 
@@ -600,58 +805,61 @@ void draw_masked(s16 x1, s16 x1_ytop, s16 x1_ybot,
         u8 bot_draw_y = max_drawable_y; 
 
         u8* col_ptr = *offset_ptr++;
-        if(top_draw_y < bot_draw_y) {
-            //top_y_int = top_y_fix >> 16;
-            //bot_y_int = bot_y_fix >> 16;
-            u8 top_draw_y = clamp(top_y_int, min_drawable_y, max_drawable_y);
-            u8 bot_draw_y = clamp(bot_y_int, min_drawable_y, max_drawable_y);
-            
-            u32 clipped_y_pix_top, clipped_y_pix_bot;
-            u8 skipped_texels;
-            u8 skipped_bot_texels = 33;
-            clipped_y_pix_bot = (y_per_texels_fix * skipped_bot_texels) >> 16;
-
-            // if there are visible pixels in this column
+        u8 col_drawn = (col_ptr == NULL);
+        if(!col_drawn) {
             if(top_draw_y < bot_draw_y) {
+                //top_y_int = top_y_fix >> 16;
+                //bot_y_int = bot_y_fix >> 16;
+                u8 top_draw_y = clamp(top_y_int, min_drawable_y, max_drawable_y);
+                u8 bot_draw_y = clamp(bot_y_int, min_drawable_y, max_drawable_y);
+                
+                u32 clipped_y_pix_top, clipped_y_pix_bot;
+                u8 skipped_texels;
+                u8 skipped_bot_texels = 33;
+                clipped_y_pix_bot = (y_per_texels_fix * skipped_bot_texels) >> 16;
 
-                // get texture column 
-                u32 tex_col = ((u_fix<<TEX_WIDTH_SHIFT)>>16);
-                u16 tex_idx = tex_col<<TEX_HEIGHT_SHIFT;
-                u16* tex_column = &tex[tex_idx];
+                // if there are visible pixels in this column
+                if(top_draw_y < bot_draw_y) {
 
-                // this sprite only has 28 columns of non-transparent pixels :)
-                if(tex_col >= 27) { 
-                    break;
-                } else if (tex_col >= 24) {
-                    // last few columns skip 29 texels
-                    skipped_texels = 29;
+                    // get texture column 
+                    u32 tex_col = ((u_fix<<TEX_WIDTH_SHIFT)>>16);
+                    u16 tex_idx = tex_col<<TEX_HEIGHT_SHIFT;
+                    u16* tex_column = &tex[tex_idx];
 
-                    clipped_y_pix_top = (y_per_texels_fix * skipped_texels)>>16;
-                } else if (tex_col < 2) {
-                    // first few columns skip 9 texels
-                    skipped_texels = 9;
-                    clipped_y_pix_top = (y_per_texels_fix * skipped_texels)>>16;
-                } else {
-                    skipped_texels = 0;
-                    clipped_y_pix_top = 0;
+                    // this sprite only has 28 columns of non-transparent pixels :)
+                    if(tex_col >= 27) { 
+                        break;
+                    } else if (tex_col >= 24) {
+                        // last few columns skip 29 texels
+                        skipped_texels = 29;
+
+                        clipped_y_pix_top = (y_per_texels_fix * skipped_texels)>>16;
+                    } else if (tex_col < 2) {
+                        // first few columns skip 9 texels
+                        skipped_texels = 9;
+                        clipped_y_pix_top = (y_per_texels_fix * skipped_texels)>>16;
+                    } else {
+                        skipped_texels = 0;
+                        clipped_y_pix_top = 0;
+                    }
+                    //KLog_S1("top y int: ", top_y_int);
+                    //KLog_U1("top_draw_y: ", top_draw_y);
+                    //KLog_U1("top_draw_y+clipped_y_pix: ", top_draw_y+clipped_y_pix);
+                    //KLog_S1("bot_y_int: ", bot_y_int);
+                    //KLog_U1("bot_draw_y: ", bot_draw_y);
+                    draw_bottom_clipped_texture_vertical_line(top_y_int, top_draw_y+clipped_y_pix_top, bot_y_int, bot_draw_y-clipped_y_pix_bot, col_ptr, tex_column);
+
                 }
-                //KLog_S1("top y int: ", top_y_int);
-                //KLog_U1("top_draw_y: ", top_draw_y);
-                //KLog_U1("top_draw_y+clipped_y_pix: ", top_draw_y+clipped_y_pix);
-                //KLog_S1("bot_y_int: ", bot_y_int);
-                //KLog_U1("bot_draw_y: ", bot_draw_y);
-                draw_bottom_clipped_texture_vertical_line(top_y_int, top_draw_y+clipped_y_pix_top, bot_y_int, bot_draw_y-clipped_y_pix_bot, col_ptr, tex_column);
 
+                u_fix += u_per_x;
             }
-
-            u_fix += u_per_x;
         }
 
         //top_y_fix += top_dy_per_dx;
         //bot_y_fix += bot_dy_per_dx;
     }
     
-    flip();
+    //flip();
 
     return; 
 }
@@ -689,7 +897,7 @@ void draw_forcefield(s16 x1, s16 x2,
     }
 
     
-    flip();
+    //flip();
 
     return; 
 }
@@ -825,12 +1033,42 @@ u8* draw_lit_floor_light_only(s16 floor_top_y, s16 floor_bot_y, u8* col_ptr, lig
 }
 
 u8* draw_lit_floor(s16 floor_top_y, s16 floor_bot_y, u8* col_ptr, light_params* params) {
-    
-    //return draw_native_vertical_line_unrolled(floor_top_y, floor_bot_y, params->light_color, col_ptr);
+    #ifndef FLAT_DIST_LIGHTING
+    return draw_native_vertical_line_unrolled(floor_top_y, floor_bot_y, params->light_color, col_ptr);
+    #endif
 
+    s16 dark_y = params->dark_y;
+    s16 mid_y = params->mid_y;
 
+    s16 y0 = floor_top_y;
+    s16 y1 = floor_bot_y;
+    if(y0 < dark_y) {
+        if(y1 > mid_y) {
+            draw_native_vertical_line_unrolled(y0, dark_y, params->dark_color, col_ptr);
+            draw_native_vertical_line_unrolled(dark_y, mid_y, params->mid_color, col_ptr);
+            draw_native_vertical_line_unrolled(mid_y, y1, params->light_color, col_ptr);
+        } else if (y1 > dark_y) {
+            draw_native_double_vertical_line_unrolled(y0, dark_y, y1, params->dark_color, params->mid_color, col_ptr);
+            //draw_native_vertical_line_unrolled(y0, dark_y, params->dark_color, col_ptr);
+            //draw_native_vertical_line_unrolled(dark_y, y1, params->mid_color, col_ptr);
+        } else {
+            draw_native_vertical_line_unrolled(y0, y1, params->dark_color, col_ptr);
+        }
+    } else if (y0 < mid_y) {
+        if(y1 > mid_y) {
+            //draw_native_vertical_line_unrolled(y0, mid_y, params->mid_color, col_ptr);
+            //draw_native_vertical_line_unrolled(mid_y, y1, params->light_color, col_ptr);
+            draw_native_double_vertical_line_unrolled(y0, mid_y, y1, params->mid_color, params->light_color, col_ptr);
+        } else {
+            draw_native_vertical_line_unrolled(y0, y1, params->mid_color, col_ptr);
+        }
+    } else {
+        draw_native_vertical_line_unrolled(y0, y1, params->light_color, col_ptr);
+    }
+    /*
     int draw_dark_top = floor_top_y;
     int draw_dark_bot = min(floor_bot_y, params->dark_y);
+
     if(draw_dark_top < draw_dark_bot) {
         draw_native_vertical_line_unrolled(draw_dark_top, draw_dark_bot, params->dark_color, col_ptr);
     }
@@ -845,7 +1083,8 @@ u8* draw_lit_floor(s16 floor_top_y, s16 floor_bot_y, u8* col_ptr, light_params* 
     int draw_light_bot = floor_bot_y;
     if(draw_light_top < draw_light_bot) {
         draw_native_vertical_line_unrolled(draw_light_top, draw_light_bot, params->light_color, col_ptr);
-    }
+    }*/
+
     return col_ptr;
 }
 
@@ -853,12 +1092,19 @@ u8* draw_lit_ceil_light_only(s16 ceil_top_y, s16 ceil_bot_y, u8* col_ptr, light_
     return draw_native_vertical_line_unrolled(ceil_top_y, ceil_bot_y, params->light_color, col_ptr);
 }
 
-u8* draw_lit_ceiling(s16 ceil_top_y, s16 ceil_bot_y, u8* col_ptr, light_params* params) {
-    
-    //return draw_native_vertical_line_unrolled(ceil_top_y, ceil_bot_y, params->light_color, col_ptr);
+u8*  draw_lit_ceiling(s16 ceil_top_y, s16 ceil_bot_y, u8* col_ptr, light_params* params) {
+    #ifndef FLAT_DIST_LIGHTING
+    s16 mid = ((ceil_bot_y-ceil_top_y)<<1)+ceil_top_y;
+    if(mid < params->mid_y) {
+        return draw_native_vertical_line_unrolled(ceil_top_y, ceil_bot_y, params->light_color, col_ptr);
+    } else {
+
+    }
+    #endif
 
     int draw_light_top = ceil_top_y;
     int draw_light_bot = min(ceil_bot_y, params->mid_y);
+
     if(draw_light_top < draw_light_bot) {
         draw_native_vertical_line_unrolled(draw_light_top, draw_light_bot, params->light_color, col_ptr);
     }
@@ -873,8 +1119,8 @@ u8* draw_lit_ceiling(s16 ceil_top_y, s16 ceil_bot_y, u8* col_ptr, light_params* 
     int draw_dark_bot = ceil_bot_y;
     if (draw_dark_top < draw_dark_bot) {
         draw_native_vertical_line_unrolled(draw_dark_top, draw_dark_bot, params->dark_color, col_ptr);
-
     }
+
     return col_ptr;
 }
 
@@ -1348,18 +1594,8 @@ void calculate_light_levels_for_wall(u32 clipped_dx, s32 inv_z1, s32 inv_z2, s32
     u8* out_ptr = light_levels;
     u8 cnt = clipped_dx;
 
-    if(light_level == -2 || light_level == 2) {
-        // z stays the same
-        //output_light_span(cur_light, cnt);
-        *out_ptr++ = MID;
-        *out_ptr++ = cnt; //cur_light;
-        //*out_ptr++ = cnt;
-        num_light_levels = 1;
-
-        return;
-    }
-    u8 cur_light;
     s16 cur_inv_z = inv_z1;
+    u8 cur_light;
     if (cur_inv_z <= FIX_0_16_INV_DARK_DIST) {
         cur_light = DARK;
     } else if (cur_inv_z <= FIX_0_16_INV_MID_DIST) {
@@ -1367,6 +1603,27 @@ void calculate_light_levels_for_wall(u32 clipped_dx, s32 inv_z1, s32 inv_z2, s32
     } else {
         cur_light = LIGHT;
     }
+
+
+    if(light_level == -2 || light_level == 2) { // 0) {
+        // z stays the same
+        //output_light_span(cur_light, cnt);
+        *out_ptr++ = cur_light; //MID;
+        *out_ptr++ = cnt; //cur_light;
+        //*out_ptr++ = cnt;
+        num_light_levels = 1;
+        return;
+    }
+   
+
+    #ifndef WALL_DIST_LIGHTING
+        *out_ptr++ = cur_light;
+        *out_ptr++ = cnt; //cur_light;
+        //*out_ptr++ = cnt;
+        num_light_levels = 1;
+        return 0;
+    #endif
+
     if(fix_inv_dz_per_dx == 0) {
         // z stays the same
         //output_light_span(cur_light, cnt);
@@ -1391,6 +1648,8 @@ void calculate_light_levels_for_wall(u32 clipped_dx, s32 inv_z1, s32 inv_z2, s32
 
 
     u8 cur_span = 0;
+
+    /*
 
     while(cnt--) {
         u8 next_light; 
@@ -1425,7 +1684,56 @@ void calculate_light_levels_for_wall(u32 clipped_dx, s32 inv_z1, s32 inv_z2, s32
         cur_inv_z += fix_inv_dz_per_dx;
         
     }
-    
+    */
+   #define OUTPUT_SPAN(nxt) do {\
+    __asm volatile(     \
+        "move.b %1, (%0)+\t\n\
+        move.b %2, (%0)+"\
+        : "+a" (out_ptr)\
+        : "d" (cur_light), "d" (cur_span)\
+    );                                  \
+    cur_light = nxt;  \
+    cur_span = 1;           \
+   } while(0) \
+
+
+    u8 next_light; 
+
+    while(cnt--) {
+        u8 next_light; 
+        if (cur_inv_z <= FIX_0_16_INV_DARK_DIST) {
+            next_light = DARK;
+        } else if (cur_inv_z <= FIX_0_16_INV_MID_DIST) {
+            next_light = MID;
+        } else {
+            next_light = LIGHT;
+        }
+
+        if(cur_light == next_light) {
+            cur_span++;
+        } else {
+            __asm volatile(
+                "move.b %1, (%0)+\t\n\
+                move.b %2, (%0)+"
+                : "+a" (out_ptr)
+                : "d" (cur_light), "d" (cur_span)
+            );
+            //*out_ptr++ = cur_light;
+            //*out_ptr++ = cur_span;
+            cur_light = next_light;
+            cur_span = 1;
+
+
+            if(end_light == cur_light) {
+                cur_span += cnt;
+                break;
+            }
+        }
+        cur_inv_z += fix_inv_dz_per_dx;
+    }
+
+   
+finished:
     __asm volatile(
         "move.b %1, (%0)+\t\n\
         move.b %2, (%0)+"
@@ -1548,7 +1856,7 @@ void draw_upper_step(s16 x1, s16 x1_ytop, s16 nx1_ytop, s16 x2, s16 x2_ytop, s16
 
     }
     
-    flip();
+    //flip();
 
     return; 
 }
@@ -1674,7 +1982,7 @@ void draw_top_pegged_textured_upper_step(s16 x1, s16 x1_ytop, s16 nx1_ytop, s16 
         pegged_top_y_fix += pegged_top_dy_per_dx;
     }
     
-    flip();
+    //flip();
 
     return; 
 }
@@ -1798,7 +2106,7 @@ void draw_bottom_pegged_textured_lower_step(
         pegged_bot_y_fix += pegged_bot_dy_per_dx;
     }
     
-    flip();
+    //flip();
 
     return; 
 }
@@ -1909,8 +2217,7 @@ void draw_lower_step(s16 x1, s16 x1_ybot, s16 nx1_ybot, s16 x2, s16 x2_ybot, s16
         }
     }
     
-    
-    flip();
+    //flip();
 
     return; 
 }
@@ -1953,18 +2260,15 @@ void draw_ceiling_update_clip(s16 x1, s16 x1_ytop, s16 x2, s16 x2_ytop,
 
     int cnt = endx-beginx;
 
-    //u8** offset_ptr = (bmp_buffer_write == bmp_buffer_0) ? (&buf_0_column_offset_table[x]) : (&buf_1_column_offset_table[x]);
     u8** offset_ptr = &bmp_ptr_buf[x];
     while(cnt--) {
         top_y_int = top_y_fix >> 16;
         u8 min_drawable_y = *yclip_ptr;
         u8 max_drawable_y = *(yclip_ptr+1);
-        //if(min_drawable_y >= max_drawable_y) { continue; }
         u8 top_draw_y = clamp(top_y_int, min_drawable_y, max_drawable_y);
 
         u8* col_ptr = *offset_ptr++;
         u8 col_drawn = (col_ptr == NULL);
-        //u8 col_drawn = *drawn_buf_ptr++;
 
         if(min_drawable_y < top_draw_y && !col_drawn) {
             ceil_func(min_drawable_y, top_draw_y, col_ptr, params);
@@ -1979,7 +2283,7 @@ void draw_ceiling_update_clip(s16 x1, s16 x1_ytop, s16 x2, s16 x2_ytop,
         top_y_fix += top_dy_per_dx;
     }
     
-    flip();
+    //flip();
 
     return; 
 }
@@ -2043,7 +2347,7 @@ void draw_floor_update_clip(s16 x1, s16 x1_ybot, s16 x2, s16 x2_ybot,
         bot_y_fix += bot_dy_per_dx;
     }
     
-    flip();
+    //flip();
 
     return; 
 }
@@ -2167,7 +2471,7 @@ void draw_solid_color_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
         }
     }
     
-    flip();
+    //flip();
 
     return; 
 }
@@ -2241,19 +2545,16 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
 
     calculate_light_levels_for_wall(cnt, cur_fix_inv_z, inv_z2, fix_inv_dz_per_dx, light_level);
     
-    u16 far_inv_z = min(inv_z1, inv_z2);
-    
-    const u8 light_floor_ceil = (far_inv_z <= FIX_0_16_INV_MID_DIST);
+    //u16 far_inv_z = min(inv_z1, inv_z2);
     draw_lit_plane_fp floor_func = &draw_lit_floor_light_only;
     draw_lit_plane_fp ceil_func = &draw_lit_ceil_light_only;
-    if(light_floor_ceil) {
-        floor_func = &draw_lit_floor;
-        ceil_func = &draw_lit_ceiling;
-    }
+
+    const u8 light_floor_ceil = ((inv_z1 <= FIX_0_16_INV_MID_DIST) || (inv_z2 <= FIX_0_16_INV_MID_DIST));
+
 
     u8* light_ptr = light_levels;
     if(light_floor_ceil) {
-        for(int i = 0; i < num_light_levels; i++) {
+        for(u16 i = 0; i < num_light_levels; i++) {
             u8 light_level = *light_ptr++;
             u8 light_cnt = *light_ptr++;
             u16* base_tex;
@@ -2275,46 +2576,71 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
 
                 u8 min_drawable_y = *yclip_ptr++;
                 u8 max_drawable_y = *yclip_ptr++;
-                //if(min_drawable_y >= max_drawable_y) { continue; }
-                u8 top_draw_y = clamp(top_y_int, min_drawable_y, max_drawable_y);
-                u8 bot_draw_y = clamp(bot_y_int, min_drawable_y, max_drawable_y);
-
                 
                 u8* col_ptr = *offset_ptr;
                 u8 col_drawn = (col_ptr == NULL);
+                *offset_ptr++ = NULL;
 
-                //u8 col_drawn = *drawn_buf_ptr;
                 u16 tex_idx = *tex_col_ptr++;
-                if(!col_drawn) {
-                    if(min_drawable_y < top_draw_y) {
-                        //draw_lit_ceiling(min_drawable_y, top_draw_y, col_ptr, ceil_params);
-                        ceil_func(min_drawable_y, top_draw_y, col_ptr, ceil_params);
-                    }
-                    if(top_draw_y < bot_draw_y) {
-                        u16* tex_column = &base_tex[tex_idx];
-                        if(bot_y_int == bot_draw_y) {
-                            draw_texture_vertical_line(top_y_int, top_draw_y, bot_y_int, col_ptr, tex_column);
-                        } else {
-                            draw_bottom_clipped_texture_vertical_line(top_y_int, top_draw_y, bot_y_int, bot_draw_y, col_ptr, tex_column);
-                        }
-                    }
-                    if(bot_draw_y < max_drawable_y) {
-                        //draw_lit_floor(bot_draw_y, max_drawable_y, col_ptr, floor_params);
-                        floor_func(bot_draw_y, max_drawable_y, col_ptr, floor_params);
-                    }
-                    //*drawn_buf_ptr++ = 1;
-                    *offset_ptr++ = NULL;
-                } else {
-                    //drawn_buf_ptr++;
-                    offset_ptr++;
-                }
-
                 top_y_fix += top_dy_per_dx;
                 bot_y_fix += bot_dy_per_dx;
+
+
+                
+                if(!col_drawn) {
+                    s16 ctop = min_drawable_y;
+                    s16 cbot = top_y_int;
+                    if(ctop < cbot) {
+                        if(max_drawable_y < ctop) {
+                            // bottom fully clips ceiling
+                            continue;
+                        } else {
+                            // bottom might partially clip ceiling
+                            cbot = (cbot <= max_drawable_y ? cbot : max_drawable_y);
+                            draw_lit_ceiling(ctop, cbot, col_ptr, ceil_params);
+                            //ceil_func(ctop, cbot, col_ptr, ceil_params);
+                        }
+                    }
+
+                    s16 ftop = bot_y_int;
+                    s16 fbot = max_drawable_y;
+                    if(ftop < fbot) {
+                        if(min_drawable_y >= fbot) {
+                            // top fully clips floor
+                            continue;
+                        } else {
+                            // top partially clips floor
+                            ftop = (ftop >= min_drawable_y ? ftop : min_drawable_y);
+                            draw_lit_floor(ftop, fbot, col_ptr, floor_params);
+                            //floor_func(ftop, fbot, col_ptr, floor_params);
+                        }
+                    }
+
+
+                    s16 wtop = top_y_int;
+                    s16 wbot = bot_y_int;
+                    wtop = (wtop >= min_drawable_y ? wtop : min_drawable_y);
+                    wbot = (wbot <= max_drawable_y ? wbot : max_drawable_y);
+
+                    if(wtop < wbot) {
+                        if(max_drawable_y <= wtop) {
+                            // fully clips wall
+                        } else if (min_drawable_y >= wbot) {
+                           // fully clips wall
+                        } else {                
+                            u16* tex_column = &base_tex[tex_idx];
+                            if(bot_y_int == wbot) {
+                                draw_texture_vertical_line(top_y_int, wtop, bot_y_int, col_ptr, tex_column);
+                            } else {
+                                draw_bottom_clipped_texture_vertical_line(top_y_int, wtop, bot_y_int, wbot, col_ptr, tex_column);
+                            }   
+                        }
+                    }
+                }
             }
         }
     } else {
-        for(int i = 0; i < num_light_levels; i++) {
+        for(u16 i = 0; i < num_light_levels; i++) {
             u8 light_level = *light_ptr++;
             u8 light_cnt = *light_ptr++;
             u16* base_tex;
@@ -2335,42 +2661,71 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
 
                 u8 min_drawable_y = *yclip_ptr++;
                 u8 max_drawable_y = *yclip_ptr++;
-                //if(min_drawable_y >= max_drawable_y) { continue; }
-                u8 top_draw_y = clamp(top_y_int, min_drawable_y, max_drawable_y);
-                u8 bot_draw_y = clamp(bot_y_int, min_drawable_y, max_drawable_y);
 
-                
                 u8* col_ptr = *offset_ptr;
-                u8 col_drawn = (col_ptr == NULL); //*drawn_buf_ptr;
+                u8 col_drawn = (col_ptr == NULL);
+                *offset_ptr++ = NULL;
+
                 u16 tex_idx = *tex_col_ptr++;
-                if(!col_drawn) {
-                    if(min_drawable_y < top_draw_y) {
-                        draw_lit_ceil_light_only(min_drawable_y, top_draw_y, col_ptr, ceil_params);
-                    }
-                    if(top_draw_y < bot_draw_y) {
-                        u16* tex_column = &base_tex[tex_idx];
-
-                        if(bot_y_int == bot_draw_y) {
-                            draw_texture_vertical_line(top_y_int, top_draw_y, bot_y_int, col_ptr, tex_column);
-                        } else {
-                            draw_bottom_clipped_texture_vertical_line(top_y_int, top_draw_y, bot_y_int, bot_draw_y, col_ptr, tex_column);
-                        }
-                    }
-                    if(bot_draw_y < max_drawable_y) {
-                        draw_lit_floor_light_only(bot_draw_y, max_drawable_y, col_ptr, floor_params);
-                    }
-                    *offset_ptr++ = NULL;
-                } else {
-                    offset_ptr++;
-                }
-
                 top_y_fix += top_dy_per_dx;
                 bot_y_fix += bot_dy_per_dx;
+
+                if(!col_drawn) {
+
+                    s16 ctop = min_drawable_y;
+                    s16 cbot = top_y_int;
+                    if(ctop < cbot) {
+                        if(max_drawable_y < ctop) {
+                            // bottom fully clips ceiling
+                            continue;
+                        } else {
+                            // bottom might partially clip ceiling
+                            cbot = (cbot <= max_drawable_y ? cbot : max_drawable_y);
+                            draw_lit_ceil_light_only(ctop, cbot, col_ptr, ceil_params);
+                        }
+                    }
+
+                    s16 ftop = bot_y_int;
+                    s16 fbot = max_drawable_y;
+                    if(ftop < fbot) {
+                        if(min_drawable_y >= fbot) {
+                            // top fully clips floor
+                            continue;
+                        } else {
+                            // top partially clips floor
+                            ftop = (ftop >= min_drawable_y ? ftop : min_drawable_y);
+                            draw_lit_floor_light_only(ftop, fbot, col_ptr, floor_params);
+
+                        }
+                    }
+
+
+                    s16 wtop = top_y_int;
+                    s16 wbot = bot_y_int;
+                    wtop = (wtop >= min_drawable_y ? wtop : min_drawable_y);
+                    wbot = (wbot <= max_drawable_y ? wbot : max_drawable_y);
+
+                    if(wtop < wbot) {
+                        if(max_drawable_y <= wtop) {
+                            // fully clips wall
+                        } else if (min_drawable_y >= wbot) {
+                           // fully clips wall
+                        } else {                
+                            u16* tex_column = &base_tex[tex_idx];
+                            if(bot_y_int == wbot) {
+                                draw_texture_vertical_line(top_y_int, wtop, bot_y_int, col_ptr, tex_column);
+                            } else {
+                                draw_bottom_clipped_texture_vertical_line(top_y_int, wtop, bot_y_int, wbot, col_ptr, tex_column);
+                            }   
+                        }
+                    }
+                }
+
             }
         }
     }    
 
-    flip();
+    //flip();
 
     return; 
 }
@@ -2509,7 +2864,7 @@ void draw_top_pegged_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
     }
     
 
-    flip();
+    //flip();
 
     return; 
 }
@@ -2653,7 +3008,7 @@ void draw_bot_pegged_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
 
     
 
-    flip();
+    //flip();
 
     return; 
 }

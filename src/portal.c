@@ -585,9 +585,9 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
             Vect2D_s16 trans_pos = transform_map_vert_16(fix32ToInt(pos.x), fix32ToInt(pos.y));
             
             u16 z_recip = z_recip_table_16[trans_pos.y>>TRANS_Z_FRAC_BITS];
-
+            
             if(trans_pos.y > 0) {
-
+                
                 s16 left_x = project_and_adjust_x(trans_pos.x-6, z_recip);
                 s16 right_x = project_and_adjust_x(trans_pos.x+6, z_recip);
 
@@ -595,6 +595,16 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
 
                 s16 top_y = project_and_adjust_y_fix(pos.z+type.from_floor_draw_offset+type.height, z_recip);
                 s16 bot_y = project_and_adjust_y_fix(pos.z+type.from_floor_draw_offset, z_recip);
+
+                //while(1) { 
+                //KLog_S1("trans_pos.y: ", trans_pos.y);
+                //KLog_U1("z_recip: ", z_recip);
+                //KLog_S1("left_x: ", left_x);
+                //KLog_S1("right_x: ", right_x);
+                //KLog_S1("top_y: ", top_y);
+                //KLog_S1("bot_y: ", bot_y);
+                //}
+
 
                 draw_masked(left_x,top_y, bot_y,
                         right_x, top_y, bot_y,

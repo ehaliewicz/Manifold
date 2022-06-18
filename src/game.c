@@ -541,7 +541,10 @@ void init_game() {
     
     init_swizzled_color_calc_table();
 
-    object* cur_obj = alloc_object_in_sector(cur_player_pos, 10, sector_centers[10].x, sector_centers[10].y, get_sector_group_floor_height(10), 0);
+    //object* cur_obj = alloc_object_in_sector(
+    //    cur_player_pos, 10, 
+    //    sector_centers[10].x, sector_centers[10].y, 
+    //    get_sector_group_floor_height(10), 0);
 
 
     if(music_on) {

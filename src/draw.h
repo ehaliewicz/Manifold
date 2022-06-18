@@ -6,6 +6,8 @@
 #include "texture.h"
 #include "vertex.h"
 
+#define WALL_DIST_LIGHTING 
+#define FLAT_DIST_LIGHTING
 
 
 typedef struct {
@@ -22,6 +24,7 @@ extern int debug_draw_cleared;
 void run_texture_test();
 
 //void draw_native_vertical_line_unrolled(s16 y0, s16 y1, u8 col, u8* col_ptr);
+u8* draw_native_double_vertical_line_unrolled(s16 y0, s16 y1, s16 y2, u32 full_col1, u32 full_col2, u8* col_ptr);
 u8* draw_native_vertical_line_unrolled(s16 y0, s16 y1, u32 full_col,  u8* col_ptr);
 void copy_2d_buffer(u16 left, u16 right, clip_buf* dest);
 void draw_native_vertical_transparent_line_unrolled(s16 y0, s16 y1, u8 col, u8* col_ptr, u8 odd);
