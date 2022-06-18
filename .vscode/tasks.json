@@ -15,9 +15,9 @@
       "problemMatcher": []
     },
     {
-      "label": "SGDK - Clean",
+      "label": "SGDK - Clean Build",
       "type": "shell",
-      "command": ".\\build.bat clean",
+      "command": ".\\build.bat cleanbuild",
       "group": "build",
       "presentation": {
         "reveal": "always",
