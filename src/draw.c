@@ -759,8 +759,8 @@ void draw_masked(s16 x1, s16 x1_ytop, s16 x1_ybot,
     fix32 bot_y_fix = x1_ybot<<12;
     s16 top_y_int = top_y_fix >> 16;
     s16 bot_y_int = bot_y_fix >> 16;
-    KLog_S1("top_y_int: ", top_y_int);
-    KLog_S1("bot_y_int: ", bot_y_int);
+    //KLog_S1("top_y_int: ", top_y_int);
+    //KLog_S1("bot_y_int: ", bot_y_int);
     //u16 height = bot_y_int-top_y_int;
 
     s16 beginx = max(x1, window_min);
@@ -1033,10 +1033,11 @@ u8* draw_lit_floor_light_only(s16 floor_top_y, s16 floor_bot_y, u8* col_ptr, lig
 }
 
 u8* draw_lit_floor(s16 floor_top_y, s16 floor_bot_y, u8* col_ptr, light_params* params) {
-    #ifndef FLAT_DIST_LIGHTING
+    #ifndef FLATS_DIST_LIGHTING
     return draw_native_vertical_line_unrolled(floor_top_y, floor_bot_y, params->light_color, col_ptr);
     #endif
 
+    /*
     s16 dark_y = params->dark_y;
     s16 mid_y = params->mid_y;
 
@@ -1065,7 +1066,8 @@ u8* draw_lit_floor(s16 floor_top_y, s16 floor_bot_y, u8* col_ptr, light_params* 
     } else {
         draw_native_vertical_line_unrolled(y0, y1, params->light_color, col_ptr);
     }
-    /*
+    */
+    
     int draw_dark_top = floor_top_y;
     int draw_dark_bot = min(floor_bot_y, params->dark_y);
 
@@ -1083,7 +1085,7 @@ u8* draw_lit_floor(s16 floor_top_y, s16 floor_bot_y, u8* col_ptr, light_params* 
     int draw_light_bot = floor_bot_y;
     if(draw_light_top < draw_light_bot) {
         draw_native_vertical_line_unrolled(draw_light_top, draw_light_bot, params->light_color, col_ptr);
-    }*/
+    }
 
     return col_ptr;
 }
@@ -1093,7 +1095,7 @@ u8* draw_lit_ceil_light_only(s16 ceil_top_y, s16 ceil_bot_y, u8* col_ptr, light_
 }
 
 u8*  draw_lit_ceiling(s16 ceil_top_y, s16 ceil_bot_y, u8* col_ptr, light_params* params) {
-    #ifndef FLAT_DIST_LIGHTING
+    #ifndef FLATS_DIST_LIGHTING
     s16 mid = ((ceil_bot_y-ceil_top_y)<<1)+ceil_top_y;
     if(mid < params->mid_y) {
         return draw_native_vertical_line_unrolled(ceil_top_y, ceil_bot_y, params->light_color, col_ptr);
@@ -1616,7 +1618,7 @@ void calculate_light_levels_for_wall(u32 clipped_dx, s32 inv_z1, s32 inv_z2, s32
     }
    
 
-    #ifndef WALL_DIST_LIGHTING
+    #ifndef WALLS_DIST_LIGHTING
         *out_ptr++ = cur_light;
         *out_ptr++ = cnt; //cur_light;
         //*out_ptr++ = cnt;
