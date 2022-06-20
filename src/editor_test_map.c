@@ -284,8 +284,8 @@ static const u8 sector_group_types[6] = {
 static const s16 sector_group_triggers[6*8] = {
     0,0,0,0,0,0,0,0,
     3,2,-1,0,0,0,0,0, // start stairs trigger on itself
-    1,2,4,-1,0,0,0,0,
-    2,2,4,-1,0,0,0,0, // 
+    1,2,4,-1,0,0,0,0, // set sector groups 2,4 dark
+    2,2,4,-1,0,0,0,0, // set sector groups 2,4 light
     0,0,0,0,0,0,0,0,
     0,0,0,0,0,0,0,0,
 };

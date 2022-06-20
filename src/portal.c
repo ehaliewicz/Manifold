@@ -96,13 +96,14 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
 
     int render_red_ball = (sector == 10);
     object* objects_in_sect = objects_in_sector(sector);
+    //KLog_U1("objects in sect?: ", objects_in_sect);
     int needs_object_clip_buffer = render_red_ball && (objects_in_sect != NULL);
     //int needs_object_clip_buffer = ;
 
     clip_buf* obj_clip_buf;
     if(needs_object_clip_buffer) {
-        //KLog_U1("allocating object clip buffer in sector: ", sector);
         obj_clip_buf = alloc_clip_buffer();
+        //KLog_U2("allocating object clip buffer in sector: ", sector, " id: ", obj_clip_buf->id);
         if(obj_clip_buf == NULL) {
             die("no more clip bufs");
         }
@@ -368,6 +369,8 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
             x1_ytop = project_and_adjust_y_fix(ceil_height, z_recip_v1);
             x2_ytop = project_and_adjust_y_fix(ceil_height, z_recip_v2);
 
+            // this test is iffy here
+            // can cause issues with floors/ceilings leaking e.g. medusa effect
             if (neighbor_ceil_height > floor_height && neighbor_floor_height < ceil_height) {
                 recur = 1;
             }
@@ -588,10 +591,13 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
             
             if(trans_pos.y > 0) {
                 
-                s16 left_x = project_and_adjust_x(trans_pos.x-6, z_recip);
-                s16 right_x = project_and_adjust_x(trans_pos.x+6, z_recip);
-
+                //s16 left_x = project_and_adjust_x(trans_pos.x-6, z_recip);
+                //s16 right_x = project_and_adjust_x(trans_pos.x+6, z_recip);
                 object_template type = object_types[cur_obj->object_type];
+
+                s16 left_x = project_and_adjust_x(trans_pos.x-(type.width>>1), z_recip);
+                s16 right_x = project_and_adjust_x(trans_pos.x+(type.width>>1), z_recip);
+
 
                 s16 top_y = project_and_adjust_y_fix(pos.z+type.from_floor_draw_offset+type.height, z_recip);
                 s16 bot_y = project_and_adjust_y_fix(pos.z+type.from_floor_draw_offset, z_recip);

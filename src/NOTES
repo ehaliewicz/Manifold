@@ -1,0 +1,1 @@
+NEED portal walls inserted into pvs when floor/ceil color or height changes.  Otherwise they are unnecessary.

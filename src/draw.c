@@ -53,6 +53,7 @@ void clear_2d_buffers() {
     u8* yclip_ptr = yclip;
     u8* drawn_buf_ptr = drawn_buf;
 
+    // 0:8 screen_height:8 0:8 screen_height:8
     u32 u32val = (SCREEN_HEIGHT << 16) | SCREEN_HEIGHT;
 
     // 128 bytes need to be moved
@@ -745,7 +746,7 @@ void draw_masked(s16 x1, s16 x1_ytop, s16 x1_ybot,
                             clip_buf* clipping_buffer,
                             u8 wall_col) {
 
-    return;
+    //return;
     // 4 subpixel bits here
     s16 top_dy_fix = x2_ytop - x1_ytop;
     s16 bot_dy_fix = x2_ybot - x1_ybot;
@@ -761,6 +762,7 @@ void draw_masked(s16 x1, s16 x1_ytop, s16 x1_ybot,
     s16 bot_y_int = bot_y_fix >> 16;
     //KLog_S1("top_y_int: ", top_y_int);
     //KLog_S1("bot_y_int: ", bot_y_int);
+    //return;
     //u16 height = bot_y_int-top_y_int;
 
     s16 beginx = max(x1, window_min);
@@ -788,7 +790,7 @@ void draw_masked(s16 x1, s16 x1_ytop, s16 x1_ybot,
 
     //u8** offset_ptr = (bmp_buffer_write == bmp_buffer_0) ? (&buf_0_column_offset_table[x]) : (&buf_1_column_offset_table[x]);
     //u8** offset_ptr = &bmp_ptr_buf[x];
-    // CANNOT USER bmp_ptr_buf because it's overwritten by opaque walls to be filled with NULL ptrs
+    // CANNOT USE bmp_ptr_buf because it's overwritten by opaque walls to be filled with NULL ptrs
     u8** offset_ptr = (bmp_buffer_write == bmp_buffer_0) ? (&buf_0_column_offset_table[x]) : (&buf_1_column_offset_table[x]);
 
 
@@ -796,10 +798,10 @@ void draw_masked(s16 x1, s16 x1_ytop, s16 x1_ybot,
     const u16* tex = raw_key_32_32_mid;
     u32 y_per_texels_fix = ((bot_y_int - top_y_int)<<16)/ 64;
     //u32 texels_per_y_fix = (64<<16) / (bot_y_int-top_y_int);
-
+    //KLog_S2("x: ", x, "end x: ", endx);
     for(;x < endx; x++) {
-        u8 min_drawable_y = *yclip_ptr++;
-        u8 max_drawable_y = *yclip_ptr++;
+        u8 min_drawable_y = 0;//*yclip_ptr++;
+        u8 max_drawable_y = SCREEN_HEIGHT; //*yclip_ptr++;
         //if(min_drawable_y >= max_drawable_y) { continue; }
 
         u8 top_draw_y = min_drawable_y; 
@@ -815,6 +817,8 @@ void draw_masked(s16 x1, s16 x1_ytop, s16 x1_ybot,
                 //bot_y_int = bot_y_fix >> 16;
                 u8 top_draw_y = clamp(top_y_int, min_drawable_y, max_drawable_y);
                 u8 bot_draw_y = clamp(bot_y_int, min_drawable_y, max_drawable_y);
+                //KLog_U1("top_draw_y: ", top_draw_y);
+                //KLog_U1("bot_draw_y: ", bot_draw_y);
                 
                 u32 clipped_y_pix_top, clipped_y_pix_bot;
                 u8 skipped_texels;
@@ -828,14 +832,19 @@ void draw_masked(s16 x1, s16 x1_ytop, s16 x1_ybot,
                     u32 tex_col = ((u_fix<<TEX_WIDTH_SHIFT)>>16);
                     u16 tex_idx = tex_col<<TEX_HEIGHT_SHIFT;
                     u16* tex_column = &tex[tex_idx];
+                    //KLog_U1("tex_col: ", tex_col);
 
                     // this sprite only has 28 columns of non-transparent pixels :)
-                    if(tex_col >= 27) { 
+                    
+                    if(tex_col >= 14) { //27) { 
                         break;
-                    } else if (tex_col >= 24) {
+                    } else if (tex_col >= 13) {
                         // last few columns skip 29 texels
                         skipped_texels = 29;
 
+                        clipped_y_pix_top = (y_per_texels_fix * skipped_texels)>>16;
+                    } else if (tex_col >= 12) {
+                        skipped_texels = 13;
                         clipped_y_pix_top = (y_per_texels_fix * skipped_texels)>>16;
                     } else if (tex_col < 2) {
                         // first few columns skip 9 texels
@@ -845,11 +854,14 @@ void draw_masked(s16 x1, s16 x1_ytop, s16 x1_ybot,
                         skipped_texels = 0;
                         clipped_y_pix_top = 0;
                     }
+                    
                     //KLog_S1("top y int: ", top_y_int);
                     //KLog_U1("top_draw_y: ", top_draw_y);
                     //KLog_U1("top_draw_y+clipped_y_pix: ", top_draw_y+clipped_y_pix);
                     //KLog_S1("bot_y_int: ", bot_y_int);
                     //KLog_U1("bot_draw_y: ", bot_draw_y);
+                    //draw_texture_vertical_line(top_y_int, bot_y_int, col_ptr, tex_column);
+                    //draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, 0x55555555, col_ptr);
                     draw_bottom_clipped_texture_vertical_line(top_y_int, top_draw_y+clipped_y_pix_top, bot_y_int, bot_draw_y-clipped_y_pix_bot, col_ptr, tex_column);
 
                 }
@@ -951,22 +963,22 @@ void cache_floor_light_params(s16 rel_floor_height, u8 floor_col, s8 light_level
 
     
     // shift, lookup, lookup
-    //light_color = get_light_color(floor_col, light_level);
+    light_color = get_light_color(floor_col, light_level);
     // shift, lookup, lookup
-    //mid_color = get_mid_dark_color(floor_col, light_level);
+    mid_color = get_mid_dark_color(floor_col, light_level);
     // shift, lookup, lookup
-    //dark_color = get_dark_color(floor_col, light_level);
+    dark_color = get_dark_color(floor_col, light_level);
+    params->light_color = light_color;
+    params->mid_color = mid_color;
+    params->dark_color = dark_color;
     
-    u32* col_ptr = get_color_ptr(floor_col, light_level);
+    //u32* col_ptr = get_color_ptr(floor_col, light_level);
+
+    //params->dark_color = *col_ptr++;
+    //params->mid_color = *col_ptr++;
+    //params->light_color = *col_ptr++;
 
 
-
-    //params->light_color = light_color;
-    //params->mid_color = mid_color;
-    //params->dark_color = dark_color;
-    params->dark_color = *col_ptr++;
-    params->mid_color = *col_ptr++;
-    params->light_color = *col_ptr++;
 
     params->needs_lighting = 1;
     
@@ -1037,7 +1049,16 @@ u8* draw_lit_floor_light_only(s16 floor_top_y, s16 floor_bot_y, u8* col_ptr, lig
 
 u8* draw_lit_floor(s16 floor_top_y, s16 floor_bot_y, u8* col_ptr, light_params* params) {
     #ifndef FLATS_DIST_LIGHTING
-    return draw_native_vertical_line_unrolled(floor_top_y, floor_bot_y, params->light_color, col_ptr);
+    s16 floor_mid = (floor_bot_y+floor_top_y)>>1;
+    s16 dark_y = params->dark_y;
+    s16 mid_y = params->mid_y;
+    if(floor_mid >= dark_y) {
+        return draw_native_vertical_line_unrolled(floor_top_y, floor_bot_y, params->dark_color, col_ptr);
+    } else if (floor_mid >= mid_y) {
+        return draw_native_vertical_line_unrolled(floor_top_y, floor_bot_y, params->mid_color, col_ptr);
+    } else {
+        return draw_native_vertical_line_unrolled(floor_top_y, floor_bot_y, params->light_color, col_ptr);
+    }
     #endif
 
     /*
@@ -2366,6 +2387,7 @@ void draw_solid_color_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
               u8 wall_color,
               light_params* floor_params, light_params* ceil_params) {
 
+    
     u16 far_inv_z = min(inv_z1, inv_z2);
     const u8 light_floor_ceil = (far_inv_z <= FIX_0_16_INV_MID_DIST);
     draw_lit_plane_fp floor_func = &draw_lit_floor_light_only;
