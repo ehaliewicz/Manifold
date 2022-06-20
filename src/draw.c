@@ -787,8 +787,9 @@ void draw_masked(s16 x1, s16 x1_ytop, s16 x1_ybot,
     u8* yclip_ptr = &(clipping_buffer->y_clip_buffer[x<<1]);
 
     //u8** offset_ptr = (bmp_buffer_write == bmp_buffer_0) ? (&buf_0_column_offset_table[x]) : (&buf_1_column_offset_table[x]);
-    u8** offset_ptr = bmp_ptr_buf[x];
-
+    //u8** offset_ptr = &bmp_ptr_buf[x];
+    // CANNOT USER bmp_ptr_buf because it's overwritten by opaque walls to be filled with NULL ptrs
+    u8** offset_ptr = (bmp_buffer_write == bmp_buffer_0) ? (&buf_0_column_offset_table[x]) : (&buf_1_column_offset_table[x]);
 
 
     //u16* tex = raw_key_mid;
@@ -805,8 +806,10 @@ void draw_masked(s16 x1, s16 x1_ytop, s16 x1_ybot,
         u8 bot_draw_y = max_drawable_y; 
 
         u8* col_ptr = *offset_ptr++;
+        // TODO: information about whether this column was filled in front of the object 
+        // should be loaded from clip buffer
         u8 col_drawn = (col_ptr == NULL);
-        if(!col_drawn) {
+        if(1) { //!col_drawn) {
             if(top_draw_y < bot_draw_y) {
                 //top_y_int = top_y_fix >> 16;
                 //bot_y_int = bot_y_fix >> 16;
