@@ -51,7 +51,7 @@ void init_2d_buffers() {
 
 void clear_2d_buffers() {
     u8* yclip_ptr = yclip;
-    u8* drawn_buf_ptr = drawn_buf;
+    //u8* drawn_buf_ptr = drawn_buf;
 
     // 0:8 screen_height:8 0:8 screen_height:8
     u32 u32val = (SCREEN_HEIGHT << 16) | SCREEN_HEIGHT;
@@ -1001,9 +1001,9 @@ void cache_ceil_light_params(s16 rel_ceil_height, u8 ceil_col, s8 light_level, l
 
     int table_idx = rel_ceil_height*4;
 
-    table_idx++;
+    table_idx++; // light
     s16 mid_top = ceil_light_positions[table_idx++];
-    table_idx++;
+    table_idx++; // mid-dark
     s16 dark_top = ceil_light_positions[table_idx++];
 
     params->dark_y = dark_top;
@@ -1581,11 +1581,30 @@ void calculate_tex_coords_for_wall(
 }
 
 typedef enum {
-    DARK, MID, LIGHT
+    //TRANSPARENT, 
+    DARK, MID, LIGHT, 
 } calc_light_level;
 
 u8 num_light_levels;
 u8 light_levels[6];
+
+// TODO: add a check first for <= FIX_0_16_INV_FADE_DIST?
+// requires modifying the draw loops below to handle another light level case
+// for solid walls, drawing 0 is sufficient, and for textured walls, 
+// using a different column drawing loop which draws constant 0 pixels should be sufficient
+
+//    if ((inv_z) <= FIX_0_16_INV_FADE_DIST) {        
+//        light_var = TRANSPARENT;                    
+
+#define CHECK_DIST(inv_z, light_var) do {           \
+    if ((inv_z) <= FIX_0_16_INV_DARK_DIST) {        \
+        light_var = DARK;                           \
+    } else if ((inv_z) <= FIX_0_16_INV_MID_DIST) {  \
+        light_var = MID;                            \
+    } else {                                        \
+        light_var = LIGHT;                          \
+    }                                               \
+} while(0);
 
 void calculate_light_levels_for_wall(u32 clipped_dx, s32 inv_z1, s32 inv_z2, s32 fix_inv_dz_per_dx, s8 light_level) {
     num_light_levels = 0;
@@ -1594,15 +1613,13 @@ void calculate_light_levels_for_wall(u32 clipped_dx, s32 inv_z1, s32 inv_z2, s32
 
     s16 cur_inv_z = inv_z1;
     u8 cur_light;
-    if (cur_inv_z <= FIX_0_16_INV_DARK_DIST) {
-        cur_light = DARK;
-    } else if (cur_inv_z <= FIX_0_16_INV_MID_DIST) {
-        cur_light = MID;
-    } else {
-        cur_light = LIGHT;
-    }
+    CHECK_DIST(cur_inv_z, cur_light);
+     
 
-
+    // TODO: for distance fading, we can't use this shortcut
+    // we have to calculate per-column distance for ALL rendered walls
+    // this here will cause far off walls with light level -2 or +2 to re-appear suddenly
+    
     if(light_level == -2 || light_level == 2) { // 0) {
         // z stays the same
         //output_light_span(cur_light, cnt);
@@ -1635,14 +1652,7 @@ void calculate_light_levels_for_wall(u32 clipped_dx, s32 inv_z1, s32 inv_z2, s32
 
     s16 end_inv_z = inv_z2; // + (cnt * fix_inv_dz_per_dx);
     u8 end_light;
-    if (end_inv_z <= FIX_0_16_INV_DARK_DIST) {
-        end_light = DARK;
-    } else if (end_inv_z <= FIX_0_16_INV_MID_DIST) {
-        end_light = MID;
-    } else {
-        end_light = LIGHT;
-    }
-
+    CHECK_DIST(end_inv_z, end_light);
 
 
     u8 cur_span = 0;
@@ -1699,13 +1709,9 @@ void calculate_light_levels_for_wall(u32 clipped_dx, s32 inv_z1, s32 inv_z2, s32
 
     while(cnt--) {
         u8 next_light; 
-        if (cur_inv_z <= FIX_0_16_INV_DARK_DIST) {
-            next_light = DARK;
-        } else if (cur_inv_z <= FIX_0_16_INV_MID_DIST) {
-            next_light = MID;
-        } else {
-            next_light = LIGHT;
-        }
+        
+        CHECK_DIST(cur_inv_z, next_light);
+
 
         if(cur_light == next_light) {
             cur_span++;
