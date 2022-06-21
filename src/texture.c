@@ -155,7 +155,7 @@ u16 unclipped_dy_fix10_recip_table[512] = {
 (TEX_HEIGHT<<10)/511,
 };
 
-u8* draw_texture_vertical_line(s16 unclipped_y0, u16 y0, s16 unclipped_y1, u8* col_ptr, u16* tex_column) {
+u8* draw_texture_vertical_line(s16 unclipped_y0, u16 y0, s16 unclipped_y1, u8* col_ptr, const u16* tex_column) {
     //return ;
 
     //u16 unclipped_dy = unclipped_y1 - unclipped_y0;
@@ -196,7 +196,7 @@ u8* draw_texture_vertical_line(s16 unclipped_y0, u16 y0, s16 unclipped_y1, u8* c
 
 
 
-u8* draw_bottom_clipped_texture_vertical_line(s16 unclipped_y0, u16 y0, s16 unclipped_y1, u16 y1, u8* col_ptr, u16* tex_column) {
+u8* draw_bottom_clipped_texture_vertical_line(s16 unclipped_y0, u16 y0, s16 unclipped_y1, u16 y1, u8* col_ptr, const u16* tex_column) {
     
 
 
@@ -210,12 +210,14 @@ u8* draw_bottom_clipped_texture_vertical_line(s16 unclipped_y0, u16 y0, s16 uncl
         : "d" (unclipped_y0)               
     );      
     if(unclipped_dy > 512) { return col_ptr; }
-
+    s16 clipped_dy = y1-y0;
+    if(clipped_dy <= 0) { return col_ptr; }
     col_ptr += y0;
     col_ptr += y0;
 
     u8 clip_top = y0-unclipped_y0;
     u8 clip_bot = unclipped_y1-y1;
+
 
     u32 clip_bot_du_fix;
     // using ROM jump tables
