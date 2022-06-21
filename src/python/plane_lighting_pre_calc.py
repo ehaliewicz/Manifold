@@ -134,8 +134,9 @@ def calc_y_positions_for_floor_height(rel_floor_height):
     #print("inv dz per dy {}".format(inv_dz))
     #print("inv dy per dz {}".format(inv_dy_per_dz))
 
+    # we don't use MID_LIGHT_DIST anymore, so add FADE_DIST here instead
 
-    light_inv_dists = [1/DARK_DIST, 1/MID_DARK_DIST, 1/MID_DIST, 1/MID_LIGHT_DIST]# , 1/NEAR_Z]
+    light_inv_dists = [1/FADE_DIST, 1/DARK_DIST, 1/MID_DARK_DIST, 1/MID_DIST] #, 1/MID_LIGHT_DIST]# , 1/NEAR_Z]
 
 
     res = [] #rel_floor_height]
@@ -188,7 +189,9 @@ def calc_y_positions_for_ceil_height(rel_ceil_height):
     #print("inv dy per dz {}".format(inv_dy_per_dz))
 
 
-    light_inv_dists = [1/MID_LIGHT_DIST, 1/MID_DIST, 1/MID_DARK_DIST, 1/DARK_DIST]# , 1/NEAR_Z]
+    # we don't use MID_LIGHT_DIST, so use FADE_DIST instead
+    light_inv_dists = [1/MID_DIST, 1/MID_DARK_DIST, 1/DARK_DIST, 1/FADE_DIST]
+    #light_inv_dists = [1/MID_LIGHT_DIST, 1/MID_DIST, 1/MID_DARK_DIST, 1/DARK_DIST]# , 1/NEAR_Z]
 
 
     res = [] #rel_floor_height]

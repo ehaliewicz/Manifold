@@ -34,6 +34,7 @@ typedef struct {
     u8 needs_lighting;
     u8 mid_y;
     u8 dark_y;
+    u8 fade_y;
     u32 light_color;
     u32 mid_color;
     u32 dark_color;

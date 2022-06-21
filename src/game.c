@@ -120,8 +120,10 @@ void showStats(u16 float_display)
 
 
 void draw_3d_view(u32 cur_frame) {
-
-    if(JOY_readJoypad(JOY_1) & BUTTON_A) {
+    
+    // for fading, it might be cheaper to just always clear the screen, and not draw faded/transparent pixels
+    //if(1) { 
+    if (JOY_readJoypad(JOY_1) & BUTTON_A) {
         bmp_vertical_clear();
     }
     // clear clipping buffers
