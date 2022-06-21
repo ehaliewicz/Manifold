@@ -86,19 +86,22 @@ int within_sector_radius(fix32 x, fix32 y, u16 radius, u16 sector) {
 
     s32 radius_sqr = radius*radius;
 
-    s32 xInt = fix32ToInt(x);
-    s32 yInt = fix32ToInt(y);
+// try disabling this for now
+    //s32 xInt = fix32ToInt(x);
+    //s32 yInt = fix32ToInt(y);
 
-    const s16* portals = cur_portal_map->portals;
+    //const s16* portals = cur_portal_map->portals;
 
+    /*
     for(int i = 0; i < num_walls-1; i++) {
         u16 vert_idx = wall_off+i;
         u16 v_idx = cur_portal_map->walls[vert_idx];
         vertex v = cur_portal_map->vertexes[v_idx];
         u16 left_portal_off = (i == 0) ? (num_walls-1) : (i-1);
         u8 is_portal = (portals[portal_off+i] != -1) && (portals[portal_off+left_portal_off] != -1);
+        if(is_portal) { continue; }
         s32 distsqr = ((v.x - xInt)*(v.x - xInt)) + ((v.y - yInt)*(v.y - yInt));
-        if(radius_sqr > distsqr && !is_portal) { return 0; }
+        if(radius_sqr > distsqr) { return 0; }
         //if(!got_dist) {
         //    dmin = distsqr;
         //    got_dist = 1;
@@ -107,6 +110,7 @@ int within_sector_radius(fix32 x, fix32 y, u16 radius, u16 sector) {
         //    dmin = min(distsqr, dmin);
         //}
     }
+    */
 
      
     //if(radius_sqr > dmin) { return 0; }
@@ -116,6 +120,9 @@ int within_sector_radius(fix32 x, fix32 y, u16 radius, u16 sector) {
     // now check against walls
 
     // if the wall is a portal, skip it
+
+    // try disabling this for now
+    
     for(int i = 0; i < num_walls; i++) {
         u16 wall_idx = wall_off+i;
         u16 portal_idx = portal_off+i;
@@ -132,6 +139,8 @@ int within_sector_radius(fix32 x, fix32 y, u16 radius, u16 sector) {
             return 0;
         }
     }
+    
+    
 
     return 1;
 
@@ -200,9 +209,10 @@ collision_result check_for_collision(fix32 curx, fix32 cury, fix32 newx, fix32 n
 collision_result check_for_collision_radius(fix32 curx, fix32 cury, fix32 newx, fix32 newy, u16 radius, u16 cur_sector) {
     if(within_sector_radius(newx, cury, radius, cur_sector)) {
         // no x collision, just move x 
+        //KLog("no x collision");
         curx = newx;
     } else {
-
+        //KLog("x collision");
         // check if traversed to new sector
         u16 portal_off = sector_portal_offset(cur_sector, (portal_map*)cur_portal_map);
         u16 num_walls = sector_num_walls(cur_sector, (portal_map*)cur_portal_map);
@@ -212,11 +222,15 @@ collision_result check_for_collision_radius(fix32 curx, fix32 cury, fix32 newx, 
             if(portal_sect == -1) {
                 continue;
             }
-
-            if(within_sector_radius(newx, cury, radius, portal_sect)) {
+            //KLog_U1("found new sector: ", portal_sect);
+            if(within_sector(newx, cury, portal_sect)) {
+            //if(within_sector_radius(newx, cury, radius, portal_sect)) {
+                //KLog("within new sector");
                 cur_sector = portal_sect;
                 curx = newx;
                 break;
+            } else {
+                //KLog("not within sector");
             }
         }
         // if we didn't move to a new sector, curx hasn't been changed
@@ -224,8 +238,10 @@ collision_result check_for_collision_radius(fix32 curx, fix32 cury, fix32 newx, 
     }
 
     if(within_sector_radius(curx, newy, radius, cur_sector)) {
+        //KLog("no y collision");
         cury = newy;
     } else {
+        //KLog("y collision");
         // check if traversed to new sector
         u16 portal_off = sector_portal_offset(cur_sector, (portal_map*)cur_portal_map);
         u16 num_walls = sector_num_walls(cur_sector, (portal_map*)cur_portal_map);
@@ -235,11 +251,16 @@ collision_result check_for_collision_radius(fix32 curx, fix32 cury, fix32 newx, 
             if(portal_sect == -1) {
                 continue;
             }
+            //KLog_U1("found new sector: ", portal_sect);
 
-            if(within_sector_radius(curx, newy, radius, portal_sect)) {
+            if(within_sector(curx, newy, portal_sect)) {
+            //if(within_sector_radius(curx, newy, radius, portal_sect)) {
+                //KLog("within new sector");
                 cur_sector = portal_sect;
                 cury = newy;
                 break;
+            } else {
+                //KLog("not within sector");
             }
         }
         // if we didn't move to a new sector, curx hasn't been changed

@@ -94,10 +94,10 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
     s16 intPx = fix32ToInt(cur_player_pos.x);
     s16 intPy = fix32ToInt(cur_player_pos.y);
 
-    int render_red_ball = (sector == 10);
+    //int render_red_ball = (sector == 10);
     object* objects_in_sect = objects_in_sector(sector);
     //KLog_U1("objects in sect?: ", objects_in_sect);
-    int needs_object_clip_buffer = render_red_ball && (objects_in_sect != NULL);
+    int needs_object_clip_buffer = (objects_in_sect != NULL); //render_red_ball && (objects_in_sect != NULL);
     //int needs_object_clip_buffer = ;
 
     clip_buf* obj_clip_buf;
@@ -621,6 +621,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
             break;
             //cur_obj = cur_obj->next;
         }
+        //KLog_U2("freeing clip buf in sector: ", sector, " id: ", obj_clip_buf->id);
         free_clip_buffer(obj_clip_buf);
     }
     

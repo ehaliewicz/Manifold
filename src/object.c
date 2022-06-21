@@ -107,6 +107,12 @@ void look_for_player(object* cur_obj, uint16_t cur_sector) {
     if(cur_player_pos.cur_sector == cur_sector) {
         cur_obj->object_type = 1;
         cur_obj->current_state++;
+        cur_obj->tgt.sector = cur_sector;
+        cur_obj->tgt.x = cur_player_pos.x;
+        cur_obj->tgt.y = cur_player_pos.y;
+        cur_obj->tgt.z = cur_player_pos.z;
+    } else {
+        KLog("player not found");
     }
 }
 
@@ -115,7 +121,7 @@ void look_for_player(object* cur_obj, uint16_t cur_sector) {
 const object_template object_types[2] = {
     {.init_state = 0,
      .sprite_col = ((1 << 4) | 1), 
-    .size = 20, .from_floor_draw_offset = 20<<4, .width=30, .height=46<<4},
+    .size = 20, .from_floor_draw_offset = 10<<4, .width=30, .height=46<<4},
     {.init_state = 1,
      .sprite_col = ((RED_IDX << 4) | RED_IDX), 
     .size = 20, .from_floor_draw_offset = 20<<4, .width=12, .height=20<<4},
@@ -246,11 +252,20 @@ object* objects_in_sector(int sector_num) {
 void follow_player(object* cur_obj, uint16_t cur_sector) {
     object_pos pos = cur_obj->pos;
     // follow player
+    //KLog("following player");
 
     int dx = fix32ToInt(cur_player_pos.x - pos.x);
     int dy = fix32ToInt(cur_player_pos.y - pos.y);
+    //u32 dist = getApproximatedDistance(dx, dy);
+    //if(dist == 0) { return ; }
+    //int norm_dx = dx/dist;
+    //int norm_dy = dy/dist;
+    //dx = 7*norm_dx;
+    //dy = 7*norm_dy;
+
     //int dz = fix32ToInt(cur_player_pos.z - pos.z);
 
+    
     if(dx > 0) {
         dx = min(3, dx);
     } else if (dx < 0) {
@@ -262,6 +277,7 @@ void follow_player(object* cur_obj, uint16_t cur_sector) {
     } else {
         dy = max(-3, dy);
     }
+    
 
     /*
     int dist_sqr = (dx*dx)+(dy*dy);
@@ -277,7 +293,8 @@ void follow_player(object* cur_obj, uint16_t cur_sector) {
     fix32 dx32 = intToFix32(dx);
     fix32 dy32 = intToFix32(dy);
 
-    collision_result move_res = check_for_collision_radius(pos.x, pos.y, pos.x+dx32, pos.y+dy32, 8, cur_sector);
+    collision_result move_res = check_for_collision_radius(pos.x, pos.y, pos.x+dx32, pos.y+dy32, 8, cur_sector); // radius of 8 originally
+    
     
     cur_obj->pos.x = move_res.pos.x;
     cur_obj->pos.y = move_res.pos.y;
@@ -305,6 +322,15 @@ obj_state object_state_machines[] = {
 
 
 void process_all_objects(uint32_t cur_frame) {
+    /*
+    for(int sect = 0; sect < num_sector_lists; sect++) {
+        object* cur_object = sector_lists[sect];
+        if(cur_object != NULL) {
+            KLog_U2("got object: ", cur_object->id, " in sector: ", sect);
+            KLog_U2("object reported sector: ", cur_object->pos.cur_sector, ", ", 0);
+        }
+    }
+    */
     for(int sect = 0; sect < num_sector_lists; sect++) {
         object* cur_object = sector_lists[sect];
         while(cur_object != NULL) {

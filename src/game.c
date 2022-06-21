@@ -59,8 +59,6 @@ void calc_movement_speeds() {
     move_speed = (base_move_speed * last_frame_ticks) >> FIX16_FRAC_BITS;
     rot_speed = (base_rot_speed * last_frame_ticks) >> FIX16_FRAC_BITS;
 
-    //KLog_S2("move speed: ", move_speed, " rot: ", rot_speed);
-    // multiply by how many ticks
 }
 
 int cur_frame;
@@ -564,7 +562,7 @@ void maybe_set_palette(u16* new_palette) {
 game_mode run_game() {
 
     u32 start_ticks = getTick();
-    //process_all_objects(cur_frame);
+    process_all_objects(cur_frame);
 
     
     run_sector_group_processes();

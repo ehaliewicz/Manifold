@@ -741,34 +741,26 @@ void flip() {
 
 /* for drawing moving objects */
 void draw_masked(s16 x1, s16 x1_ytop, s16 x1_ybot,
-                            s16 x2, s16 x2_ytop, s16 x2_ybot,
-                            u16 window_min, u16 window_max,
-                            clip_buf* clipping_buffer,
-                            u8 wall_col) {
+                 s16 x2, s16 x2_ytop, s16 x2_ybot,
+                 u16 window_min, u16 window_max,
+                 clip_buf* clipping_buffer,
+                 u8 wall_col) {
 
-    //return;
     // 4 subpixel bits here
     s16 top_dy_fix = x2_ytop - x1_ytop;
     s16 bot_dy_fix = x2_ybot - x1_ybot;
 
     s16 dx = x2-x1;
-
-    //fix32 top_dy_per_dx = (top_dy_fix<<12) / dx; // (dy_fix<<4) / dx; // 22.10
-    //fix32 bot_dy_per_dx = (bot_dy_fix<<12) / dx;
+    if(dx == 0) { return ;}
 
     fix32 top_y_fix = x1_ytop<<12; 
     fix32 bot_y_fix = x1_ybot<<12;
     s16 top_y_int = top_y_fix >> 16;
     s16 bot_y_int = bot_y_fix >> 16;
-    //KLog_S1("top_y_int: ", top_y_int);
-    //KLog_S1("bot_y_int: ", bot_y_int);
-    //return;
-    //u16 height = bot_y_int-top_y_int;
 
     s16 beginx = max(x1, window_min);
 
     s16 skip_x = beginx - x1;
-
 
 
     s16 endx = min(window_max, x2);
@@ -776,14 +768,9 @@ void draw_masked(s16 x1, s16 x1_ytop, s16 x1_ybot,
     u32 u_fix = 0;
 
     if(skip_x > 0) {
-        //top_y_fix += (skip_x * top_dy_per_dx);
-        //bot_y_fix += (skip_x * bot_dy_per_dx);
-        //tex_col_fix +=  (skip_x * tex_per_pix_fix);'
         u_fix += (skip_x * u_per_x);
     }
 
-    //while(1) { }
-    //u32 full_col = long_color_table[wall_col];
 
     s16 x = beginx;
     u8* yclip_ptr = &(clipping_buffer->y_clip_buffer[x<<1]);
@@ -796,12 +783,11 @@ void draw_masked(s16 x1, s16 x1_ytop, s16 x1_ybot,
 
     //u16* tex = raw_key_mid;
     const u16* tex = raw_key_32_32_mid;
-    u32 y_per_texels_fix = ((bot_y_int - top_y_int)<<16)/ 64;
-    //u32 texels_per_y_fix = (64<<16) / (bot_y_int-top_y_int);
-    //KLog_S2("x: ", x, "end x: ", endx);
+    u32 y_per_texels_fix = ((bot_y_int - top_y_int)<<16)/ 64; // 16.16 fixed point
+    
     for(;x < endx; x++) {
-        u8 min_drawable_y = 0;//*yclip_ptr++;
-        u8 max_drawable_y = SCREEN_HEIGHT; //*yclip_ptr++;
+        u8 min_drawable_y = *yclip_ptr++;
+        u8 max_drawable_y = *yclip_ptr++;
         //if(min_drawable_y >= max_drawable_y) { continue; }
 
         u8 top_draw_y = min_drawable_y; 
@@ -817,52 +803,38 @@ void draw_masked(s16 x1, s16 x1_ytop, s16 x1_ybot,
                 //bot_y_int = bot_y_fix >> 16;
                 u8 top_draw_y = clamp(top_y_int, min_drawable_y, max_drawable_y);
                 u8 bot_draw_y = clamp(bot_y_int, min_drawable_y, max_drawable_y);
-                //KLog_U1("top_draw_y: ", top_draw_y);
-                //KLog_U1("bot_draw_y: ", bot_draw_y);
                 
                 u32 clipped_y_pix_top, clipped_y_pix_bot;
                 u8 skipped_texels;
-                u8 skipped_bot_texels = 33;
-                clipped_y_pix_bot = (y_per_texels_fix * skipped_bot_texels) >> 16;
+
+                clipped_y_pix_top = 0;
+                clipped_y_pix_bot = 0;
+
+                //u8 skipped_bot_texels = 33;
+                //(y_per_texels_fix * skipped_bot_texels) >> 16;
 
                 // if there are visible pixels in this column
                 if(top_draw_y < bot_draw_y) {
 
                     // get texture column 
-                    u32 tex_col = ((u_fix<<TEX_WIDTH_SHIFT)>>16);
-                    u16 tex_idx = tex_col<<TEX_HEIGHT_SHIFT;
-                    u16* tex_column = &tex[tex_idx];
-                    //KLog_U1("tex_col: ", tex_col);
+                    u32 tex_col = ((u_fix<<TEX_WIDTH_SHIFT)>>16); //TEX_WIDTH_SHIFT)>>16);
+                    u32 tex_idx = tex_col<<TEX_HEIGHT_SHIFT; //TEX_HEIGHT_SHIFT;
+                    const u16* tex_column = &tex[tex_idx+1];
 
                     // this sprite only has 28 columns of non-transparent pixels :)
                     
-                    if(tex_col >= 14) { //27) { 
+                    if(tex_col > 27) {
                         break;
-                    } else if (tex_col >= 13) {
-                        // last few columns skip 29 texels
-                        skipped_texels = 29;
-
-                        clipped_y_pix_top = (y_per_texels_fix * skipped_texels)>>16;
-                    } else if (tex_col >= 12) {
-                        skipped_texels = 13;
-                        clipped_y_pix_top = (y_per_texels_fix * skipped_texels)>>16;
-                    } else if (tex_col < 2) {
-                        // first few columns skip 9 texels
-                        skipped_texels = 9;
-                        clipped_y_pix_top = (y_per_texels_fix * skipped_texels)>>16;
-                    } else {
-                        skipped_texels = 0;
-                        clipped_y_pix_top = 0;
+                    } else if (tex_col < 4) {
+                        skipped_texels = 8;
+                        clipped_y_pix_top = ((y_per_texels_fix << 3)>>16)+1;
+                    } else if (tex_col >= 24) {
+                        skipped_texels = 28;
+                        clipped_y_pix_top = ((y_per_texels_fix * skipped_texels)>>16)+1; 
                     }
-                    
-                    //KLog_S1("top y int: ", top_y_int);
-                    //KLog_U1("top_draw_y: ", top_draw_y);
-                    //KLog_U1("top_draw_y+clipped_y_pix: ", top_draw_y+clipped_y_pix);
-                    //KLog_S1("bot_y_int: ", bot_y_int);
-                    //KLog_U1("bot_draw_y: ", bot_draw_y);
-                    //draw_texture_vertical_line(top_y_int, bot_y_int, col_ptr, tex_column);
-                    //draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, 0x55555555, col_ptr);
-                    draw_bottom_clipped_texture_vertical_line(top_y_int, top_draw_y+clipped_y_pix_top, bot_y_int, bot_draw_y-clipped_y_pix_bot, col_ptr, tex_column);
+
+
+                    draw_bottom_clipped_texture_vertical_line(top_y_int, top_draw_y+clipped_y_pix_top, bot_y_int, bot_draw_y, col_ptr, tex_column);
 
                 }
 

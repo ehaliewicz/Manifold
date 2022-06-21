@@ -11,7 +11,12 @@ typedef struct {
     u16 cur_sector;
 } object_pos;
 
-
+typedef struct {
+    fix32 x;
+    fix32 y;
+    fix32 z;
+    u16 sector;
+} object_tgt;
 
 typedef struct {
     uint8_t sprite_col;
@@ -31,6 +36,7 @@ struct object {
     uint16_t current_state;
     uint8_t object_type;
     uint32_t activate_tick;
+    object_tgt tgt;
     object_pos pos;
     object *prev;
     object *next;
