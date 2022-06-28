@@ -1,6 +1,7 @@
 #include <genesis.h>
 #include "colors.h"
 #include "collision.h"
+#include "console.h"
 #include "debug.h"
 #include "game.h"
 #include "level.h"
@@ -103,27 +104,15 @@ void clear_object_lists() {
 }
 
 
-void look_for_player(object* cur_obj, uint16_t cur_sector) {
-    if(cur_player_pos.cur_sector == cur_sector) {
-        cur_obj->object_type = 1;
-        cur_obj->current_state++;
-        cur_obj->tgt.sector = cur_sector;
-        cur_obj->tgt.x = cur_player_pos.x;
-        cur_obj->tgt.y = cur_player_pos.y;
-        cur_obj->tgt.z = cur_player_pos.z;
-    } else {
-        KLog("player not found");
-    }
-}
-
-
 
 const object_template object_types[2] = {
-    {.init_state = 0,
+    {.init_state = 2,
      .sprite_col = ((1 << 4) | 1), 
+     .name = "blue keycard", 
     .size = 20, .from_floor_draw_offset = 10<<4, .width=30, .height=46<<4},
     {.init_state = 1,
      .sprite_col = ((RED_IDX << 4) | RED_IDX), 
+     .name = "red cube",
     .size = 20, .from_floor_draw_offset = 20<<4, .width=12, .height=20<<4},
 };
 
@@ -249,15 +238,50 @@ object* objects_in_sector(int sector_num) {
 }
 
 
-void follow_player(object* cur_obj, uint16_t cur_sector) {
+int look_for_player(object* cur_obj, uint16_t cur_sector) {
+    if(cur_player_pos.cur_sector == cur_sector) {
+        cur_obj->object_type = 1;
+        cur_obj->current_state++;
+        cur_obj->tgt.sector = cur_sector;
+        cur_obj->tgt.x = cur_player_pos.x;
+        cur_obj->tgt.y = cur_player_pos.y;
+        cur_obj->tgt.z = cur_player_pos.z;
+    } else {
+        //KLog("player not found");
+    }
+    return 1;
+}
+
+
+int maybe_get_picked_up(object* cur_obj, uint16_t cur_sector) {  
+    object_pos pos = cur_obj->pos;
+    int dx = fix32ToInt(cur_player_pos.x - pos.x);
+    int dy = fix32ToInt(cur_player_pos.y - pos.y);
+    
+    u32 dist = getApproximatedDistance(dx, dy);
+    
+    if(dist < 32) { 
+        char buf[50];
+        int len = sprintf(buf, "picked up the %s!", object_types[cur_obj->object_type].name);
+        console_push_message_high_priority(buf, len, 20);
+
+
+        return 0;
+    }
+    return 1;
+}
+
+int follow_player(object* cur_obj, uint16_t cur_sector) {
     object_pos pos = cur_obj->pos;
     // follow player
     //KLog("following player");
 
     int dx = fix32ToInt(cur_player_pos.x - pos.x);
     int dy = fix32ToInt(cur_player_pos.y - pos.y);
+
+
     //u32 dist = getApproximatedDistance(dx, dy);
-    //if(dist == 0) { return ; }
+    //if(dist < 8) { c }
     //int norm_dx = dx/dist;
     //int norm_dy = dy/dist;
     //dx = 7*norm_dx;
@@ -312,12 +336,14 @@ void follow_player(object* cur_obj, uint16_t cur_sector) {
     u16 sect = cur_obj->pos.cur_sector;
     u16 sect_group = sector_group(sect, cur_portal_map);
     cur_obj->pos.z = get_sector_group_floor_height(sect_group);
+    return 1;
 }
 
 
 obj_state object_state_machines[] = {
-    {.next_state = 0, .ticks = 3, &look_for_player, },
-    {.next_state = 1, .ticks = 1, &follow_player, }
+    {.next_state = 0, .ticks = 3, .action = &look_for_player, },
+    {.next_state = 1, .ticks = 1, .action = &follow_player, },
+    {.next_state = 2, .ticks = 1, .action = &maybe_get_picked_up, },
 };
 
 
@@ -335,8 +361,14 @@ void process_all_objects(uint32_t cur_frame) {
         object* cur_object = sector_lists[sect];
         while(cur_object != NULL) {
             uint16_t state_idx = cur_object->current_state;
-            object_state_machines[state_idx].action(cur_object, sect);
-            //cur_object = cur_object->next;
+            int live = object_state_machines[state_idx].action(cur_object, sect);
+            if(!live) { 
+                // TODO: make work with more than one object
+                // this will only work with a single object
+                push(cur_object, free_list);
+                sector_lists[sect] = NULL;
+            }
+            cur_object = cur_object->next;
             break;
         }
     }

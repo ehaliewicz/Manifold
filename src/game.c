@@ -2,6 +2,7 @@
 #include "my_bmp.h"
 #include "cart_ram.h"
 #include "collision.h"
+#include "console.h"
 #include "clip_buf.h"
 #include "colors.h"
 #include "config.h"
@@ -23,6 +24,9 @@
 #include "portal_map.h"
 #include "sector.h"
 #include "sys.h"
+#include "vwf.h"
+
+
 
 object_pos cur_player_pos;
 
@@ -114,6 +118,7 @@ void showStats(u16 float_display)
     */
 
 
+
 }
 
 
@@ -152,7 +157,7 @@ u16 last_joy = 0;
 
 Vect2D_f32 *sector_centers = NULL;
 
-static int last_pressed_b = 0;
+//static int last_pressed_b = 0;
 //u8 do_collision = 0;
 
 int run_bob_idx;
@@ -264,6 +269,7 @@ void handle_input() {
             cur_player_pos.cur_sector = collision.new_sector;
             sect_group = sector_group(collision.new_sector, cur_portal_map);
             activate_sector_group_enter_trigger(sect_group);
+            
         }
      
         idle_bob_idx = 27;
@@ -519,13 +525,13 @@ void init_game() {
     clear_menu();
 
     bmp_init_vertical(1, BG_A, PAL1, 0);
-    //bmp_buffer_0 = bmp_buffer_read;
-    //bmp_buffer_1 = bmp_buffer_write;
 
     u16 skybox_gradient_basetile = TILE_ATTR_FULL(PAL3, 0, 0, 0, free_tile_loc);
 	VDP_drawImageEx(BG_B, &skybox_gradient, skybox_gradient_basetile, 4, 4, 0, 1);
     PAL_setPalette(PAL3, skybox_gradient.palette->data);
     free_tile_loc += skybox_gradient.tileset->numTile;
+
+
 
     //u16 hud_base_tile = TILE_ATTR_FULL(PAL2, 1, 0, 0, free_tile_loc);
     //VDP_drawImageEx(BG_B, &hud, hud_base_tile, 0, 20, 0, 1);
@@ -537,10 +543,7 @@ void init_game() {
 
     init_object_lists(cur_portal_map->num_sectors);
 
-
-    //object* red_cube = alloc_object_in_sector(cur_player_pos, 0, sector_centers[0].x, sector_centers[0].y, get_sector_group_floor_height(0), 0);
     
-    init_swizzled_color_calc_table();
 
     s16 obj_sect_group = sector_group(10, cur_portal_map);
     object* cur_obj = alloc_object_in_sector(
@@ -548,10 +551,19 @@ void init_game() {
         sector_centers[10].x, sector_centers[10].y, 
         get_sector_group_floor_height(obj_sect_group), 0);
 
+    u16 free_bytes = MEM_getFree();
+    KLog_U1("free bytes in RAM: ", free_bytes);
+    //while(1) {}
 
     if(music_on) {
         //XGM_startPlay(xgm_e1m4);
     }
+
+    vwf_init();
+    free_tile_loc = console_init(free_tile_loc);
+
+    const char* init_str = "game initialized!";
+    console_push_message("game initialized!", 17, 20);
 }
 
 void maybe_set_palette(u16* new_palette) {
@@ -564,9 +576,10 @@ void maybe_set_palette(u16* new_palette) {
 game_mode run_game() {
 
     u32 start_ticks = getTick();
+    
     process_all_objects(cur_frame);
 
-    
+    console_tick();
     run_sector_group_processes();
     calc_movement_speeds();
     handle_input();
@@ -603,6 +616,9 @@ void cleanup_game() {
     release_2d_buffers();
     clear_object_lists();
     clean_sector_parameters();
-    
+
+    //console_cleanup();
+    vwf_cleanup();
+
     MEM_pack();
 }

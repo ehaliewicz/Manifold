@@ -1,4 +1,5 @@
 #include <genesis.h>
+#include "console.h"
 #include "game.h"
 #include "level.h"
 #include "portal_map.h"
@@ -285,7 +286,7 @@ void activate_sector_group_enter_trigger(u16 sector_group) {
     s16 type = get_sector_group_trigger_type(sector_group);
     switch(type) {
         case NO_TRIGGER:
-            break;
+            return;
         case SET_SECTOR_DARK:
             for(int i = 0; i < NUM_SECTOR_TRIGGER_TARGETS; i++) {
                 s16 tgt_sector_group = get_sector_group_trigger_target(sector_group, i);
@@ -311,4 +312,9 @@ void activate_sector_group_enter_trigger(u16 sector_group) {
             break;
 
     }
+    
+    char buf[50];
+    int len = sprintf(buf, "trap for sector #%i triggered", sector_group);
+    buf[len] = 0;
+    console_push_message(buf, len, 20);
 }

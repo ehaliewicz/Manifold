@@ -25,6 +25,7 @@ typedef struct {
     uint8_t width;
     uint16_t height;
     uint16_t init_state;
+    char name[32];
 } object_template;
 
 extern const object_template object_types[];
@@ -59,7 +60,7 @@ void process_all_objects(uint32_t cur_tick);
 typedef struct {
     uint16_t next_state;
     uint16_t ticks;
-    void (*action)(object*, uint16_t); // passed the current object as well as the sector
+    int (*action)(object*, uint16_t); // passed the current object as well as the sector
 } obj_state;
 
 
