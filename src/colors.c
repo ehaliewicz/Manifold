@@ -191,32 +191,6 @@ u32 get_light_color(u8 col_idx, s8 light_level) {
   return color_calc_table[light_off+dist_off+col_idx];
 }
 
-u32 swizzled_color_calc_table[16*5*4];
-
-void init_swizzled_color_calc_table() {
-   for(int color = 0; color < 16; color++) {
-      for(int light = -2; light <= 2; light++) {
-         u32 dcol = get_dark_color(color, light);
-         u32 mcol = get_mid_dark_color(color, light);
-         u32 lcol = get_light_color(color, light);
-         // color is up to 16
-         // light is up to 5
-
-         // organized in terms of light levels
-         // i.e. light level 0
-         // color 0
-         // color_0_light_level_0_dist_0, ... color_0_light_level_0_dist_3,
-         // 3 * 16
-
-         u16 col_off = color * 4;
-         u16 light_off = 4 * 16 * (light + 2);
-         swizzled_color_calc_table[light_off + col_off + 0] = dcol;
-         swizzled_color_calc_table[light_off + col_off + 1] = mcol;
-         swizzled_color_calc_table[light_off + col_off + 2] = lcol;
-      }
-   }
-}
-
 
 u32* get_color_ptr(u16 color, s16 light_level) {
    u32* ret = swizzled_color_calc_table;

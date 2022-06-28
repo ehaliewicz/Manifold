@@ -160,11 +160,13 @@ u8* draw_texture_vertical_line(s16 unclipped_y0, u16 y0, s16 unclipped_y1, u8* c
 
     //u16 unclipped_dy = unclipped_y1 - unclipped_y0;
     u16 unclipped_dy = unclipped_y1;
+
     __asm volatile(             
         "sub.w %1, %0"          
         : "+d" (unclipped_dy)              
         : "d" (unclipped_y0)               
-    );      
+    );
+
     if(unclipped_dy > 512) { return col_ptr; }
 
     col_ptr += y0;
@@ -209,6 +211,7 @@ u8* draw_bottom_clipped_texture_vertical_line(s16 unclipped_y0, u16 y0, s16 uncl
         : "+d" (unclipped_dy)              
         : "d" (unclipped_y0)               
     );      
+
     if(unclipped_dy > 512) { return col_ptr; }
     s16 clipped_dy = y1-y0;
     if(clipped_dy <= 0) { return col_ptr; }

@@ -56,6 +56,7 @@ int pre_transform_backfacing_walls;
 int portals_frustum_culled;
 // u8* src_pvs
 
+
 int sectors_scanned = 0;
 void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint8_t depth) {
     if(depth >= MAX_DEPTH) {
@@ -612,8 +613,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
                 //}
 
 
-                draw_masked(left_x,top_y, bot_y,
-                        right_x, top_y, bot_y,
+                draw_masked(left_x, right_x, top_y, bot_y,
                         window_min, window_max,
                         obj_clip_buf,
                         type.sprite_col);

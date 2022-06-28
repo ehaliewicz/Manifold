@@ -110,8 +110,7 @@ void draw_floor_update_clip(s16 x1, s16 x1_ybot, s16 x2, s16 x2_ybot,
 
 
                             
-void draw_masked(s16 x1, s16 x1_ytop, s16 x1_ybot,
-                 s16 x2, s16 x2_ytop, s16 x2_ybot,
+void draw_masked(s16 x1, s16 x2, s16 ytop, s16 ybot,
                  u16 window_min, u16 window_max,
                  clip_buf* clipping_buffer,
                  u8 wall_col);

@@ -740,23 +740,19 @@ void flip() {
 
 
 /* for drawing moving objects */
-void draw_masked(s16 x1, s16 x1_ytop, s16 x1_ybot,
-                 s16 x2, s16 x2_ytop, s16 x2_ybot,
+void draw_masked(s16 x1, s16 x2, s16 ytop, s16 ybot,
                  u16 window_min, u16 window_max,
                  clip_buf* clipping_buffer,
                  u8 wall_col) {
 
     // 4 subpixel bits here
-    s16 top_dy_fix = x2_ytop - x1_ytop;
-    s16 bot_dy_fix = x2_ybot - x1_ybot;
-
+    ybot>>=4;
+    ytop>>=4;
+    s16 unclipped_dy = ybot-ytop;
+    if(unclipped_dy == 0) { return ;}
     s16 dx = x2-x1;
     if(dx == 0) { return ;}
 
-    fix32 top_y_fix = x1_ytop<<12; 
-    fix32 bot_y_fix = x1_ybot<<12;
-    s16 top_y_int = top_y_fix >> 16;
-    s16 bot_y_int = bot_y_fix >> 16;
 
     s16 beginx = max(x1, window_min);
 
@@ -783,9 +779,12 @@ void draw_masked(s16 x1, s16 x1_ytop, s16 x1_ybot,
 
     //u16* tex = raw_key_mid;
     const u16* tex = raw_key_32_32_mid;
-    u32 y_per_texels_fix = ((bot_y_int - top_y_int)<<16)/ 64; // 16.16 fixed point
+    u32 y_per_texels_fix = (unclipped_dy<<16)/ 64; // 16.16 fixed point
     
-    for(;x < endx; x++) {
+    s32 dv_per_y_f16 = (64<<16)/unclipped_dy;
+
+
+    for(;x < endx; x++) {    
         u8 min_drawable_y = *yclip_ptr++;
         u8 max_drawable_y = *yclip_ptr++;
         //if(min_drawable_y >= max_drawable_y) { continue; }
@@ -799,51 +798,49 @@ void draw_masked(s16 x1, s16 x1_ytop, s16 x1_ybot,
         u8 col_drawn = (col_ptr == NULL);
         if(1) { //!col_drawn) {
             if(top_draw_y < bot_draw_y) {
-                //top_y_int = top_y_fix >> 16;
-                //bot_y_int = bot_y_fix >> 16;
-                u8 top_draw_y = clamp(top_y_int, min_drawable_y, max_drawable_y);
-                u8 bot_draw_y = clamp(bot_y_int, min_drawable_y, max_drawable_y);
+                u8 top_draw_y = clamp(ytop, min_drawable_y, max_drawable_y);
+                u8 bot_draw_y = clamp(ybot, min_drawable_y, max_drawable_y);
                 
                 u32 clipped_y_pix_top, clipped_y_pix_bot;
                 u8 skipped_texels;
 
-                clipped_y_pix_top = 0;
-                clipped_y_pix_bot = 0;
+                clipped_y_pix_top = clipped_y_pix_bot = 0;
+
+                //clipped_y_pix_bot = 0;
 
                 //u8 skipped_bot_texels = 33;
                 //(y_per_texels_fix * skipped_bot_texels) >> 16;
 
-                // if there are visible pixels in this column
-                if(top_draw_y < bot_draw_y) {
+                // get texture column 
+                u32 tex_col = ((u_fix<<TEX_WIDTH_SHIFT)>>16); //TEX_WIDTH_SHIFT)>>16);
+                u32 tex_idx = tex_col<<TEX_HEIGHT_SHIFT; //TEX_HEIGHT_SHIFT;
+                const u16* tex_column = &tex[tex_idx+1];
 
-                    // get texture column 
-                    u32 tex_col = ((u_fix<<TEX_WIDTH_SHIFT)>>16); //TEX_WIDTH_SHIFT)>>16);
-                    u32 tex_idx = tex_col<<TEX_HEIGHT_SHIFT; //TEX_HEIGHT_SHIFT;
-                    const u16* tex_column = &tex[tex_idx+1];
-
-                    // this sprite only has 28 columns of non-transparent pixels :)
-                    
-                    if(tex_col > 27) {
-                        break;
-                    } else if (tex_col < 4) {
-                        skipped_texels = 8;
-                        clipped_y_pix_top = ((y_per_texels_fix << 3)>>16)+1;
-                    } else if (tex_col >= 24) {
-                        skipped_texels = 28;
-                        clipped_y_pix_top = ((y_per_texels_fix * skipped_texels)>>16)+1; 
-                    }
-
-
-                    draw_bottom_clipped_texture_vertical_line(top_y_int, top_draw_y+clipped_y_pix_top, bot_y_int, bot_draw_y, col_ptr, tex_column);
-
+                // this sprite only has 28 columns of non-transparent pixels :)
+                
+                if(tex_col > 27) {
+                    break;
+                } else if (tex_col < 4) {
+                    skipped_texels = 8;
+                    clipped_y_pix_top = ((y_per_texels_fix << 3)>>16)+1;
+                } else if (tex_col >= 24) {
+                    skipped_texels = 28;
+                    clipped_y_pix_top = ((y_per_texels_fix * skipped_texels)>>16)+1; 
                 }
 
-                u_fix += u_per_x;
+                //draw_bottom_clipped_texture_with_tex_chunk(
+                //    chk, 
+                //    ytop, top_draw_y, //+clipped_y_pix_top, 
+                //    ybot, bot_draw_y, 
+                //    col_ptr, tex_column);
+                //draw_bottom_clipped_texture_vertical_line(top_y_int, top_draw_y+clipped_y_pix_top, bot_y_int, bot_draw_y, col_ptr, tex_column);
+                draw_bottom_clipped_texture_vertical_line(ytop, top_draw_y+clipped_y_pix_top, ybot, bot_draw_y, col_ptr, tex_column);
+
+
             }
         }
+        u_fix += u_per_x;
 
-        //top_y_fix += top_dy_per_dx;
-        //bot_y_fix += bot_dy_per_dx;
     }
     
     //flip();
