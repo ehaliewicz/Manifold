@@ -292,7 +292,18 @@ s16 line_slope(s16 x1, s16 y1_4, s16 x2, s16 y2_4) {
     return (y1_4-y2_4)/(x1-x2);
 }
 
-clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2, texmap_params* tmap, u32 wall_len) {
+
+#define TEX_REPEAT_DIST (64)
+
+
+u16 get_texture_repetitions(s16 v1x, s16 v1y, s16 v2x, s16 v2y) {
+    //u16 repetitions = max(1, wall_len / TEX_REPEAT_DIST);
+    u32 len = getApproximatedDistance(v2x-v1x, (v2y<<4)-(v1y<<4));
+    u16 repetitions = max(1, len / TEX_REPEAT_DIST);
+    return repetitions;
+}
+
+clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2, texmap_params* tmap, u16 wall_len) {
     // TODO: adjust texture coordinates here as well
     
 
@@ -314,16 +325,17 @@ clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2, texma
 
     s16 dz_12_4 = rz2_12_4 - rz1_12_4;
 
-    #define TEX_REPEAT_DIST 64
     u16 repetitions = max(1, wall_len / TEX_REPEAT_DIST);
     tmap->repetitions = repetitions;
-    //KLog_U1("repetitions: ", repetitions);
 
     s32 base_left_u_16 = 0;
     s32 base_right_u_16 = (1)<<16;
     s32 fix_du_16 = (base_right_u_16-base_left_u_16);
-    s16 du_per_len_16 = base_right_u_16/wall_len; 
-    s16 du_per_len_sq_16 = base_left_u_16/(wall_len*wall_len);
+    
+    //s16 du_per_len_16 = base_right_u_16/wall_len; 
+    //s16 du_per_len_16 = divs_32_by_16(base_right_u_16, wall_len); // base_right_u_16/wall_len; 
+    
+    //s16 du_per_len_sq_16 = base_left_u_16/(wall_len*wall_len);
 
 
     s32 du_over_dz_16; // = fix_du; // 16.16
@@ -335,8 +347,8 @@ clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2, texma
     if(dz_12_4 != 0) {
         //KLog("calculated du_over_dz_16");
         
-        du_over_dz_16 = (fix_du_16<<TRANS_Z_FRAC_BITS) / dz_12_4; // fix 16
-        
+        //du_over_dz_16 = (fix_du_16<<TRANS_Z_FRAC_BITS) / dz_12_4; // fix 16
+        du_over_dz_16 = divs_32_by_16(fix_du_16<<TRANS_Z_FRAC_BITS, dz_12_4);        
 
         
         //du_over_dz_7 = (fix_du_16>>5)/dz_12_4;
@@ -374,7 +386,7 @@ clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2, texma
         return clip_status;
     }
 
-    if(0) { //left_vert_outside_left_frustum) {
+    if(left_vert_outside_left_frustum) {
         //KLog("left frustum clipping");
         //die("LEFT FRUSTUM CLIPPING");
 
@@ -471,7 +483,7 @@ clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2, texma
         
     }
 
-    if(0) { //right_vert_outside_right_frustum) {
+    if(right_vert_outside_right_frustum) {
         s16 intersection_z_4;
         s16 intersection_x;
         if(rx1 == rx2) {

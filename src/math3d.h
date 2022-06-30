@@ -49,9 +49,11 @@ typedef enum {
 #define TRANS_Z_FRAC_BITS 4
 Vect2D_s16 transform_map_vert_16(s16 x, s16 y);
 
+u16 get_texture_repetitions(s16 v1x, s16 v1y, s16 v2x, s16 v2y);
+
 // clip pair of map vertexes against near z plane, modifies input pointers if necessary
 //clip_result clip_map_vertex(Vect2D_f32* trans_v1, Vect2D_f32* trans_v2);
-clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2, texmap_params* tmap, u32 wall_len);
+clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2, texmap_params* tmap, u16 wall_len);
 
 // project map vertex without height attributes
 //s16 project_and_adjust_x(Vect2D_f32 trans_map_vert);

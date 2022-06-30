@@ -7,6 +7,7 @@
 #include "level.h"
 #include "object.h"
 #include "portal_map.h"
+#include "utils.h"
 
 int next_obj_id = 0; 
 
@@ -253,12 +254,13 @@ int look_for_player(object* cur_obj, uint16_t cur_sector) {
 }
 
 
+
 int maybe_get_picked_up(object* cur_obj, uint16_t cur_sector) {  
     object_pos pos = cur_obj->pos;
     int dx = fix32ToInt(cur_player_pos.x - pos.x);
     int dy = fix32ToInt(cur_player_pos.y - pos.y);
     
-    u32 dist = getApproximatedDistance(dx, dy);
+    u32 dist = fastLength(dx, dy);
     
     if(dist < 32) { 
         char buf[50];

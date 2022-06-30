@@ -136,6 +136,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
         s16 wall_idx = wall_offset+i+1;
 
         u16 portal_idx = portal_offset+i;
+
         s16 portal_sector = map->portals[portal_idx];
         int is_portal = portal_sector != -1;
 
@@ -221,7 +222,8 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
 
         // reverse transform frustum lines
 
-        //u8 frustum_culled_portal;
+        //u8 frustum_culled_portal;.
+
         //if(!within_frustum(trans_v1.x, trans_v1.y>>TRANS_Z_FRAC_BITS, trans_v2.x, trans_v2.y>>TRANS_Z_FRAC_BITS)) {
             //if(is_portal) {
             //    goto dont_skip;
@@ -230,10 +232,12 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
         //}
         //dont_skip:;
 
+        texmap_params tmap_info = {};//repetitions: wall_tex_repetitions[portal_idx]};
+        
         u32 wall_len = getApproximatedDistance(v2.x - v1.x, v2.y - v1.y);
-
-        texmap_params tmap_info = {};
+        //u16 wall_len = fastLength(v2.x-v1.y, (v2.y>>TRANS_Z_FRAC_BITS)-(v1.y>>TRANS_Z_FRAC_BITS));
         clip_result clipped = clip_map_vertex_16(&trans_v1, &trans_v2, &tmap_info, wall_len);
+
 
         u16 z_recip_v1 = z_recip_table_16[trans_v1.y>>TRANS_Z_FRAC_BITS];
         u16 z_recip_v2 = z_recip_table_16[trans_v2.y>>TRANS_Z_FRAC_BITS];
@@ -716,21 +720,15 @@ void pvs_scan(u16 src_sector, s16 window_min, s16 window_max, u32 cur_frame) {
             Vect2D_s16 trans_v1 = transform_map_vert_16(v1.x, v1.y);
             Vect2D_s16 trans_v2 = transform_map_vert_16(v2.x, v2.y);
 
-            //if(!within_frustum(trans_v1.x, trans_v1.y>>TRANS_Z_FRAC_BITS, trans_v2.x, trans_v2.y>>TRANS_Z_FRAC_BITS)) {
-            //    //KLog("not in frustum");
-            //    continue;
-            //} else {
-            //    //KLog("in frustum");
-            //}
+            texmap_params tmap_info = {repetitions: wall_tex_repetitions[portal_idx]};
 
-            //KLog("potentially on-screen");
-            texmap_params tmap_info = {};
             u32 wall_len = getApproximatedDistance(v2.x - v1.x, v2.y - v1.y);
-
+            //u16 wall_len = fastLength(v2.x-v1.y, v2.y-v1.y);
+            
+            //u32 wall_len = getApproximatedDistance(v2.x - v1.x, (v2.y>>4) - (v1.y>>4));
             clip_result clipped = clip_map_vertex_16(&trans_v1, &trans_v2, &tmap_info, wall_len);
 
             if(clipped == OFFSCREEN) {
-                //inc_counter(NEAR_Z_CULL_COUNTER);
                 continue;
             }
 

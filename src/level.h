@@ -5,6 +5,7 @@
 
 extern portal_map* cur_portal_map;
 
+extern u16 *wall_tex_repetitions;
 
 
 

@@ -737,6 +737,40 @@ void flip() {
 
 }
 
+extern uint32_t span_scale_table[32*512];
+
+typedef struct {
+    uint8_t runs;
+    uint8_t run_data[];
+} columns;
+
+void draw_column(uint8_t* column, uint16_t output_scale, u8 x0, u8 x1, s16 y0, s16 y1, u8** col_ptrs) {
+    uint16_t out_pix_f16 = y0<<16;
+
+
+    uint8_t num_runs = *column++;
+    uint32_t* offset_table = &span_scale_table[output_scale<<5];
+    while(num_runs--) {
+        uint8_t skip_len = *column++;
+        out_pix_f16 += offset_table[skip_len];
+        uint8_t out_pix = out_pix_f16>>16;
+
+        uint8_t run_len = *column++;
+        uint32_t run_length_f16 = offset_table[run_len];
+        uint32_t end_pix_f16 = out_pix_f16+run_length_f16;
+        uint8_t end_pix = end_pix_f16>>16;
+
+        out_pix_f16 = end_pix_f16;
+
+        // clipping is gonna be a bitch
+        // ignore it
+        for(int i = x0; i <= x1; i++) {
+            draw_texture_vertical_line(out_pix, out_pix, end_pix, col_ptrs[i], column);
+        }
+        //draw_bottom_clipped_texture_vertical_line(ytop, top_draw_y+clipped_y_pix_top, ybot, bot_draw_y, col_ptr, tex_column);
+
+    }
+}
 
 
 /* for drawing moving objects */

@@ -1,4 +1,5 @@
 #include <genesis.h>
+#include "math3d.h"
 #include "portal_map.h"
 #include "sector.h"
 
@@ -19,9 +20,41 @@ portal_map* cur_portal_map = NULL;
      live_sector_group_parameters = NULL;
  }
 
+/*
+u16 *wall_tex_repetitions;
+
+
+void init_wall_tex_repetitions(portal_map* map) {
+    u16 num_walls = map->num_walls;
+    wall_tex_repetitions = MEM_alloc(sizeof(u16)*num_walls);
+    u16 num_sectors = map->num_sectors;
+
+    u16 k = 0;
+
+    for(int i = 0; i < num_sectors; i++) {
+        u16 wall_offset = sector_wall_offset(i, map);
+        u16 sect_num_walls = sector_num_walls(i, map);
+        for(int j = 0; j < sect_num_walls; j++) {
+            u16 v1_idx = cur_portal_map->walls[wall_offset];
+            u16 v2_idx = cur_portal_map->walls[wall_offset+1];
+            vertex v1 = cur_portal_map->vertexes[v1_idx];
+            vertex v2 = cur_portal_map->vertexes[v2_idx];
+            u16 repetitions = get_texture_repetitions(v1.x, v1.y, v2.x, v2.y);
+
+
+            wall_tex_repetitions[k++] = repetitions;
+
+        }
+    }
+
+}
+*/
 
 void load_portal_map(portal_map* l) {
     cur_portal_map = l;
     init_sector_parameters(l);
+
+    //init_wall_tex_repetitions(l);
+
 }
 
