@@ -3,10 +3,6 @@
 #define DIVIDE_ROUND_UP(a,b) (((a) + ((b)-1))/(b))
 
 
-#define NUM_TILES 32 // let's see if this is necessary
-static uint16_t vram_addr;
-
-
 
 void vwf_init() {
 }

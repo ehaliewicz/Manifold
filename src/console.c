@@ -11,7 +11,8 @@ tile* tile_buf;
 
 static uint16_t start_vram_addr;
 
-static int rendered_tiles_are_dirty = 1;
+static int rendered_tiles_are_dirty = 0;
+
 static int tiles_to_draw;
 
 typedef struct {
@@ -23,6 +24,31 @@ typedef struct {
 
 console_msg message;
 
+uint16_t console_init(uint16_t start_addr) {
+    rendered_tiles_are_dirty = 0;
+    tiles_to_draw = 0;
+
+
+    //read = write = 0;
+    //messages = MEM_alloc(sizeof(console_msg)*CONSOLE_NUM_MESSAGES);
+    message.ticks_left = 0;
+    message.msg[0] = 0;
+
+    tile_buf = MEM_alloc(sizeof(tile)*NUM_TILES);
+
+    start_vram_addr = start_addr;
+    
+    //VDP_setWindowAddress(VDP_getAPlanAddress()); 
+    //VDP_setWindowVPos(TRUE, 21); 
+    
+    //memset(messages, 0, sizeof(console_msg)*CONSOLE_NUM_MESSAGES);
+    return start_vram_addr+NUM_TILES;
+}
+
+void console_cleanup() {
+    //MEM_free(messages);
+    MEM_free(tile_buf);
+}
 
 void copy_console_message(char *msg, int len, uint16_t ticks) {
     if(len > CONSOLE_MAX_MSG_SIZE) {
@@ -31,6 +57,7 @@ void copy_console_message(char *msg, int len, uint16_t ticks) {
     strcpy(message.msg, msg);
     message.len = len;
     message.ticks_left = ticks;
+    rendered_tiles_are_dirty = 1;
 }
 
 
@@ -86,7 +113,6 @@ void console_tick() {
         }
         
         if(message.ticks_left-- == 1) {
-            rendered_tiles_are_dirty = 1;
             const u16 clear_base_tile = TILE_ATTR_FULL(3, 0, 0, 0, 0x39E);
             VDP_fillTileMapRect(BG_B, clear_base_tile, CONSOLE_BASE_X, CONSOLE_BASE_Y, tiles_to_draw, 1);
             message.ticks_left = 0;
@@ -95,23 +121,3 @@ void console_tick() {
     }
 }
 
-uint16_t console_init(uint16_t start_addr) {
-    //read = write = 0;
-    //messages = MEM_alloc(sizeof(console_msg)*CONSOLE_NUM_MESSAGES);
-    message.ticks_left = 0;
-
-    tile_buf = MEM_alloc(sizeof(tile)*NUM_TILES);
-
-    start_vram_addr = start_addr;
-    
-    //VDP_setWindowAddress(VDP_getAPlanAddress()); 
-    //VDP_setWindowVPos(TRUE, 21); 
-    
-    //memset(messages, 0, sizeof(console_msg)*CONSOLE_NUM_MESSAGES);
-    return start_vram_addr+NUM_TILES;
-}
-
-void console_cleanup() {
-    //MEM_free(messages);
-    MEM_free(tile_buf);
-}
