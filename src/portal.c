@@ -232,11 +232,9 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
         //}
         //dont_skip:;
 
-        texmap_params tmap_info = {};//repetitions: wall_tex_repetitions[portal_idx]};
-        
-        u32 wall_len = getApproximatedDistance(v2.x - v1.x, v2.y - v1.y);
-        //u16 wall_len = fastLength(v2.x-v1.y, (v2.y>>TRANS_Z_FRAC_BITS)-(v1.y>>TRANS_Z_FRAC_BITS));
-        clip_result clipped = clip_map_vertex_16(&trans_v1, &trans_v2, &tmap_info, wall_len);
+
+        texmap_params tmap_info = {repetitions: wall_tex_repetitions[portal_idx]};
+        clip_result clipped = clip_map_vertex_16(&trans_v1, &trans_v2, &tmap_info);
 
 
         u16 z_recip_v1 = z_recip_table_16[trans_v1.y>>TRANS_Z_FRAC_BITS];
@@ -721,12 +719,8 @@ void pvs_scan(u16 src_sector, s16 window_min, s16 window_max, u32 cur_frame) {
             Vect2D_s16 trans_v2 = transform_map_vert_16(v2.x, v2.y);
 
             texmap_params tmap_info = {repetitions: wall_tex_repetitions[portal_idx]};
-
-            u32 wall_len = getApproximatedDistance(v2.x - v1.x, v2.y - v1.y);
-            //u16 wall_len = fastLength(v2.x-v1.y, v2.y-v1.y);
-            
-            //u32 wall_len = getApproximatedDistance(v2.x - v1.x, (v2.y>>4) - (v1.y>>4));
-            clip_result clipped = clip_map_vertex_16(&trans_v1, &trans_v2, &tmap_info, wall_len);
+                     
+            clip_result clipped = clip_map_vertex_16(&trans_v1, &trans_v2, &tmap_info);
 
             if(clipped == OFFSCREEN) {
                 continue;

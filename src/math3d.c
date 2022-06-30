@@ -296,14 +296,38 @@ s16 line_slope(s16 x1, s16 y1_4, s16 x2, s16 y2_4) {
 #define TEX_REPEAT_DIST (64)
 
 
+unsigned int int_sqrt (unsigned int n) {
+
+    unsigned int result = 0;
+    unsigned int odd    = 1;
+    unsigned int oddsum = 1;
+
+    while (oddsum <= n) {
+
+        result = result + 1;
+        odd = odd + 2;
+        oddsum = oddsum + odd;
+
+    }
+
+    return result;
+
+}
+
 u16 get_texture_repetitions(s16 v1x, s16 v1y, s16 v2x, s16 v2y) {
     //u16 repetitions = max(1, wall_len / TEX_REPEAT_DIST);
-    u32 len = getApproximatedDistance(v2x-v1x, (v2y<<4)-(v1y<<4));
-    u16 repetitions = max(1, len / TEX_REPEAT_DIST);
+    //u32 len = getApproximatedDistance(v2x-v1x, v2y-v1y);
+    u32 sqx = (v2x-v1x)*(v2x-v1x); 
+    u32 sqy = (v2y-v1y)*(v2y-v1y);
+
+    u32 sum_sqs = sqx+sqy;
+    u32 dist = int_sqrt(sum_sqs);
+
+    u16 repetitions = max(1, dist / TEX_REPEAT_DIST);
     return repetitions;
 }
 
-clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2, texmap_params* tmap, u16 wall_len) {
+clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2, texmap_params* tmap) {
     // TODO: adjust texture coordinates here as well
     
 
@@ -313,8 +337,6 @@ clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2, texma
     s16 rx2 = trans_v2->x;
     s16 rz2_12_4 = trans_v2->y; // 12.4
 
-    //s16 rz1 = rz1_fix >> TRANS_Z_FRAC_BITS;
-    //s16 rz2 = rz2_fix >> TRANS_Z_FRAC_BITS;
 
     clip_result clip_status = UNCLIPPED;
 
@@ -325,25 +347,11 @@ clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2, texma
 
     s16 dz_12_4 = rz2_12_4 - rz1_12_4;
 
-    u16 repetitions = max(1, wall_len / TEX_REPEAT_DIST);
-    tmap->repetitions = repetitions;
-
     s32 base_left_u_16 = 0;
     s32 base_right_u_16 = (1)<<16;
     s32 fix_du_16 = (base_right_u_16-base_left_u_16);
-    
-    //s16 du_per_len_16 = base_right_u_16/wall_len; 
-    //s16 du_per_len_16 = divs_32_by_16(base_right_u_16, wall_len); // base_right_u_16/wall_len; 
-    
-    //s16 du_per_len_sq_16 = base_left_u_16/(wall_len*wall_len);
 
-
-    s32 du_over_dz_16; // = fix_du; // 16.16
-    //s32 du_over_dz_7;
-    //u16 dist_sqr = wall_len * wall_len;
-    //s32 du_over_dist_sq_16 = fix_du_16 / dist_sqr;
-    //s32 du_over_dist_16 = fix_du_16/ wall_len;
-
+    s32 du_over_dz_16;
     if(dz_12_4 != 0) {
         //KLog("calculated du_over_dz_16");
         
@@ -386,9 +394,10 @@ clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2, texma
         return clip_status;
     }
 
+    // this frustum code seems to cause some issues with portal clipping
+    // with pvs renderer, doesn't seem to be an issue?
     if(left_vert_outside_left_frustum) {
-        //KLog("left frustum clipping");
-        //die("LEFT FRUSTUM CLIPPING");
+
 
         //s16 frustum_left_x = -16384;
         //s16 frustum_left_y = 16384;

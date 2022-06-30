@@ -92,9 +92,7 @@ void render_console() {
 
     const u16 base_tile = TILE_ATTR_FULL(3, 1, 0, 0, start_vram_addr);
     VDP_fillTileMapRectInc(BG_B, base_tile, CONSOLE_BASE_X, CONSOLE_BASE_Y, tiles_to_draw, 1);
-    //for(int i = 0; i < tiles_to_draw; i++) {
-    //    VDP_setTileMapXY(BG_B, base_tile+i, CONSOLE_BASE_X+i, CONSOLE_BASE_Y);
-    //}
+
 
     int clear_tiles = NUM_TILES-tiles_to_draw;
     const u16 clear_base_tile = TILE_ATTR_FULL(3, 0, 0, 0, 0x39E);

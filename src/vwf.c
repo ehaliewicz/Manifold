@@ -15,7 +15,6 @@ int vwf_count_tiles(char* string, int len) {
   for(int i = 0; i < len; i++) {
     char c = string[i];
     int cur_num_pairs = charmap[c-32].width;
-    KLog_U1("num_pairs: ", cur_num_pairs);
     if(cur_num_pairs == 0 || cur_num_pairs > PAIRS_IN_TILE) { char buf[32]; sprintf(buf, "wtf %i/%c %i", c, c, cur_num_pairs); die(buf); } //  die("wtf"); }
     
 
