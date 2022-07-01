@@ -182,7 +182,7 @@ const Vect2D_s16 gun_bobs[16] = {
 
 Sprite* shotgun_spr;
 #define BASE_GUN_X 128
-#define BASE_GUN_Y 110
+#define BASE_GUN_Y 115
 
 void set_gun_pos() {
     u8 idx = (gun_bob_idx>>4) % 0xF;
@@ -438,16 +438,6 @@ void init_game() {
     
     //ram_set(100, 0);
     
-
-    //SPR_init();
-    //shotgun_spr = SPR_addSprite(&shotgun, BASE_GUN_X, BASE_GUN_Y, TILE_ATTR_FULL(PAL0, 0, 0, 0, free_tile_loc));
-    //SPR_setVRAMTileIndex(shotgun_spr, free_tile_loc);
-    //free_tile_loc += shotgun.maxNumTile;
-    //reset_gun_bob();
-    
-    //PAL_setPalette(PAL0, shotgun.palette->data);
-    //SPR_update();
-
     //XGM_stopPlay();
     //SYS_setVIntCallback(do_vint_flip);
     VDP_setVerticalScroll(BG_B, 0);
@@ -531,6 +521,42 @@ void init_game() {
     PAL_setPalette(PAL3, skybox_gradient.palette->data);
     free_tile_loc += skybox_gradient.tileset->numTile;
 
+    
+    VDP_loadTileSet(shotgun.animations[0]->frames[0]->tileset, free_tile_loc, DMA);
+    u8 shotgun_w = shotgun.animations[0]->frames[0]->w/8;
+    u8 shotgun_h = shotgun.animations[0]->frames[0]->h/8;
+    AnimationFrame *frame1 = shotgun.animations[0]->frames[0];
+
+    VDP_allocateSprites(frame1->numSprite);
+    u16 tile_idx = free_tile_loc;
+
+    FrameVDPSprite** f = frame1->frameInfos[0].frameVDPSprites;
+    for(int i = 0; i < frame1->numSprite; i++) {
+        FrameVDPSprite* spr = f[i];
+
+        VDP_setSprite(
+            i,
+            BASE_GUN_X+spr->offsetX, BASE_GUN_Y+spr->offsetY,
+            spr->size,
+            TILE_ATTR_FULL(PAL0, 0, 0, 0, tile_idx)
+        );
+        tile_idx += spr->numTile;
+
+    }
+    free_tile_loc += shotgun.maxNumTile;
+    PAL_setPalette(PAL0, shotgun.palette->data);
+    VDP_linkSprites(0, frame1->numSprite);
+    KLog_U1("num shotgun sprites: ", frame1->numSprite);
+    VDP_updateSprites(frame1->numSprite, DMA);
+    
+    //shotgun_spr = SPR_addSprite(&shotgun, BASE_GUN_X, BASE_GUN_Y, TILE_ATTR_FULL(PAL0, 0, 0, 0, free_tile_loc));
+    //SPR_setVRAMTileIndex(shotgun_spr, free_tile_loc);
+    //KLog_U1("init shotgun tiles to address: ", free_tile_loc);
+    //free_tile_loc += shotgun.maxNumTile;
+    //KLog_U1("after shotgun address: ", free_tile_loc);
+    //reset_gun_bob();
+    
+    //SPR_update();
 
 
     //u16 hud_base_tile = TILE_ATTR_FULL(PAL2, 1, 0, 0, free_tile_loc);
@@ -551,6 +577,17 @@ void init_game() {
         sector_centers[10].x, sector_centers[10].y, 
         get_sector_group_floor_height(obj_sect_group), 0);
 
+
+    vwf_init();
+    KLog_U1("init console to address: ", free_tile_loc);
+    free_tile_loc = console_init(free_tile_loc);
+    KLog_U1("after console address: ", free_tile_loc);
+
+    const char* init_str = "game initialized!";
+    console_push_message("game initialized!", 17, 20);
+
+    MEM_pack();
+
     u16 free_bytes = MEM_getFree();
     KLog_U1("free bytes in RAM: ", free_bytes);
     //while(1) {}
@@ -558,12 +595,6 @@ void init_game() {
     if(music_on) {
         //XGM_startPlay(xgm_e1m4);
     }
-
-    vwf_init();
-    free_tile_loc = console_init(free_tile_loc);
-
-    const char* init_str = "game initialized!";
-    console_push_message("game initialized!", 17, 20);
 }
 
 void maybe_set_palette(u16* new_palette) {

@@ -710,7 +710,7 @@ void pvs_scan(u16 src_sector, s16 window_min, s16 window_max, u32 cur_frame) {
 
             u8 tex_idx = map->wall_colors[(portal_idx<<WALL_COLOR_NUM_PARAMS_SHIFT)+WALL_TEXTURE_IDX];
             u8 is_solid_color = map->wall_colors[(portal_idx<<WALL_COLOR_NUM_PARAMS_SHIFT)+WALL_SOLID_COLOR_IDX];
-            u8 wall_col = tex_idx;
+            u8 wall_col = (tex_idx+random())&15;
             texmap_params tmap_info = {
                 repetitions: wall_tex_repetitions[portal_idx], 
                 needs_texture: !is_solid_color

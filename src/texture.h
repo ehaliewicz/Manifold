@@ -47,7 +47,7 @@ typedef struct {
     u32 d_u_over_z_dx_23;
 } persp_params;
 
-persp_params calc_perspective(u16 z1_12_4, u16 z2_12_4, u32 left_u_16, u32 right_u_16, u16 dx);
+persp_params calc_perspective(u16 z1_12_4, u16 z2_12_4, u16 inv_z1, u16 inv_z2, u32 left_u_16, u32 right_u_16, u16 dx);
 
 #define FAR_MIP_WIDTH 16
 #define FAR_MIP_WIDTH_SHIFT 4

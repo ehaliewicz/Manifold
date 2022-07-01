@@ -1220,10 +1220,11 @@ u16 tex_col_buffer[RENDER_WIDTH];
 void calculate_tex_coords_for_wall(
     s16 beginx, s16 endx, s16 skip_x, s16 dx,
     u16 z1_12_4,     u16 z2_12_4,
+    u16 inv_z1,      u16 inv_z2,
     texmap_params* tmap_info) {
     u32 left_u_16 = tmap_info->left_u * tmap_info->repetitions;
     u32 right_u_16 = tmap_info->right_u * tmap_info->repetitions;
-    persp_params persp = calc_perspective(z1_12_4, z2_12_4, left_u_16, right_u_16, dx);
+    persp_params persp = calc_perspective(z1_12_4, z2_12_4, inv_z1, inv_z2, left_u_16, right_u_16, dx);
     
 
     u32 one_over_z_26 = persp.one_over_z_26;
@@ -1232,16 +1233,16 @@ void calculate_tex_coords_for_wall(
     u32 d_u_over_z_dx_23 = persp.d_u_over_z_dx_23;
 
     u32 du = right_u_16 - left_u_16;
-    u32 du_dx = du/dx;
+    //u32 du_dx = du/dx;
 
-    u32 cur_u = left_u_16;
+    //u32 cur_u = left_u_16;
     if(skip_x > 0) {
         // always use perspective
         one_over_z_26 += (skip_x * d_one_over_z_dx_26);
         u_over_z_23 += skip_x * d_u_over_z_dx_23;
 
         // TEMP HACK FOR NO PERSPECTIVE
-        cur_u += (skip_x * du_dx);
+        //cur_u += (skip_x * du_dx);
     }
 
     u16 one_over_z_16 = one_over_z_26>>10;
@@ -1405,7 +1406,7 @@ void calculate_tex_coords_for_wall(
 
         
         tmp = u_over_z_23_span_end;
-        u16 u_7_end;
+        u16 u_7_end; // 9.7 fixed point
         __asm volatile(
             "divu.w %2, %1\t\n\
             move.w %1, %0\t\n\
@@ -1706,10 +1707,10 @@ u8 light_levels[6];
     }                                               \
 } while(0);
 
-void calculate_light_levels_for_wall(u32 clipped_dx, s32 inv_z1, s32 inv_z2, s32 fix_inv_dz_per_dx, s8 light_level) {
+void calculate_light_levels_for_wall(u32 clipped_dx, s16 inv_z1, s16 inv_z2, s16 fix_inv_dz_per_dx, s8 light_level) {
     num_light_levels = 0;
     u8* out_ptr = light_levels;
-    u8 cnt = clipped_dx;
+    s32 cnt = clipped_dx;
 
     s16 cur_inv_z = inv_z1;
     u8 cur_light;
@@ -1810,30 +1811,94 @@ void calculate_light_levels_for_wall(u32 clipped_dx, s32 inv_z1, s32 inv_z2, s32
     cur_span = 1;           \
    } while(0) \
 
+    
+    u8 next_light;
+    /*
+    //if(cnt <= 0) {
+    //    goto finished;
+    //}
+    //cnt--;
 
-    u8 next_light; 
+    __asm volatile("\t\n\
+        tst.l %5\t\n\
+        ble.b exit%=\t\n\
+    loop%=:\t\n\
+        cmp.w #65536/350, %3\t\n\
+        ble.b next_is_dark%=\t\n\
+        cmp.w #65536/150, %3\t\n\
+        ble.b next_is_mid%=\t\n\
+    next_is_light%=:\t\n\
+        moveq #2, %0\t\n\
+        bra.b end_dist_test%=\t\n\
+    next_is_dark%=:\t\n\
+        moveq #0, %0\t\n\
+        bra.b end_dist_test%=\t\n\
+    next_is_mid%=:\t\n\
+        moveq #1, %0\t\n\
+    end_dist_test%=:\t\n\
+        cmp.w %0, %1\t\n\
+        bne.b diff_light_level%=\t\n\
+    \t\n\
+    \t\n\
+    same_light_level%=:\t\n\
+        addq #1, %2\t\n\
+        add.w %7, %3\t\n\
+        dbra %5, loop%=\t\n\
+        bra.b exit%=\t\n\
+    \t\n\
+    \t\n\
+    diff_light_level%=:\t\n\
+        move.b %1, (%4)+ | *out_ptr++ = cur_light \t\n\
+        move.b %2, (%4)+ | *out_ptr++ = cur_span \t\n\
+        move.b %0, %1    | cur_light = next_light \t\n\
+        moveq #1, %2     | cur_span = 1 \t\n\
+        cmp.b %1, %6     | cur_light == end_light? \t\n\
+        beq.b end_loop_end_light%= \t\n\
+        add.w %7, %3     | cur_inv_z += fix_inv_dz_per_dx \t\n\
+        dbra %5, loop%=\t\n\
+        bra.b exit%=\t\n\
+    \t\n\
+    end_loop_end_light%=:\t\n\
+        add.b %5, %2  | cur_span += cnt\t\n\
+    \t\n\
+    exit%=:\t\n\
+    "
+        : "+d" (next_light), "+d" (cur_light), "+d" (cur_span), "+a" (cur_inv_z), "+a" (out_ptr), "+d" (cnt)
+        : "d" (end_light), "a" (fix_inv_dz_per_dx)
+    );
+    */
+    // 
 
+    
     while(cnt--) {
         u8 next_light; 
+        //CHECK_DIST(cur_inv_z, next_light);
+        //MID_DIST
+        //FIX_0_16_INV_MID_DIST
         
-        CHECK_DIST(cur_inv_z, next_light);
-
+        if (cur_inv_z <= FIX_0_16_INV_DARK_DIST) {        
+            next_light = DARK;                           
+        } else if (cur_inv_z <= FIX_0_16_INV_MID_DIST) {  
+            next_light = MID;                            
+        } else {                                        
+            next_light = LIGHT;                          
+        }                                               
 
         if(cur_light == next_light) {
             cur_span++;
         } else {
             __asm volatile(
                 "move.b %1, (%0)+\t\n\
-                move.b %2, (%0)+"
-                : "+a" (out_ptr)
-                : "d" (cur_light), "d" (cur_span)
+                move.b %3, (%0)+\t\n\
+                move.b %4, %1\t\n\
+                moveq #1, %2"
+                : "+a" (out_ptr), "+d" (cur_light), "=d" (cur_span)
+                : "d" (cur_span), "d" (next_light)
             );
-            //*out_ptr++ = cur_light;
-            //*out_ptr++ = cur_span;
-            cur_light = next_light;
-            cur_span = 1;
-
-
+            // *out_ptr++ = cur_light;
+            // *out_ptr++ = cur_span;
+            //cur_light = next_light;
+            //cur_span = 1;
             if(end_light == cur_light) {
                 cur_span += cnt;
                 break;
@@ -1841,7 +1906,7 @@ void calculate_light_levels_for_wall(u32 clipped_dx, s32 inv_z1, s32 inv_z2, s32
         }
         cur_inv_z += fix_inv_dz_per_dx;
     }
-
+    
    
 finished:
     __asm volatile(
@@ -1885,7 +1950,7 @@ void draw_upper_step(s16 x1, s16 x1_ytop, s16 nx1_ytop, s16 x2, s16 x2_ytop, s16
     s16 beginx = max(x1, window_min);
 
     s16 inv_dz = inv_z2 - inv_z1;
-    s32 fix_inv_dz_per_dx = inv_dz / dx;
+    s16 fix_inv_dz_per_dx = inv_dz / dx;
 
     s32 cur_fix_inv_z = inv_z1;
 
@@ -2025,7 +2090,7 @@ void draw_top_pegged_textured_upper_step(s16 x1, s16 x1_ytop, s16 nx1_ytop, s16 
     }
 
     calculate_tex_coords_for_wall(beginx, endx, skip_x, dx,
-        z1_12_4, z2_12_4, tmap_info);
+        z1_12_4, z2_12_4, inv_z1, inv_z2, tmap_info);
 
     lit_texture* lit_tex = tmap_info->tex;
     u16* dark_tex = lit_tex->dark;
@@ -2151,7 +2216,7 @@ void draw_bottom_pegged_textured_lower_step(
     }
 
     calculate_tex_coords_for_wall(beginx, endx, skip_x, dx,
-        z1_12_4, z2_12_4, tmap_info);
+        z1_12_4, z2_12_4, inv_z1, inv_z2, tmap_info);
 
 
     lit_texture* lit_tex = tmap_info->tex;
@@ -2683,7 +2748,7 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
     }
 
     calculate_tex_coords_for_wall(beginx, endx, skip_x, dx,
-        z1_12_4, z2_12_4, tmap_info);
+        z1_12_4, z2_12_4, inv_z1, inv_z2, tmap_info);
         
 
     lit_texture* lit_tex = tmap_info->tex;
@@ -2969,7 +3034,7 @@ void draw_top_pegged_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
     }
 
     calculate_tex_coords_for_wall(beginx, endx, skip_x, dx,
-        z1_12_4, z2_12_4, tmap_info);
+        z1_12_4, z2_12_4, inv_z1, inv_z2, tmap_info);
 
 
     lit_texture* lit_tex = tmap_info->tex;
@@ -3110,7 +3175,7 @@ void draw_bot_pegged_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
     }
 
     calculate_tex_coords_for_wall(beginx, endx, skip_x, dx,
-        z1_12_4, z2_12_4, tmap_info);
+        z1_12_4, z2_12_4, inv_z1, inv_z2, tmap_info);
 
 
     lit_texture* lit_tex = tmap_info->tex;

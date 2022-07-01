@@ -1,7 +1,7 @@
 #include <genesis.h>
 #include "vwf.h"
 
-#define CONSOLE_MAX_MSG_SIZE 79
+#define CONSOLE_MAX_MSG_SIZE 49
 #define CONSOLE_NUM_MESSAGES 4
 #define CONSOLE_NUM_MESSAGES_MASK 0b111
 
@@ -87,7 +87,7 @@ void render_console() {
     // clean up the last tile we will be using, in case it has garbage (because we might only render to the left half of it)
     memset(tile_buf[tiles_to_draw-1].rows, 0, 32);
     vwf_render_tiles(message.msg, message.len, tile_buf, tiles_to_draw);
-    VDP_loadTileData(&(tile_buf[0].rows[0]), start_vram_addr, tiles_to_draw, CPU); //DMA_QUEUE);
+    VDP_loadTileData(&(tile_buf[0].rows[0]), start_vram_addr, tiles_to_draw, DMA_QUEUE);
     
 
     const u16 base_tile = TILE_ATTR_FULL(3, 1, 0, 0, start_vram_addr);
@@ -95,7 +95,7 @@ void render_console() {
 
 
     int clear_tiles = NUM_TILES-tiles_to_draw;
-    const u16 clear_base_tile = TILE_ATTR_FULL(3, 0, 0, 0, 0x39E);
+    const u16 clear_base_tile = TILE_ATTR_FULL(3, 0, 0, 0, 0); //0x39E);
     VDP_fillTileMapRect(BG_B, clear_base_tile, CONSOLE_BASE_X+tiles_to_draw, CONSOLE_BASE_Y, clear_tiles, 1);
 
 

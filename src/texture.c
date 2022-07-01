@@ -16,7 +16,7 @@
 
 #define Z_PERSP_MIN (100<<4)
 
-persp_params calc_perspective(u16 z1_12_4, u16 z2_12_4, u32 left_u_16, u32 right_u_16, u16 dx) {
+persp_params calc_perspective(u16 z1_12_4, u16 z2_12_4, u16 inv_z1, u16 inv_z2, u32 left_u_16, u32 right_u_16, u16 dx) {
     persp_params ret;
     //if (abs(z2_12_4 - z1_12_4) < Z_PERSP_MIN) {
     //    u32 du_16 = right_u_16-left_u_16;
@@ -32,16 +32,31 @@ persp_params calc_perspective(u16 z1_12_4, u16 z2_12_4, u32 left_u_16, u32 right
 
     s32 d_one_over_z_26 = (one_over_z_end_26 - one_over_z_26);
 
-    u32 u_over_z_23 = (left_u_16<<(TRANS_Z_FRAC_BITS+7))/z1_12_4;  
-    u32 u_over_z_end_23 = (right_u_16<<(TRANS_Z_FRAC_BITS+7))/z2_12_4;
+    //u32 u_over_z_23 = (left_u_16<<(TRANS_Z_FRAC_BITS+7))/z1_12_4;  
+    //u32 u_over_z_end_23 = (right_u_16<<(TRANS_Z_FRAC_BITS+7))/z2_12_4;
 
+    //u16 inv_z1_0_16 = 65536/(z1_12_4>>4);
+    //u16 inv_z2_0_16 = 65536/(z2_12_4>>4);
+    //u16 inv_z1_0_16 = z_recip_table_16[z1_12_4>>4];
+    //u16 inv_z2_0_16 = z_recip_table_16[z2_12_4>>4];
+    u32 u_over_z_23 = ((left_u_16)*(inv_z1))>>9; // 11+12
+    u32 u_over_z_end_23 = ((right_u_16)*(inv_z2))>>9;
+
+    
+
+
+    //u32 u_over_z_end = (right_u_16<<8)/z2_12_4;
+    //u32 u_over_z_23 = u_over_z<<19;
+    //u32 u_over_z_end_23 = u_over_z_end<<19;
 
     s32 d_u_over_z_23 = (u_over_z_end_23 - u_over_z_23);
 
 
     ret.one_over_z_26 = one_over_z_26;
 
+
     ret.d_one_over_z_dx_26 = (d_one_over_z_26/dx);
+
     ret.u_over_z_23 = u_over_z_23;
     ret.d_u_over_z_dx_23 = d_u_over_z_23/dx;
     return ret;
@@ -50,7 +65,7 @@ persp_params calc_perspective(u16 z1_12_4, u16 z2_12_4, u32 left_u_16, u32 right
 
 u16 unclipped_dy_fix10_recip_table[512] = {
     0xF00F,
-    (TEX_HEIGHT<<10)/1, (TEX_HEIGHT<<10)/2, (TEX_HEIGHT<<10)/3, (TEX_HEIGHT<<10)/4, (TEX_HEIGHT<<10)/5, 
+    ((TEX_HEIGHT<<10)-1)/1, (TEX_HEIGHT<<10)/2, (TEX_HEIGHT<<10)/3, (TEX_HEIGHT<<10)/4, (TEX_HEIGHT<<10)/5, 
 (TEX_HEIGHT<<10)/6, (TEX_HEIGHT<<10)/7, (TEX_HEIGHT<<10)/8, (TEX_HEIGHT<<10)/9, (TEX_HEIGHT<<10)/10, 
 (TEX_HEIGHT<<10)/11, (TEX_HEIGHT<<10)/12, (TEX_HEIGHT<<10)/13, (TEX_HEIGHT<<10)/14, (TEX_HEIGHT<<10)/15, 
 (TEX_HEIGHT<<10)/16, (TEX_HEIGHT<<10)/17, (TEX_HEIGHT<<10)/18, (TEX_HEIGHT<<10)/19, (TEX_HEIGHT<<10)/20, 
