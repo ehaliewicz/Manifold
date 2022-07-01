@@ -174,23 +174,6 @@ const u32 long_color_table[256] = {
 // 960 bytes
 
 
-u32 get_dark_color(u8 col_idx, s8 light_level) {
-  u16 light_off = (light_level+2)<<4;
-  return color_calc_table[light_off+col_idx];
-}
-
-u32 get_mid_dark_color(u8 col_idx, s8 light_level) {
-  u16 light_off = (light_level+2)<<4;  
-  u16 dist_off = (16*5);
-  return color_calc_table[light_off+dist_off+col_idx];
-}
-
-u32 get_light_color(u8 col_idx, s8 light_level) {
-  u16 light_off = (light_level+2)<<4;  
-  u16 dist_off = (16*5*2);
-  return color_calc_table[light_off+dist_off+col_idx];
-}
-
 
 u32* get_color_ptr(u16 color, s16 light_level) {
    u32* ret = swizzled_color_calc_table;

@@ -220,20 +220,17 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
         volatile Vect2D_s16 trans_v2 = transform_map_vert_16(v2.x, v2.y);
         prev_transformed_vert = trans_v2;
 
-        // reverse transform frustum lines
 
-        //u8 frustum_culled_portal;.
-
-        //if(!within_frustum(trans_v1.x, trans_v1.y>>TRANS_Z_FRAC_BITS, trans_v2.x, trans_v2.y>>TRANS_Z_FRAC_BITS)) {
-            //if(is_portal) {
-            //    goto dont_skip;
-            //}
-        //    continue;
-        //}
-        //dont_skip:;
-
-
-        texmap_params tmap_info = {repetitions: wall_tex_repetitions[portal_idx]};
+        u8 tex_idx = map->wall_colors[(portal_idx<<WALL_COLOR_NUM_PARAMS_SHIFT)+WALL_TEXTURE_IDX];
+        u8 is_solid_color = map->wall_colors[(portal_idx<<WALL_COLOR_NUM_PARAMS_SHIFT)+WALL_SOLID_COLOR_IDX];
+        texmap_params tmap_info = {
+            repetitions: wall_tex_repetitions[portal_idx],
+            needs_texture: !is_solid_color};
+        u8 wall_col = tex_idx;
+        if(!is_solid_color) {
+            lit_texture *tex = get_texture(tex_idx, light_level);
+            tmap_info.tex = tex;
+        }
         clip_result clipped = clip_map_vertex_16(&trans_v1, &trans_v2, &tmap_info);
 
 
@@ -423,13 +420,6 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
             }
         }
 
-        u8 tex_idx = map->wall_colors[(portal_idx<<WALL_COLOR_NUM_PARAMS_SHIFT)+WALL_TEXTURE_IDX];
-        u8 is_solid_color = map->wall_colors[(portal_idx<<WALL_COLOR_NUM_PARAMS_SHIFT)+WALL_SOLID_COLOR_IDX];
-        u8 wall_col = tex_idx;
-        if(!is_solid_color) {
-            lit_texture *tex = get_texture(tex_idx, light_level);
-            tmap_info.tex = tex;
-        }
 
         if (is_portal) {
 
@@ -458,7 +448,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
                 //                z_recip_v1, z_recip_v2,
                 //                window_min, window_max, upper_color, light_level, &ceil_params);
 
-                if(neighbor_sector_group_type == DOOR) {
+                if(neighbor_sector_group_type == DOOR && !is_solid_color) {
                     //KLog_S2("nx1_ytop: ", nx1_ytop, "nx2_ytop: ", nx2_ytop);
                     //KLog_S2("x1 door top: ", x1_door_top, "x2 door top: ", x2_door_top);
                     draw_top_pegged_textured_upper_step(x1, x1_ytop, nx1_ytop, x2, x2_ytop, nx2_ytop,
@@ -495,7 +485,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
 
                 u8 lower_color = map->wall_colors[(portal_idx<<WALL_COLOR_NUM_PARAMS_SHIFT)+WALL_LOW_COLOR_IDX];
 
-                if(neighbor_sector_group_type == LIFT) {
+                if(neighbor_sector_group_type == LIFT && !is_solid_color) {
 
                     draw_bottom_pegged_textured_lower_step(x1, x1_ybot, nx1_ybot, x2, x2_ybot, nx2_ybot,
                                                         trans_v1_z_fix, trans_v2_z_fix,
@@ -718,7 +708,19 @@ void pvs_scan(u16 src_sector, s16 window_min, s16 window_max, u32 cur_frame) {
             Vect2D_s16 trans_v1 = transform_map_vert_16(v1.x, v1.y);
             Vect2D_s16 trans_v2 = transform_map_vert_16(v2.x, v2.y);
 
-            texmap_params tmap_info = {repetitions: wall_tex_repetitions[portal_idx]};
+            u8 tex_idx = map->wall_colors[(portal_idx<<WALL_COLOR_NUM_PARAMS_SHIFT)+WALL_TEXTURE_IDX];
+            u8 is_solid_color = map->wall_colors[(portal_idx<<WALL_COLOR_NUM_PARAMS_SHIFT)+WALL_SOLID_COLOR_IDX];
+            u8 wall_col = tex_idx;
+            texmap_params tmap_info = {
+                repetitions: wall_tex_repetitions[portal_idx], 
+                needs_texture: !is_solid_color
+            };
+
+            if(!is_solid_color) {
+
+                lit_texture *tex = get_texture(tex_idx, light_level);
+                tmap_info.tex = tex;
+            }
                      
             clip_result clipped = clip_map_vertex_16(&trans_v1, &trans_v2, &tmap_info);
 
@@ -764,14 +766,7 @@ void pvs_scan(u16 src_sector, s16 window_min, s16 window_max, u32 cur_frame) {
             x2_ytop = project_and_adjust_y_fix(ceil_height, z_recip_v2);
 
 
-            u8 tex_idx = map->wall_colors[(portal_idx<<WALL_COLOR_NUM_PARAMS_SHIFT)+WALL_TEXTURE_IDX];
-            //u8 is_solid_color = map->wall_colors[(portal_idx<<WALL_COLOR_NUM_PARAMS_SHIFT)+WALL_SOLID_COLOR_IDX];
-            //u8 wall_col = tex_idx;
-            //if(!is_solid_color) {
-
-                lit_texture *tex = get_texture(tex_idx, light_level);
-                tmap_info.tex = tex;
-            //}
+ 
  
 
             if(is_portal) {
@@ -852,13 +847,22 @@ void pvs_scan(u16 src_sector, s16 window_min, s16 window_max, u32 cur_frame) {
 
             } else {
 
+                if(is_solid_color) {
+                    draw_solid_color_wall(
+                        x1, x1_ytop, x1_ybot,
+                        x2, x2_ytop, x2_ybot,
+                        z_recip_v1, z_recip_v2,
+                        window_min, window_max, light_level, 
+                        wall_col, &floor_params, &ceil_params);
+                } else {
+                    draw_wall(
+                        x1, x1_ytop, x1_ybot,
+                        x2, x2_ytop, x2_ybot,
+                        trans_v1_z_fix, trans_v2_z_fix, z_recip_v1, z_recip_v2,
+                        window_min, window_max, light_level, 
+                        &tmap_info, &floor_params, &ceil_params);
 
-                draw_wall(
-                    x1, x1_ytop, x1_ybot,
-                    x2, x2_ytop, x2_ybot,
-                    trans_v1_z_fix, trans_v2_z_fix, z_recip_v1, z_recip_v2,
-                    window_min, window_max, light_level, 
-                    &tmap_info, &floor_params, &ceil_params);
+                }
 
                 // update window based on drawn opaque walls for easy out
                 if(x1 <= window_min && x2 > window_min) {

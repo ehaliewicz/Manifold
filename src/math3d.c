@@ -352,32 +352,14 @@ clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2, texma
     s32 fix_du_16 = (base_right_u_16-base_left_u_16);
 
     s32 du_over_dz_16;
-    if(dz_12_4 != 0) {
-        //KLog("calculated du_over_dz_16");
-        
-        //du_over_dz_16 = (fix_du_16<<TRANS_Z_FRAC_BITS) / dz_12_4; // fix 16
-        du_over_dz_16 = divs_32_by_16(fix_du_16<<TRANS_Z_FRAC_BITS, dz_12_4);        
-
-        
-        //du_over_dz_7 = (fix_du_16>>5)/dz_12_4;
-        if(0) { //if(debug) {
-            //KLog_S1("du_over_dz_20: ", du_over_dz_16);
+    if(tmap->needs_texture) {
+        if(dz_12_4 != 0) {
+            du_over_dz_16 = divs_32_by_16(fix_du_16<<TRANS_Z_FRAC_BITS, dz_12_4);      
+            tmap->du_over_dz = du_over_dz_16;  
+        } else {
+            tmap->left_u = base_left_u_16;
+            tmap->right_u = base_right_u_16;
         }
-        //__asm volatile(
-        //    "divs.w %1, %0"
-        //    : "+d" (du_over_dz) 
-        //    : "d" (dz)
-        //);
-        tmap->du_over_dz = du_over_dz_16;
-        //tmap->du_over_dz = (du_over_dz_7<<9);
-
-    } else {
-        //KLog("skipped du_over_dz_16");
-        if(0) { //if(debug) {
-            KLog("NO PERSPECTIVE NEEDED");
-        }
-        tmap->left_u = base_left_u_16;
-        tmap->right_u = base_right_u_16;
     }
 
     
@@ -396,7 +378,7 @@ clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2, texma
 
     // this frustum code seems to cause some issues with portal clipping
     // with pvs renderer, doesn't seem to be an issue?
-    if(left_vert_outside_left_frustum) {
+    if(0) { // left_vert_outside_left_frustum) {
 
 
         //s16 frustum_left_x = -16384;
@@ -410,9 +392,12 @@ clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2, texma
             intersection_x = rx1;
             intersection_z_4 = -rx1<<4;
             
-            s16 z_adjust_4 = intersection_z_4 - rz1_12_4;
-            s32 u_adjust_20 = du_over_dz_16 * z_adjust_4;
-            base_left_u_16 += (u_adjust_20>>4);
+            if(tmap->needs_texture) {
+                s16 z_adjust_4 = intersection_z_4 - rz1_12_4;
+                
+                s32 u_adjust_20 = du_over_dz_16 * z_adjust_4;
+                base_left_u_16 += (u_adjust_20>>4);
+            }
 
         } else {
             
@@ -431,21 +416,16 @@ clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2, texma
             if(slope_a_4 == 0) {
                 intersection_x = -rz1_12_4>>4;
                 intersection_z_4 = rz1_12_4;
-                
-                // is this correct? 
-                //if(intersection_z_4 & 0b1111) {
-                //    intersection_x+=1;
-                //}
-                // need to adjust texture here
-                s32 du_over_dx_16 = (fix_du_16) / (rx2-rx1);
-                s16 x_adjust = intersection_x - rx1;
-                s32 u_adjust_16 = x_adjust * du_over_dx_16;
-                base_left_u_16 += u_adjust_16;
+
+                if(tmap->needs_texture) {
+                    s32 du_over_dx_16 = (fix_du_16) / (rx2-rx1);
+                    s16 x_adjust = intersection_x - rx1;
+                    s32 u_adjust_16 = x_adjust * du_over_dx_16;
+                    base_left_u_16 += u_adjust_16;
+                }
             } else {
  
                 const s16 slope_b_4 = -1<<4;
-                //intersection_x = ((slope_a_4*rx1) - rz1_12_4)/(slope_a_4-slope_b_4);
-                //intersection_x = divs_32_by_16((slope_a_4*rx1) - rz1_12_4,(slope_a_4-slope_b_4));
                 s16 dslope = slope_a_4-slope_b_4;
                 s32 tmp = slope_a_4; //*rx1;
                 __asm volatile(
@@ -464,21 +444,23 @@ clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2, texma
                 intersection_z_4 = -intersection_x<<4; 
   
 
-                s16 z_adjust_4 = intersection_z_4 - rz1_12_4;
-                s16 x_adjust = intersection_x - rx1;
+                //    kinda working!
+                if(tmap->needs_texture) {
+                    s16 z_adjust_4 = intersection_z_4 - rz1_12_4;
+                    s16 x_adjust = intersection_x - rx1;
 
                 
-                //    kinda working!
-                if((z_adjust_4>>4) > x_adjust) {
-                    s32 u_adjust_20 = du_over_dz_16 * z_adjust_4;
-                    base_left_u_16 += (u_adjust_20>>4);
+                    if((z_adjust_4>>4) > x_adjust) {
+                        s32 u_adjust_20 = du_over_dz_16 * z_adjust_4;
+                        base_left_u_16 += (u_adjust_20>>4);
 
-                } else {
-                    
-                    s32 du_over_dx_16 = (fix_du_16) / (rx2-rx1);
+                    } else {
+                        
+                        s32 du_over_dx_16 = (fix_du_16) / (rx2-rx1);
 
-                    s32 u_adjust_16 = x_adjust * du_over_dx_16;
-                    base_left_u_16 += u_adjust_16;
+                        s32 u_adjust_16 = x_adjust * du_over_dx_16;
+                        base_left_u_16 += u_adjust_16;
+                    }
                 }
 
             }
@@ -492,18 +474,19 @@ clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2, texma
         
     }
 
-    if(right_vert_outside_right_frustum) {
+    if(0) { //right_vert_outside_right_frustum) {
         s16 intersection_z_4;
         s16 intersection_x;
         if(rx1 == rx2) {
             intersection_x = rx2;
             intersection_z_4 = rx2<<4;
 
-            s16 z_adjust_4 = intersection_z_4 - rz2_12_4;
-            s32 u_adjust_20 = du_over_dz_16 * z_adjust_4;
-            base_right_u_16 += (u_adjust_20>>4);
+            if(tmap->needs_texture) {
+                s16 z_adjust_4 = intersection_z_4 - rz2_12_4;
+                s32 u_adjust_20 = du_over_dz_16 * z_adjust_4;
+                base_right_u_16 += (u_adjust_20>>4);
+            }
         } else {
-            //s16 slope_a_4 = (rz2_12_4-rz1_12_4)/(rx2-rx1);
             s16 dx = rx2-rx1;
             s32 tmp = rz2_12_4-rz1_12_4; 
             s16 slope_a_4;
@@ -519,14 +502,14 @@ clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2, texma
                 intersection_x = rz2_12_4>>4;
                 intersection_z_4 = rz2_12_4;
 
-                s32 du_over_dx_16 = (fix_du_16) / (rx2-rx1);
-                s16 x_adjust = intersection_x - rx2;
-                s32 u_adjust_16 = x_adjust * du_over_dx_16;
-                base_right_u_16 += u_adjust_16;
+                if(tmap->needs_texture) {
+                    s32 du_over_dx_16 = (fix_du_16) / (rx2-rx1);
+                    s16 x_adjust = intersection_x - rx2;
+                    s32 u_adjust_16 = x_adjust * du_over_dx_16;
+                    base_right_u_16 += u_adjust_16;
+                }
             } else {
                 const s16 slope_b_4 = 1<<4;
-                //intersection_x = ((slope_a_4*rx2) - rz2_12_4)/(slope_a_4-slope_b_4);
-                //intersection_x = divs_32_by_16((slope_a_4*rx2) - rz2_12_4,(slope_a_4-slope_b_4));
                 s16 dslope = slope_a_4-slope_b_4;
                 s32 tmp = slope_a_4; // * rx2
                 __asm volatile(
@@ -544,19 +527,21 @@ clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2, texma
 
                 intersection_z_4 = intersection_x<<4;
 
-                s16 z_adjust_4 = intersection_z_4 - rz2_12_4;
-                s16 x_adjust = intersection_x - rx2;
+                if(tmap->needs_texture) {
+                    s16 z_adjust_4 = intersection_z_4 - rz2_12_4;
+                    s16 x_adjust = intersection_x - rx2;
 
-                //    kinda working!
-                if((z_adjust_4>>4) > x_adjust) {
-                    s32 u_adjust_20 = du_over_dz_16 * z_adjust_4;
-                    base_right_u_16 += (u_adjust_20>>4);
+                    //    kinda working!
+                    if((z_adjust_4>>4) > x_adjust) {
+                        s32 u_adjust_20 = du_over_dz_16 * z_adjust_4;
+                        base_right_u_16 += (u_adjust_20>>4);
 
-                } else {
-                    
-                    s32 du_over_dx_16 = (fix_du_16) / (rx2-rx1);
-                    s32 u_adjust_16 = x_adjust * du_over_dx_16;
-                    base_right_u_16 += u_adjust_16;
+                    } else {
+                        
+                        s32 du_over_dx_16 = (fix_du_16) / (rx2-rx1);
+                        s32 u_adjust_16 = x_adjust * du_over_dx_16;
+                        base_right_u_16 += u_adjust_16;
+                    }
                 }
 
             }
@@ -569,98 +554,49 @@ clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2, texma
     }
 
     if(rz1_12_4 >= NEAR_Z_FIX && rz2_12_4 >= NEAR_Z_FIX) {
-        if(0) { //if(debug) {
-            KLog("NOT CLIPPED");
+        if(tmap->needs_texture) {
+            tmap->left_u = base_left_u_16;
+            tmap->right_u = base_right_u_16;
         }
-        //u32 fix_du = 32<<6;
-
-        //__asm volatile(
-        //    "divs.w %1, %0"
-        //    :  "+d" (du_over_dx)  // output
-        //    :  "d" (dx) // input
-        //);
-        tmap->left_u = base_left_u_16;
-        tmap->right_u = base_right_u_16;
-
         clip_status |= UNCLIPPED;
         return clip_status;
     }
     
     s16 dx = rx2-rx1;
-    //KLog_S1("dx: ", dx);
 
 
     // SLOW
     #ifdef CLIP_DIVISION
-    //s32 fix_dx = dx<<6; // .6
     s32 dx_over_dz_6 = (dx<<(6+TRANS_Z_FRAC_BITS))/ dz_12_4; // << 6
-    if(0) { //if(debug) {
-        KLog_S1("dx over dz: ", dx_over_dz_6);
-    }
-
-    //s16 dx_over_dz_6 = fix_dx<<TRANS_Z_FRAC_BITS;
-
-    //divs.w %3, %1
-    // dx_over_dz = fix 6
-    //__asm volatile(
-    //    "divs.w %1, %0"
-    //    :  "+d" (dx_over_dz_6)  // output
-    //    :  "d" (dz_12_4) // input
-    //);
-   
-    
    #else
-   s16 inv_dz = (dz < 0) ? -(z_recip_table[-dz]>>10) : (z_recip_table[dz]>>10);
-   s16 dx_over_dz = dx * inv_dz; //dx_over_dz_32 >> 10;
+    s16 inv_dz = (dz < 0) ? -(z_recip_table[-dz]>>10) : (z_recip_table[dz]>>10);
+    s16 dx_over_dz = dx * inv_dz; //dx_over_dz_32 >> 10;
    #endif 
 
 
 
 
+    // left near clip
     if(rz1_12_4 < NEAR_Z_FIX) { 
-        if(0) { //if(debug) {
-            KLog("LEFT CLIPPED");
-        }
-        //if(dz == 0) { die("wtf"); }
-        // left clipped
         s16 z_adjust_12_4 = NEAR_Z_FIX-rz1_12_4;
         s32 x_adjust_10 = dx_over_dz_6 * z_adjust_12_4;
         s16 x_adjust_int = x_adjust_10>>(6+TRANS_Z_FRAC_BITS);
 
-        if(0) { //if(debug) {
-            KLog_S1("z_adjust_10_6: ", z_adjust_12_4);
-            KLog_S1("x_adjust_12: ", x_adjust_10);
-            KLog_S1("x_adjust_int: ", x_adjust_int);
-        }
-
-        s32 u_adjust_20 = (du_over_dz_16 * z_adjust_12_4); // 12.20 // 12.4 fixed point
-        //s32 u_adjust_11 = (du_over_dz_7 * z_adjust_12_4);
-
-        if(0) { //if(debug) {
-            //KLog_S1("u_adjust_22: ", u_adjust_20);
-        }
-        
         rx1 += x_adjust_int;    // modify x coord
         rz1_12_4 = NEAR_Z_FIX;
         trans_v1->x = rx1;
         trans_v1->y = rz1_12_4;
-        
-        //KLog_S1("z adjust: ", z_adjust);
-        //KLog_S1("u adjust: ", u_adjust);
-        //KLog_S1("u result: ", base_left_u + u_adjust);
-        tmap->left_u = base_left_u_16 + (u_adjust_20>>4);
-        //tmap->left_u = base_left_u_16 + (u_adjust_11<<5);
-        if(0) { //if(debug) {
-            KLog_S1("clipped left u: ", tmap->left_u);
+   
+        if(tmap->needs_texture) {
+            s32 u_adjust_20 = (du_over_dz_16 * z_adjust_12_4); // 12.20 // 12.4 fixed point
+            tmap->left_u = base_left_u_16 + (u_adjust_20>>4);
+            tmap->right_u = base_right_u_16;
         }
-        tmap->right_u = base_right_u_16;
 
         clip_status |= LEFT_Z_CLIPPED;
         clip_status &= (~LEFT_FRUSTUM_CLIPPED);
     } else {
-        if(0) { //if(debug) {
-            KLog("RIGHT CLIPPED");
-        }
+
         // right clipped
         s16 z_adjust_12_4 = NEAR_Z_FIX - rz2_12_4; 
         s32 x_adjust_10 = dx_over_dz_6 * z_adjust_12_4; // dx_over_dz is negative
@@ -670,12 +606,12 @@ clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2, texma
         trans_v2->x = rx2;
         trans_v2->y = rz1_12_4;
 
-        s32 u_adjust_20 = du_over_dz_16 * z_adjust_12_4;
-        //s32 u_adjust_11 = (du_over_dz_7 * z_adjust_12_4);
+        if(tmap->needs_texture) {
+            s32 u_adjust_20 = du_over_dz_16 * z_adjust_12_4;
+            tmap->left_u = base_left_u_16;
+            tmap->right_u = base_right_u_16 + (u_adjust_20>>4);
+        }
 
-        tmap->left_u = base_left_u_16;
-        tmap->right_u = base_right_u_16 + (u_adjust_20>>4);
-        //tmap->right_u = base_right_u_16 + (u_adjust_11<<5);
         clip_status |= RIGHT_Z_CLIPPED;
         clip_status &= (~RIGHT_FRUSTUM_CLIPPED);
     }

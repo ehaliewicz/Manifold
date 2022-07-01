@@ -46,9 +46,29 @@
 #define DARK_STEEL_IDX  0xF
 
 
-u32 get_dark_color(u8 col_idx, s8 light_level);
-u32 get_mid_dark_color(u8 col_idx, s8 light_level);
-u32 get_light_color(u8 col_idx, s8 light_level);
+//u32 get_dark_color(u8 col_idx, s8 light_level);
+//u32 get_mid_dark_color(u8 col_idx, s8 light_level);
+//u32 get_light_color(u8 col_idx, s8 light_level);
+
+extern const u32 color_calc_table[16*5*3];
+
+inline u32 get_dark_color(u8 col_idx, s8 light_level) {
+  u16 light_off = (light_level+2)<<4;
+  return color_calc_table[light_off+col_idx];
+}
+
+inline u32 get_mid_dark_color(u8 col_idx, s8 light_level) {
+  u16 light_off = (light_level+2)<<4;  
+  u16 dist_off = (16*5);
+  return color_calc_table[light_off+dist_off+col_idx];
+}
+
+inline u32 get_light_color(u8 col_idx, s8 light_level) {
+  u16 light_off = (light_level+2)<<4;  
+  u16 dist_off = (16*5*2);
+  return color_calc_table[light_off+dist_off+col_idx];
+}
+
 
 u8 needs_dither(u32 dist);
 void init_swizzled_color_calc_table();

@@ -14,12 +14,13 @@ u16 divu_32_by_16(u32 num, u16 denom) {
 
 
 u32 mulu_16_by_16(u16 a, u16 b) {
+    u32 a32 = a;
      __asm volatile(
         "mulu.w %1, %0"
-        : "+d" (a) // output
+        : "+d" (a32) // output
         : "d" (b)
     );
-    return a;
+    return a32;
 }
 
 #define SUB_16_16(a, b) do {    \
