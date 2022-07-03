@@ -2329,10 +2329,11 @@ void draw_lower_step(s16 x1, s16 x1_ybot, s16 nx1_ybot, s16 x2, s16 x2_ybot, s16
 
     s16 skip_x = beginx - x1;
     if(skip_x > 0) {
-        bot_y_fix += muls_16_by_16(skip_x, bot_dy_per_dx_8)<<8;
-        nbot_y_fix += muls_16_by_16(skip_x, nbot_dy_per_dx_8)<<8;
-        //bot_y_fix += (skip_x * bot_dy_per_dx);
-        //nbot_y_fix += (skip_x * nbot_dy_per_dx);
+        // TODO causes inaccuracy issues
+        //bot_y_fix += muls_16_by_16(skip_x, bot_dy_per_dx_8)<<8;
+        //nbot_y_fix += muls_16_by_16(skip_x, nbot_dy_per_dx_8)<<8;
+        bot_y_fix += (skip_x * bot_dy_per_dx);
+        nbot_y_fix += (skip_x * nbot_dy_per_dx);
         if(light_level > -2 && light_level < 2) {
             cur_fix_inv_z += (skip_x * fix_inv_dz_per_dx);
         }
@@ -2603,10 +2604,10 @@ void draw_solid_color_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
     
 
     if(skip_x > 0) {
-        top_y_fix += muls_16_by_16(skip_x, top_dy_per_dx_8)<<8;
-        bot_y_fix += muls_16_by_16(skip_x, bot_dy_per_dx_8)<<8;
-        //top_y_fix += (skip_x * top_dy_per_dx);
-        //bot_y_fix += (skip_x * bot_dy_per_dx);
+        //top_y_fix += muls_16_by_16(skip_x, top_dy_per_dx_8)<<8;
+        //bot_y_fix += muls_16_by_16(skip_x, bot_dy_per_dx_8)<<8;
+        top_y_fix += (skip_x * top_dy_per_dx);
+        bot_y_fix += (skip_x * bot_dy_per_dx);
         if(light_level > -2 && light_level < 2) {
             //cur_fix_inv_z += (skip_x * fix_inv_dz_per_dx);
             cur_fix_inv_z += muls_16_by_16(skip_x, fix_inv_dz_per_dx);
@@ -2736,10 +2737,10 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
     
 
     if(skip_x > 0) {
-        top_y_fix += muls_16_by_16(skip_x, top_dy_per_dx_8)<<8;
-        bot_y_fix += muls_16_by_16(skip_x, bot_dy_per_dx_8)<<8;
-        //top_y_fix += (skip_x * top_dy_per_dx);
-        //bot_y_fix += (skip_x * bot_dy_per_dx);
+        //top_y_fix += muls_16_by_16(skip_x, top_dy_per_dx_8)<<8;
+        //bot_y_fix += muls_16_by_16(skip_x, bot_dy_per_dx_8)<<8;
+        top_y_fix += (skip_x * top_dy_per_dx);
+        bot_y_fix += (skip_x * bot_dy_per_dx);
         //cur_fix_inv_z += (skip_x * fix_inv_dz_per_dx);
         if(light_level > -2 && light_level < 2) {
             //cur_fix_inv_z += (skip_x * fix_inv_dz_per_dx);
