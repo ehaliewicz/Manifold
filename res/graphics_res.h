@@ -4,6 +4,5 @@
 extern const Palette pal;
 extern const SpriteDefinition shotgun;
 extern const Image skybox_gradient;
-extern const Image hud;
 
 #endif // _RES_GRAPHICS_RES_H_

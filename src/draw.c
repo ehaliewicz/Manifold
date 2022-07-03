@@ -2711,12 +2711,12 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
     bot_y_fix = x1_ybot<<12;
     u16 dx = x2-x1;
 
-    //fix32 top_dy_per_dx = (top_dy_fix<<12) / dx; // 16.16 / 16 -> 16.16 
-    //fix32 bot_dy_per_dx = (bot_dy_fix<<12) / dx;
-    fix16 top_dy_per_dx_8 = divs_32_by_16((top_dy_fix<<4), dx);
-    fix16 bot_dy_per_dx_8 = divs_32_by_16(bot_dy_fix<<4, dx);
-    fix32 top_dy_per_dx = top_dy_per_dx_8<<8;
-    fix32 bot_dy_per_dx = bot_dy_per_dx_8<<8; 
+    fix32 top_dy_per_dx = (top_dy_fix<<12) / dx; // 16.16 / 16 -> 16.16 
+    fix32 bot_dy_per_dx = (bot_dy_fix<<12) / dx;
+    //fix16 top_dy_per_dx_8 = divs_32_by_16((top_dy_fix<<4), dx);
+    //fix16 bot_dy_per_dx_8 = divs_32_by_16(bot_dy_fix<<4, dx);
+    //fix32 top_dy_per_dx = top_dy_per_dx_8<<8;
+    //fix32 bot_dy_per_dx = bot_dy_per_dx_8<<8; 
     
     s16 top_y_int;
     s16 bot_y_int;
@@ -2724,8 +2724,8 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
 
     s16 inv_dz = inv_z2 - inv_z1;
     
-    //s32 fix_inv_dz_per_dx = inv_dz / dx;
-    s16 fix_inv_dz_per_dx = divs_32_by_16(inv_dz, dx);// inv_dz / dx;
+    s32 fix_inv_dz_per_dx = inv_dz / dx;
+    //s16 fix_inv_dz_per_dx = divs_32_by_16(inv_dz, dx);// inv_dz / dx;
 
 
     s32 cur_fix_inv_z = inv_z1;
@@ -2743,7 +2743,6 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
         bot_y_fix += (skip_x * bot_dy_per_dx);
         //cur_fix_inv_z += (skip_x * fix_inv_dz_per_dx);
         if(light_level > -2 && light_level < 2) {
-            //cur_fix_inv_z += (skip_x * fix_inv_dz_per_dx);
             cur_fix_inv_z += muls_16_by_16(skip_x, fix_inv_dz_per_dx);
         }
     }

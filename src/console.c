@@ -78,7 +78,7 @@ void console_push_message_high_priority(char *msg, int len, uint16_t ticks) {
 #define CONSOLE_BASE_Y2 53
 
 
-void render_console() {
+void console_render() {
     tiles_to_draw = vwf_count_tiles(message.msg, message.len);
     if(tiles_to_draw > NUM_TILES) {
         tiles_to_draw = NUM_TILES;
@@ -107,7 +107,7 @@ void render_console() {
 void console_tick() {
     if(message.ticks_left) {
         if(rendered_tiles_are_dirty) {
-            render_console();
+            console_render();
         }
         
         if(message.ticks_left-- == 1) {

@@ -11,6 +11,7 @@
 #include "game.h"
 #include "game_mode.h"
 #include "graphics_res.h"
+#include "inventory.h"
 #include "joy_helper.h"
 #include "level.h"
 #include "maps.h"
@@ -514,6 +515,9 @@ void init_game() {
     
     clear_menu();
 
+    // bmp is PAL1
+    // hud/inventory is PAL 2
+    // skybox is PAL3
     bmp_init_vertical(1, BG_A, PAL1, 0);
 
     u16 skybox_gradient_basetile = TILE_ATTR_FULL(PAL3, 0, 0, 0, free_tile_loc);
@@ -559,9 +563,8 @@ void init_game() {
     //SPR_update();
 
 
-    //u16 hud_base_tile = TILE_ATTR_FULL(PAL2, 1, 0, 0, free_tile_loc);
-    //VDP_drawImageEx(BG_B, &hud, hud_base_tile, 0, 20, 0, 1);
-    //PAL_setPalette(PAL2, hud.palette->data);
+
+    init_inventory();
     
     init_2d_buffers();
 
