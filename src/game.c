@@ -439,7 +439,7 @@ void init_game() {
     
     //ram_set(100, 0);
     
-    //XGM_stopPlay();
+    XGM_stopPlay();
     //SYS_setVIntCallback(do_vint_flip);
     VDP_setVerticalScroll(BG_B, 0);
     
@@ -515,23 +515,26 @@ void init_game() {
     
     clear_menu();
 
+    // weapon is PAL0
     // bmp is PAL1
     // hud/inventory is PAL 2
     // skybox is PAL3
     bmp_init_vertical(1, BG_A, PAL1, 0);
 
     u16 skybox_gradient_basetile = TILE_ATTR_FULL(PAL3, 0, 0, 0, free_tile_loc);
-	VDP_drawImageEx(BG_B, &skybox_gradient, skybox_gradient_basetile, 4, 4, 0, 1);
+	VDP_drawImageEx(BG_B, &skybox_gradient, skybox_gradient_basetile, 4, 4, 0, 0);
     PAL_setPalette(PAL3, skybox_gradient.palette->data);
     free_tile_loc += skybox_gradient.tileset->numTile;
 
     
+
     VDP_loadTileSet(shotgun.animations[0]->frames[0]->tileset, free_tile_loc, DMA);
-    u8 shotgun_w = shotgun.animations[0]->frames[0]->w/8;
-    u8 shotgun_h = shotgun.animations[0]->frames[0]->h/8;
+    //u8 shotgun_w = shotgun.animations[0]->frames[0]->w/8;
+    //u8 shotgun_h = shotgun.animations[0]->frames[0]->h/8;
     AnimationFrame *frame1 = shotgun.animations[0]->frames[0];
 
-    VDP_allocateSprites(frame1->numSprite);
+    VDP_resetSprites();
+    s16 spr_idx = VDP_allocateSprites(frame1->numSprite);
     u16 tile_idx = free_tile_loc;
 
     FrameVDPSprite** f = frame1->frameInfos[0].frameVDPSprites;
@@ -539,7 +542,7 @@ void init_game() {
         FrameVDPSprite* spr = f[i];
 
         VDP_setSprite(
-            i,
+            spr_idx+i,
             BASE_GUN_X+spr->offsetX, BASE_GUN_Y+spr->offsetY,
             spr->size,
             TILE_ATTR_FULL(PAL0, 0, 0, 0, tile_idx)
@@ -553,6 +556,7 @@ void init_game() {
     KLog_U1("num shotgun sprites: ", frame1->numSprite);
     VDP_updateSprites(frame1->numSprite, DMA);
     
+    
     //shotgun_spr = SPR_addSprite(&shotgun, BASE_GUN_X, BASE_GUN_Y, TILE_ATTR_FULL(PAL0, 0, 0, 0, free_tile_loc));
     //SPR_setVRAMTileIndex(shotgun_spr, free_tile_loc);
     //KLog_U1("init shotgun tiles to address: ", free_tile_loc);
@@ -564,7 +568,8 @@ void init_game() {
 
 
 
-    init_inventory();
+    free_tile_loc = inventory_init(free_tile_loc);
+    inventory_draw();
     
     init_2d_buffers();
 
@@ -587,7 +592,7 @@ void init_game() {
     KLog_U1("after console address: ", free_tile_loc);
 
     const char* init_str = "game initialized!";
-    console_push_message("game initialized!", 17, 20);
+    console_push_message("game initialized!", 17, 30);
 
     MEM_pack();
 
@@ -614,6 +619,7 @@ game_mode run_game() {
     process_all_objects(cur_frame);
 
     console_tick();
+    inventory_draw();
     run_sector_group_processes();
     calc_movement_speeds();
     handle_input();

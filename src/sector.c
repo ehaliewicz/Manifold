@@ -316,5 +316,5 @@ void activate_sector_group_enter_trigger(u16 sector_group) {
     char buf[50];
     int len = sprintf(buf, "trap for sector #%i triggered", sector_group);
     buf[len] = 0;
-    console_push_message(buf, len, 20);
+    console_push_message(buf, len, 30);
 }

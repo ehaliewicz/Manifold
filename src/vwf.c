@@ -52,6 +52,10 @@ int vwf_render_tiles(char* string, int len, tile* tiles, int num_tiles) {
     // render 1 byte, 2 pixel pair at once
     for(int pair_x = 0; pair_x < char_width; pair_x++) {
       for(int y = 0; y < 8; y++) {
+        // clear only pixels with font
+        //cur_tile->bytes[y][pos_in_tile] &= til.bytes[y][pair_x];
+        //cur_tile->bytes[y][pos_in_tile] |= til.bytes[y][pair_x];
+
         cur_tile->bytes[y][pos_in_tile] = til.bytes[y][pair_x];
       }
       pos_in_tile += 1;

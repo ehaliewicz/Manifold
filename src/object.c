@@ -4,6 +4,7 @@
 #include "console.h"
 #include "debug.h"
 #include "game.h"
+#include "inventory.h"
 #include "level.h"
 #include "object.h"
 #include "portal_map.h"
@@ -263,10 +264,11 @@ int maybe_get_picked_up(object* cur_obj, uint16_t cur_sector) {
     u32 dist = fastLength(dx, dy);
     
     if(dist < 32) { 
-        char buf[50];
-        int len = sprintf(buf, "picked up the %s!", object_types[cur_obj->object_type].name);
-        console_push_message_high_priority(buf, len, 20);
-
+        if(inventory_add_item(BLUE_KEY)) {
+            char buf[50];
+            int len = sprintf(buf, "picked up the %s!", object_types[cur_obj->object_type].name);
+            console_push_message_high_priority(buf, len, 30);
+        }
 
         return 0;
     }
