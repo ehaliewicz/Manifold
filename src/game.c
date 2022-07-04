@@ -129,7 +129,7 @@ void draw_3d_view(u32 cur_frame) {
     
     // for fading, it might be cheaper to just always clear the screen, and not draw faded/transparent pixels
     //if(1) { 
-    if (JOY_readJoypad(JOY_1) & BUTTON_A) {
+    if (render_mode == RENDER_WIREFRAME || JOY_readJoypad(JOY_1) & BUTTON_A) {
         bmp_vertical_clear();
     }
     // clear clipping buffers
@@ -164,7 +164,7 @@ Vect2D_f32 *sector_centers = NULL;
 int run_bob_idx;
 int wait_idle_bob_idx;
 int idle_bob_idx;
-u8 gun_bob_idx;
+s16 gun_bob_idx;
 const fix32 bobs[28] = { // 32
     -1,-2,-3,-4,-5,-6,-7,//-8,
     //-7,
@@ -175,33 +175,106 @@ const fix32 bobs[28] = { // 32
 };
 
 
-const Vect2D_s16 gun_bobs[16] = {
-    {-1,-1},{-2,-2},{-3,-3},{-4,-4},{-3,4},{-2,4},{-1,4},{0,4},{1,4},{2,4},{3,4},{4,4},{3,3},{2,2},{1,1},{0,0}
+const Vect2D_s16 gun_bobs[20] = {
+    {0,0},
+    {-1,0},
+    {-2,0},
+    {-3,-1},
+    {-4,-2},
+    {-5,-3},
+    {-4,-2},
+    {-3,-1},
+    {-2,0},
+    {-1,0},
+    {0,0},
+    {1,0},
+    {2,0},
+    {3,-1},
+    {4,-2},
+    {5,-3},
+    {4,-2},
+    {3,-1},
+    {2,0},
+    {1,0}
 };
 
 
 
-Sprite* shotgun_spr;
+//Sprite* shotgun_spr;
 #define BASE_GUN_X 128
-#define BASE_GUN_Y 115
+#define BASE_GUN_Y 120
+
+int shotgun_spr_idx_start, shotgun_num_sprites;
+
 
 void set_gun_pos() {
-    u8 idx = (gun_bob_idx>>4) % 0xF;
+    u8 idx = (gun_bob_idx>>4) % 20;
 
-    SPR_setPosition(shotgun_spr, BASE_GUN_X+(gun_bobs[idx].x<<1), BASE_GUN_Y+(gun_bobs[idx].y<<1));
+    s16 bobOffX = gun_bobs[idx].x<<1;
+    s16 bobOffY = gun_bobs[idx].y<<1;
+
+    AnimationFrame *frame1 = shotgun.animations[0]->frames[0];
+    FrameVDPSprite** f = frame1->frameInfos[0].frameVDPSprites;
+    for(int i = 0; i < shotgun_num_sprites; i++) {
+        FrameVDPSprite* spr = f[i];
+        VDP_setSpritePosition(i+shotgun_spr_idx_start,
+            BASE_GUN_X+spr->offsetX+bobOffX,
+            BASE_GUN_Y+spr->offsetY+bobOffY
+        );
+    }
+    VDP_updateSprites(shotgun_num_sprites, DMA_QUEUE);
+    
 }
 
 void step_gun_bob() {
     set_gun_pos();
-    gun_bob_idx++;
+    s16 inc = last_frame_ticks * 1; //(.20 << 2);
+    gun_bob_idx += inc; //(1 << 2);
 }
 void reset_gun_bob() {
     gun_bob_idx = 0;
     set_gun_pos();
 }
 
+u32 init_shotgun(u32 tile_loc) {
+
+    VDP_loadTileSet(shotgun.animations[0]->frames[0]->tileset, tile_loc, DMA);
+    //u8 shotgun_w = shotgun.animations[0]->frames[0]->w/8;
+    //u8 shotgun_h = shotgun.animations[0]->frames[0]->h/8;
+    AnimationFrame *frame1 = shotgun.animations[0]->frames[0];
+
+    VDP_resetSprites();
+    s16 spr_idx = VDP_allocateSprites(frame1->numSprite);
+    shotgun_num_sprites = frame1->numSprite;
+    shotgun_spr_idx_start = spr_idx;
+
+    u16 tile_idx = tile_loc;
+
+    FrameVDPSprite** f = frame1->frameInfos[0].frameVDPSprites;
+    for(int i = 0; i < frame1->numSprite; i++) {
+        FrameVDPSprite* spr = f[i];
+
+        VDP_setSprite(
+            spr_idx+i,
+            BASE_GUN_X+spr->offsetX, BASE_GUN_Y+spr->offsetY,
+            spr->size,
+            TILE_ATTR_FULL(PAL0, 0, 0, 0, tile_idx)
+        );
+        tile_idx += spr->numTile;
+
+    }
+    tile_loc += shotgun.maxNumTile;
+    PAL_setPalette(PAL0, shotgun.palette->data);
+    VDP_linkSprites(0, frame1->numSprite);
+    VDP_updateSprites(frame1->numSprite, DMA);
+
+    return tile_loc;
+}
+
 
 int holding_down_move = 0;
+
+u8 render_mode;
 
 void handle_input() {
     int strafe = joy_button_pressed(BUTTON_C);
@@ -302,13 +375,9 @@ void handle_input() {
     cur_player_pos.z += run_bob_amt;
     cur_player_pos.z += idle_bob_amt;
     
-    //fix32 bob_amount = (bob_idx>16) ? FIX32(0.7) : FIX32(0.7);
-
 
     u8 move_button = joy_button_pressed(BUTTON_UP) ? BUTTON_UP : (joy_button_pressed(BUTTON_DOWN) ? BUTTON_DOWN : 0);
-
-    step_gun_bob();
-    /*
+    
     if(!holding_down_move && move_button) {
         holding_down_move = move_button;
     } else if (holding_down_move && (holding_down_move == move_button)) {
@@ -317,7 +386,8 @@ void handle_input() {
         holding_down_move = 0;
         reset_gun_bob();
     }
-    */
+    
+    return;
 
 
     pause_game = joy_button_pressed(BUTTON_START);
@@ -328,7 +398,9 @@ void handle_input() {
 
     last_joy = joy;
 
-
+    if (joy & BUTTON_Z) {
+        render_mode = (render_mode == RENDER_SOLID ? RENDER_WIREFRAME : RENDER_SOLID);
+    }
     /*
     if(joy & BUTTON_Y) {
         if(render_mode == AUTOMAP) {
@@ -430,7 +502,9 @@ selected_level init_load_level = SLIME_ROOM;
 
 
 void init_game() {
-    copy_texture_tables();
+    render_mode = RENDER_SOLID;
+
+    //copy_texture_tables();
     
     VDP_setTextPalette(PAL3);
 
@@ -497,6 +571,10 @@ void init_game() {
     } else {
         init_sector_jump_positions();
         
+        //Message : player x: 270579 y: -687032 z: 194968
+        //Message : player ang: 884 sector: 4
+
+        
         cur_player_pos.x = sector_centers[0].x;
         cur_player_pos.y = sector_centers[0].y; 
         cur_player_pos.cur_sector = 0;
@@ -506,6 +584,8 @@ void init_game() {
         cur_player_pos.z = (get_sector_group_floor_height(sect_group)<<(FIX32_FRAC_BITS-4)) + FIX32(50);
 
         cur_player_pos.ang = 0;
+
+
     }
 
     init_clip_buffer_list();
@@ -528,46 +608,6 @@ void init_game() {
 
     
 
-    VDP_loadTileSet(shotgun.animations[0]->frames[0]->tileset, free_tile_loc, DMA);
-    //u8 shotgun_w = shotgun.animations[0]->frames[0]->w/8;
-    //u8 shotgun_h = shotgun.animations[0]->frames[0]->h/8;
-    AnimationFrame *frame1 = shotgun.animations[0]->frames[0];
-
-    VDP_resetSprites();
-    s16 spr_idx = VDP_allocateSprites(frame1->numSprite);
-    u16 tile_idx = free_tile_loc;
-
-    FrameVDPSprite** f = frame1->frameInfos[0].frameVDPSprites;
-    for(int i = 0; i < frame1->numSprite; i++) {
-        FrameVDPSprite* spr = f[i];
-
-        VDP_setSprite(
-            spr_idx+i,
-            BASE_GUN_X+spr->offsetX, BASE_GUN_Y+spr->offsetY,
-            spr->size,
-            TILE_ATTR_FULL(PAL0, 0, 0, 0, tile_idx)
-        );
-        tile_idx += spr->numTile;
-
-    }
-    free_tile_loc += shotgun.maxNumTile;
-    PAL_setPalette(PAL0, shotgun.palette->data);
-    VDP_linkSprites(0, frame1->numSprite);
-    KLog_U1("num shotgun sprites: ", frame1->numSprite);
-    VDP_updateSprites(frame1->numSprite, DMA);
-    
-    
-    //shotgun_spr = SPR_addSprite(&shotgun, BASE_GUN_X, BASE_GUN_Y, TILE_ATTR_FULL(PAL0, 0, 0, 0, free_tile_loc));
-    //SPR_setVRAMTileIndex(shotgun_spr, free_tile_loc);
-    //KLog_U1("init shotgun tiles to address: ", free_tile_loc);
-    //free_tile_loc += shotgun.maxNumTile;
-    //KLog_U1("after shotgun address: ", free_tile_loc);
-    //reset_gun_bob();
-    
-    //SPR_update();
-
-
-
     free_tile_loc = inventory_init(free_tile_loc);
     inventory_draw();
     
@@ -577,7 +617,7 @@ void init_game() {
 
     init_object_lists(cur_portal_map->num_sectors);
 
-    
+    free_tile_loc = init_shotgun(free_tile_loc);
 
     s16 obj_sect_group = sector_group(10, cur_portal_map);
     object* cur_obj = alloc_object_in_sector(
@@ -587,9 +627,7 @@ void init_game() {
 
 
     vwf_init();
-    KLog_U1("init console to address: ", free_tile_loc);
     free_tile_loc = console_init(free_tile_loc);
-    KLog_U1("after console address: ", free_tile_loc);
 
     const char* init_str = "game initialized!";
     console_push_message("game initialized!", 17, 30);
@@ -597,7 +635,6 @@ void init_game() {
     MEM_pack();
 
     u16 free_bytes = MEM_getFree();
-    KLog_U1("free bytes in RAM: ", free_bytes);
     //while(1) {}
 
     if(music_on) {
@@ -648,8 +685,6 @@ game_mode run_game() {
 
 void cleanup_game() { 
     bmp_end();
-    //SPR_releaseSprite(shotgun_spr);
-    //SPR_end();
     MEM_free(sector_centers);
     cleanup_portal_renderer();
     free_clip_buffer_list();

@@ -352,7 +352,7 @@ clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2, texma
     s32 fix_du_16 = (base_right_u_16-base_left_u_16);
 
     s32 du_over_dz_16;
-    if(tmap->needs_texture) {
+    if(1) { //tmap->needs_texture) {
         if(dz_12_4 != 0) {
             du_over_dz_16 = divs_32_by_16(fix_du_16<<TRANS_Z_FRAC_BITS, dz_12_4);      
             tmap->du_over_dz = du_over_dz_16;  
@@ -378,7 +378,7 @@ clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2, texma
 
     // this frustum code seems to cause some issues with portal clipping
     // with pvs renderer, doesn't seem to be an issue?
-    if(left_vert_outside_left_frustum) {
+    if(0) { //left_vert_outside_left_frustum) {
 
 
         //s16 frustum_left_x = -16384;
@@ -392,6 +392,8 @@ clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2, texma
             intersection_x = rx1;
             intersection_z_4 = -rx1<<4;
             
+            // TODO: for solid color walls we can skip all this stuff
+            // but it breaks for some reason
             if(tmap->needs_texture) {
                 s16 z_adjust_4 = intersection_z_4 - rz1_12_4;
                 
@@ -445,7 +447,7 @@ clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2, texma
   
 
                 //    kinda working!
-                if(tmap->needs_texture) {
+                if(1) { //tmap->needs_texture) {
                     s16 z_adjust_4 = intersection_z_4 - rz1_12_4;
                     s16 x_adjust = intersection_x - rx1;
 
@@ -474,7 +476,7 @@ clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2, texma
         
     }
 
-    if(right_vert_outside_right_frustum) {
+    if(0) { //right_vert_outside_right_frustum) {
         s16 intersection_z_4;
         s16 intersection_x;
         if(rx1 == rx2) {

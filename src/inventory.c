@@ -14,6 +14,7 @@ static u16 *inventory;
 
 static u16 *item_vram_addresses; //[NUM_ITEM_TYPES]; 
 
+#define HUD_BASE_Y 20
 
 int inventory_full() {
     return (num_items == MAX_ITEMS);
@@ -43,7 +44,7 @@ void inventory_draw() {
 
 
         VDP_setTileMapXY(BG_B, TILE_ATTR_FULL(2, 1, 0, 0, tile_addr),
-                         ix*2+2, iy+22);
+                         ix*2+2, HUD_BASE_Y+2+iy);
         ix++;
         if(ix >= 5) {
             iy++;
@@ -104,7 +105,7 @@ u32 inventory_init(u32 free_tile_loc) {
             tile_attr |= (1<<TILE_ATTR_PRIORITY_SFT);
             tile_attr |= (PAL2<<TILE_ATTR_PALETTE_SFT);
 
-            VDP_setTileMapXY(BG_B, tile_attr, x, y+20);
+            VDP_setTileMapXY(BG_B, tile_attr, x, y+HUD_BASE_Y);
         }
     }
 

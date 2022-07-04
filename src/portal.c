@@ -59,7 +59,7 @@ int portals_frustum_culled;
 
 int sectors_scanned = 0;
 void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint8_t depth) {
-    if(depth >= MAX_DEPTH) {
+    if(depth >= MAX_DEPTH ) {
         return;
     }
     portal_map* map = cur_portal_map;
@@ -547,7 +547,6 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
                                         &floor_params, &ceil_params,
                                         x1_pegged, x2_pegged);
                 } else {
-                    
                     draw_wall(x1, x1_ytop, x1_ybot, x2, x2_ytop, x2_ybot,
                                 trans_v1_z_fix, trans_v2_z_fix,
                                 z_recip_v1, z_recip_v2,

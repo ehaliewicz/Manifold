@@ -171,7 +171,6 @@ u16 unclipped_dy_fix10_recip_table[512] = {
 };
 
 u8* draw_texture_vertical_line(s16 unclipped_y0, u16 y0, s16 unclipped_y1, u8* col_ptr, const u16* tex_column) {
-    //return ;
 
     //u16 unclipped_dy = unclipped_y1 - unclipped_y0;
     u16 unclipped_dy = unclipped_y1;
@@ -233,13 +232,14 @@ u8* draw_bottom_clipped_texture_vertical_line(s16 unclipped_y0, u16 y0, s16 uncl
     col_ptr += y0;
     col_ptr += y0;
 
-    u8 clip_top = y0-unclipped_y0;
-    u8 clip_bot = unclipped_y1-y1;
+    u16 clip_top = y0-unclipped_y0;
+    u16 clip_bot = unclipped_y1-y1;
 
 
     u32 clip_bot_du_fix;
     // using ROM jump tables
     void* base_call_loc; 
+    
     __asm volatile(
         "add.w %3, %3\t\n\
          move.w %6, %2\t\n\
@@ -253,18 +253,23 @@ u8* draw_bottom_clipped_texture_vertical_line(s16 unclipped_y0, u16 y0, s16 uncl
         : "=a" (base_call_loc), "+a" (tex_column), "=d" (clip_bot_du_fix), "+d" (unclipped_dy)
         : "a" (unclipped_dy_fix10_recip_table), "a" (jump_table_lut), "d" (clip_bot)
     );
-    //void* base_call_loc = jump_table_lut[unclipped_dy];
-    //u16 du_dy_fix10 = unclipped_dy_fix10_recip_table[unclipped_dy];
-    //u32 clip_bot_du_fix = du_dy_fix10;
-    //__asm volatile(
-    //    "mulu.w %1, %0"
-    //    : "+d" (clip_bot_du_fix) // output
-    //    : "d" (clip_bot)
-    //);
 
-    //u16 clip_bot_du = clip_bot_du_fix >> 10;
+    /*
+    base_call_loc = jump_table_lut[unclipped_dy];
 
-    //tex_column -= (clip_bot_du);
+    // calculate how much texture per y pixel
+    u16 du_dy_fix10 = unclipped_dy_fix10_recip_table[unclipped_dy];
+    clip_bot_du_fix = du_dy_fix10;
+    __asm volatile(
+        "mulu.w %1, %0"
+        : "+d" (clip_bot_du_fix) // output
+        : "d" (clip_bot)
+    );
+    */
+
+    u16 clip_bot_du = clip_bot_du_fix >> 10;
+
+    tex_column -= (clip_bot_du);
     
     register const a0 asm ("%a0") = ((u32)tex_column); // - (clip_bot<<1 * du_dy);
     register const  a1 asm ("%a1") = (u32)col_ptr;

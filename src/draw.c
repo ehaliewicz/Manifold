@@ -1232,7 +1232,8 @@ void calculate_tex_coords_for_wall(
     u32 u_over_z_23 = persp.u_over_z_23;
     u32 d_u_over_z_dx_23 = persp.d_u_over_z_dx_23;
 
-    u32 du = right_u_16 - left_u_16;
+    //u32 du = right_u_16 - left_u_16;
+
     //u32 du_dx = du/dx;
 
     //u32 cur_u = left_u_16;
@@ -1298,8 +1299,8 @@ void calculate_tex_coords_for_wall(
     } while(0)
 
     //divu_32_by_16((1<<16),one_over_z_16);
-// = u_over_z_16 * z;
-        // u32 tmp = 1<<16; 
+    // = u_over_z_16 * z;
+    // u32 tmp = 1<<16; 
 
 
     #define TEXMAP_16_ITER do { \
@@ -2846,10 +2847,10 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
                     }
 
 
-                    s16 wtop = top_y_int;
-                    s16 wbot = bot_y_int;
-                    wtop = (wtop >= min_drawable_y ? wtop : min_drawable_y);
-                    wbot = (wbot <= max_drawable_y ? wbot : max_drawable_y);
+                    s16 wtop = max(top_y_int, min_drawable_y);
+                    s16 wbot = min(bot_y_int, max_drawable_y);
+                    //wtop = (wtop >= min_drawable_y ? wtop : min_drawable_y);
+                    //wbot = (wbot <= max_drawable_y ? wbot : max_drawable_y);
 
                     if(wtop < wbot) {
                         if(max_drawable_y <= wtop) {
@@ -2861,6 +2862,7 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
                         } else {                
                             u16* tex_column = &base_tex[tex_idx];
                             if(bot_y_int == wbot) {
+                                
                                 draw_texture_vertical_line(top_y_int, wtop, bot_y_int, col_ptr, tex_column);
                             } else {
                                 draw_bottom_clipped_texture_vertical_line(top_y_int, wtop, bot_y_int, wbot, col_ptr, tex_column);

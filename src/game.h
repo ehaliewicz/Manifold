@@ -54,4 +54,11 @@ void cleanup_game();
 
 void request_flip();
 
+extern u8 render_mode;
+
+typedef enum {
+    RENDER_SOLID,
+    RENDER_WIREFRAME
+} render_modes;
+
 #endif
