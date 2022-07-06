@@ -378,7 +378,7 @@ clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2, texma
 
     // this frustum code seems to cause some issues with portal clipping
     // with pvs renderer, doesn't seem to be an issue?
-    if(0) { //left_vert_outside_left_frustum) {
+    if(left_vert_outside_left_frustum) {
 
 
         //s16 frustum_left_x = -16384;
@@ -476,7 +476,7 @@ clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2, texma
         
     }
 
-    if(0) { //right_vert_outside_right_frustum) {
+    if(right_vert_outside_right_frustum) {
         s16 intersection_z_4;
         s16 intersection_x;
         if(rx1 == rx2) {
