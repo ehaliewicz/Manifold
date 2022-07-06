@@ -530,7 +530,7 @@ void init_game() {
 
     cur_frame = 1;
     
-	VDP_setBackgroundColor(1);
+	VDP_setBackgroundColor(10);
 
 
     //load_portal_map(&overlapping_map);
@@ -590,10 +590,11 @@ void init_game() {
 
     init_clip_buffer_list();
 
-    cur_palette = pal.data;
+    cur_palette = no_distance_lighting_pal.data;
     VDP_setPalette(PAL1, cur_palette);
     
     clear_menu();
+
 
     // weapon is PAL0
     // bmp is PAL1
@@ -601,16 +602,21 @@ void init_game() {
     // skybox is PAL3
     bmp_init_vertical(1, BG_A, PAL1, 0);
 
+    VDP_waitVSync();
+
     u16 skybox_gradient_basetile = TILE_ATTR_FULL(PAL3, 0, 0, 0, free_tile_loc);
 	VDP_drawImageEx(BG_B, &skybox_gradient, skybox_gradient_basetile, 4, 4, 0, 0);
     PAL_setPalette(PAL3, skybox_gradient.palette->data);
     free_tile_loc += skybox_gradient.tileset->numTile;
-
     
 
+    VDP_waitVSync();
+    
     free_tile_loc = inventory_init(free_tile_loc);
     inventory_draw();
     
+    VDP_waitVSync();
+
     init_2d_buffers();
 
     init_portal_renderer();
@@ -636,7 +642,7 @@ void init_game() {
 
     u16 free_bytes = MEM_getFree();
     //while(1) {}
-
+    KLog_U1("free bytes of RAM after init: ", free_bytes);
     if(music_on) {
         //XGM_startPlay(xgm_e1m4);
     }
@@ -671,7 +677,7 @@ game_mode run_game() {
     playerYInt = cur_player_pos.y>>FIX32_FRAC_BITS;
 
 
-    maybe_set_palette(pal.data);
+    maybe_set_palette(no_distance_lighting_pal.data);
     draw_3d_view(cur_frame);
 
     //SPR_update();
