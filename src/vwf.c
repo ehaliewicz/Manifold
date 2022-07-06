@@ -71,3 +71,31 @@ int vwf_render_tiles(char* string, int len, tile* tiles, int num_tiles) {
   
   return len;
 }
+
+int vwf_render_to_separate_tiles(char* string, int len, tile* tiles, int num_tiles) {
+ 
+  int tile_num = 0;
+  int pos_in_tile = 0;
+  
+  tile* cur_tile = tiles;
+  
+  for(int i = 0; i < len; i++) {
+    char c = string[i];
+    char_entry* centr = &(charmap[c-32]);
+    
+    int char_width = centr->width;
+    tile til = centr->bitmap;
+
+    if(tile_num == num_tiles-1 && pos_in_tile + char_width > PAIRS_IN_TILE) {
+      // can't render this, return number of characters rendered
+      return i;
+    }
+
+    memcpy(cur_tile->bytes, &til.bytes, sizeof(tile));
+    tile_num += 1;
+    cur_tile++;
+  
+  }
+  
+  return len;
+}

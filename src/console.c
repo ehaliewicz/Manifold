@@ -91,7 +91,9 @@ void console_push_message_high_priority(char *msg, int len, uint16_t ticks) {
 //21
 
 void console_render() {
-    tiles_to_draw = vwf_count_tiles(message.msg, message.len);
+    //tiles_to_draw = vwf_count_tiles(message.msg, message.len);
+    tiles_to_draw = message.len;
+
     if(tiles_to_draw > NUM_TILES) {
         tiles_to_draw = NUM_TILES;
     }
@@ -102,18 +104,24 @@ void console_render() {
     //    memcpy(tile_buf+(i*32), skybox_gradient.tileset->tiles, 32);
     //}
 
-    vwf_render_tiles(message.msg, message.len, tile_buf, tiles_to_draw);
-    
+    //vwf_render_tiles(message.msg, message.len, tile_buf, tiles_to_draw);
+    vwf_render_to_separate_tiles(message.msg, message.len, tile_buf, tiles_to_draw);
+
     VDP_loadTileData(&(tile_buf[0].rows[0]), start_vram_addr, tiles_to_draw, DMA_QUEUE);
     
     
 
     int spr_idx = rendered_sprites_idx;
 
+    u16 cur_x_pos = CONSOLE_BASE_X*8;
+
     for(int i = 0; i < tiles_to_draw; i++) {
+        u16 char_width = charmap[message.msg[i]-32].width*2;
+
         VDP_setSprite(
             spr_idx,
-            CONSOLE_BASE_X*8+(i*8),
+            //CONSOLE_BASE_X*8+(i*8),
+            cur_x_pos,
             CONSOLE_BASE_Y*8,
             SPRITE_SIZE(1,1),
             TILE_ATTR_FULL(3, 1, 0, 0, start_vram_addr+i)
@@ -123,6 +131,9 @@ void console_render() {
         } else {
             VDP_setSpriteLink(spr_idx, spr_idx+1);
         }
+        KLog_U1("cur x pos: ", cur_x_pos);
+        cur_x_pos += char_width;
+
         spr_idx++;
 
     }
@@ -222,7 +233,7 @@ void console_tick() {
             message.len = 0;
         } else {
             
-            //swizzle_sprites();
+            swizzle_sprites();
         }
     }
 }

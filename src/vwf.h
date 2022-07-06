@@ -18,11 +18,11 @@ typedef struct {
     tile bitmap;
 } char_entry;
 
-extern char_entry charmap[96];
-
+extern const char_entry charmap[96];
 
 void vwf_init();
 int vwf_render_tiles(char* string, int len, tile* tiles, int num_tiles);
+int vwf_render_to_separate_tiles(char* string, int len, tile* tiles, int num_tiles);
 int vwf_count_tiles(char* string, int len);
 void vwf_cleanup();
 

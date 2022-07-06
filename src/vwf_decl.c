@@ -1,6 +1,6 @@
 #include "vwf.h"
     
-char_entry charmap[96] = {
+const char_entry charmap[96] = {
   {
     .chr = ' ',
     .width = 2,
