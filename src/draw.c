@@ -1092,6 +1092,8 @@ u8* draw_lit_floor_light_only(s16 floor_top_y, s16 floor_bot_y, u8* col_ptr, lig
 }
 
 u8* draw_lit_floor(s16 floor_top_y, s16 floor_bot_y, u8* col_ptr, light_params* params) {
+    
+    return draw_lit_floor_light_only(floor_top_y, floor_bot_y, col_ptr, params);
     #ifndef FLATS_DIST_LIGHTING
     s16 floor_mid = (floor_bot_y+floor_top_y)>>1;
     s16 dark_y = params->dark_y;
@@ -1170,6 +1172,7 @@ u8* draw_lit_ceil_light_only(s16 ceil_top_y, s16 ceil_bot_y, u8* col_ptr, light_
 }
 
 u8*  draw_lit_ceiling(s16 ceil_top_y, s16 ceil_bot_y, u8* col_ptr, light_params* params) {
+    return draw_lit_ceil_light_only(ceil_top_y, ceil_bot_y, col_ptr, params);
     #ifndef FLATS_DIST_LIGHTING
     s16 mid = ((ceil_bot_y-ceil_top_y)<<1)+ceil_top_y;
     if(mid < params->mid_y) {
@@ -1701,8 +1704,8 @@ u8 light_levels[6];
 #define CHECK_DIST(inv_z, light_var) do {           \
     if ((inv_z) <= FIX_0_16_INV_DARK_DIST) {        \
         light_var = DARK;                           \
-    } else if ((inv_z) <= FIX_0_16_INV_MID_DIST) {  \
-        light_var = MID;                            \
+    } else if ((inv_z) <= FIX_0_16_INV_DARK_DIST) { \
+        light_var = DARK;                           \
     } else {                                        \
         light_var = LIGHT;                          \
     }                                               \
@@ -1873,17 +1876,8 @@ void calculate_light_levels_for_wall(u32 clipped_dx, s16 inv_z1, s16 inv_z2, s16
     
     while(cnt--) {
         u8 next_light; 
-        //CHECK_DIST(cur_inv_z, next_light);
-        //MID_DIST
-        //FIX_0_16_INV_MID_DIST
-        
-        if (cur_inv_z <= FIX_0_16_INV_DARK_DIST) {        
-            next_light = DARK;                           
-        } else if (cur_inv_z <= FIX_0_16_INV_MID_DIST) {  
-            next_light = MID;                            
-        } else {                                        
-            next_light = LIGHT;                          
-        }                                               
+        CHECK_DIST(cur_inv_z, next_light);
+                              
 
         if(cur_light == next_light) {
             cur_span++;
