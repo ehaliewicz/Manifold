@@ -28,22 +28,22 @@
 #define DARK_BROWN   RGB24_TO_VDPCOLOR(0x654321)
 */
 
-#define TRANSPARENT_IDX 0x0
-#define LIGHT_GREEN_IDX 0x1 
-#define LIGHT_RED_IDX   0x2
-#define LIGHT_BLUE_IDX  0x3
-#define LIGHT_BROWN_IDX 0x4
-#define LIGHT_STEEL_IDX 0x5
-#define GREEN_IDX       0x6
-#define RED_IDX         0x7
-#define BLUE_IDX        0x8
-#define BROWN_IDX       0x9
-#define STEEL_IDX       0xA
-#define DARK_GREEN_IDX  0xB
-#define DARK_RED_IDX    0xC
-#define DARK_BLUE_IDX   0xD
-#define DARK_BROWN_IDX  0xE
-#define DARK_STEEL_IDX  0xF
+#define TRANSPARENT_IDX  0x0
+#define LIGHT_YELLOW_IDX 0x1
+#define LIGHT_BLUE_IDX   0x2
+#define LIGHT_GREEN_IDX  0x3 
+#define LIGHT_PURPLE_IDX 0x4
+#define LIGHT_RED_IDX    0x5
+#define YELLOW_IDX       0x6
+#define BLUE_IDX         0x7
+#define GREEN_IDX        0x8
+#define PURPLE_IDX       0x9
+#define RED_IDX          0xA
+#define DARK_YELLOW_IDX  0xB
+#define DARK_BLUE_IDX    0xC
+#define DARK_STEEL_IDX   0xD
+#define DARK_PURPLE_IDX  0xE
+#define DARK_RED_IDX     0xF
 
 
 //u32 get_dark_color(u8 col_idx, s8 light_level);

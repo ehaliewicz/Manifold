@@ -280,6 +280,7 @@ if __name__ == '__main__':
     #dark_f = "C:\\Users\\Erik\\code\\genesis\\DOOM\\res\\textures\\WALL_C_DARKEST.png"
     #name = "wall_c"
 
+    """
     norm_f = "C:\\Users\\Erik\\code\\genesis\\DOOM\\res\\textures\\WALL_A_FOG.png"
     mid_f = "C:\\Users\\Erik\\code\\genesis\\DOOM\\res\\textures\\WALL_A_FOG_DARKER.png"
     dark_f = "C:\\Users\\Erik\\code\\genesis\\DOOM\\res\\textures\\WALL_A_FOG_DARKEST.png"
@@ -294,7 +295,23 @@ if __name__ == '__main__':
     mid_f = "C:\\Users\\Erik\\code\\genesis\\DOOM\\res\\textures\\KEY_32_32.png"
     dark_f = "C:\\Users\\Erik\\code\\genesis\\DOOM\\res\\textures\\KEY_32_32.png"
     name = "key_32_32"
+    """
 
+    
+    #norm_f = "C:\\Users\\Erik\\code\\genesis\\DOOM\\res\\textures\\WALLA_15COL.png"
+    #mid_f = "C:\\Users\\Erik\\code\\genesis\\DOOM\\res\\textures\\WALLA_15COL.png"
+    #dark_f = "C:\\Users\\Erik\\code\\genesis\\DOOM\\res\\textures\\WALLA_15COL.png"
+    #name = "wall_a_15col"
+
+    #norm_f = "C:\\Users\\Erik\\code\\genesis\\DOOM\\res\\textures\\WALLB_15COL.png"
+    #mid_f = "C:\\Users\\Erik\\code\\genesis\\DOOM\\res\\textures\\WALLB_15COL.png"
+    #dark_f = "C:\\Users\\Erik\\code\\genesis\\DOOM\\res\\textures\\WALLB_15COL.png"
+    #name = "wall_b_15col"   
+    
+    norm_f = "C:\\Users\\Erik\\code\\genesis\\DOOM\\res\\textures\\WALLB_15COL.png"
+    mid_f = "C:\\Users\\Erik\\code\\genesis\\DOOM\\res\\textures\\WALLB_15COL.png"
+    dark_f = "C:\\Users\\Erik\\code\\genesis\\DOOM\\res\\textures\\WALLB_15COL.png"
+    name = "wall_b_15col"
     gen_mip_image(name, norm_f, mid_f, dark_f)
 
     # gen_tables(512, 64, "C:\\Users\\Erik\\Desktop\\tables.s", "C:\\Users\\Erik\\Desktop\\tables_table.c")
