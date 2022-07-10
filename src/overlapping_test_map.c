@@ -31,12 +31,12 @@ static const s16 sectors[17*SECTOR_SIZE] = {
 
 static const s16 sector_group_params[NUM_SECTOR_PARAMS*17] = {
     // light, orig_height, ticks_left, state, floor_height, ceil_height, floor_color, ceil_color
-    0, 0, 0, 0,  60<<4, 200<<4, 5, 5, // only LIGHT is relevant here
+    0, 0, 0, 0,  60<<4, 200<<4, 2, 2, // only LIGHT is relevant here
 
-    0, 200<<4, CLOSED, 30, 60<<4, 60<<4,  2, 2, 
+    0, 200<<4, CLOSED, 30, 60<<4, 60<<4,  DARK_BLUE_IDX, DARK_BLUE_IDX, 
     
-    0, 60<<4, CLOSED, 30, 200<<4, 200<<4, 2, 2,
-    
+    0, 60<<4, CLOSED, 30, 200<<4, 200<<4, DARK_BLUE_IDX, DARK_BLUE_IDX,
+
     -1, 0, 0, 0, 120<<4, 240<<4, BLUE_IDX, LIGHT_BLUE_IDX,
     
     -1, 0, 0, 0, 140<<4, 280<<4, BLUE_IDX, BLUE_IDX,
@@ -208,9 +208,9 @@ static const u8 wall_normal_quadrants[73] ={
 static const u8 wall_colors[73 * WALL_COLOR_NUM_PARAMS] = {
     5, 0, 0, 0,
     5, 0, 0, 0,
-    5, LIGHT_GREEN_IDX, GREEN_IDX, 0,
+    8, LIGHT_GREEN_IDX, GREEN_IDX, 0,
     5, 0, 0, 0,
-    5, LIGHT_GREEN_IDX, LIGHT_GREEN_IDX, 0,
+    8, LIGHT_GREEN_IDX, LIGHT_GREEN_IDX, 0,
     5, 0, 0, 0,
     // sector 1 walls
     6, 0, 0, 0,
@@ -229,15 +229,15 @@ static const u8 wall_colors[73 * WALL_COLOR_NUM_PARAMS] = {
     5, 0, 0, 0,
     5, GREEN_IDX, GREEN_IDX, 0,
     // sector 4 walls
-    6, 0, 0, 0,
-    6, LIGHT_GREEN_IDX, LIGHT_GREEN_IDX, 0,
-    6, 0, 0, 0,
-    6, GREEN_IDX, GREEN_IDX, 0,
+    5, 0, 0, 0,
+    5, LIGHT_GREEN_IDX, LIGHT_GREEN_IDX, 0,
+    5, 0, 0, 0,
+    5, GREEN_IDX, GREEN_IDX, 0,
     // sector 5 walls
-    7, 0, 0, 0,
-    7, LIGHT_GREEN_IDX, LIGHT_GREEN_IDX, 0,
-    7, 0, 0, 0,
-    7, GREEN_IDX, GREEN_IDX, 0,
+    5, 0, 0, 0,
+    5, LIGHT_GREEN_IDX, LIGHT_GREEN_IDX, 0,
+    5, 0, 0, 0,
+    5, GREEN_IDX, GREEN_IDX, 0,
     // sector 6 walls
     5, 0, 0, 0,
     5, GREEN_IDX, GREEN_IDX, 0,
@@ -251,39 +251,39 @@ static const u8 wall_colors[73 * WALL_COLOR_NUM_PARAMS] = {
     6, GREEN_IDX, GREEN_IDX, 0,
     // sector 8 walls
     7, 0, 0, 0,
-    7, LIGHT_GREEN_IDX, LIGHT_GREEN_IDX, 0,
+    8, LIGHT_GREEN_IDX, LIGHT_GREEN_IDX, 0,
+    7, 0, 0, 0,
+    8, GREEN_IDX, GREEN_IDX, 0,
+    // sector 9 walls
+    7, 0, 0, 0,
+    7, 0, 0, 0,
     7, 0, 0, 0,
     7, GREEN_IDX, GREEN_IDX, 0,
-    // sector 9 walls
-    5, 0, 0, 0,
-    5, 0, 0, 0,
-    5, 0, 0, 0,
-    5, GREEN_IDX, GREEN_IDX, 0,
     // sector 10 walls
+    7, 0, 0, 0,
+    7, 0, 0, 0,
+    7, 0, 0, 0,
+    7, GREEN_IDX, GREEN_IDX, 0,
+    // sector 11 walls
     6, 0, 0, 0,
+    8, GREEN_IDX, GREEN_IDX, 0,
     6, 0, 0, 0,
+    8, GREEN_IDX, GREEN_IDX, 0,
+    // sector 12 walls
+    6, 0, 0, 0,
+    6, LIGHT_GREEN_IDX, LIGHT_GREEN_IDX, 0,
     6, 0, 0, 0,
     6, GREEN_IDX, GREEN_IDX, 0,
-    // sector 11 walls
-    7, 0, 0, 0,
-    7, GREEN_IDX, GREEN_IDX, 0,
-    7, 0, 0, 0,
-    7, GREEN_IDX, GREEN_IDX, 0,
-    // sector 12 walls
-    5, 0, 0, 0,
-    5, LIGHT_GREEN_IDX, LIGHT_GREEN_IDX, 0,
-    5, 0, 0, 0,
-    5, GREEN_IDX, GREEN_IDX, 0,
     // sector 13 walls
     6, 0, 0, 0,
     6, LIGHT_GREEN_IDX, LIGHT_GREEN_IDX, 0,
     6, 0, 0, 0,
     6, GREEN_IDX, GREEN_IDX, 0,
     // sector 14 walls
-    7, 0, 0, 0,
-    7, LIGHT_GREEN_IDX, LIGHT_GREEN_IDX, 0,
-    7, 0, 0, 0,
-    7, GREEN_IDX, GREEN_IDX, 0,
+    6, 0, 0, 0,
+    6, LIGHT_GREEN_IDX, LIGHT_GREEN_IDX, 0,
+    6, 0, 0, 0,
+    6, GREEN_IDX, GREEN_IDX, 0,
     // sector 15 walls
     7, 0, 0, 0,
     7, LIGHT_GREEN_IDX, LIGHT_GREEN_IDX, 0,

@@ -233,7 +233,7 @@ void console_tick() {
             message.len = 0;
         } else {
             
-            swizzle_sprites();
+            //swizzle_sprites();
         }
     }
 }
