@@ -32,47 +32,31 @@
 #define LIGHT_YELLOW_IDX 0x1
 #define LIGHT_BLUE_IDX   0x2
 #define LIGHT_GREEN_IDX  0x3 
-#define LIGHT_PURPLE_IDX 0x4
-#define LIGHT_RED_IDX    0x5
-#define YELLOW_IDX       0x6
-#define BLUE_IDX         0x7
-#define GREEN_IDX        0x8
-#define PURPLE_IDX       0x9
+#define LIGHT_RED_IDX    0x4
+#define LIGHT_PURPLE_IDX 0x5
+#define LIGHT_STEEL_IDX  0x6
+#define YELLOW_IDX       0x7
+#define BLUE_IDX         0x8
+#define GREEN_IDX        0x9
 #define RED_IDX          0xA
-#define DARK_YELLOW_IDX  0xB
-#define DARK_BLUE_IDX    0xC
-#define DARK_STEEL_IDX   0xD
-#define DARK_PURPLE_IDX  0xE
-#define DARK_RED_IDX     0xF
+#define PURPLE_IDX       0xB
+#define STEEL_IDX        0xC
+#define DARK_YELLOW_IDX  0xD
+#define DARK_BLUE_IDX    0xE
+#define BLACK_IDX        0xF
 
 
 //u32 get_dark_color(u8 col_idx, s8 light_level);
 //u32 get_mid_dark_color(u8 col_idx, s8 light_level);
 //u32 get_light_color(u8 col_idx, s8 light_level);
 
-extern const u32 color_calc_table[16*5*3];
+//extern const u32 color_calc_table[16*3*2];
+extern const u32 color_calc_table[16*5*2];
 
-inline u32 get_dark_color(u8 col_idx, s8 light_level) {
-  u16 light_off = (light_level+2)<<4;
-  return color_calc_table[light_off+col_idx];
-}
+extern const u32 long_color_table[16];
 
-inline u32 get_mid_dark_color(u8 col_idx, s8 light_level) {
-  u16 light_off = (light_level+2)<<4;  
-  u16 dist_off = (16*5);
-  return color_calc_table[light_off+dist_off+col_idx];
-}
+u32 get_dark_color(u8 col_idx, s8 light_level);
+u32 get_light_color(u8 col_idx, s8 light_level);
 
-inline u32 get_light_color(u8 col_idx, s8 light_level) {
-  u16 light_off = (light_level+2)<<4;  
-  u16 dist_off = (16*5*2);
-  return color_calc_table[light_off+dist_off+col_idx];
-}
-
-
-u8 needs_dither(u32 dist);
-void init_swizzled_color_calc_table();
-u32* get_color_ptr(u16 color, s16 light_level);
-extern u32 swizzled_color_calc_table[16*5*4];
 
 #endif
