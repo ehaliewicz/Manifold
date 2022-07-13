@@ -31,23 +31,23 @@ static const s16 sectors[17*SECTOR_SIZE] = {
 
 static const s16 sector_group_params[NUM_SECTOR_PARAMS*17] = {
     // light, orig_height, ticks_left, state, floor_height, ceil_height, floor_color, ceil_color
-    0, 0, 0, 0,  60<<4, 200<<4, 2, 2, // only LIGHT is relevant here
+    0, 0, 0, 0,  60<<4, 200<<4, DARK_BLUE_IDX, DARK_BLUE_IDX, // only LIGHT is relevant here
 
-    0, 200<<4, CLOSED, 30, 60<<4, 60<<4,  DARK_BLUE_IDX, DARK_BLUE_IDX, 
+    -1, 200<<4, CLOSED, 30, 60<<4, 60<<4,  DARK_BLUE_IDX, DARK_BLUE_IDX, 
     
-    0, 60<<4, CLOSED, 30, 200<<4, 200<<4, DARK_BLUE_IDX, DARK_BLUE_IDX,
+    -1, 60<<4, CLOSED, 30, 200<<4, 200<<4, DARK_BLUE_IDX, DARK_BLUE_IDX,
 
-    -1, 0, 0, 0, 120<<4, 240<<4, BLUE_IDX, LIGHT_BLUE_IDX,
+    -1, 0, 0, 0, 120<<4, 240<<4, DARK_BLUE_IDX, BLUE_IDX,
     
-    -1, 0, 0, 0, 140<<4, 280<<4, BLUE_IDX, BLUE_IDX,
+    -1, 0, 0, 0, 140<<4, 280<<4, DARK_BLUE_IDX, BLUE_IDX,
     
-    -1, 0, 0, 0, 160<<4, 320<<4, BLUE_IDX, LIGHT_BLUE_IDX,
+    -1, 0, 0, 0, 160<<4, 320<<4, DARK_BLUE_IDX, BLUE_IDX,
     
-    -1, 0, 0, 0, 180<<4, 350<<4, BLUE_IDX, BLUE_IDX,
+    -1, 0, 0, 0, 180<<4, 350<<4, DARK_BLUE_IDX, BLUE_IDX,
     
-    0, 0, 0, 0, 200<<4, 350<<4, BLUE_IDX, LIGHT_BLUE_IDX,
+    0, 0, 0, 0, 200<<4, 350<<4, DARK_BLUE_IDX, BLUE_IDX,
     
-    -1, 0, 0, 0,  60<<4, 200<<4, BLUE_IDX, BLUE_IDX,
+    -1, 0, 0, 0,  60<<4, 200<<4, STEEL_IDX, STEEL_IDX,
     
     -2, 0, 0, 0, 100<<4, 200<<4, BLUE_IDX, BLUE_IDX,
     
@@ -55,18 +55,18 @@ static const s16 sector_group_params[NUM_SECTOR_PARAMS*17] = {
     
     -1, 0, 0, 0,  60<<4, 180<<4, RED_IDX,  LIGHT_RED_IDX, 
     
-    -1, 0, 0, 0,  60<<4, 160<<4, BLUE_IDX, BLUE_IDX,
+    -1, 0, 0, 0,  60<<4, 160<<4, RED_IDX, LIGHT_RED_IDX,
     
     -1, 0, 0, 0,  40<<4, 140<<4, RED_IDX,  LIGHT_RED_IDX,
     
-    -1, 0, 0, 0,  20<<4, 120<<4, BLUE_IDX, BLUE_IDX,
+    -1, 0, 0, 0,  20<<4, 120<<4, RED_IDX, LIGHT_RED_IDX,
     
     -2, 0, 0, 0,   0<<4, 100<<4, RED_IDX,  LIGHT_RED_IDX,
 
-    -2, 0, 0, 0,   0<<4, 100<<4, TRANSPARENT_IDX,  BLUE_IDX,
+    -2, 0, 0, 0,   0<<4, 100<<4, TRANSPARENT_IDX,  STEEL_IDX,
 };
 
-static const u16 sector_group_triggers[17*8] = {
+static const s16 sector_group_triggers[17*8] = {
     0,0,0,0,0,0,0,0,
     0,0,0,0,0,0,0,0,
     0,0,0,0,0,0,0,0,
@@ -206,95 +206,95 @@ static const u8 wall_normal_quadrants[73] ={
 
 
 static const u8 wall_colors[73 * WALL_COLOR_NUM_PARAMS] = {
-    5, 0, 0, 0,
-    5, 0, 0, 0,
-    8, LIGHT_GREEN_IDX, GREEN_IDX, 0,
-    5, 0, 0, 0,
-    8, LIGHT_GREEN_IDX, LIGHT_GREEN_IDX, 0,
-    5, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    3, LIGHT_GREEN_IDX, GREEN_IDX, 0,
+    0, 0, 0, 0,
+    3, LIGHT_GREEN_IDX, LIGHT_GREEN_IDX, 0,
+    0, 0, 0, 0,
     // sector 1 walls
-    6, 0, 0, 0,
-    6, GREEN_IDX, GREEN_IDX, 0,
-    6, 0, 0, 0,
-    6, GREEN_IDX, GREEN_IDX, 0,
-    6, GREEN_IDX, GREEN_IDX, 0,
+    2, 0, 0, 0,
+    2, GREEN_IDX, GREEN_IDX, 0,
+    2, 0, 0, 0,
+    2, GREEN_IDX, GREEN_IDX, 0,
+    2, GREEN_IDX, GREEN_IDX, 0,
     // sector 2 walls
-    7, 0, 0, 0,
-    7, LIGHT_GREEN_IDX, LIGHT_GREEN_IDX, 0,
-    7, 0, 0, 0,
-    7, LIGHT_GREEN_IDX, LIGHT_GREEN_IDX, 0,
+    3, 0, 0, 0,
+    3, STEEL_IDX, STEEL_IDX, 0,
+    3, 0, 0, 0,
+    3, STEEL_IDX, STEEL_IDX, 0,
     // sector 3 walls
-    5, 0, 0, 0,
-    5, LIGHT_GREEN_IDX, LIGHT_GREEN_IDX, 0,
-    5, 0, 0, 0,
-    5, GREEN_IDX, GREEN_IDX, 0,
+    2, 0, 0, 0,
+    2, STEEL_IDX, STEEL_IDX, 0,
+    2, 0, 0, 0,
+    2, STEEL_IDX, STEEL_IDX, 0,
     // sector 4 walls
     5, 0, 0, 0,
-    5, LIGHT_GREEN_IDX, LIGHT_GREEN_IDX, 0,
+    5, STEEL_IDX, STEEL_IDX, 0,
     5, 0, 0, 0,
-    5, GREEN_IDX, GREEN_IDX, 0,
+    5, STEEL_IDX, STEEL_IDX, 0,
     // sector 5 walls
     5, 0, 0, 0,
-    5, LIGHT_GREEN_IDX, LIGHT_GREEN_IDX, 0,
+    5, STEEL_IDX, STEEL_IDX, 0,
     5, 0, 0, 0,
-    5, GREEN_IDX, GREEN_IDX, 0,
+    5, STEEL_IDX, STEEL_IDX, 0,
     // sector 6 walls
     5, 0, 0, 0,
-    5, GREEN_IDX, GREEN_IDX, 0,
+    5, STEEL_IDX, STEEL_IDX, 0,
+    5, 0, 0, 0,
+    5, STEEL_IDX, STEEL_IDX, 0,
+    // sector 7 walls
+    1, 0, 0, 0,
+    1, STEEL_IDX, STEEL_IDX, 0,
+    1, 0, 0, 0,
+    1, 0, 0, 0,
+    1, STEEL_IDX, STEEL_IDX, 0,
+    // sector 8 walls
+    4, 0, 0, 0,
+    3, STEEL_IDX, STEEL_IDX, 0,
+    4, 0, 0, 0,
+    3, STEEL_IDX, STEEL_IDX, 0,
+    // sector 9 walls
+    5, 0, 0, 0,
+    5, 0, 0, 0,
+    5, 0, 0, 0,
+    5, STEEL_IDX, STEEL_IDX, 0,
+    // sector 10 walls
+    2, 0, 0, 0,
+    2, 0, 0, 0,
+    2, 0, 0, 0,
+    2, STEEL_IDX, STEEL_IDX, 0,
+    // sector 11 walls
+    4, 0, 0, 0,
+    3, STEEL_IDX, STEEL_IDX, 0,
+    4, 0, 0, 0,
+    3, STEEL_IDX, STEEL_IDX, 0,
+    // sector 12 walls
+    1, 0, 0, 0,
+    1, STEEL_IDX, STEEL_IDX, 0,
+    1, 0, 0, 0,
+    1, STEEL_IDX, STEEL_IDX, 0,
+    // sector 13 walls
+    0, 0, 0, 0,
+    0, STEEL_IDX, STEEL_IDX, 0,
+    0, 0, 0, 0,
+    0, STEEL_IDX, STEEL_IDX, 0,
+    // sector 14 walls
+    5, 0, 0, 0,
+    5, STEEL_IDX, STEEL_IDX, 0,
     5, 0, 0, 0,
     5, GREEN_IDX, GREEN_IDX, 0,
-    // sector 7 walls
-    6, 0, 0, 0,
-    6, GREEN_IDX, GREEN_IDX, 0,
-    6, 0, 0, 0,
-    6, 0, 0, 0,
-    6, GREEN_IDX, GREEN_IDX, 0,
-    // sector 8 walls
-    7, 0, 0, 0,
-    8, LIGHT_GREEN_IDX, LIGHT_GREEN_IDX, 0,
-    7, 0, 0, 0,
-    8, GREEN_IDX, GREEN_IDX, 0,
-    // sector 9 walls
-    7, 0, 0, 0,
-    7, 0, 0, 0,
-    7, 0, 0, 0,
-    7, GREEN_IDX, GREEN_IDX, 0,
-    // sector 10 walls
-    7, 0, 0, 0,
-    7, 0, 0, 0,
-    7, 0, 0, 0,
-    7, GREEN_IDX, GREEN_IDX, 0,
-    // sector 11 walls
-    6, 0, 0, 0,
-    8, GREEN_IDX, GREEN_IDX, 0,
-    6, 0, 0, 0,
-    8, GREEN_IDX, GREEN_IDX, 0,
-    // sector 12 walls
-    6, 0, 0, 0,
-    6, LIGHT_GREEN_IDX, LIGHT_GREEN_IDX, 0,
-    6, 0, 0, 0,
-    6, GREEN_IDX, GREEN_IDX, 0,
-    // sector 13 walls
-    6, 0, 0, 0,
-    6, LIGHT_GREEN_IDX, LIGHT_GREEN_IDX, 0,
-    6, 0, 0, 0,
-    6, GREEN_IDX, GREEN_IDX, 0,
-    // sector 14 walls
-    6, 0, 0, 0,
-    6, LIGHT_GREEN_IDX, LIGHT_GREEN_IDX, 0,
-    6, 0, 0, 0,
-    6, GREEN_IDX, GREEN_IDX, 0,
     // sector 15 walls
-    7, 0, 0, 0,
-    7, LIGHT_GREEN_IDX, LIGHT_GREEN_IDX, 0,
-    7, 0, 0, 0,
-    7, 0, 0, 0,
-    7, GREEN_IDX, GREEN_IDX, 0,
+    4, 0, 0, 0,
+    4, STEEL_IDX, STEEL_IDX, 0,
+    4, 0, 0, 0,
+    4, 0, 0, 0,
+    4, STEEL_IDX, STEEL_IDX, 0,
     // sector 16
     5, 0, 0, 0,
     5, 0, 0, 0,
     5, 0, 0, 0,
-    5, GREEN_IDX, GREEN_IDX, 0,
+    5, STEEL_IDX, STEEL_IDX, 0,
 };
 
 // #define VERT(x1,y1) { .x = (x1 * 6), .y = ((-y1) * 6) } 

@@ -955,27 +955,6 @@ const s16 ceil_light_positions[512*4] = {
 -30, -18, -167, -71, -31, -18, -167, -72, -31, -18, -168, -72, -31, -18, -168, -72, -31, -18, -169, -73, -31, -19, -169, -73, -32, -19, -169, -73, -32, -19, -170, -73, -32, -19, -170, -74, -32, -19, -171, -74, -32, -19, -171, -74, -33, -20, -172, -75, -33, -20, -172, -75, -33, -20, -173, -75, -33, -20, -173, -75, -33, -20, -174, -76, -34, -20
 };
 
-/*
-const s16 ceil_light_positions[512*4] = {
-    -1, -1, -1, -1, 73, 75, 78, 78, 68, 70, 72, 73, 66, 68, 70, 71, 65, 67, 69, 70, 65, 67, 69, 69, 65, 66, 68, 69, 64, 66, 68, 69, 64, 66, 68, 69, 64, 66, 68, 69, 64, 66, 68, 68, 63, 65, 67, 68, 63, 65, 67, 68, 62, 64, 67, 68, 61, 64, 66, 68, 61, 63, 66, 67, 60, 63, 66, 67, 59, 62, 66, 67, 59, 62, 65, 67, 58, 61, 65, 67, 57, 61, 65, 66, 57, 60, 64, 66, 56, 60, 64, 66, 55, 59, 64, 66, 55, 59, 64, 66, 54, 58, 63, 65, 53, 58, 63, 65, 53, 58, 63, 65, 52, 57, 62, 65, 52, 57, 62, 65, 51, 56, 62, 64, 50, 56, 62, 64, 50, 55, 61, 64, 49, 55, 61, 64, 48, 54, 61, 64, 48, 54, 60, 63, 47, 53, 60, 63, 46, 53, 60, 63, 46, 52, 60, 63, 45, 52, 59, 62, 44, 51, 59, 62, 44, 51, 59, 62, 43, 50, 58, 62, 42, 50, 58, 62, 42, 49, 58, 61, 41, 49, 58, 61, 40, 48, 57, 61, 40, 48, 57, 61, 39, 47, 57, 61, 38, 47, 56, 60, 38, 46, 56, 60, 37, 46, 56, 60, 36, 46, 56, 60, 36, 45, 55, 60, 35, 45, 55, 59, 35, 44, 55, 59, 34, 44, 54, 59, 33, 43, 54, 59, 33, 43, 54, 59, 32, 42, 54, 58, 31, 42, 53, 58, 31, 41, 53, 58, 30, 41, 53, 58, 29, 40, 52, 58, 29, 40, 52, 57, 28, 39, 52, 57, 27, 39, 51, 57, 27, 38, 51, 57, 26, 38, 51, 57, 25, 37, 51, 56, 25, 37, 50, 56, 24, 36, 50, 56, 23, 36, 50, 56, 23, 35, 49, 55, 22, 35, 49, 55, 21, 35, 49, 55, 21, 34, 49, 55, 20, 34, 48, 55, 19, 33, 48, 54, 19, 33, 48, 54, 18, 32, 47, 54, 17, 32, 47, 54, 17, 31, 47, 54, 16, 31, 47, 53, 16, 30, 46, 53, 15, 30, 46, 53, 14, 29, 46, 53, 14, 29, 45, 53, 13, 28, 45, 52, 12, 28, 45, 52, 12, 27, 45, 52, 11, 27, 44, 52, 10, 26, 44, 52, 10, 26, 44, 51, 9, 25, 43, 51, 8, 25, 43, 51, 8, 24, 43, 51, 7, 24, 43, 51, 6, 23, 42, 50, 6, 23, 42, 50, 5, 22, 42, 50, 4, 22, 41, 50, 4, 22, 41, 50, 3, 21, 41, 49, 2, 21, 41, 49, 2, 20, 40, 49, 1, 20, 40, 49, 0, 19, 40, 48, 0, 19, 39, 48, 0, 18, 39, 48, 0, 18, 39, 48, -1, 17, 39, 48, -2, 17, 38, 47, -2, 16, 38, 47, -3, 16, 38, 47, -4, 15, 37, 47, -4, 15, 37, 47, -5, 14, 37, 46, -6, 14, 37, 46, -6, 13, 36, 46, -7, 13, 36, 46, -8, 12, 36, 46, -8, 12, 35, 45, -9, 11, 35, 45, -10, 11, 35, 45, -10, 10, 35, 45, -11, 10, 34, 45, -12, 10, 34, 44, -12, 9, 34, 44, -13, 9, 33, 44, -14, 8, 33, 44, -14, 8, 33, 44, -15, 7, 32, 43, -16, 7, 32, 43, -16, 6, 32, 43, -17, 6, 32, 43, -18, 5, 31, 43, -18, 5, 31, 42, -19, 4, 31, 42, -19, 4, 30, 42, -20, 3, 30, 42, -21, 3, 30, 41, -21, 2, 30, 41, -22, 2, 29, 41, -23, 1, 29, 41, -23, 1, 29, 41, -24, 0, 28, 40, -25, 0, 28, 40, -25, 0, 28, 40, -26, 0, 28, 40, -27, -1, 27, 40, -27, -1, 27, 39, -28, -1, 27, 39, -29, -2, 26, 39, -29, -2, 26, 39, -30, -3, 26, 39, -31, -3, 26, 38, -31, -4, 25, 38, -32, -4, 25, 38, -33, -5, 25, 38, -33, -5, 24, 38, -34, -6, 24, 37, -35, -6, 24, 37, -35, -7, 24, 37, -36, -7, 23, 37, -36, -8, 23, 37, -37, -8, 23, 36, -38, -9, 22, 36, -38, -9, 22, 36, -39, -10, 22, 36, -40, -10, 22, 36, -40, -11, 21, 35, -41, -11, 21, 35, -42, -12, 21, 35, -42, -12, 20, 35, -43, -13, 20, 35, -44, -13, 20, 34, -44, -13, 20, 34, -45, -14, 19, 34, -46, -14, 19, 34, -46, -15, 19, 33, -47, -15, 18, 33, -48, -16, 18, 33, -48, -16, 18, 33, -49, -17, 18, 33, -50, -17, 17, 32, -50, -18, 17, 32, -51, -18, 17, 32, -52, -19, 16, 32, -52, -19, 16, 32, -53, -20, 16, 31, -54, -20, 15, 31, -54, -21, 15, 31, -55, -21, 15, 31, -55, -22, 15, 31, -56, -22, 14, 30, -57, -23, 14, 30, -57, -23, 14, 30, -58, -24, 13, 30, -59, -24, 13, 30, -59, -25, 13, 29, -60, -25, 13, 29, -61, -25, 12, 29, -61, -26, 12, 29, -62, -26, 12, 29, -63, -27, 11, 28, -63, -27, 11, 28, -64, -28, 11, 28, -65, -28, 11, 28, -65, -29, 10, 28, -66, -29, 10, 27, -67, -30, 10, 27, -67, -30, 9, 27, -68, -31, 9, 27, -69, -31, 9, 26, -69, -32, 9, 26, -70, -32, 8, 26, -71, -33, 8, 26, -71, -33, 8, 26, -72, -34, 7, 25, -72, -34, 7, 25, -73, -35, 7, 25, -74, -35, 7, 25, -74, -36, 6, 25, -75, -36, 6, 24, -76, -37, 6, 24, -76, -37, 5, 24, -77, -37, 5, 24, -78, -38, 5, 24, -78, -38, 5, 23, -79, -39, 4, 23, -80, -39, 4, 23, -80, -40, 4, 23, -81, -40, 3, 23, -82, -41, 3, 22, -82, -41, 3, 22, -83, -42, 3, 22, -84, -42, 2, 22, -84, -43, 2, 22, -85, -43, 2, 21, -86, -44, 1, 21, -86, -44, 1, 21, -87, -45, 1, 21, -88, -45, 1, 21, -88, -46, 0, 20, -89, -46, 0, 20, -90, -47, 0, 20, -90, -47, 0, 20, -91, -48, 0, 19, -91, -48, 0, 19, -92, -49, -1, 19, -93, -49, -1, 19, -93, -49, -1, 19, -94, -50, -1, 18, -95, -50, -2, 18, -95, -51, -2, 18, -96, -51, -2, 18, -97, -52, -3, 18, -97, -52, -3, 17, -98, -53, -3, 17, -99, -53, -3, 17, -99, -54, -4, 17, -100, -54, -4, 17, -101, -55, -4, 16, -101, -55, -5, 16, -102, -56, -5, 16, -103, -56, -5, 16, -103, -57, -5, 16, -104, -57, -6, 15, -105, -58, -6, 15, -105, -58, -6, 15, -106, -59, -7, 15, -107, -59, -7, 15, -107, -60, -7, 14, -108, -60, -7, 14, -108, -61, -8, 14, -109, -61, -8, 14, -110, -61, -8, 14, -110, -62, -9, 13, -111, -62, -9, 13, -112, -63, -9, 13, -112, -63, -9, 13, -113, -64, -10, 12, -114, -64, -10, 12, -114, -65, -10, 12, -115, -65, -11, 12, -116, -66, -11, 12, -116, -66, -11, 11, -117, -67, -11, 11, -118, -67, -12, 11, -118, -68, -12, 11, -119, -68, -12, 11, -120, -69, -13, 10, -120, -69, -13, 10, -121, -70, -13, 10, -122, -70, -13, 10, -122, -71, -14, 10, -123, -71, -14, 9, -124, -72, -14, 9, -124, -72, -15, 9, -125, -73, -15, 9, -126, -73, -15, 9, -126, -73, -15, 8, -127, -74, -16, 8, -127, -74, -16, 8, -128, -75, -16, 8, -129, -75, -17, 8, -129, -76, -17, 7, -130, -76, -17, 7, -131, -77, -17, 7, -131, -77, -18, 7, -132, -78, -18, 7, -133, -78, -18, 6, -133, -79, -19, 6, -134, -79, -19, 6, -135, -80, -19, 6, -135, -80, -20, 5, -136, -81, -20, 5, -137, -81, -20, 5, -137, -82, -20, 5, -138, -82, -21, 5, -139, -83, -21, 4, -139, -83, -21, 4, -140, -84, -22, 4, -141, -84, -22, 4, -141, -85, -22, 4, -142, -85, -22, 3, -143, -85, -23, 3, -143, -86, -23, 3, -144, -86, -23, 3, -145, -87, -24, 3, -145, -87, -24, 2, -146, -88, -24, 2, -146, -88, -24, 2, -147, -89, -25, 2, -148, -89, -25, 2, -148, -90, -25, 1, -149, -90, -26, 1, -150, -91, -26, 1, -150, -91, -26, 1, -151, -92, -26, 1, -152, -92, -27, 0, -152, -93, -27, 0, -153, -93, -27, 0, -154, -94, -28, 0, -154, -94, -28, 0, -155, -95, -28, 0, -156, -95, -28, 0, -156, -96, -29, 0, -157, -96, -29, 0, -158, -97, -29, 0, -158, -97, -30, -1, -159, -97, -30, -1, -160, -98, -30, -1, -160, -98, -30, -1, -161, -99, -31, -2, -162, -99, -31, -2, -162, -100, -31, -2, -163, -100, -32, -2, -163, -101, -32, -2, -164, -101, -32, -3, -165, -102, -32, -3, -165, -102, -33, -3, -166, -103, -33, -3, -167, -103, -33, -3, -167, -104, -34, -4, -168, -104, -34, -4, -169, -105, -34, -4, -169, -105, -34, -4, -170, -106, -35, -4, -171, -106, -35, -5, -171, -107, -35, -5, -172, -107, -36, -5, -173, -108, -36, -5, -173, -108, -36, -5, -174, -109, -37, -6, -175, -109, -37, -6, -175, -109, -37, -6, -176, -110, -37, -6, -177, -110, -38, -6, -177, -111, -38, -7, -178, -111, -38, -7, -179, -112, -39, -7, -179, -112, -39, -7, -180, -113, -39, -7, -181, -113, -39, -8, -181, -114, -40, -8, -182, -114, -40, -8, -182, -115, -40, -8, -183, -115, -41, -9, -184, -116, -41, -9, -184, -116, -41, -9, -185, -117, -41, -9, -186, -117, -42, -9, -186, -118, -42, -10, -187, -118, -42, -10, -188, -119, -43, -10, -188, -119, -43, -10, -189, -120, -43, -10, -190, -120, -43, -11, -190, -121, -44, -11, -191, -121, -44, -11, -192, -121, -44, -11, -192, -122, -45, -11, -193, -122, -45, -12, -194, -123, -45, -12, -194, -123, -45, -12, -195, -124, -46, -12, -196, -124, -46, -12, -196, -125, -46, -13, -197, -125, -47, -13, -198, -126, -47, -13, -198, -126, -47, -13, -199, -127, -47, -13, -199, -127, -48, -14, -200, -128, -48, -14, -201, -128, -48, -14, -201, -129, -49, -14, -202, -129, -49, -14, -203, -130, -49, -15, -203, -130, -49, -15, -204, -131, -50, -15, -205, -131, -50, -15, -205, -132, -50, -16, -206, -132, -51, -16, -207, -133, -51, -16, -207, -133, -51, -16, -208, -133, -51, -16, -209, -134, -52, -17, -209, -134, -52, -17, -210, -135, -52, -17, -211, -135, -53, -17, -211, -136, -53, -17, -212, -136, -53, -18, -213, -137, -53, -18, -213, -137, -54, -18, -214, -138, -54, -18, -215, -138, -54, -18, -215, -139, -55, -19, -216, -139, -55, -19, -216, -140, -55, -19, -217, -140, -56, -19, -218, -141, -56, -19, -218, -141, -56, -20, -219, -142, -56, -20, -220, -142, -57, -20, -220, -143, -57, -20, -221, -143, -57, -20, -222, -144, -58, -21, -222, -144, -58, -21, -223, -145, -58, -21, -224, -145, -58, -21, -224, -145, -59, -21, -225, -146, -59, -22, -226, -146, -59, -22, -226, -147, -60, -22, -227, -147, -60, -22, -228, -148, -60, -23, -228, -148, -60, -23, -229, -149, -61, -23, -230, -149, -61, -23, -230, -150, -61, -23, -231, -150, -62, -24, -232, -151, -62, -24, -232, -151, -62, -24, -233, -152, -62, -24, -234, -152, -63, -24, -234, -153, -63, -25, -235, -153, -63, -25, -235, -154, -64, -25, -236, -154, -64, -25, -237, -155, -64, -25, -237, -155, -64, -26, -238, -156, -65, -26, -239, -156, -65, -26, -239, -157, -65, -26, -240, -157, -66, -26, -241, -157, -66, -27, -241, -158, -66, -27, -242, -158, -66, -27, -243, -159, -67, -27, -243, -159, -67, -27, -244, -160, -67, -28, -245, -160, -68, -28, -245, -161, -68, -28, -246, -161, -68, -28, -247, -162, -68, -28, -247, -162, -69, -29, -248, -163, -69, -29, -249, -163, -69, -29, -249, -164, -70, -29, -250, -164, -70, -30, -251, -165, -70, -30, -251, -165, -70, -30, -252, -166, -71, -30, -253, -166, -71, -30, -253, -167, -71, -31, -254, -167, -72, -31, -254, -168, -72, -31, -255, -168, -72, -31, -256, -169, -73, -31, -256, -169, -73, -32, -257, -169, -73, -32, -258, -170, -73, -32, -258, -170, -74, -32, -259, -171, -74, -32, -260, -171, -74, -33, -260, -172, -75, -33, -261, -172, -75, -33, -262, -173, -75, -33, -262, -173, -75, -33, -263, -174, -76, -34};
-*/
-
-//u16 cached_floor_col = MAX_U16;
-//u16 cached_floor_light_level = MAX_U16;
-//u32 cached_rel_floor_height = MAX_U32;
-//u16 cached_ceil_col = MAX_U16;
-//u16 cached_ceil_light_level = MAX_U16;
-//u32 cached_rel_ceil_height = MAX_U32;
-
-
-void clear_light_cache() {
-//    cached_floor_col = MAX_U16;
-//    cached_floor_light_level = MAX_U16;
-//    cached_rel_floor_height = MAX_U32;
-//    cached_ceil_col = MAX_U16;
-//    cached_ceil_light_level = MAX_U16;
-//    cached_rel_ceil_height = MAX_U32;
-}
 
 void cache_floor_light_params(s16 rel_floor_height, u8 floor_col, s8 light_level, light_params* params) {
     u32 light_color, mid_color, dark_color;
@@ -992,21 +971,16 @@ void cache_floor_light_params(s16 rel_floor_height, u8 floor_col, s8 light_level
     
     // shift, lookup, lookup
     light_color = get_light_color(floor_col, light_level);
+    
     // shift, lookup, lookup
-    mid_color = get_mid_dark_color(floor_col, light_level);
+    //mid_color = get_mid_dark_color(floor_col, light_level);
+
     // shift, lookup, lookup
     dark_color = get_dark_color(floor_col, light_level);
     params->light_color = light_color;
-    params->mid_color = mid_color;
+    //params->mid_color = mid_color;
     params->dark_color = dark_color;
     
-    //u32* col_ptr = get_color_ptr(floor_col, light_level);
-
-    //params->dark_color = *col_ptr++;
-    //params->mid_color = *col_ptr++;
-    //params->light_color = *col_ptr++;
-
-
 
     params->needs_lighting = 1;
     
@@ -1027,7 +1001,7 @@ void cache_floor_light_params(s16 rel_floor_height, u8 floor_col, s8 light_level
     s16 mid_bot = floor_light_positions[table_idx++];
 
     params->dark_y = dark_bot;
-    params->mid_y = mid_bot;
+    //params->mid_y = mid_bot;
     //params->fade_y = fade_bot;
 }
 
@@ -1049,13 +1023,13 @@ void cache_ceil_light_params(s16 rel_ceil_height, u8 ceil_col, s8 light_level, l
     params->light_color = light_color;
 
     
-    mid_color = get_mid_dark_color(ceil_col, light_level);
+    //mid_color = get_mid_dark_color(ceil_col, light_level);
     dark_color = get_dark_color(ceil_col, light_level);
     //if(light_color == mid_color && mid_color == dark_color) {
     //    params->needs_lighting = 0;
     //    return;
     //}
-    params->mid_color = mid_color;
+    //params->mid_color = mid_color;
     params->dark_color = dark_color;
     params->needs_lighting = 1;
 
@@ -1078,7 +1052,7 @@ void cache_ceil_light_params(s16 rel_ceil_height, u8 ceil_col, s8 light_level, l
     */
 
     params->dark_y = dark_top;
-    params->mid_y = mid_top;
+    //params->mid_y = mid_top;
     //params->fade_y = fade_top;
 }
 
@@ -1093,7 +1067,7 @@ u8* draw_lit_floor_light_only(s16 floor_top_y, s16 floor_bot_y, u8* col_ptr, lig
 
 u8* draw_lit_floor(s16 floor_top_y, s16 floor_bot_y, u8* col_ptr, light_params* params) {
     
-    return draw_lit_floor_light_only(floor_top_y, floor_bot_y, col_ptr, params);
+    //return draw_lit_floor_light_only(floor_top_y, floor_bot_y, col_ptr, params);
     #ifndef FLATS_DIST_LIGHTING
     s16 floor_mid = (floor_bot_y+floor_top_y)>>1;
     s16 dark_y = params->dark_y;
@@ -1152,13 +1126,13 @@ u8* draw_lit_floor(s16 floor_top_y, s16 floor_bot_y, u8* col_ptr, light_params* 
         draw_native_vertical_line_unrolled(draw_dark_top, draw_dark_bot, params->dark_color, col_ptr);
     }
 
-    int draw_mid_top = max(floor_top_y, params->dark_y);
-    int draw_mid_bot = min(floor_bot_y, params->mid_y);
-    if(draw_mid_top < draw_mid_bot) {
-        draw_native_vertical_line_unrolled(draw_mid_top, draw_mid_bot, params->mid_color, col_ptr);
-    }
+    //int draw_mid_top = max(floor_top_y, params->dark_y);
+    //int draw_mid_bot = min(floor_bot_y, params->mid_y);
+    //if(draw_mid_top < draw_mid_bot) {
+    //    draw_native_vertical_line_unrolled(draw_mid_top, draw_mid_bot, params->mid_color, col_ptr);
+    //}
 
-    int draw_light_top = max(floor_top_y, params->mid_y);
+    int draw_light_top = max(floor_top_y, params->dark_y);
     int draw_light_bot = floor_bot_y;
     if(draw_light_top < draw_light_bot) {
         draw_native_vertical_line_unrolled(draw_light_top, draw_light_bot, params->light_color, col_ptr);
@@ -1172,7 +1146,7 @@ u8* draw_lit_ceil_light_only(s16 ceil_top_y, s16 ceil_bot_y, u8* col_ptr, light_
 }
 
 u8*  draw_lit_ceiling(s16 ceil_top_y, s16 ceil_bot_y, u8* col_ptr, light_params* params) {
-    return draw_lit_ceil_light_only(ceil_top_y, ceil_bot_y, col_ptr, params);
+    //return draw_lit_ceil_light_only(ceil_top_y, ceil_bot_y, col_ptr, params);
     #ifndef FLATS_DIST_LIGHTING
     s16 mid = ((ceil_bot_y-ceil_top_y)<<1)+ceil_top_y;
     if(mid < params->mid_y) {
@@ -1183,17 +1157,17 @@ u8*  draw_lit_ceiling(s16 ceil_top_y, s16 ceil_bot_y, u8* col_ptr, light_params*
     #endif
 
     int draw_light_top = ceil_top_y;
-    int draw_light_bot = min(ceil_bot_y, params->mid_y);
+    int draw_light_bot = min(ceil_bot_y, params->dark_y); //params->mid_y);
 
     if(draw_light_top < draw_light_bot) {
         draw_native_vertical_line_unrolled(draw_light_top, draw_light_bot, params->light_color, col_ptr);
     }
 
-    int draw_mid_top = max(ceil_top_y, params->mid_y);
-    int draw_mid_bot = min(ceil_bot_y, params->dark_y);
-    if(draw_mid_top < draw_mid_bot) {
-        draw_native_vertical_line_unrolled(draw_mid_top, draw_mid_bot, params->mid_color, col_ptr);
-    }
+    //int draw_mid_top = max(ceil_top_y, params->mid_y);
+    //int draw_mid_bot = min(ceil_bot_y, params->dark_y);
+    //if(draw_mid_top < draw_mid_bot) {
+    //    draw_native_vertical_line_unrolled(draw_mid_top, draw_mid_bot, params->mid_color, col_ptr);
+    //}
 
     int draw_dark_top = max(ceil_top_y, params->dark_y);
     int draw_dark_bot = ceil_bot_y;
@@ -1701,10 +1675,18 @@ u8 light_levels[6];
     }                                               \
 } while(0);
 
-#define CHECK_DIST(inv_z, light_var) do {           \
+#define CHECK_DIST_WITH_MID(inv_z, light_var) do {  \
     if ((inv_z) <= FIX_0_16_INV_DARK_DIST) {        \
         light_var = DARK;                           \
-    } else if ((inv_z) <= FIX_0_16_INV_DARK_DIST) { \
+    } else if ((inv_z) <= FIX_0_16_INV_MID_DIST) { \
+        light_var = MID;                           \
+    } else {                                        \
+        light_var = LIGHT;                          \
+    }                                               \
+} while(0);
+
+#define CHECK_DIST(inv_z, light_var) do {           \
+    if ((inv_z) <= FIX_0_16_INV_DARK_DIST) {    \
         light_var = DARK;                           \
     } else {                                        \
         light_var = LIGHT;                          \
@@ -1732,7 +1714,7 @@ void calculate_light_levels_for_wall(u32 clipped_dx, s16 inv_z1, s16 inv_z2, s16
     if (light_level == -2 || light_level == 2) { 
         // z stays the same
         //output_light_span(cur_light, cnt);
-        *out_ptr++ = cur_light; //MID;
+        *out_ptr++ = (light_level == -2) ? DARK : LIGHT; //cur_light; //MID;
         *out_ptr++ = cnt; //cur_light;
         //*out_ptr++ = cnt;
         num_light_levels = 1;
@@ -1894,10 +1876,12 @@ void calculate_light_levels_for_wall(u32 clipped_dx, s16 inv_z1, s16 inv_z2, s16
             // *out_ptr++ = cur_span;
             //cur_light = next_light;
             //cur_span = 1;
-            if(end_light == cur_light) {
+            
+            // we only have two light levels, so we can just quit now
+            //if(end_light == cur_light) {
                 cur_span += cnt;
                 break;
-            }
+            //}
         }
         cur_inv_z += fix_inv_dz_per_dx;
     }
@@ -1968,7 +1952,7 @@ void draw_upper_step(s16 x1, s16 x1_ytop, s16 nx1_ytop, s16 x2, s16 x2_ytop, s16
     calculate_light_levels_for_wall(cnt, cur_fix_inv_z, inv_z2, fix_inv_dz_per_dx, light_level);
 
     u32 dark_color = get_dark_color(upper_color, light_level);
-    u32 mid_color = get_mid_dark_color(upper_color, light_level);
+    //u32 mid_color = get_mid_dark_color(upper_color, light_level);
     u32 light_color = get_light_color(upper_color, light_level);
 
     //u8** offset_ptr = (bmp_buffer_write == bmp_buffer_0) ? (&buf_0_column_offset_table[x]) : (&buf_1_column_offset_table[x]);
@@ -1987,8 +1971,8 @@ void draw_upper_step(s16 x1, s16 x1_ytop, s16 nx1_ytop, s16 x2, s16 x2_ytop, s16
                 color = dark_color;
                 break;
             case MID:
-                color = mid_color;
-                break;
+                //color = mid_color;
+                //break;
             case LIGHT:
                 color = light_color;
                 break;
@@ -2089,7 +2073,7 @@ void draw_top_pegged_textured_upper_step(s16 x1, s16 x1_ytop, s16 nx1_ytop, s16 
 
     lit_texture* lit_tex = tmap_info->tex;
     u16* dark_tex = lit_tex->dark;
-    u16* mid_tex = lit_tex->mid;
+    //u16* mid_tex = lit_tex->mid;
     u16* light_tex = lit_tex->light;
 
 
@@ -2126,8 +2110,8 @@ void draw_top_pegged_textured_upper_step(s16 x1, s16 x1_ytop, s16 nx1_ytop, s16 
                 u16* tex_column;
                 if (cur_inv_z <= FIX_0_16_INV_DARK_DIST) {
                     tex_column = &dark_tex[tex_idx];
-                } else if (cur_inv_z <= FIX_0_16_INV_MID_DIST) {
-                    tex_column = &mid_tex[tex_idx];
+                //} else if (cur_inv_z <= FIX_0_16_INV_MID_DIST) {
+                //    tex_column = &mid_tex[tex_idx];
                 } else {
                     tex_column = &light_tex[tex_idx];
                 }
@@ -2216,7 +2200,7 @@ void draw_bottom_pegged_textured_lower_step(
 
     lit_texture* lit_tex = tmap_info->tex;
     u16* dark_tex = lit_tex->dark;
-    u16* mid_tex = lit_tex->mid;
+    //u16* mid_tex = lit_tex->mid;
     u16* light_tex = lit_tex->light;
 
     s16 x = beginx;
@@ -2249,8 +2233,8 @@ void draw_bottom_pegged_textured_lower_step(
                 u16* tex_column;
                 if (cur_inv_z <= FIX_0_16_INV_DARK_DIST) {
                     tex_column = &dark_tex[tex_idx];
-                } else if (cur_inv_z <= FIX_0_16_INV_MID_DIST) {
-                    tex_column = &mid_tex[tex_idx];
+                //} else if (cur_inv_z <= FIX_0_16_INV_MID_DIST) {
+                //    tex_column = &mid_tex[tex_idx];
                 } else {
                     tex_column = &light_tex[tex_idx];
                 }
@@ -2342,7 +2326,7 @@ void draw_lower_step(s16 x1, s16 x1_ybot, s16 nx1_ybot, s16 x2, s16 x2_ybot, s16
     u8* drawn_buf_ptr = &(drawn_buf[x]);
 
     u32 dark_color = get_dark_color(lower_color, light_level);
-    u32 mid_color = get_mid_dark_color(lower_color, light_level);
+    //u32 mid_color = get_mid_dark_color(lower_color, light_level);
     u32 light_color = get_light_color(lower_color, light_level);
 
 
@@ -2366,8 +2350,8 @@ void draw_lower_step(s16 x1, s16 x1_ybot, s16 nx1_ybot, s16 x2, s16 x2_ybot, s16
                 color = dark_color;
                 break;
             case MID:
-                color = mid_color;
-                break;
+            //    color = mid_color;
+            //    break;
             case LIGHT:
                 color = light_color;
                 break;
@@ -2620,7 +2604,7 @@ void draw_solid_color_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
     calculate_light_levels_for_wall(cnt, cur_fix_inv_z, inv_z2, fix_inv_dz_per_dx, light_level);
     
     u32 light_color = get_light_color(wall_color, light_level);
-    u32 mid_color = get_mid_dark_color(wall_color, light_level);
+    //u32 mid_color = get_mid_dark_color(wall_color, light_level);
     u32 dark_color = get_dark_color(wall_color, light_level);
 
 
@@ -2638,8 +2622,8 @@ void draw_solid_color_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
                 color = dark_color;
                 break;
             case MID:
-                color = mid_color;
-                break;
+            //    color = mid_color;
+            //    break;
             case LIGHT:
                 color = light_color;
                 break;
@@ -2748,7 +2732,7 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
 
     lit_texture* lit_tex = tmap_info->tex;
     u16* dark_tex = lit_tex->dark;
-    u16* mid_tex = lit_tex->mid;
+    //u16* mid_tex = lit_tex->mid;
     u16* light_tex = lit_tex->light;
 
     s16 x = beginx;
@@ -2788,8 +2772,8 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
                     base_tex = dark_tex;
                     break;
                 case MID:
-                    base_tex = mid_tex;
-                    break;
+                //    base_tex = mid_tex;
+                //    break;
                 case LIGHT:
                     base_tex = light_tex;
                     break;
@@ -2882,8 +2866,8 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
                     base_tex = dark_tex;
                     break;
                 case MID:
-                    base_tex = mid_tex;
-                    break;
+                //    base_tex = mid_tex;
+                //    break;
                 case LIGHT:
                     base_tex = light_tex;
                     break;
@@ -3035,7 +3019,7 @@ void draw_top_pegged_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
 
     lit_texture* lit_tex = tmap_info->tex;
     u16* dark_tex = lit_tex->dark;
-    u16* mid_tex = lit_tex->mid;
+    //u16* mid_tex = lit_tex->mid;
     u16* light_tex = lit_tex->light;
 
     s16 x = beginx;
@@ -3073,8 +3057,8 @@ void draw_top_pegged_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
                 u16* tex_column;
                 if (cur_inv_z <= FIX_0_16_INV_DARK_DIST) {
                     tex_column = &dark_tex[tex_idx];
-                } else if (cur_inv_z <= FIX_0_16_INV_MID_DIST) {
-                    tex_column = &mid_tex[tex_idx];
+                //} else if (cur_inv_z <= FIX_0_16_INV_MID_DIST) {
+                //    tex_column = &mid_tex[tex_idx];
                 } else {
                     tex_column = &light_tex[tex_idx];
                 }
@@ -3176,7 +3160,7 @@ void draw_bot_pegged_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
 
     lit_texture* lit_tex = tmap_info->tex;
     u16* dark_tex = lit_tex->dark;
-    u16* mid_tex = lit_tex->mid;
+    //u16* mid_tex = lit_tex->mid;
     u16* light_tex = lit_tex->light;
 
     s16 x = beginx;
@@ -3216,8 +3200,8 @@ void draw_bot_pegged_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
                 u16* tex_column;
                 if (cur_inv_z <= FIX_0_16_INV_DARK_DIST) {
                     tex_column = &dark_tex[tex_idx];
-                } else if (cur_inv_z <= FIX_0_16_INV_MID_DIST) {
-                    tex_column = &mid_tex[tex_idx];
+                //} else if (cur_inv_z <= FIX_0_16_INV_MID_DIST) {
+                //    tex_column = &mid_tex[tex_idx];
                 } else {
                     tex_column = &light_tex[tex_idx];
                 }
