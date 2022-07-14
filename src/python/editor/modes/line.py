@@ -1,7 +1,7 @@
 import imgui
 
-from src.python.editor import map_db, utils
-from utils import circle_on_line, draw_list, delay
+import utils
+import map_db
 import math
 
 
@@ -89,14 +89,14 @@ class Line():
         x2 = v2.x
         y2 = v2.y
 
-        if circle_on_line(x1,y1, x2,y2, cx, cy, 5):
+        if utils.circle_on_line(x1,y1, x2,y2, cx, cy, 5):
             return True
 
         if not collide_with_normal:
             return False
         
         ((n1x,n1y),(n2x,n2y)) = self.centered_normal(map_data)
-        return circle_on_line(n1x,n1y, n2x,n2y, cx, cy, 5)
+        return utils.circle_on_line(n1x,n1y, n2x,n2y, cx, cy, 5)
 
 
 
@@ -167,12 +167,12 @@ def draw_line_mode(cur_state):
         utils.input_select("Upper col idx: ", "##line{}_upper_col".format(cur_wall),
                            palette_opts,
                            map_db.get_line_param(cur_state.map_data, wall_param_idx, map_db.WALL_HIGH_COLOR_IDX),
-                           delay(map_db.set_line_param, cur_state.map_data, wall_param_idx, map_db.WALL_HIGH_COLOR_IDX))
+                           utils.delay(map_db.set_line_param, cur_state.map_data, wall_param_idx, map_db.WALL_HIGH_COLOR_IDX))
 
         utils.input_select("Lower col idx: ", "##line{}_lower_col".format(cur_wall),
                            palette_opts,
                            map_db.get_line_param(cur_state.map_data, wall_param_idx, map_db.WALL_LOW_COLOR_IDX),
-                           delay(map_db.set_line_param, cur_state.map_data, wall_param_idx, map_db.WALL_LOW_COLOR_IDX))
+                           utils.delay(map_db.set_line_param, cur_state.map_data, wall_param_idx, map_db.WALL_LOW_COLOR_IDX))
 
         #up_col_changed, new_up_col = imgui.core.combo("upper color", cur_wall.up_color, color_opts)
         #tex_opts = [str(x) for x in range(32)]
@@ -203,5 +203,5 @@ def draw_line_mode(cur_state):
         num_walls = map_db.get_sector_constant(cur_state.map_data, cur_state.cur_sector, map_db.NUM_WALLS_IDX)
         line_list = range(wall_off, wall_off+num_walls, 1)
 
-        draw_list(cur_state, "Line", "Line list", line_list, set_cur_wall, delete_line)
+        utils.draw_list(cur_state, "Line", "Line list", line_list, set_cur_wall, delete_line)
     

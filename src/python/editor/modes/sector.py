@@ -1,6 +1,6 @@
 import imgui
 
-from src.python.editor import map_db
+import map_db
 from utils import input_int, draw_list, input_select
 
 

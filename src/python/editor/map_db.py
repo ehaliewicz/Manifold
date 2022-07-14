@@ -1,4 +1,4 @@
-from src.python.editor import vertex, line
+from modes import vertex, line
 
 NUM_SECTOR_CONSTANTS = 4
 NUM_SECTOR_GROUP_PARAMS = 8

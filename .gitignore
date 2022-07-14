@@ -64,3 +64,9 @@ out/
 .idea
 .idea*
 .idea/*
+.venv/
+src/python/editor/build/
+editor.spec
+imgui.ini
+src/python/dist.7z
+src/python/editor/dist/

@@ -13,17 +13,18 @@ import imgui
 from imgui.integrations.sdl2 import SDL2Renderer
 from sdl2 import *
 
-import line
-import render_3d
-import script
-import sector
-import sector_group
-import texture
-import trigger
-import vertex
+from modes import line, script, sector, sector_group, texture, trigger, vertex
+#from line import line
+#import render_3d
+#import script
+#import sector
+#import sector_group
+#import texture
+#import trigger
+#import vertex
 
 # commands
-from src.python.editor import map_db
+import map_db
 
 
 class Mode(Enum):
@@ -169,7 +170,7 @@ class Map():
 def main_sdl2():
     def pysdl2_init():
         width, height = 1280, 800
-        window_name = "Map Edit"
+        window_name = "Construct"
         if SDL_Init(SDL_INIT_EVERYTHING) < 0:
             print("Error: SDL could not initialize! SDL Error: " + SDL_GetError())
             exit(1)
@@ -210,7 +211,7 @@ def main_sdl2():
 
     event = SDL_Event()
 
-    render_3d.init_sdl_window()
+    #render_3d.init_sdl_window()
 
     while running:
         while SDL_PollEvent(ctypes.byref(event)) != 0:
@@ -281,7 +282,7 @@ def add_new_vertex(x,y):
 MODE_DRAW_FUNCS = {
     Mode.SECTOR: sector.draw_sector_mode,
     Mode.SECTOR_GROUP: sector_group.draw_sector_group_mode,
-    Mode.PREVIEW: render_3d.draw_preview,
+    #Mode.PREVIEW: render_3d.draw_preview,
     Mode.LINE: line.draw_line_mode,
     Mode.VERTEX: vertex.draw_vert_mode,
     Mode.SCRIPT: script.draw_script_mode,
