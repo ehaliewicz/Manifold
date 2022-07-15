@@ -54,11 +54,11 @@ void set_sector_group_ceil_height(u16 sect_group, s16 height) {
     live_sector_group_parameters[(sect_group<<NUM_SECTOR_PARAMS_SHIFT) + SECTOR_PARAM_CEIL_HEIGHT_IDX] = height;
 }
 
-s16 get_sector_group_floor_color(u16 sect_group) {
+u16 get_sector_group_floor_color(u16 sect_group) {
     return live_sector_group_parameters[(sect_group<<NUM_SECTOR_PARAMS_SHIFT) + SECTOR_PARAM_FLOOR_COLOR_IDX];
 }
 
-s16 get_sector_group_ceil_color(u16 sect_group) {
+u16 get_sector_group_ceil_color(u16 sect_group) {
     return live_sector_group_parameters[(sect_group<<NUM_SECTOR_PARAMS_SHIFT) + SECTOR_PARAM_CEIL_COLOR_IDX];
 }
 
@@ -183,7 +183,10 @@ void run_stairs(s16* params) {
                 cur_height += 32;
                 //ticks++;
                 //params[SECTOR_PARAM_TICKS_LEFT_IDX] = ticks;
-                params[SECTOR_PARAM_FLOOR_COLOR_IDX] = 3;
+                
+                // TODO: floor color hack!
+                params[SECTOR_PARAM_FLOOR_COLOR_IDX] = 12;
+                
                 params[SECTOR_PARAM_FLOOR_HEIGHT_IDX] = cur_height;
                 if(cur_height >= orig_stairs_height) {
                     params[SECTOR_PARAM_FLOOR_HEIGHT_IDX] = orig_stairs_height;
@@ -288,14 +291,16 @@ void activate_sector_group_enter_trigger(u16 sector_group) {
         case NO_TRIGGER:
             return;
         case SET_SECTOR_DARK:
+            return;
             for(int i = 0; i < NUM_SECTOR_TRIGGER_TARGETS; i++) {
                 s16 tgt_sector_group = get_sector_group_trigger_target(sector_group, i);
                 if(tgt_sector_group == -1) { break; }
-                set_sector_group_light_level(tgt_sector_group, -2);
+                set_sector_group_light_level(tgt_sector_group, -1);
                 
             }
             break;
         case SET_SECTOR_LIGHT:
+            return;
             for(int i = 0; i < NUM_SECTOR_TRIGGER_TARGETS; i++) {
                 s16 tgt_sector_group = get_sector_group_trigger_target(sector_group, i);
                 if(tgt_sector_group == -1) { break; }
@@ -313,8 +318,8 @@ void activate_sector_group_enter_trigger(u16 sector_group) {
 
     }
     
-    char buf[50];
-    int len = sprintf(buf, "trap for sector #%i triggered", sector_group);
-    buf[len] = 0;
-    console_push_message(buf, len, 30);
+    //char buf[50];
+    //int len = sprintf(buf, "trap for sector #%i triggered", sector_group);
+    //buf[len] = 0;
+    //console_push_message(buf, len, 30);
 }

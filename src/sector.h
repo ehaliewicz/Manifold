@@ -41,8 +41,8 @@ void set_sector_group_floor_height(u16 sector_idx, s16 height);
 
 s16 get_sector_group_ceil_height(u16 sector_idx);
 void set_sector_group_ceil_height(u16 sector_idx, s16 height);
-s16 get_sector_group_floor_color(u16 sector_idx);
-s16 get_sector_group_ceil_color(u16 sector_idx);
+u16 get_sector_group_floor_color(u16 sector_idx);
+u16 get_sector_group_ceil_color(u16 sector_idx);
 
 void run_sector_group_processes();
 
