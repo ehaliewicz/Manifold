@@ -72,7 +72,6 @@ s8 point_sign_int_vert(fix32 x, fix32 y, s16 v1_x, s16 v1_y, s16 v2_x, s16 v2_y)
 
 
 s8 sign(s16 ax, s16 ay, s16 bx, s16 by, s16 cx, s16 cy) {
-    s32 p1 = bx-ax;
     s32 val = ((bx - ax)*(cy - ay) - (by - ay)*(cx - ax));
     //KLog_S2("ax: ", ax, "ay: ", ay);
     //KLog_S2("bx: ", bx, "by: ", by);
@@ -125,7 +124,6 @@ u8 within_frustum(s16 x1, s16 y1, s16 x2, s16 y2) {
     //if(p2_right_sign) { ret =  1; }
     
     
-    s16 tmp;
     //  first check against right frustum (cy-cx) >= 0 for both points
     //  if either are valid, go to second check
     //  if neither are valid, exit with failure

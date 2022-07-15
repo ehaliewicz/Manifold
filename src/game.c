@@ -285,7 +285,7 @@ u8 render_mode;
 void handle_input() {
     int strafe = joy_button_pressed(BUTTON_C);
 
-    int pressed_b = joy_button_pressed(BUTTON_B);
+    //int pressed_b = joy_button_pressed(BUTTON_B);
 
 
     int moved = 0;
@@ -646,7 +646,7 @@ void init_game() {
     vwf_init();
     free_tile_loc = console_init(free_tile_loc);
 
-    const char* init_str = "game initialized!";
+    //const char* init_str = "game initialized!";
     console_push_message("game initialized!", 17, 30);
 
     MEM_pack();

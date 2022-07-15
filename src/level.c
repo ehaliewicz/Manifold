@@ -29,8 +29,6 @@ void init_wall_tex_repetitions(portal_map* map) {
     wall_tex_repetitions = MEM_alloc(sizeof(u16)*num_walls);
     u16 num_sectors = map->num_sectors;
 
-    u16 k = 0;
-
     for(int sector = 0; sector < num_sectors; sector++) {
         u16 wall_offset = sector_wall_offset(sector, map);
         u16 sect_num_walls = sector_num_walls(sector, map);
