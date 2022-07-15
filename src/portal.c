@@ -304,11 +304,11 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
 
         //KLog("potentially on-screen");
         s16 trans_v1_z_fix = trans_v1.y;
-        s32 trans_v1_z_int = trans_v1_z_fix>>TRANS_Z_FRAC_BITS;
+        //s32 trans_v1_z_int = trans_v1_z_fix>>TRANS_Z_FRAC_BITS;
         s16 trans_v2_z_fix = trans_v2.y;
-        s32 trans_v2_z_int = trans_v2_z_fix>>TRANS_Z_FRAC_BITS;
+        //s32 trans_v2_z_int = trans_v2_z_fix>>TRANS_Z_FRAC_BITS;
 
-        s16 max_z_int = max(trans_v1_z_int, trans_v2_z_int);
+        //s16 max_z_int = max(trans_v1_z_int, trans_v2_z_int);
 
         s16 x1 = clipped & LEFT_FRUSTUM_CLIPPED ? 0 : project_and_adjust_x(trans_v1.x, z_recip_v1);
         s16 x2 = clipped & RIGHT_FRUSTUM_CLIPPED ? RENDER_WIDTH : project_and_adjust_x(trans_v2.x, z_recip_v2);
@@ -355,7 +355,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
 
         if(is_portal) {
             u16 neighbor_sect_group = sector_group(portal_sector, map);
-            u8 neighbor_sector_group_type = cur_portal_map->sector_group_types[neighbor_sect_group];
+            //u8 neighbor_sector_group_type = cur_portal_map->sector_group_types[neighbor_sect_group];
             //s16 neighbor_ceil_color = get_sector_group_floor_color(neighbor_sect_group);
             //s16 neighbor_floor_color = get_sector_group_floor_color(neighbor_sect_group);
 
@@ -408,9 +408,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
 
         int render_forcefield = 0; //(sector == 0 && is_portal && portal_sector == 2) || (sector == 2 && is_portal && portal_sector == 0);
         render_forcefield = 0; //(sector == 6 && is_portal && portal_sector == 7) || (sector == 7 && is_portal && portal_sector == 6);
-        int render_glass = 0; //(sector == 0 && is_portal && portal_sector == 1) || (sector == 1 && is_portal && portal_sector == 0);
-
-
+        //int render_glass = 0; //(sector == 0 && is_portal && portal_sector == 1) || (sector == 1 && is_portal && portal_sector == 0);
 
         if (render_forcefield)  {
 
@@ -575,7 +573,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
 
         while(cur_obj != NULL) {
             object_pos pos = cur_obj->pos;
-            s16 flr_height = get_sector_group_floor_height(sector);
+            //s16 flr_height = get_sector_group_floor_height(sector);
 
             Vect2D_s16 trans_pos = transform_map_vert_16(fix32ToInt(pos.x), fix32ToInt(pos.y));
             
