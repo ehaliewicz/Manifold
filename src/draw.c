@@ -737,41 +737,6 @@ void flip() {
 
 }
 
-extern uint32_t span_scale_table[32*512];
-
-typedef struct {
-    uint8_t runs;
-    uint8_t run_data[];
-} columns;
-
-void draw_column(uint8_t* column, uint16_t output_scale, u8 x0, u8 x1, s16 y0, s16 y1, u8** col_ptrs) {
-    uint16_t out_pix_f16 = y0<<16;
-
-
-    uint8_t num_runs = *column++;
-    uint32_t* offset_table = &span_scale_table[output_scale<<5];
-    while(num_runs--) {
-        uint8_t skip_len = *column++;
-        out_pix_f16 += offset_table[skip_len];
-        uint8_t out_pix = out_pix_f16>>16;
-
-        uint8_t run_len = *column++;
-        uint32_t run_length_f16 = offset_table[run_len];
-        uint32_t end_pix_f16 = out_pix_f16+run_length_f16;
-        uint8_t end_pix = end_pix_f16>>16;
-
-        out_pix_f16 = end_pix_f16;
-
-        // clipping is gonna be a bitch
-        // ignore it
-        for(int i = x0; i <= x1; i++) {
-            draw_texture_vertical_line(out_pix, out_pix, end_pix, col_ptrs[i], column);
-        }
-        //draw_bottom_clipped_texture_vertical_line(ytop, top_draw_y+clipped_y_pix_top, ybot, bot_draw_y, col_ptr, tex_column);
-
-    }
-}
-
 
 /* for drawing moving objects */
 void draw_masked(s16 x1, s16 x2, s16 ytop, s16 ybot,
@@ -815,7 +780,7 @@ void draw_masked(s16 x1, s16 x2, s16 ytop, s16 ybot,
     const u16* tex = raw_key_32_32_mid;
     u32 y_per_texels_fix = (unclipped_dy<<16)/ 64; // 16.16 fixed point
     
-    s32 dv_per_y_f16 = (64<<16)/unclipped_dy;
+    //s32 dv_per_y_f16 = (64<<16)/unclipped_dy;
 
 
     for(;x < endx; x++) {    
@@ -829,7 +794,7 @@ void draw_masked(s16 x1, s16 x2, s16 ytop, s16 ybot,
         u8* col_ptr = *offset_ptr++;
         // TODO: information about whether this column was filled in front of the object 
         // should be loaded from clip buffer
-        u8 col_drawn = (col_ptr == NULL);
+        //u8 col_drawn = (col_ptr == NULL);
         if(1) { //!col_drawn) {
             if(top_draw_y < bot_draw_y) {
                 u8 top_draw_y = clamp(ytop, min_drawable_y, max_drawable_y);
@@ -998,7 +963,7 @@ void cache_floor_light_params(s16 rel_floor_height, u8 floor_col, s8 light_level
 
     //s16 mid_top = mid_dark_bot;
     // lookup
-    s16 mid_bot = floor_light_positions[table_idx++];
+    //s16 mid_bot = floor_light_positions[table_idx++];
 
     params->dark_y = dark_bot;
     //params->mid_y = mid_bot;
@@ -1037,7 +1002,8 @@ void cache_ceil_light_params(s16 rel_ceil_height, u8 ceil_col, s8 light_level, l
     int table_idx = rel_ceil_height*4;
 
 
-    s16 mid_top = ceil_light_positions[table_idx++];
+    //s16 mid_top = ceil_light_positions[table_idx++];
+    table_idx++; // mid
     table_idx++; // mid-dark
     s16 dark_top = ceil_light_positions[table_idx++];
 
@@ -1199,8 +1165,10 @@ void calculate_tex_coords_for_wall(
     u16 z1_12_4,     u16 z2_12_4,
     u16 inv_z1,      u16 inv_z2,
     texmap_params* tmap_info) {
-    u32 left_u_16 = tmap_info->left_u * tmap_info->repetitions;
-    u32 right_u_16 = tmap_info->right_u * tmap_info->repetitions;
+    
+    u16 repetitions = tmap_info->repetitions;
+    u32 left_u_16 = tmap_info->left_u * repetitions;
+    u32 right_u_16 = tmap_info->right_u * repetitions;
     persp_params persp = calc_perspective(z1_12_4, z2_12_4, inv_z1, inv_z2, left_u_16, right_u_16, dx);
     
 
@@ -1224,9 +1192,9 @@ void calculate_tex_coords_for_wall(
     }
 
     u16 one_over_z_16 = one_over_z_26>>10;
-    u16 u_over_z_16 = u_over_z_23>>7;
+    //u16 u_over_z_16 = u_over_z_23>>7;
     s16 d_one_over_z_dx_16 = d_one_over_z_dx_26>>10;
-    u16 d_u_over_z_dx_16 = d_u_over_z_dx_23>>7;
+    //u16 d_u_over_z_dx_16 = d_u_over_z_dx_23>>7;
 
     
 
@@ -1239,8 +1207,8 @@ void calculate_tex_coords_for_wall(
     //}
 
 
-    const u8 tex_width_shift = MID_MIP_WIDTH_SHIFT;
-    const u8 tex_width = MID_MIP_WIDTH;
+    //const u8 tex_width_shift = MID_MIP_WIDTH_SHIFT;
+    //const u8 tex_width = MID_MIP_WIDTH;
     
 
     
@@ -1771,8 +1739,8 @@ void calculate_light_levels_for_wall(u32 clipped_dx, s16 inv_z1, s16 inv_z2, s16
                 : "+a" (out_ptr)
                 : "d" (cur_light), "d" (cur_span)
             );
-            //*out_ptr++ = cur_light;
-            //*out_ptr++ = cur_span;
+            // *out_ptr++ = cur_light;
+            // *out_ptr++ = cur_span;
             cur_light = next_light;
             cur_span = 1;
 
@@ -1798,7 +1766,7 @@ void calculate_light_levels_for_wall(u32 clipped_dx, s16 inv_z1, s16 inv_z2, s16
    } while(0) \
 
     
-    u8 next_light;
+    //u8 next_light;
     /*
     //if(cnt <= 0) {
     //    goto finished;
@@ -1855,11 +1823,10 @@ void calculate_light_levels_for_wall(u32 clipped_dx, s16 inv_z1, s16 inv_z2, s16
     */
     // 
 
-    
     while(cnt--) {
         u8 next_light; 
+        
         CHECK_DIST(cur_inv_z, next_light);
-                              
 
         if(cur_light == next_light) {
             cur_span++;
@@ -1872,22 +1839,16 @@ void calculate_light_levels_for_wall(u32 clipped_dx, s16 inv_z1, s16 inv_z2, s16
                 : "+a" (out_ptr), "+d" (cur_light), "=d" (cur_span)
                 : "d" (cur_span), "d" (next_light)
             );
-            // *out_ptr++ = cur_light;
-            // *out_ptr++ = cur_span;
-            //cur_light = next_light;
-            //cur_span = 1;
-            
+
             // we only have two light levels, so we can just quit now
-            //if(end_light == cur_light) {
-                cur_span += cnt;
-                break;
-            //}
+            cur_span += cnt;
+            break;
         }
+        
         cur_inv_z += fix_inv_dz_per_dx;
     }
     
    
-finished:
     __asm volatile(
         "move.b %1, (%0)+\t\n\
         move.b %2, (%0)+"
@@ -1992,7 +1953,7 @@ void draw_upper_step(s16 x1, s16 x1_ytop, s16 nx1_ytop, s16 x2, s16 x2_ytop, s16
 
             //u8 col_drawn = *drawn_buf_ptr++;
             if(!col_drawn) {
-                u8 clip_top = max(top_draw_y, bot_draw_y);
+                //u8 clip_top = max(top_draw_y, bot_draw_y);
                 if(min_drawable_y < top_draw_y) {
                     u8* ret_ptr = ceil_func(min_drawable_y, top_draw_y, col_ptr, params);
                     *yclip_ptr = top_draw_y;
@@ -2072,9 +2033,9 @@ void draw_top_pegged_textured_upper_step(s16 x1, s16 x1_ytop, s16 nx1_ytop, s16 
         z1_12_4, z2_12_4, inv_z1, inv_z2, tmap_info);
 
     lit_texture* lit_tex = tmap_info->tex;
-    u16* dark_tex = lit_tex->dark;
+    const u16* dark_tex = lit_tex->dark;
     //u16* mid_tex = lit_tex->mid;
-    u16* light_tex = lit_tex->light;
+    const u16* light_tex = lit_tex->light;
 
 
     s16 x = beginx;
@@ -2107,7 +2068,7 @@ void draw_top_pegged_textured_upper_step(s16 x1, s16 x1_ytop, s16 nx1_ytop, s16 
                 s16 pegged_top_y_int = pegged_top_y_fix>>16;
 
 
-                u16* tex_column;
+                const u16* tex_column;
                 if (cur_inv_z <= FIX_0_16_INV_DARK_DIST) {
                     tex_column = &dark_tex[tex_idx];
                 //} else if (cur_inv_z <= FIX_0_16_INV_MID_DIST) {
@@ -2199,9 +2160,9 @@ void draw_bottom_pegged_textured_lower_step(
 
 
     lit_texture* lit_tex = tmap_info->tex;
-    u16* dark_tex = lit_tex->dark;
+    const u16* dark_tex = lit_tex->dark;
     //u16* mid_tex = lit_tex->mid;
-    u16* light_tex = lit_tex->light;
+    const u16* light_tex = lit_tex->light;
 
     s16 x = beginx;
     u16 cnt = endx-x;
@@ -2230,7 +2191,7 @@ void draw_bottom_pegged_textured_lower_step(
                 s16 cur_inv_z = cur_fix_inv_z;
                 s16 pegged_bot_y_int = pegged_bot_y_fix>>16;
                 
-                u16* tex_column;
+                const u16* tex_column;
                 if (cur_inv_z <= FIX_0_16_INV_DARK_DIST) {
                     tex_column = &dark_tex[tex_idx];
                 //} else if (cur_inv_z <= FIX_0_16_INV_MID_DIST) {
@@ -2323,7 +2284,7 @@ void draw_lower_step(s16 x1, s16 x1_ybot, s16 nx1_ybot, s16 x2, s16 x2_ybot, s16
 
     s16 x = beginx;
     u8* yclip_ptr = &(yclip[x<<1]);
-    u8* drawn_buf_ptr = &(drawn_buf[x]);
+    //u8* drawn_buf_ptr = &(drawn_buf[x]);
 
     u32 dark_color = get_dark_color(lower_color, light_level);
     //u32 mid_color = get_mid_dark_color(lower_color, light_level);
@@ -2713,7 +2674,7 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
     s16 endx = min(window_max, x2);
     s16 skip_x = beginx - x1;
 
-    
+    if(beginx >= endx) { return; }
 
     if(skip_x > 0) {
         //top_y_fix += muls_16_by_16(skip_x, top_dy_per_dx_8)<<8;
@@ -2731,9 +2692,9 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
         
 
     lit_texture* lit_tex = tmap_info->tex;
-    u16* dark_tex = lit_tex->dark;
+    const u16* dark_tex = lit_tex->dark;
     //u16* mid_tex = lit_tex->mid;
-    u16* light_tex = lit_tex->light;
+    const u16* light_tex = lit_tex->light;
 
     s16 x = beginx;
     u16 cnt = endx-x;
@@ -2749,8 +2710,8 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
     calculate_light_levels_for_wall(cnt, cur_fix_inv_z, inv_z2, fix_inv_dz_per_dx, light_level);
     
     //u16 far_inv_z = min(inv_z1, inv_z2);
-    draw_lit_plane_fp floor_func = &draw_lit_floor_light_only;
-    draw_lit_plane_fp ceil_func = &draw_lit_ceil_light_only;
+    //draw_lit_plane_fp floor_func = &draw_lit_floor_light_only;
+    //draw_lit_plane_fp ceil_func = &draw_lit_ceil_light_only;
 
     const u8 light_floor_ceil = ((inv_z1 <= FIX_0_16_INV_MID_DIST) || (inv_z2 <= FIX_0_16_INV_MID_DIST));
 
@@ -2760,7 +2721,7 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
         for(u16 i = 0; i < num_light_levels; i++) {
             u8 light_level = *light_ptr++;
             u8 light_cnt = *light_ptr++;
-            u16* base_tex;
+            const u16* base_tex;
             
             //u8 fade = 0;
 
@@ -2838,7 +2799,7 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
                         //} else if (fade) {
                         //    //draw_native_vertical_line_unrolled(wtop, wbot, 0, col_ptr);
                         } else {                
-                            u16* tex_column = &base_tex[tex_idx];
+                            const u16* tex_column = &base_tex[tex_idx];
                             if(bot_y_int == wbot) {
                                 
                                 draw_texture_vertical_line(top_y_int, wtop, bot_y_int, col_ptr, tex_column);
@@ -2856,7 +2817,7 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
         for(u16 i = 0; i < num_light_levels; i++) {
             u8 light_level = *light_ptr++;
             u8 light_cnt = *light_ptr++;
-            u16* base_tex;
+            const u16* base_tex;
             //u8 fade = 0;
             switch(light_level) {
                 //case FADE:
@@ -2930,7 +2891,7 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
                         //} else if (fade) { 
                         //    //draw_native_vertical_line_unrolled(wtop, wbot, 0, col_ptr);
                         } else {                
-                            u16* tex_column = &base_tex[tex_idx];
+                            const u16* tex_column = &base_tex[tex_idx];
                             if(bot_y_int == wbot) {
                                 draw_texture_vertical_line(top_y_int, wtop, bot_y_int, col_ptr, tex_column);
                             } else {
@@ -3018,9 +2979,9 @@ void draw_top_pegged_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
 
 
     lit_texture* lit_tex = tmap_info->tex;
-    u16* dark_tex = lit_tex->dark;
+    const u16* dark_tex = lit_tex->dark;
     //u16* mid_tex = lit_tex->mid;
-    u16* light_tex = lit_tex->light;
+    const u16* light_tex = lit_tex->light;
 
     s16 x = beginx;
     u16 cnt = endx-x;
@@ -3054,7 +3015,7 @@ void draw_top_pegged_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
                 s16 cur_inv_z = cur_fix_inv_z;
                 s16 pegged_top_y_int = pegged_top_y_fix>>16;
 
-                u16* tex_column;
+                const u16* tex_column;
                 if (cur_inv_z <= FIX_0_16_INV_DARK_DIST) {
                     tex_column = &dark_tex[tex_idx];
                 //} else if (cur_inv_z <= FIX_0_16_INV_MID_DIST) {
@@ -3159,9 +3120,9 @@ void draw_bot_pegged_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
 
 
     lit_texture* lit_tex = tmap_info->tex;
-    u16* dark_tex = lit_tex->dark;
+    const u16* dark_tex = lit_tex->dark;
     //u16* mid_tex = lit_tex->mid;
-    u16* light_tex = lit_tex->light;
+    const u16* light_tex = lit_tex->light;
 
     s16 x = beginx;
     u16 cnt = endx-x;
@@ -3197,7 +3158,7 @@ void draw_bot_pegged_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
                 s16 pegged_bot_y_int = pegged_bot_y_fix>>16;
             
 
-                u16* tex_column;
+                const u16* tex_column;
                 if (cur_inv_z <= FIX_0_16_INV_DARK_DIST) {
                     tex_column = &dark_tex[tex_idx];
                 //} else if (cur_inv_z <= FIX_0_16_INV_MID_DIST) {
