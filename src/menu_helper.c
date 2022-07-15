@@ -39,9 +39,9 @@ void clear_menu() {
 
 void run_menu(menu_state* st) {
 
-    menu* cur_menu = st->cur_menu;
+    const menu* cur_menu = st->cur_menu;
     int cur_item = st->cur_item;
-    menu* prev_menu = st->prev_menu;
+    const menu* prev_menu = st->prev_menu;
 
 
     int max_lines = 30;
@@ -56,7 +56,7 @@ void run_menu(menu_state* st) {
     char buf[40];
 
     for(int i = 0; i < cur_menu->num_items; i++) {
-        menu_item* rend_item = &(cur_menu->items[i]);
+        const menu_item* rend_item = &(cur_menu->items[i]);
         char* rend_str = (rend_item->render == NULL ? "" : rend_item->render());
         char* cursor = (cur_item == i) ? ">" : " ";
        

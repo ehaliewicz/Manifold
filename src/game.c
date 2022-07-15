@@ -72,7 +72,7 @@ int cur_frame;
 void showStats(u16 float_display)
 {
     char str[32];
-    const u16 y = 5;
+    u16 y = 5;
 
     if (float_display)
     {
@@ -86,17 +86,23 @@ void showStats(u16 float_display)
     }
 
     // display FPS
-    VDP_drawTextBG(BG_B, str, 1, y);
+    VDP_drawTextBG(BG_B, str, 1, y++);
 
     //sprintf(str, "%i ", vints);
     //vints = 0;
     //VDP_drawTextBG(BG_B, str, 1, 6); 
 
     //sprintf(str, "s: %i ", cur_player_pos.cur_sector);
-    //VDP_drawTextBG(BG_B, str, 1, 7);
-
-    //sprintf(str, "sg: %i", sector_group(cur_player_pos.cur_sector, cur_portal_map));
+    //VDP_drawTextBG(BG_B, str, 1, y++);
+    
+    //KLog_U1("sector: ", cur_player_pos.cur_sector);
+    //KLog_S3("px: ", cur_player_pos.x, " py: ", cur_player_pos.y, " pz: ", cur_player_pos.z);
+    //KLog_U1("ang: ", cur_player_pos.ang);
+    
+    //sprintf(str, "sll: %i ", get_sector_group_light_level(sector_group(cur_player_pos.cur_sector, cur_portal_map)));
     //VDP_drawTextBG(BG_B, str, 1, 8);
+    //sprintf(str, "sg: %i", sector_group(cur_player_pos.cur_sector, cur_portal_map));
+    //VDP_drawTextBG(BG_B, str, 1, y++);
 
     
     
@@ -470,6 +476,20 @@ void init_sector_jump_positions() {
     }
 }
 
+
+void init_player_pos() {
+    cur_player_pos.x = sector_centers[0].x;
+    cur_player_pos.y = sector_centers[0].y; 
+    cur_player_pos.cur_sector = 0;
+
+    u16 sect_group = sector_group(cur_player_pos.cur_sector, cur_portal_map);
+
+    cur_player_pos.z = (get_sector_group_floor_height(sect_group)<<(FIX32_FRAC_BITS-4)) + FIX32(50);
+
+    cur_player_pos.ang = 0;
+}
+
+
 void do_vint_flip();
 
 #include "tex_tables_lookup.h"
@@ -574,16 +594,7 @@ void init_game() {
         //Message : player x: 270579 y: -687032 z: 194968
         //Message : player ang: 884 sector: 4
 
-        
-        cur_player_pos.x = sector_centers[0].x;
-        cur_player_pos.y = sector_centers[0].y; 
-        cur_player_pos.cur_sector = 0;
-
-        u16 sect_group = sector_group(cur_player_pos.cur_sector, cur_portal_map);
-
-        cur_player_pos.z = (get_sector_group_floor_height(sect_group)<<(FIX32_FRAC_BITS-4)) + FIX32(50);
-
-        cur_player_pos.ang = 0;
+        init_player_pos();
 
 
     }

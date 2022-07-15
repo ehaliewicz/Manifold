@@ -1,3 +1,4 @@
+#include "utils.h"
 #include "vwf.h"
 
 #define DIVIDE_ROUND_UP(a,b) (((a) + ((b)-1))/(b))
@@ -39,7 +40,7 @@ int vwf_render_tiles(char* string, int len, tile* tiles, int num_tiles) {
   
   for(int i = 0; i < len; i++) {
     char c = string[i];
-    char_entry* centr = &(charmap[c-32]);
+    const char_entry* centr = &(charmap[c-32]);
     
     int char_width = centr->width;
     tile til = centr->bitmap;
@@ -81,7 +82,7 @@ int vwf_render_to_separate_tiles(char* string, int len, tile* tiles, int num_til
   
   for(int i = 0; i < len; i++) {
     char c = string[i];
-    char_entry* centr = &(charmap[c-32]);
+    const char_entry* centr = &(charmap[c-32]);
     
     int char_width = centr->width;
     tile til = centr->bitmap;
