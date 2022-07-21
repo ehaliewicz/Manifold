@@ -559,11 +559,19 @@ void init_game() {
     switch(init_load_level) {
         case SLIME_ROOM:
             load_portal_map((portal_map*)map_table[4]);
+            if(music_on) {
+                //XGM_startPlay(xgm_e2m2);
+                //XGM_setLoopNumber(-1);
+            }
             break;
         case OVERLAPPING_ROOMS:
             load_portal_map((portal_map*)map_table[3]);
+            if(music_on) {
+                //XGM_startPlay(xgm_sysdoom);
+                //XGM_setLoopNumber(-1);
+            }
             break;
-    }
+    }    
     //load_portal_map((portal_map*)map_table[3]);
     /*
     KLog_U1("map table address: ", map_table);
@@ -654,9 +662,7 @@ void init_game() {
     u16 free_bytes = MEM_getFree();
     //while(1) {}
     KLog_U1("free bytes of RAM after init: ", free_bytes);
-    if(music_on) {
-        //XGM_startPlay(xgm_e1m4);
-    }
+
 }
 
 void maybe_set_palette(u16* new_palette) {
