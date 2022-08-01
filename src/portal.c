@@ -7,11 +7,11 @@
 #include "counter.h"
 #include "debug.h"
 #include "div_lut.h"
-#include "ball.h"
 #include "draw.h"
 #include "game.h"
 #include "level.h"
 #include "math3D.h"
+#include "obj_sprite.h"
 #include "portal_map.h"
 #include "sector.h"
 #include "textures.h"
@@ -602,11 +602,33 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
                 //KLog_S1("bot_y: ", bot_y);
                 //}
 
+                
 
                 draw_masked(left_x, right_x, top_y, bot_y,
                         window_min, window_max,
                         obj_clip_buf,
                         type.sprite_col);
+
+                const u16 spans[4] = {
+                    (9<<8 | 9),
+                    (9<<8 | 9)
+                };
+                const u16 texel_runs[20] = {
+                    0x1A1A,0x1A1A,0x1A1A,0x1A1A,0x1A1A,0x1A1A,0x1A1A,0x1A1A,0x1A1A,0x1A1A,
+
+                    0x3F3F,0x3F3F,0x3F3F,0x3F3F,0x3F3F,0x3F3F,0x3F3F,0x3F3F,0x3F3F,0x3F3F,
+                };
+                //const column col = {.num_spans = 2, .spans = spans, .texel_runs = texel_runs};
+                rle_object obj = {
+                    .columns = { {.num_spans = 2, .spans = spans, .texel_runs = texel_runs }},
+                    .num_columns = 1
+                };
+
+                //tile tile_buf[64];
+                //memset(tile_buf, 0, sizeof(tile)*8);
+
+                //render_object_to_sprite(0, 0, 64, &obj, tile_buf);
+                //VDP_loadTileData(tile_buf->rows, 0x460, 8, CPU);
             }
             break;
             //cur_obj = cur_obj->next;
