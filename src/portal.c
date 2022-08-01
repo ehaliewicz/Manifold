@@ -452,7 +452,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
                     draw_top_pegged_textured_upper_step(x1, x1_ytop, nx1_ytop, x2, x2_ytop, nx2_ytop,
                                                         trans_v1_z_fix, trans_v2_z_fix,
                                                         z_recip_v1, z_recip_v2,
-                                                        window_min, window_max,
+                                                        window_min, window_max, light_level,
                                                         &tmap_info,
                                                         &ceil_params, x1_pegged, x2_pegged);
                 } else {
@@ -488,7 +488,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
                     draw_bottom_pegged_textured_lower_step(x1, x1_ybot, nx1_ybot, x2, x2_ybot, nx2_ybot,
                                                         trans_v1_z_fix, trans_v2_z_fix,
                                                         z_recip_v1, z_recip_v2,
-                                                        window_min, window_max,
+                                                        window_min, window_max, light_level,
                                                         &tmap_info,
                                                         &floor_params, x1_pegged, x2_pegged);
                 } else {
@@ -532,7 +532,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
                     draw_top_pegged_wall(x1, x1_ytop, x1_ybot, x2, x2_ytop, x2_ybot,
                                         trans_v1_z_fix, trans_v2_z_fix,
                                         z_recip_v1, z_recip_v2,
-                                        window_min, window_max,
+                                        window_min, window_max, light_level,
                                         &tmap_info,
                                         &floor_params, &ceil_params,
                                         x1_pegged, x2_pegged);
@@ -540,7 +540,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
                     draw_bot_pegged_wall(x1, x1_ytop, x1_ybot, x2, x2_ytop, x2_ybot,
                                         trans_v1_z_fix, trans_v2_z_fix,
                                         z_recip_v1, z_recip_v2,
-                                        window_min, window_max,
+                                        window_min, window_max, light_level,
                                         &tmap_info,
                                         &floor_params, &ceil_params,
                                         x1_pegged, x2_pegged);

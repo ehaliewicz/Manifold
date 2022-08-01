@@ -3,6 +3,8 @@
 
 #include <genesis.h>
 
+#define NEAR_DIST 50
+#define FIX_0_16_INV_NEAR_DIST (65536/NEAR_DIST)
 #define MID_DIST 150
 #define FIX_0_16_INV_MID_DIST (65536/MID_DIST)
 #define MID_DARK_DIST 250
