@@ -61,6 +61,7 @@ persp_params calc_perspective(u16 z1_12_4, u16 z2_12_4, u16 inv_z1, u16 inv_z2, 
     return ret;
 }
 
+
 u8* draw_texture_vertical_line(s16 unclipped_y0, u16 y0, s16 unclipped_y1, u8* col_ptr, const u16* tex_column) {
 
     //u16 unclipped_dy = unclipped_y1 - unclipped_y0;
@@ -84,14 +85,22 @@ u8* draw_texture_vertical_line(s16 unclipped_y0, u16 y0, s16 unclipped_y1, u8* c
     void* base_call_loc = jump_table_lut[unclipped_dy];
 
 
+    int inst_size_shift = 2;
+
     if(unclipped_dy >= 64) {
         u8* adj_table_ptr = skip_table_lut[unclipped_dy];
-        tex_column += adj_table_ptr[clip_top];
+        inst_size_shift = 1;
+        u32 tmp = 0;
+        __asm volatile(             
+            "move.b (%3, %2.w), %1\t\n\
+             add.l %1, %0\t\n\
+             "   
+            : "+a" (tex_column)            
+            : "d" (tmp), "d" (clip_top), "a" (adj_table_ptr)   
+        );
     }
     register const a0 asm ("%a0") = ((u32)tex_column); // - (clip_bot<<1 * du_dy);
     register const  a1 asm ("%a1") = (u32)col_ptr;
-
-    const int inst_size_shift = (unclipped_dy >= 64) ? 1 : 2;
 
     register const  a2 asm ("%a2") = base_call_loc + (clip_top << inst_size_shift);
 
@@ -131,18 +140,30 @@ u8* draw_bottom_clipped_texture_vertical_line(s16 unclipped_y0, u16 y0, s16 uncl
     u16 clip_bot = unclipped_y1-y1;
 
 
-    u32 clip_bot_du_fix;
     // using ROM jump tables
     //void* base_call_loc; 
     void* base_call_loc = jump_table_lut[unclipped_dy];
     u8* adj_table_ptr = skip_table_lut[unclipped_dy];
     //tex_column -= adj_table_ptr[clip_bot];
     int inst_shift_size = 1;
+    u32 tmp = 0;
     if(unclipped_dy < 64) {
         inst_shift_size = 2;
-        tex_column -= adj_table_ptr[clip_bot];
+        __asm volatile(             
+            "move.b (%3, %2.w), %1\t\n\
+             sub.l %1, %0\t\n\
+             "   
+            : "+a" (tex_column)            
+            : "d" (tmp), "d" (clip_bot), "a" (adj_table_ptr)   
+        );
     } else {
-        tex_column += adj_table_ptr[clip_top];
+        __asm volatile(             
+            "move.b (%3, %2.w), %1\t\n\
+             add.l %1, %0\t\n\
+             "   
+            : "+a" (tex_column)            
+            : "d" (tmp), "d" (clip_top), "a" (adj_table_ptr)   
+        );
     }
     
     register const a0 asm ("%a0") = ((u32)tex_column); // - (clip_bot<<1 * du_dy);

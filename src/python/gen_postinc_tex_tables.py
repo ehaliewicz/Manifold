@@ -34,7 +34,7 @@ for y in range(1,513):
     print("const u8 skip_64_{}[{}] = ".format(y, y) + "{")
     du_dy = 64/y
     for skip in range(y):
-        print("{}, ".format(int(skip*du_dy)), end="")
+        print("{}, ".format(2*int(skip*du_dy)), end="")
         if skip % 40 == 0:
             print("")
     print("};")
