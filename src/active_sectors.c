@@ -4,11 +4,9 @@
 
 
 u32* active_sectors;
-u16 num_longwords;
 
 void init_active_sectors() {
     active_sectors = MEM_alloc(MAX_SECTOR_GROUPS/8);
-    num_longwords = MAX_SECTOR_GROUPS/32;
 }
 
 void cleanup_active_sectors() {
@@ -29,7 +27,7 @@ void register_sect_group_as_inactive(u16 sect_group) {
 
 
 void iterate_active_sectors(active_sector_callback cb) {
-    for(u16 lw_index = 0; lw_index < num_longwords; lw_index++) {
+    for(u16 lw_index = 0; lw_index < MAX_SECTOR_GROUPS/32; lw_index++) {
         u32 lw = active_sectors[lw_index];
         if(lw == 0) { continue; }
 

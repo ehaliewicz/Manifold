@@ -190,7 +190,7 @@ void init_fire() {
 	//BMP_setBufferCopy(0);
 	reset_scroll();
 
-	VDP_setPalette(PAL1, fire_cols);
+	PAL_setPalette(PAL1, fire_cols);
 	SYS_enableInts();
 
 

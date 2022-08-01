@@ -224,8 +224,9 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
         u8 tex_idx = map->wall_colors[(portal_idx<<WALL_COLOR_NUM_PARAMS_SHIFT)+WALL_TEXTURE_IDX];
         u8 is_solid_color = map->wall_colors[(portal_idx<<WALL_COLOR_NUM_PARAMS_SHIFT)+WALL_SOLID_COLOR_IDX];
         texmap_params tmap_info = {
-            repetitions: wall_tex_repetitions[portal_idx],
-            needs_texture: !is_solid_color};
+            .repetitions = wall_tex_repetitions[portal_idx],
+            .needs_texture = !is_solid_color
+        };
         u8 wall_col = tex_idx;
         if(!is_solid_color) {
             lit_texture *tex = get_texture(tex_idx, light_level);
@@ -709,8 +710,8 @@ void pvs_scan(u16 src_sector, s16 window_min, s16 window_max, u32 cur_frame) {
             u8 is_solid_color = map->wall_colors[(portal_idx<<WALL_COLOR_NUM_PARAMS_SHIFT)+WALL_SOLID_COLOR_IDX];
             u8 wall_col = (tex_idx+random())&15;
             texmap_params tmap_info = {
-                repetitions: wall_tex_repetitions[portal_idx], 
-                needs_texture: !is_solid_color
+                .repetitions = wall_tex_repetitions[portal_idx], 
+                .needs_texture = !is_solid_color
             };
 
             if(!is_solid_color) {
@@ -794,7 +795,7 @@ void pvs_scan(u16 src_sector, s16 window_min, s16 window_max, u32 cur_frame) {
                         draw_top_pegged_textured_upper_step(x1, x1_ytop, nx1_ytop, x2, x2_ytop, nx2_ytop,
                                                             trans_v1_z_fix, trans_v2_z_fix,
                                                             z_recip_v1, z_recip_v2,
-                                                            window_min, window_max,
+                                                            window_min, window_max, light_level,
                                                             &tmap_info,
                                                             &ceil_params, x1_pegged, x2_pegged);
                     } else {
@@ -826,7 +827,7 @@ void pvs_scan(u16 src_sector, s16 window_min, s16 window_max, u32 cur_frame) {
                         draw_bottom_pegged_textured_lower_step(x1, x1_ybot, nx1_ybot, x2, x2_ybot, nx2_ybot,
                                                             trans_v1_z_fix, trans_v2_z_fix,
                                                             z_recip_v1, z_recip_v2,
-                                                            window_min, window_max,
+                                                            window_min, window_max, light_level,
                                                             &tmap_info,
                                                             &floor_params, x1_pegged, x2_pegged);
                     } else {

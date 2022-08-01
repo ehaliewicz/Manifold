@@ -1,6 +1,5 @@
 #include <genesis.h>
 #include "my_bmp.h"
-#include "cart_ram.h"
 #include "collision.h"
 #include "console.h"
 #include "clip_buf.h"
@@ -10,7 +9,6 @@
 #include "debug.h"
 #include "game.h"
 #include "game_mode.h"
-#include "graphics_res.h"
 #include "inventory.h"
 #include "joy_helper.h"
 #include "level.h"
@@ -27,6 +25,8 @@
 #include "sys.h"
 #include "vwf.h"
 
+#include "graphics_res.h"
+#include "sprites_res.h"
 
 
 object_pos cur_player_pos;
@@ -219,6 +219,7 @@ void set_gun_pos() {
     s16 bobOffX = gun_bobs[idx].x<<1;
     s16 bobOffY = gun_bobs[idx].y<<1;
 
+    /*
     AnimationFrame *frame1 = shotgun.animations[0]->frames[0];
     FrameVDPSprite** f = frame1->frameInfos[0].frameVDPSprites;
     for(int i = 0; i < shotgun_num_sprites; i++) {
@@ -229,7 +230,8 @@ void set_gun_pos() {
         );
     }
     VDP_updateSprites(shotgun_num_sprites, DMA_QUEUE);
-    
+    */
+   
 }
 
 void step_gun_bob() {
@@ -270,7 +272,6 @@ u32 init_shotgun(u32 tile_loc) {
 
     }
     tile_loc += shotgun.maxNumTile;
-    PAL_setPalette(PAL0, shotgun.palette->data);
     VDP_linkSprites(0, frame1->numSprite);
     VDP_updateSprites(frame1->numSprite, DMA);
 
@@ -492,27 +493,6 @@ void init_player_pos() {
 
 void do_vint_flip();
 
-#include "tex_tables_lookup.h"
-void copy_texture_tables() {
-    #ifdef RAM_TEXTURE
-    u32 ram_position = RAM_START;
-    //u32 slot = 0;
-    //return;
-    for(int i = 1; i < 500; i++) {
-        u16* table_start = (u16*)(jump_table_lut[i]);
-        u32 words_to_copy = i*2 + 1; // each instruction in the table is 2 words, plus 1 extra for the rts
-        u32 bytes_to_copy = words_to_copy*2;
-
-        
-        unlock_ram();
-        memcpy((void*)ram_position, (void*)(jump_table_lut[i]), bytes_to_copy);
-        lock_ram();
-        
-        jump_table_lut[i] = ram_position;
-        ram_position += bytes_to_copy;
-    }        
-    #endif
-}
 
 u16 free_tile_loc = 0x390;
 
@@ -524,15 +504,11 @@ selected_level init_load_level = SLIME_ROOM;
 void init_game() {
     render_mode = RENDER_SOLID;
 
-    //copy_texture_tables();
     
-    VDP_setTextPalette(PAL3);
 
     //DMA_doVRamFill(0x0390, 0x0170, 0x00, 1);
     VDP_fillTileData(0x00, 0x0390, 0x170, 1);
-    
-    //ram_set(100, 0);
-    
+        
     XGM_stopPlay();
     //SYS_setVIntCallback(do_vint_flip);
     VDP_setVerticalScroll(BG_B, 0);
@@ -552,14 +528,11 @@ void init_game() {
     
 	VDP_setBackgroundColor(10);
 
-
-    //load_portal_map(&overlapping_map);
-    //load_portal_map(&editor_test_map);
-
     switch(init_load_level) {
         case SLIME_ROOM:
             load_portal_map((portal_map*)map_table[4]);
             if(music_on) {
+                //SND_startPlay_PCM(interference_wav, sizeof(interference_wav), SOUND_RATE_11025, SOUND_PAN_CENTER, 1);
                 //XGM_startPlay(xgm_e2m2);
                 //XGM_setLoopNumber(-1);
             }
@@ -567,6 +540,7 @@ void init_game() {
         case OVERLAPPING_ROOMS:
             load_portal_map((portal_map*)map_table[3]);
             if(music_on) {
+                //SND_startPlay_PCM(interference_wav, sizeof(interference_wav), SOUND_RATE_11025, SOUND_PAN_CENTER, 1);
                 //XGM_startPlay(xgm_sysdoom);
                 //XGM_setLoopNumber(-1);
             }
@@ -609,28 +583,31 @@ void init_game() {
 
     init_clip_buffer_list();
 
-    cur_palette = no_distance_lighting_pal.data;
-    VDP_setPalette(PAL1, cur_palette);
+    cur_palette = two_light_levels_pal.data;
+
+    // palette 0 is weapon palette
+    PAL_setPalette(PAL0, shotgun.palette->data);
+    // palette 1 is 3d palette
+    PAL_setPalette(PAL1, cur_palette);
+    // palette 2 is HUD palette, set in inventory_init
+    // palette 3 is sprite palette
+    PAL_setPalette(PAL3, sprite_pal.data);
+    VDP_setTextPalette(PAL3);
     
     clear_menu();
 
-
-    // weapon is PAL0
-    // bmp is PAL1
-    // hud/inventory is PAL 2
     // skybox is PAL3
     bmp_init_vertical(1, BG_A, PAL1, 0);
 
     VDP_waitVSync();
 
-    u16 skybox_gradient_basetile = TILE_ATTR_FULL(PAL3, 0, 0, 0, free_tile_loc);
-	VDP_drawImageEx(BG_B, &skybox_gradient, skybox_gradient_basetile, 4, 4, 0, 0);
-    PAL_setPalette(PAL3, skybox_gradient.palette->data);
-    free_tile_loc += skybox_gradient.tileset->numTile;
+    //u16 skybox_gradient_basetile = TILE_ATTR_FULL(PAL3, 0, 0, 0, free_tile_loc);
+	//VDP_drawImageEx(BG_B, &skybox_gradient, skybox_gradient_basetile, 4, 4, 0, 0);
+    //PAL_setPalette(PAL3, skybox_gradient.palette->data);
+    //free_tile_loc += skybox_gradient.tileset->numTile;
+    //VDP_waitVSync();
     
-
-    VDP_waitVSync();
-    
+    // palette 2 is HUD palette
     free_tile_loc = inventory_init(free_tile_loc);
     inventory_draw();
     
@@ -667,7 +644,7 @@ void init_game() {
 
 void maybe_set_palette(u16* new_palette) {
     if(cur_palette != new_palette) {
-        VDP_setPalette(PAL1, new_palette);
+        PAL_setPalette(PAL1, new_palette);
         cur_palette = new_palette;
     }
 }
@@ -694,7 +671,7 @@ game_mode run_game() {
     playerYInt = cur_player_pos.y>>FIX32_FRAC_BITS;
 
 
-    maybe_set_palette(no_distance_lighting_pal.data);
+    maybe_set_palette(two_light_levels_pal.data);
     draw_3d_view(cur_frame);
 
     //SPR_update();
