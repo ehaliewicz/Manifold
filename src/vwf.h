@@ -3,14 +3,11 @@
 
 #include <genesis.h>
 #include "common.h"
+#include "tile.h"
 
 #define NUM_CHARS 96
 #define PAIRS_IN_TILE 4
 
-typedef union {
-    u8 bytes[8][4];
-    u32 rows[8];
-} tile;
 
 typedef struct {
     char chr;
