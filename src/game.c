@@ -625,11 +625,13 @@ void init_game() {
     object* cur_obj = alloc_object_in_sector(
         cur_player_pos, 10, 
         sector_centers[10].x, sector_centers[10].y, 
-        get_sector_group_floor_height(obj_sect_group), 0);
+        get_sector_group_floor_height(obj_sect_group), 
+        2);
 
 
     vwf_init();
     free_tile_loc = console_init(free_tile_loc);
+    obj_sprite_init(free_tile_loc);
 
     //const char* init_str = "game initialized!";
     console_push_message("game initialized!", 17, 30);
@@ -653,7 +655,7 @@ game_mode run_game() {
 
     u32 start_ticks = getTick();
     
-    process_all_objects(cur_frame);
+    //process_all_objects(cur_frame);
 
     console_tick();
     inventory_draw();

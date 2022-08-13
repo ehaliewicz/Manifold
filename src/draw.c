@@ -9,6 +9,7 @@
 #include "game.h"
 #include "level.h"
 #include "math3d.h"
+#include "obj_sprite.h"
 #include "portal.h"
 #include "texture.h"
 #include "textures.h"
@@ -727,9 +728,335 @@ void flip() {
   } else {
       last_pressed_a = 0;
   }
+}
+
+u8 sprite_draw_cache[1536+2]; // extra 2 bytes are for a RTS at the end // 0x4E75;
+
+extern const u8* sprite_draw_cache_lookup[512];
+extern const u16 sprite_draw_cache_size_lookup[512];
+void fill_draw_cache(u16 scale) {
+    u16 bytes_to_copy = sprite_draw_cache_size_lookup[scale];
+    u8* src_ptr = sprite_draw_cache_lookup[scale];
+    memcpy(sprite_draw_cache, src_ptr, bytes_to_copy);
+
+    sprite_draw_cache[bytes_to_copy] = 0x4E;
+    sprite_draw_cache[bytes_to_copy] = 0x75;
+}
+
+void draw_col(s16 ytop, s16 ybot, s16 unclipped_dy, u32 u_fix, u32 texels_per_scaled_vpixel, u32 y_per_texels_fix, u8* col_ptr, const rle_object* obj, u32* scaled_run_lengths_lut) {
+    u8 top_draw_y = ytop; //clamp(ytop, min_drawable_y, max_drawable_y);
+    u8 bot_draw_y = ybot; //clamp(ybot, min_drawable_y, max_drawable_y);
+    
+    u32 cur_y_fix = ytop<<16;
+    //KLog_U1("drawing column: ", u_fix>>16);
+    
+    const column* c = &obj->columns[(u_fix>>16)];
+    const u16* span_ptr = c->spans;
+
+    const u8* base_texel_ptr = c->texels;
+    const u8* cur_texel_ptr = base_texel_ptr;
+    //KLog_U1("col: ", u_fix>>16);
+    //KLog_U1("num spans: ", c->num_spans);
+    //KLog_U1("num spans: ", c->num_spans);
+    //return;
+
+    for(int i = 0; i < c->num_spans; i++) {
+        u16 skip = *span_ptr++;
+        u16 len = *span_ptr++;
+
+        
+        //KLog_U1("skip: ", skip);
+        //KLog_U1("len: ", len);
+    
+        // skip to y position of this run
+
+        u32 scaled_skip = scaled_run_lengths_lut[skip];
+        u32 scaled_len = scaled_run_lengths_lut[len];
+
+        //u32 calc_scaled_skip = y_per_texels_fix * skip;
+        //u32 calc_scaled_len = y_per_texels_fix * len;
+        //scaled_skip = calc_scaled_skip;
+        //scaled_len = calc_scaled_len;
+
+        //KLog_U1("unclipped_dy: ", unclipped_dy);
+        //KLog_U1("skip length: ", skip);
+        //KLog_U1("lut scaled_skip: ", scaled_skip);
+        //KLog_U1("calc_scaled_skip: ", calc_scaled_skip);
+        //KLog_U1("run length: ", len);
+        //KLog_U1("lut scaled_len: ", scaled_len);
+        //KLog_U1("calc_scaled_len: ", calc_scaled_len);
+        //if(calc_scaled_skip != scaled_skip) {
+        //    die("wtf");
+        //}
+        //if(calc_scaled_len != scaled_len) {
+        //    die("wtf");
+        //}
+
+
+        cur_y_fix += scaled_skip; //y_per_texels_fix * skip;
+
+        //KLog_U1("skipping fixed point pixels: ", y_per_texels_fix * skip);
+        //KLog_U1("y pos: ", cur_y_fix);
+
+
+
+        // if scaled to e.g. 128, and the run was 6, this should be 12<<16
+        u32 num_scaled_pixels_fix = scaled_len; //y_per_texels_fix * len; 
+        u16 num_scaled_pixels = num_scaled_pixels_fix>>16;
+
+        //KLog_U1("num_scaled_pixels_fix: ", num_scaled_pixels_fix);
+        //KLog_U1("num_scaled_pixels: ", num_scaled_pixels);
+        // in this case, this would be 128-16, 112
+        u16 clipped_virtual_pixels = unclipped_dy - (num_scaled_pixels_fix>>16);
+        //KLog_U1("clipped_virtual_pixels: ", clipped_virtual_pixels);
+
+        // texels_per_scaled_pixel would be (64<<16)/128, or .5, so this result would be 56 in 16.16
+        
+        u32 reverse_offset_texels = clipped_virtual_pixels * texels_per_scaled_vpixel;
+        //KLog_U1("reverse_offset_texels: ", reverse_offset_texels);
+        
+        u16* reverse_offsetted_texel_ptr = cur_texel_ptr - (reverse_offset_texels>>16);
+        //KLog_U1("cur_texel_ptr: ", cur_texel_ptr);
+        //KLog_U1("cur texel idx: ", cur_texel_ptr - c->texels);
+        //KLog_U1("reverse_offsetted_texel_ptr: ", reverse_offsetted_texel_ptr);
+        //KLog_S1("reverse offsetted texel idx: ", reverse_offsetted_texel_ptr - c->texels);
+        
+        u16 span_draw_top_clipped = (cur_y_fix>>16);
+        u16 span_draw_top_unclipped = span_draw_top_clipped-clipped_virtual_pixels;
+        //KLog_U1("unclipped ytop: ", ytop);
+        //KLog_U1("Starting drawing from: ", ytop+clipped_virtual_pixels);
+        
+        //draw_texture_vertical_line(span_draw_top_unclipped, span_draw_top_clipped, ybot, col_ptr, reverse_offsetted_texel_ptr);
+
+
+        u8* cur_col_ptr = &col_ptr[span_draw_top_clipped<<1];
+        u8 clipped_bot = 0;
+        s16 bot = (span_draw_top_clipped+num_scaled_pixels);
+
+        if(bot >= ybot) {
+
+            //num_scaled_pixels -= max(0, (bot-ybot));
+
+            clipped_bot = 1;
+        }
+
+        u32 cur_tex_fix = 0; //cur_texel_ptr-base_texel_ptr;
+        
+        u32 tmp;
+        u8 remainder_pix = num_scaled_pixels & 0b11;
+        switch(remainder_pix) {
+            case 3:
+                //*cur_col_ptr++ = cur_texel_ptr[cur_tex_fix>>16];
+                //cur_col_ptr++;
+                //cur_tex_fix += texels_per_scaled_vpixel;
+                __asm volatile(
+                    "swap %1\t\n\
+                    move.b 0(%2, %1.w), (%0)+\t\n\
+                    addq #1, %0\t\n\
+                    swap %1\t\n\
+                    add.l %3, %1"
+                    : "+a" (cur_col_ptr), "+d" (cur_tex_fix)
+                    : "a" (cur_texel_ptr), "d" (texels_per_scaled_vpixel)
+                );
+            case 2:
+                __asm volatile(
+                    "swap %1\t\n\
+                    move.b 0(%2, %1.w), (%0)+\t\n\
+                    addq #1, %0\t\n\
+                    swap %1\t\n\
+                    add.l %3, %1"
+                    : "+a" (cur_col_ptr), "+d" (cur_tex_fix)
+                    : "a" (cur_texel_ptr), "d" (texels_per_scaled_vpixel)
+                );
+            case 1:
+                __asm volatile(
+                    "swap %1\t\n\
+                    move.b 0(%2, %1.w), (%0)+\t\n\
+                    addq #1, %0\t\n\
+                    swap %1\t\n\
+                    add.l %3, %1"
+                    : "+a" (cur_col_ptr), "+d" (cur_tex_fix)
+                    : "a" (cur_texel_ptr), "d" (texels_per_scaled_vpixel)
+                );
+
+            case 0:
+                break;
+        }
+        num_scaled_pixels >>= 2; // divide by 8
+        u32 texels_per_scaled_vpixel_times_four = texels_per_scaled_vpixel<<2;
+        
+
+        while(num_scaled_pixels--) {
+            
+            /*
+            *cur_col_ptr++ = cur_texel_ptr[cur_tex_fix>>16];
+            cur_tex_fix += texels_per_scaled_vpixel;
+            cur_col_ptr[1] = cur_texel_ptr[cur_tex_fix>>16];
+            cur_tex_fix += texels_per_scaled_vpixel;
+            cur_col_ptr[3] = cur_texel_ptr[cur_tex_fix>>16];
+            cur_tex_fix += texels_per_scaled_vpixel;
+            cur_col_ptr[5] = cur_texel_ptr[cur_tex_fix>>16];
+            cur_tex_fix += texels_per_scaled_vpixel;
+            cur_col_ptr += 7;
+            */
+           u32 tmp_cur_tex_fix = cur_tex_fix;
+        
+           __asm volatile(
+                "add.w %3, %1\t\n\
+                swap %3\t\n\
+                swap %1\t\n\
+                move.b (%2, %1.w), (%0)+\t\n\
+                addx.l %3, %1\t\n\
+                move.b (%2, %1.w), 1(%0)\t\n\
+                addx.l %3, %1\t\n\
+                move.b (%2, %1.w), 3(%0)\t\n\
+                addx.l %3, %1\t\n\
+                move.b (%2, %1.w), 5(%0)\t\n\
+                addx.l %3, %1\t\n\
+                addq.l #7, %0\t\n\
+                swap %3\t\n\
+                "
+            : "+a" (cur_col_ptr), "+d" (tmp_cur_tex_fix)
+            : "a" (cur_texel_ptr), "d" (texels_per_scaled_vpixel)
+           );
+           cur_tex_fix += texels_per_scaled_vpixel_times_four;
+            /*
+            __asm volatile(
+                "swap %4\t\n\
+                move.b 0(%1, %4.w), (%0)\t\n\
+                swap %4\t\n\
+                addq #2, %0\t\n\
+                "
+                :  "+a" (cur_col_ptr)
+                : "a" (cur_texel_ptr), "d" (texels_per_scaled_vpixel), "d" (tmp), "d" (cur_tex_fix)
+            );
+            //cur_col_ptr++;
+            
+            //u8 texel = cur_texel_ptr[cur_tex_fix>>16];
+            //*cur_col_ptr++ = texel; //cur_texel_ptr[cur_tex_fix>>16];
+            //cur_col_ptr++;
+            cur_tex_fix += texels_per_scaled_vpixel;
+            */
+        }
+        if(clipped_bot) {
+            return;
+        }
+        //draw_bottom_clipped_texture_vertical_line(span_draw_top_clipped, span_draw_top_clipped, bot, bot-clipped_virtual_pixels, col_ptr, cur_texel_ptr);
+
+        // now we skip past texels and pixels again
+        cur_y_fix += num_scaled_pixels_fix;
+        cur_texel_ptr += len;
+
+    }
 
 }
 
+
+/* for drawing moving objects */
+void draw_rle_sprite(s16 x1, s16 x2, s16 ytop, s16 ybot,
+                 u16 window_min, u16 window_max,
+                 clip_buf* clipping_buffer,
+                 const rle_object* obj) {
+
+    
+    s16 unclipped_dy = ybot-ytop;
+    if(unclipped_dy == 0) { return ;}
+    s16 unclipped_dx = x2-x1;
+    //s16 dcol = unclipped_dx>>2;
+    if(unclipped_dx == 0) { return ;}
+
+
+    s16 beginx = max(x1, window_min);
+
+    s16 skip_x = beginx - x1;
+
+
+    s16 endx = min(window_max, x2);
+    //u32 u_per_x = (1<<16)/dx;
+    u32 u_fix = 0;
+
+    if(endx < beginx) { return; }
+    // optimize with lookup table
+    u32 y_per_texels_fix = (unclipped_dy<<16)/ 64; // 16.16 fixed point
+    
+    
+
+    u32 texels_per_scaled_pixel = (64<<16)/unclipped_dy;
+    // each column only covers half an h-pixel
+
+    u32* scaled_run_lengths_lut = &scaled_sprite_run_lengths[unclipped_dy<<6];
+
+    // something slightly 
+    u32 cols_per_scaled_hpixel = (obj->num_columns<<16>>1)/(unclipped_dx);
+    u32 texels_per_scaled_vpixel = (64<<16)/unclipped_dy;
+
+    //KLog_U1("unclipped dy: ", unclipped_dy);
+    //KLog_U1("cols_per_scaled_hpixel: ", cols_per_scaled_hpixel);
+    //KLog_U1("texels_per_scaled_vpixel: ", texels_per_scaled_vpixel);
+
+    if(skip_x > 0) {
+        // double this here because we have to skip 2 rle columns per screen-pixel
+        u_fix += skip_x * (cols_per_scaled_hpixel<<1); //(skip_x * u_per_x);
+    }
+
+
+    s16 x = beginx;
+    u8* yclip_ptr = &(clipping_buffer->y_clip_buffer[x<<1]);
+
+    //u8** offset_ptr = (bmp_buffer_write == bmp_buffer_0) ? (&buf_0_column_offset_table[x]) : (&buf_1_column_offset_table[x]);
+    //u8** offset_ptr = &bmp_ptr_buf[x];
+    // CANNOT USE bmp_ptr_buf because it's overwritten by opaque walls to be filled with NULL ptrs
+    u8** offset_ptr = (bmp_buffer_write == bmp_buffer_0) ? (&buf_0_column_offset_table[x]) : (&buf_1_column_offset_table[x]);
+
+
+    //u16* tex = raw_key_mid;
+    
+    //const u16* tex = raw_key_32_32_mid;
+
+    //s32 dv_per_y_f16 = (64<<16)/unclipped_dy;
+    
+
+    u16 col_dx = (endx-beginx);
+    //KLog_U1("col_dx: ", col_dx);
+    //return;
+
+
+    while(col_dx--) {
+    //for(;x < endx; x++) {    
+        u8 min_drawable_y = *yclip_ptr++;
+        u8 max_drawable_y = *yclip_ptr++;
+        //if(min_drawable_y >= max_drawable_y) { continue; }
+
+        u8 top_draw_y = max(ytop, min_drawable_y);
+        u8 bot_draw_y = min(ybot, max_drawable_y);
+
+        u8* col_ptr = *offset_ptr++;
+        // TODO: information about whether this column was filled in front of the object 
+        // should be loaded from clip buffer
+        //u8 col_drawn = (col_ptr == NULL);
+
+
+        if(1) { //!col_drawn) {
+            if(1) { //top_draw_y < bot_draw_y) {
+                // texels_per_scaled_vpixel
+                draw_col(top_draw_y, bot_draw_y, unclipped_dy, u_fix, texels_per_scaled_vpixel, y_per_texels_fix, col_ptr, obj, scaled_run_lengths_lut);
+            }
+        }
+        u_fix += cols_per_scaled_hpixel;
+        if(1) { //!col_drawn) {
+            if(1) { //top_draw_y < bot_draw_y) {
+                // texels_per_scaled_vpixel
+                draw_col(top_draw_y, bot_draw_y, unclipped_dy, u_fix, texels_per_scaled_vpixel, y_per_texels_fix, col_ptr+1, obj, scaled_run_lengths_lut);
+            }
+        }
+        u_fix += cols_per_scaled_hpixel;
+
+    }
+
+    //flip();
+
+    return; 
+}
 
 /* for drawing moving objects */
 void draw_masked(s16 x1, s16 x2, s16 ytop, s16 ybot,
@@ -2786,7 +3113,6 @@ u16 to_u_col(u16 one_over_z_16, u16 u_over_z_16) {
 }
 
 
-
 void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
               s16 x2, s16 x2_ytop, s16 x2_ybot,
               u16 z1_12_4,     u16 z2_12_4,
@@ -2794,7 +3120,6 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
               u16 window_min, u16 window_max, s8 light_level, 
               texmap_params *tmap_info, 
               light_params* floor_params, light_params* ceil_params) {
-
 
 
 
@@ -2806,6 +3131,7 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
     top_y_fix = x1_ytop<<12; 
     bot_y_fix = x1_ybot<<12;
     u16 dx = x2-x1;
+
 
     fix32 top_dy_per_dx = (top_dy_fix<<12) / dx; // 16.16 / 16 -> 16.16 
     fix32 bot_dy_per_dx = (bot_dy_fix<<12) / dx;

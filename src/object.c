@@ -107,7 +107,7 @@ void clear_object_lists() {
 
 
 
-const object_template object_types[2] = {
+const object_template object_types[3] = {
     {.init_state = 2,
      .sprite_col = ((1 << 4) | 1), 
      .name = "blue keycard", 
@@ -116,6 +116,10 @@ const object_template object_types[2] = {
      .sprite_col = ((RED_IDX << 4) | RED_IDX), 
      .name = "red cube",
     .size = 20, .from_floor_draw_offset = 20<<4, .width=12, .height=20<<4},
+    {.init_state = 1,
+     .sprite_col = ((RED_IDX << 4) | RED_IDX), 
+     .name = "first enemy type ",
+    .size = 20, .from_floor_draw_offset = 20<<4, .width=64, .height=64<<4},
 };
 
 fix32 dist_sqr(object_pos posa, object_pos origin) {

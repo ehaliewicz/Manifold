@@ -5,6 +5,7 @@
 
 
 int main() {
+	VDP_init();
 
 	set_game_mode(INTRO);
 	//set_game_mode(IN_GAME);
