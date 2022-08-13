@@ -64,10 +64,10 @@ persp_params calc_perspective(u16 z1_12_4, u16 z2_12_4, u16 inv_z1, u16 inv_z2, 
 typedef u8* (*top_clip_wall_fill_func)(u8* col_ptr, u16* tex_column, u16 clip_top);
 typedef u8* (*bot_clip_wall_fill_func)(u8* col_ptr, u16* tex_column, u16 clip_top, u16 clip_bot);
 
+
 u8* draw_texture_vertical_line(s16 unclipped_y0, u16 y0, s16 unclipped_y1, u8* col_ptr, const u16* tex_column) {
 
     u16 unclipped_dy = unclipped_y1;
-
     __asm volatile(             
         "sub.w %1, %0"          
         : "+d" (unclipped_dy)              
@@ -75,43 +75,36 @@ u8* draw_texture_vertical_line(s16 unclipped_y0, u16 y0, s16 unclipped_y1, u8* c
     );
 
     if(unclipped_dy > 512) { return col_ptr; }
-
-    col_ptr += y0;
-    col_ptr += y0;
-
-    u16 clip_top = y0-unclipped_y0;
-
-    void* base_call_loc;
-     __asm volatile(             
-        "lsl.l #2, %2\t\n\
-         move.l 0(%1, %2.w), %0"          
-        : "=a" (base_call_loc)  
-        : "a" (jump_table_lut), "d" (unclipped_dy)       
-    );      
-
-
-    register const a0 asm ("%a0") = ((u32)tex_column); // - (clip_bot<<1 * du_dy);
-    register const  a1 asm ("%a1") = (u32)col_ptr;
-
-    register  a2 asm ("%a2") = base_call_loc;//+ (clip_top << inst_size_shift);
-
     __asm volatile(
-        "swap %0\t\n\
-         clr.w %0\t\n\
-         swap %0\t\n\
-         lsl.l #2, %0\t\n\
-         add.l %0, %1\t\n\
-    "
-        : "+d" (clip_top), "+g" (a2)
-    );
-    
-    __asm volatile(
-        "jsr (%1)"
+        "add.l %1, %0\t\n\
+        add.l %1, %0"
         : "+a" (col_ptr)
-        : "a" (a2), "a" (a0), "a" (a1)
+        : "d" (y0)
     );
 
+    u16 clip_top = y0;//y0-unclipped_y0;
+    __asm volatile(
+        "sub.w %1, %0"
+        : "+d" (clip_top)
+        : "d" (unclipped_y0)
+    );
+    u16 f;// = unclipped_dy;
+
+    register const a0 asm ("%a0") = ((u32)tex_column);
+    register const a1 asm ("%a1") = (u32)col_ptr;
+
+    register const d0 asm ("%d0") = clip_top;
+
+    u32 tmp;
+    __asm volatile(
+        "lsl.l #2, %6\t\n\
+        move.l 0(%5, %6.w), %1\t\n\
+        jsr (%1)"
+        : "+a" (col_ptr)
+        : "a" (f), "a" (a0), "a" (a1), "d" (d0), "a" (jump_table_top_clip_lut), "d" (unclipped_dy)
+    );
     return a1;
+
 }
 
 
@@ -128,65 +121,38 @@ u8* draw_bottom_clipped_texture_vertical_line(s16 unclipped_y0, u16 y0, s16 uncl
     if(unclipped_dy > 512) { return col_ptr; }
     s16 clipped_dy = y1-y0;
     if(clipped_dy <= 0) { return col_ptr; }
-    col_ptr += y0;
-    col_ptr += y0;
-
-    u16 clip_top = y0-unclipped_y0;
-    u16 clip_bot = unclipped_y1-y1;
-
-    void* base_call_loc;
-    u8* adj_table_ptr;
-     __asm volatile(             
-        "lsl.l #2, %4\t\n\
-         move.l 0(%2, %4.w), %0\t\n\
-         move.l 0(%3, %4.w), %1\t\n\
-        "          
-        : "=a" (base_call_loc), "=a" (adj_table_ptr)       
-        : "a" (jump_table_lut), "a" (skip_table_lut), "d" (unclipped_dy)       
-    );      
-
-    u32 tmp = 0;
-
-    __asm volatile(             
-        "move.b (%3, %2.w), %1\t\n\
-         sub.l %1, %0\t\n\
-        "   
-        : "+a" (tex_column)            
-        : "d" (tmp), "d" (clip_bot), "a" (adj_table_ptr)   
-    );
-
-    
-    register const a0 asm ("%a0") = ((u32)tex_column); // - (clip_bot<<1 * du_dy);
-    register const  a1 asm ("%a1") = (u32)col_ptr;
-
-    register  a2 asm ("%a2") = base_call_loc; // + ((u32clip_top + u32clip_bot) << inst_shift_size); // + (clip_bot << inst_shift_size);
-
     __asm volatile(
-        "swap %0\t\n\
-         clr.w %0\t\n\
-         swap %0\t\n\
-         swap %1\t\n\
-         clr.w %1\t\n\
-         swap %1\t\n\
-         add.l %0, %1\t\n\
-         lsl.l #2, %1\t\n\
-         add.l %1, %2\t\n\
-    "
-        : "+d" (clip_bot), "+d" (clip_top), "+g" (a2)
-    );
-    
-    __asm volatile(
-        "jsr (%1)"
+        "add.l %1, %0\t\n\
+        add.l %1, %0"
         : "+a" (col_ptr)
-        : "a" (a2), "a" (a0), "a" (a1)
+        : "d" (y0)
     );
 
-    return a1;
-    
+    u16 clip_top = y0;
+    u16 clip_bot = unclipped_y1;
+    __asm volatile(
+        "sub.w %2, %0\t\n\
+         sub.w %3, %1\t\n\
+         "
+        : "+d" (clip_top), "+d" (clip_bot)
+        : "d" (unclipped_y0), "d" (y1)
+    );
+    u16 f;
+    register d0 asm ("%d0") = clip_top;
+    register d1 asm ("%d1") = clip_bot;
+    register const a0 asm ("%a0") = ((u32)tex_column);
+    register const a1 asm ("%a1") = (u32)col_ptr;
 
+
+    __asm volatile(
+        "lsl.l #2, %7\t\n\
+         move.l 0(%6, %7.w), %1\t\n\
+         jsr (%1)\t\n\
+    "
+        : "+a" (col_ptr)
+        : "a" (f), "a" (a0), "a" (a1), "d" (d0), "d" (d1), "a" (jump_table_bot_clip_lut), "d" (unclipped_dy)
+    );
+    return a1;
+  
 }
     
-
-
-// column 0            column 1            column 2                column 3
-// blue blue blue blue blue blue blue blue green green green green green green green green

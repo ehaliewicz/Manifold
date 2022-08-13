@@ -1,45 +1,50 @@
-SHRINK_HEADER_TOP_CLIP = """
-
+HEADER_TOP_CLIP = """
+    | tex_column in a0, col_ptr in a1, top_clip in d0
+    lsl.l #2, %d0
+    jmp scale_64_{}_jump(%pc, %d0.w)
 """
-SHRINK_HEADER_BOT_CLIP = """
-scale_64_{}:	
-	move.l a2, -(%sp) ; stash a2 
-	
-	move.l 20(%sp), %a0         | a0 = clip_bot
-	move.l %a0, %a2             | a0 and a2 are clip_bot
-	add.l  16(%sp), %a2         | a2 is clip_bot + clip_top
-	lsl.l #2, %a2               | a2 is (clip_bot+clip_top)<<2
-	moveq #0, %d0			    | d0 = 0
-	move.l 12(%sp), %a0 	    | a0 = tex_column
-	move.b skip_64_32(%a0), %d0 | d0 = skip_64_32[clip_bot]
-	sub.l %d0, %a0			    | tex_column -= skip_64_32[clip_bot]
-	
-    move.l 8(%sp), %a1          | a1 = col_ptr
-	jmp jump_stuff(%a2)
-"""
-SCALE_HEADER_TOP_CLIP = """
-
-"""
-SCALE_HEADER_BOT_CLIP = """
+HEADER_BOT_CLIP = """
+    | tex_column in a0, col_ptr in a1, top_clip in d0, bot_clip in d1
+    add.l %d1, %d0 | d0 = clip_top+clip_bot
+    lsl.l #2, %d0 | d0 = (clip_top+clip_bot)<<=2
+    move.l %a0, -(%sp) | stash tex_column for now
+    move.l #skip_64_{}, %a0
+    move.b 0(%a0, %d1.w), %d1 | d1 = texels to skip backwards
+    ext.w %d1 |ext.w %d1 | andi.w #255, %d1
+    move.l (%sp)+, %a0
+    sub.l %d1, %a0
+    jmp scale_64_{}_jump(%pc, %d0.w)
 
 """
 
 
-for y in range(1,513):
+"""
+for y in range(513):
+  print(".globl scale_64_{}_top_clip".format(y))
+  print(".globl scale_64_{}_bot_clip".format(y))
+
+  
+  print("scale_64_{}_top_clip:".format(y))
+  if y == 0:
+    print("rts")
+  else:
+    print(HEADER_TOP_CLIP.format(y))
+
+  print("scale_64_{}_bot_clip:".format(y))
+  if y == 0:
+    print("rts")
+  else:
+    print(HEADER_BOT_CLIP.format(y, y))
+
+  if y == 0:
+    continue  
+
   du_per_dy = 64/y
   scaled = du_per_dy <= 1
   cur_u = 0
-  
-  print(".globl scale_64_{}_top_clip".format(y))
-  print(".globl scale_64_{}_bot_clip".format(y))
-  
-  if scaled:
-    print("scale_64_{}_top_clip:")
-    print(SCALE)
-    
 
   print("scale_64_{}_jump:".format(y))
-  if scaled:
+  if 0: #scaled:
 
     
     for yy in range(y):
@@ -57,18 +62,21 @@ for y in range(1,513):
     for yy in range(y):
       int_u = int(cur_u)
       cur_u += du_per_dy
-      print("move.w {}(%a0), (%a1)+".format(2*int(skip*du_dy)))
-  print("move.l %a1, %d0")
+      if int_u == 0:
+        print("dc.w 0b0011001011101000, 0b0000000000000000")
+      else:
+        print("move.w {}(%a0), (%a1)+".format(2*int_u))
   print("rts")
 
 """
-  print(".global skip_64_{}".format(y))
-  print("skip_64_{}:".format(y))
-  for yy in range(y):
-    int_u = int(cur_u)
-    cur_u += du_per_dy
-    print("dc.w {}".format(int_u))
-"""
+
+  #print(".global skip_64_{}".format(y))
+  #print("skip_64_{}:".format(y))
+  #for yy in range(y):
+  #  int_u = int(cur_u)
+  #  cur_u += du_per_dy
+  #  print("dc.w {}".format(int_u))
+
 
 """
 for y in range(1,513):  
@@ -86,3 +94,22 @@ for y in range(1,513):
 #
 #    if y % 20 == 0:
 #        print("")
+
+#for y in range(513):
+#  print("extern void scale_64_{}_top_clip(void);".format(y))
+#  print("extern void scale_64_{}_bot_clip(void);".format(y))
+
+
+#print("jump_table_top_clip_lut[513] = {")
+#for y in range(1, 513):
+#  print("scale_64_{}_top_clip, ".format(y), end="")
+#  if y % 8 == 0:
+#    print("")
+#print("}")
+
+print("jump_table_bot_clip_lut[513] = {")
+for y in range(1, 513):
+  print("scale_64_{}_bot_clip, ".format(y), end="")
+  if y % 8 == 0:
+    print("")
+print("}")

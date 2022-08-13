@@ -1,5 +1,6 @@
 #include <genesis.h>
 
+/*
 extern void scale_64_0(void);
 extern void scale_64_1(void);
 extern void scale_64_2(void);
@@ -620,6 +621,8 @@ scale_64_501, scale_64_502, scale_64_503, scale_64_504, scale_64_505,
 scale_64_506, scale_64_507, scale_64_508, scale_64_509, scale_64_510, 
 scale_64_511, scale_64_512, 
 };
+
+*/
 
 const u8 skip_64_0[1] = { 0 };
 const u8 skip_64_1[1] = {
@@ -5212,4 +5215,1170 @@ skip_64_461, skip_64_462, skip_64_463, skip_64_464, skip_64_465, skip_64_466, sk
 skip_64_481, skip_64_482, skip_64_483, skip_64_484, skip_64_485, skip_64_486, skip_64_487, skip_64_488, skip_64_489, skip_64_490, skip_64_491, skip_64_492, skip_64_493, skip_64_494, skip_64_495, skip_64_496, skip_64_497, skip_64_498, skip_64_499, skip_64_500, 
 skip_64_501, skip_64_502, skip_64_503, skip_64_504, skip_64_505, skip_64_506, skip_64_507, skip_64_508, skip_64_509, skip_64_510, skip_64_511, skip_64_512, 
 
+};
+
+
+
+extern void scale_64_0_top_clip(void);
+extern void scale_64_0_bot_clip(void);
+extern void scale_64_1_top_clip(void);
+extern void scale_64_1_bot_clip(void);
+extern void scale_64_2_top_clip(void);
+extern void scale_64_2_bot_clip(void);
+extern void scale_64_3_top_clip(void);
+extern void scale_64_3_bot_clip(void);
+extern void scale_64_4_top_clip(void);
+extern void scale_64_4_bot_clip(void);
+extern void scale_64_5_top_clip(void);
+extern void scale_64_5_bot_clip(void);
+extern void scale_64_6_top_clip(void);
+extern void scale_64_6_bot_clip(void);
+extern void scale_64_7_top_clip(void);
+extern void scale_64_7_bot_clip(void);
+extern void scale_64_8_top_clip(void);
+extern void scale_64_8_bot_clip(void);
+extern void scale_64_9_top_clip(void);
+extern void scale_64_9_bot_clip(void);
+extern void scale_64_10_top_clip(void);
+extern void scale_64_10_bot_clip(void);
+extern void scale_64_11_top_clip(void);
+extern void scale_64_11_bot_clip(void);
+extern void scale_64_12_top_clip(void);
+extern void scale_64_12_bot_clip(void);
+extern void scale_64_13_top_clip(void);
+extern void scale_64_13_bot_clip(void);
+extern void scale_64_14_top_clip(void);
+extern void scale_64_14_bot_clip(void);
+extern void scale_64_15_top_clip(void);
+extern void scale_64_15_bot_clip(void);
+extern void scale_64_16_top_clip(void);
+extern void scale_64_16_bot_clip(void);
+extern void scale_64_17_top_clip(void);
+extern void scale_64_17_bot_clip(void);
+extern void scale_64_18_top_clip(void);
+extern void scale_64_18_bot_clip(void);
+extern void scale_64_19_top_clip(void);
+extern void scale_64_19_bot_clip(void);
+extern void scale_64_20_top_clip(void);
+extern void scale_64_20_bot_clip(void);
+extern void scale_64_21_top_clip(void);
+extern void scale_64_21_bot_clip(void);
+extern void scale_64_22_top_clip(void);
+extern void scale_64_22_bot_clip(void);
+extern void scale_64_23_top_clip(void);
+extern void scale_64_23_bot_clip(void);
+extern void scale_64_24_top_clip(void);
+extern void scale_64_24_bot_clip(void);
+extern void scale_64_25_top_clip(void);
+extern void scale_64_25_bot_clip(void);
+extern void scale_64_26_top_clip(void);
+extern void scale_64_26_bot_clip(void);
+extern void scale_64_27_top_clip(void);
+extern void scale_64_27_bot_clip(void);
+extern void scale_64_28_top_clip(void);
+extern void scale_64_28_bot_clip(void);
+extern void scale_64_29_top_clip(void);
+extern void scale_64_29_bot_clip(void);
+extern void scale_64_30_top_clip(void);
+extern void scale_64_30_bot_clip(void);
+extern void scale_64_31_top_clip(void);
+extern void scale_64_31_bot_clip(void);
+extern void scale_64_32_top_clip(void);
+extern void scale_64_32_bot_clip(void);
+extern void scale_64_33_top_clip(void);
+extern void scale_64_33_bot_clip(void);
+extern void scale_64_34_top_clip(void);
+extern void scale_64_34_bot_clip(void);
+extern void scale_64_35_top_clip(void);
+extern void scale_64_35_bot_clip(void);
+extern void scale_64_36_top_clip(void);
+extern void scale_64_36_bot_clip(void);
+extern void scale_64_37_top_clip(void);
+extern void scale_64_37_bot_clip(void);
+extern void scale_64_38_top_clip(void);
+extern void scale_64_38_bot_clip(void);
+extern void scale_64_39_top_clip(void);
+extern void scale_64_39_bot_clip(void);
+extern void scale_64_40_top_clip(void);
+extern void scale_64_40_bot_clip(void);
+extern void scale_64_41_top_clip(void);
+extern void scale_64_41_bot_clip(void);
+extern void scale_64_42_top_clip(void);
+extern void scale_64_42_bot_clip(void);
+extern void scale_64_43_top_clip(void);
+extern void scale_64_43_bot_clip(void);
+extern void scale_64_44_top_clip(void);
+extern void scale_64_44_bot_clip(void);
+extern void scale_64_45_top_clip(void);
+extern void scale_64_45_bot_clip(void);
+extern void scale_64_46_top_clip(void);
+extern void scale_64_46_bot_clip(void);
+extern void scale_64_47_top_clip(void);
+extern void scale_64_47_bot_clip(void);
+extern void scale_64_48_top_clip(void);
+extern void scale_64_48_bot_clip(void);
+extern void scale_64_49_top_clip(void);
+extern void scale_64_49_bot_clip(void);
+extern void scale_64_50_top_clip(void);
+extern void scale_64_50_bot_clip(void);
+extern void scale_64_51_top_clip(void);
+extern void scale_64_51_bot_clip(void);
+extern void scale_64_52_top_clip(void);
+extern void scale_64_52_bot_clip(void);
+extern void scale_64_53_top_clip(void);
+extern void scale_64_53_bot_clip(void);
+extern void scale_64_54_top_clip(void);
+extern void scale_64_54_bot_clip(void);
+extern void scale_64_55_top_clip(void);
+extern void scale_64_55_bot_clip(void);
+extern void scale_64_56_top_clip(void);
+extern void scale_64_56_bot_clip(void);
+extern void scale_64_57_top_clip(void);
+extern void scale_64_57_bot_clip(void);
+extern void scale_64_58_top_clip(void);
+extern void scale_64_58_bot_clip(void);
+extern void scale_64_59_top_clip(void);
+extern void scale_64_59_bot_clip(void);
+extern void scale_64_60_top_clip(void);
+extern void scale_64_60_bot_clip(void);
+extern void scale_64_61_top_clip(void);
+extern void scale_64_61_bot_clip(void);
+extern void scale_64_62_top_clip(void);
+extern void scale_64_62_bot_clip(void);
+extern void scale_64_63_top_clip(void);
+extern void scale_64_63_bot_clip(void);
+extern void scale_64_64_top_clip(void);
+extern void scale_64_64_bot_clip(void);
+extern void scale_64_65_top_clip(void);
+extern void scale_64_65_bot_clip(void);
+extern void scale_64_66_top_clip(void);
+extern void scale_64_66_bot_clip(void);
+extern void scale_64_67_top_clip(void);
+extern void scale_64_67_bot_clip(void);
+extern void scale_64_68_top_clip(void);
+extern void scale_64_68_bot_clip(void);
+extern void scale_64_69_top_clip(void);
+extern void scale_64_69_bot_clip(void);
+extern void scale_64_70_top_clip(void);
+extern void scale_64_70_bot_clip(void);
+extern void scale_64_71_top_clip(void);
+extern void scale_64_71_bot_clip(void);
+extern void scale_64_72_top_clip(void);
+extern void scale_64_72_bot_clip(void);
+extern void scale_64_73_top_clip(void);
+extern void scale_64_73_bot_clip(void);
+extern void scale_64_74_top_clip(void);
+extern void scale_64_74_bot_clip(void);
+extern void scale_64_75_top_clip(void);
+extern void scale_64_75_bot_clip(void);
+extern void scale_64_76_top_clip(void);
+extern void scale_64_76_bot_clip(void);
+extern void scale_64_77_top_clip(void);
+extern void scale_64_77_bot_clip(void);
+extern void scale_64_78_top_clip(void);
+extern void scale_64_78_bot_clip(void);
+extern void scale_64_79_top_clip(void);
+extern void scale_64_79_bot_clip(void);
+extern void scale_64_80_top_clip(void);
+extern void scale_64_80_bot_clip(void);
+extern void scale_64_81_top_clip(void);
+extern void scale_64_81_bot_clip(void);
+extern void scale_64_82_top_clip(void);
+extern void scale_64_82_bot_clip(void);
+extern void scale_64_83_top_clip(void);
+extern void scale_64_83_bot_clip(void);
+extern void scale_64_84_top_clip(void);
+extern void scale_64_84_bot_clip(void);
+extern void scale_64_85_top_clip(void);
+extern void scale_64_85_bot_clip(void);
+extern void scale_64_86_top_clip(void);
+extern void scale_64_86_bot_clip(void);
+extern void scale_64_87_top_clip(void);
+extern void scale_64_87_bot_clip(void);
+extern void scale_64_88_top_clip(void);
+extern void scale_64_88_bot_clip(void);
+extern void scale_64_89_top_clip(void);
+extern void scale_64_89_bot_clip(void);
+extern void scale_64_90_top_clip(void);
+extern void scale_64_90_bot_clip(void);
+extern void scale_64_91_top_clip(void);
+extern void scale_64_91_bot_clip(void);
+extern void scale_64_92_top_clip(void);
+extern void scale_64_92_bot_clip(void);
+extern void scale_64_93_top_clip(void);
+extern void scale_64_93_bot_clip(void);
+extern void scale_64_94_top_clip(void);
+extern void scale_64_94_bot_clip(void);
+extern void scale_64_95_top_clip(void);
+extern void scale_64_95_bot_clip(void);
+extern void scale_64_96_top_clip(void);
+extern void scale_64_96_bot_clip(void);
+extern void scale_64_97_top_clip(void);
+extern void scale_64_97_bot_clip(void);
+extern void scale_64_98_top_clip(void);
+extern void scale_64_98_bot_clip(void);
+extern void scale_64_99_top_clip(void);
+extern void scale_64_99_bot_clip(void);
+extern void scale_64_100_top_clip(void);
+extern void scale_64_100_bot_clip(void);
+extern void scale_64_101_top_clip(void);
+extern void scale_64_101_bot_clip(void);
+extern void scale_64_102_top_clip(void);
+extern void scale_64_102_bot_clip(void);
+extern void scale_64_103_top_clip(void);
+extern void scale_64_103_bot_clip(void);
+extern void scale_64_104_top_clip(void);
+extern void scale_64_104_bot_clip(void);
+extern void scale_64_105_top_clip(void);
+extern void scale_64_105_bot_clip(void);
+extern void scale_64_106_top_clip(void);
+extern void scale_64_106_bot_clip(void);
+extern void scale_64_107_top_clip(void);
+extern void scale_64_107_bot_clip(void);
+extern void scale_64_108_top_clip(void);
+extern void scale_64_108_bot_clip(void);
+extern void scale_64_109_top_clip(void);
+extern void scale_64_109_bot_clip(void);
+extern void scale_64_110_top_clip(void);
+extern void scale_64_110_bot_clip(void);
+extern void scale_64_111_top_clip(void);
+extern void scale_64_111_bot_clip(void);
+extern void scale_64_112_top_clip(void);
+extern void scale_64_112_bot_clip(void);
+extern void scale_64_113_top_clip(void);
+extern void scale_64_113_bot_clip(void);
+extern void scale_64_114_top_clip(void);
+extern void scale_64_114_bot_clip(void);
+extern void scale_64_115_top_clip(void);
+extern void scale_64_115_bot_clip(void);
+extern void scale_64_116_top_clip(void);
+extern void scale_64_116_bot_clip(void);
+extern void scale_64_117_top_clip(void);
+extern void scale_64_117_bot_clip(void);
+extern void scale_64_118_top_clip(void);
+extern void scale_64_118_bot_clip(void);
+extern void scale_64_119_top_clip(void);
+extern void scale_64_119_bot_clip(void);
+extern void scale_64_120_top_clip(void);
+extern void scale_64_120_bot_clip(void);
+extern void scale_64_121_top_clip(void);
+extern void scale_64_121_bot_clip(void);
+extern void scale_64_122_top_clip(void);
+extern void scale_64_122_bot_clip(void);
+extern void scale_64_123_top_clip(void);
+extern void scale_64_123_bot_clip(void);
+extern void scale_64_124_top_clip(void);
+extern void scale_64_124_bot_clip(void);
+extern void scale_64_125_top_clip(void);
+extern void scale_64_125_bot_clip(void);
+extern void scale_64_126_top_clip(void);
+extern void scale_64_126_bot_clip(void);
+extern void scale_64_127_top_clip(void);
+extern void scale_64_127_bot_clip(void);
+extern void scale_64_128_top_clip(void);
+extern void scale_64_128_bot_clip(void);
+extern void scale_64_129_top_clip(void);
+extern void scale_64_129_bot_clip(void);
+extern void scale_64_130_top_clip(void);
+extern void scale_64_130_bot_clip(void);
+extern void scale_64_131_top_clip(void);
+extern void scale_64_131_bot_clip(void);
+extern void scale_64_132_top_clip(void);
+extern void scale_64_132_bot_clip(void);
+extern void scale_64_133_top_clip(void);
+extern void scale_64_133_bot_clip(void);
+extern void scale_64_134_top_clip(void);
+extern void scale_64_134_bot_clip(void);
+extern void scale_64_135_top_clip(void);
+extern void scale_64_135_bot_clip(void);
+extern void scale_64_136_top_clip(void);
+extern void scale_64_136_bot_clip(void);
+extern void scale_64_137_top_clip(void);
+extern void scale_64_137_bot_clip(void);
+extern void scale_64_138_top_clip(void);
+extern void scale_64_138_bot_clip(void);
+extern void scale_64_139_top_clip(void);
+extern void scale_64_139_bot_clip(void);
+extern void scale_64_140_top_clip(void);
+extern void scale_64_140_bot_clip(void);
+extern void scale_64_141_top_clip(void);
+extern void scale_64_141_bot_clip(void);
+extern void scale_64_142_top_clip(void);
+extern void scale_64_142_bot_clip(void);
+extern void scale_64_143_top_clip(void);
+extern void scale_64_143_bot_clip(void);
+extern void scale_64_144_top_clip(void);
+extern void scale_64_144_bot_clip(void);
+extern void scale_64_145_top_clip(void);
+extern void scale_64_145_bot_clip(void);
+extern void scale_64_146_top_clip(void);
+extern void scale_64_146_bot_clip(void);
+extern void scale_64_147_top_clip(void);
+extern void scale_64_147_bot_clip(void);
+extern void scale_64_148_top_clip(void);
+extern void scale_64_148_bot_clip(void);
+extern void scale_64_149_top_clip(void);
+extern void scale_64_149_bot_clip(void);
+extern void scale_64_150_top_clip(void);
+extern void scale_64_150_bot_clip(void);
+extern void scale_64_151_top_clip(void);
+extern void scale_64_151_bot_clip(void);
+extern void scale_64_152_top_clip(void);
+extern void scale_64_152_bot_clip(void);
+extern void scale_64_153_top_clip(void);
+extern void scale_64_153_bot_clip(void);
+extern void scale_64_154_top_clip(void);
+extern void scale_64_154_bot_clip(void);
+extern void scale_64_155_top_clip(void);
+extern void scale_64_155_bot_clip(void);
+extern void scale_64_156_top_clip(void);
+extern void scale_64_156_bot_clip(void);
+extern void scale_64_157_top_clip(void);
+extern void scale_64_157_bot_clip(void);
+extern void scale_64_158_top_clip(void);
+extern void scale_64_158_bot_clip(void);
+extern void scale_64_159_top_clip(void);
+extern void scale_64_159_bot_clip(void);
+extern void scale_64_160_top_clip(void);
+extern void scale_64_160_bot_clip(void);
+extern void scale_64_161_top_clip(void);
+extern void scale_64_161_bot_clip(void);
+extern void scale_64_162_top_clip(void);
+extern void scale_64_162_bot_clip(void);
+extern void scale_64_163_top_clip(void);
+extern void scale_64_163_bot_clip(void);
+extern void scale_64_164_top_clip(void);
+extern void scale_64_164_bot_clip(void);
+extern void scale_64_165_top_clip(void);
+extern void scale_64_165_bot_clip(void);
+extern void scale_64_166_top_clip(void);
+extern void scale_64_166_bot_clip(void);
+extern void scale_64_167_top_clip(void);
+extern void scale_64_167_bot_clip(void);
+extern void scale_64_168_top_clip(void);
+extern void scale_64_168_bot_clip(void);
+extern void scale_64_169_top_clip(void);
+extern void scale_64_169_bot_clip(void);
+extern void scale_64_170_top_clip(void);
+extern void scale_64_170_bot_clip(void);
+extern void scale_64_171_top_clip(void);
+extern void scale_64_171_bot_clip(void);
+extern void scale_64_172_top_clip(void);
+extern void scale_64_172_bot_clip(void);
+extern void scale_64_173_top_clip(void);
+extern void scale_64_173_bot_clip(void);
+extern void scale_64_174_top_clip(void);
+extern void scale_64_174_bot_clip(void);
+extern void scale_64_175_top_clip(void);
+extern void scale_64_175_bot_clip(void);
+extern void scale_64_176_top_clip(void);
+extern void scale_64_176_bot_clip(void);
+extern void scale_64_177_top_clip(void);
+extern void scale_64_177_bot_clip(void);
+extern void scale_64_178_top_clip(void);
+extern void scale_64_178_bot_clip(void);
+extern void scale_64_179_top_clip(void);
+extern void scale_64_179_bot_clip(void);
+extern void scale_64_180_top_clip(void);
+extern void scale_64_180_bot_clip(void);
+extern void scale_64_181_top_clip(void);
+extern void scale_64_181_bot_clip(void);
+extern void scale_64_182_top_clip(void);
+extern void scale_64_182_bot_clip(void);
+extern void scale_64_183_top_clip(void);
+extern void scale_64_183_bot_clip(void);
+extern void scale_64_184_top_clip(void);
+extern void scale_64_184_bot_clip(void);
+extern void scale_64_185_top_clip(void);
+extern void scale_64_185_bot_clip(void);
+extern void scale_64_186_top_clip(void);
+extern void scale_64_186_bot_clip(void);
+extern void scale_64_187_top_clip(void);
+extern void scale_64_187_bot_clip(void);
+extern void scale_64_188_top_clip(void);
+extern void scale_64_188_bot_clip(void);
+extern void scale_64_189_top_clip(void);
+extern void scale_64_189_bot_clip(void);
+extern void scale_64_190_top_clip(void);
+extern void scale_64_190_bot_clip(void);
+extern void scale_64_191_top_clip(void);
+extern void scale_64_191_bot_clip(void);
+extern void scale_64_192_top_clip(void);
+extern void scale_64_192_bot_clip(void);
+extern void scale_64_193_top_clip(void);
+extern void scale_64_193_bot_clip(void);
+extern void scale_64_194_top_clip(void);
+extern void scale_64_194_bot_clip(void);
+extern void scale_64_195_top_clip(void);
+extern void scale_64_195_bot_clip(void);
+extern void scale_64_196_top_clip(void);
+extern void scale_64_196_bot_clip(void);
+extern void scale_64_197_top_clip(void);
+extern void scale_64_197_bot_clip(void);
+extern void scale_64_198_top_clip(void);
+extern void scale_64_198_bot_clip(void);
+extern void scale_64_199_top_clip(void);
+extern void scale_64_199_bot_clip(void);
+extern void scale_64_200_top_clip(void);
+extern void scale_64_200_bot_clip(void);
+extern void scale_64_201_top_clip(void);
+extern void scale_64_201_bot_clip(void);
+extern void scale_64_202_top_clip(void);
+extern void scale_64_202_bot_clip(void);
+extern void scale_64_203_top_clip(void);
+extern void scale_64_203_bot_clip(void);
+extern void scale_64_204_top_clip(void);
+extern void scale_64_204_bot_clip(void);
+extern void scale_64_205_top_clip(void);
+extern void scale_64_205_bot_clip(void);
+extern void scale_64_206_top_clip(void);
+extern void scale_64_206_bot_clip(void);
+extern void scale_64_207_top_clip(void);
+extern void scale_64_207_bot_clip(void);
+extern void scale_64_208_top_clip(void);
+extern void scale_64_208_bot_clip(void);
+extern void scale_64_209_top_clip(void);
+extern void scale_64_209_bot_clip(void);
+extern void scale_64_210_top_clip(void);
+extern void scale_64_210_bot_clip(void);
+extern void scale_64_211_top_clip(void);
+extern void scale_64_211_bot_clip(void);
+extern void scale_64_212_top_clip(void);
+extern void scale_64_212_bot_clip(void);
+extern void scale_64_213_top_clip(void);
+extern void scale_64_213_bot_clip(void);
+extern void scale_64_214_top_clip(void);
+extern void scale_64_214_bot_clip(void);
+extern void scale_64_215_top_clip(void);
+extern void scale_64_215_bot_clip(void);
+extern void scale_64_216_top_clip(void);
+extern void scale_64_216_bot_clip(void);
+extern void scale_64_217_top_clip(void);
+extern void scale_64_217_bot_clip(void);
+extern void scale_64_218_top_clip(void);
+extern void scale_64_218_bot_clip(void);
+extern void scale_64_219_top_clip(void);
+extern void scale_64_219_bot_clip(void);
+extern void scale_64_220_top_clip(void);
+extern void scale_64_220_bot_clip(void);
+extern void scale_64_221_top_clip(void);
+extern void scale_64_221_bot_clip(void);
+extern void scale_64_222_top_clip(void);
+extern void scale_64_222_bot_clip(void);
+extern void scale_64_223_top_clip(void);
+extern void scale_64_223_bot_clip(void);
+extern void scale_64_224_top_clip(void);
+extern void scale_64_224_bot_clip(void);
+extern void scale_64_225_top_clip(void);
+extern void scale_64_225_bot_clip(void);
+extern void scale_64_226_top_clip(void);
+extern void scale_64_226_bot_clip(void);
+extern void scale_64_227_top_clip(void);
+extern void scale_64_227_bot_clip(void);
+extern void scale_64_228_top_clip(void);
+extern void scale_64_228_bot_clip(void);
+extern void scale_64_229_top_clip(void);
+extern void scale_64_229_bot_clip(void);
+extern void scale_64_230_top_clip(void);
+extern void scale_64_230_bot_clip(void);
+extern void scale_64_231_top_clip(void);
+extern void scale_64_231_bot_clip(void);
+extern void scale_64_232_top_clip(void);
+extern void scale_64_232_bot_clip(void);
+extern void scale_64_233_top_clip(void);
+extern void scale_64_233_bot_clip(void);
+extern void scale_64_234_top_clip(void);
+extern void scale_64_234_bot_clip(void);
+extern void scale_64_235_top_clip(void);
+extern void scale_64_235_bot_clip(void);
+extern void scale_64_236_top_clip(void);
+extern void scale_64_236_bot_clip(void);
+extern void scale_64_237_top_clip(void);
+extern void scale_64_237_bot_clip(void);
+extern void scale_64_238_top_clip(void);
+extern void scale_64_238_bot_clip(void);
+extern void scale_64_239_top_clip(void);
+extern void scale_64_239_bot_clip(void);
+extern void scale_64_240_top_clip(void);
+extern void scale_64_240_bot_clip(void);
+extern void scale_64_241_top_clip(void);
+extern void scale_64_241_bot_clip(void);
+extern void scale_64_242_top_clip(void);
+extern void scale_64_242_bot_clip(void);
+extern void scale_64_243_top_clip(void);
+extern void scale_64_243_bot_clip(void);
+extern void scale_64_244_top_clip(void);
+extern void scale_64_244_bot_clip(void);
+extern void scale_64_245_top_clip(void);
+extern void scale_64_245_bot_clip(void);
+extern void scale_64_246_top_clip(void);
+extern void scale_64_246_bot_clip(void);
+extern void scale_64_247_top_clip(void);
+extern void scale_64_247_bot_clip(void);
+extern void scale_64_248_top_clip(void);
+extern void scale_64_248_bot_clip(void);
+extern void scale_64_249_top_clip(void);
+extern void scale_64_249_bot_clip(void);
+extern void scale_64_250_top_clip(void);
+extern void scale_64_250_bot_clip(void);
+extern void scale_64_251_top_clip(void);
+extern void scale_64_251_bot_clip(void);
+extern void scale_64_252_top_clip(void);
+extern void scale_64_252_bot_clip(void);
+extern void scale_64_253_top_clip(void);
+extern void scale_64_253_bot_clip(void);
+extern void scale_64_254_top_clip(void);
+extern void scale_64_254_bot_clip(void);
+extern void scale_64_255_top_clip(void);
+extern void scale_64_255_bot_clip(void);
+extern void scale_64_256_top_clip(void);
+extern void scale_64_256_bot_clip(void);
+extern void scale_64_257_top_clip(void);
+extern void scale_64_257_bot_clip(void);
+extern void scale_64_258_top_clip(void);
+extern void scale_64_258_bot_clip(void);
+extern void scale_64_259_top_clip(void);
+extern void scale_64_259_bot_clip(void);
+extern void scale_64_260_top_clip(void);
+extern void scale_64_260_bot_clip(void);
+extern void scale_64_261_top_clip(void);
+extern void scale_64_261_bot_clip(void);
+extern void scale_64_262_top_clip(void);
+extern void scale_64_262_bot_clip(void);
+extern void scale_64_263_top_clip(void);
+extern void scale_64_263_bot_clip(void);
+extern void scale_64_264_top_clip(void);
+extern void scale_64_264_bot_clip(void);
+extern void scale_64_265_top_clip(void);
+extern void scale_64_265_bot_clip(void);
+extern void scale_64_266_top_clip(void);
+extern void scale_64_266_bot_clip(void);
+extern void scale_64_267_top_clip(void);
+extern void scale_64_267_bot_clip(void);
+extern void scale_64_268_top_clip(void);
+extern void scale_64_268_bot_clip(void);
+extern void scale_64_269_top_clip(void);
+extern void scale_64_269_bot_clip(void);
+extern void scale_64_270_top_clip(void);
+extern void scale_64_270_bot_clip(void);
+extern void scale_64_271_top_clip(void);
+extern void scale_64_271_bot_clip(void);
+extern void scale_64_272_top_clip(void);
+extern void scale_64_272_bot_clip(void);
+extern void scale_64_273_top_clip(void);
+extern void scale_64_273_bot_clip(void);
+extern void scale_64_274_top_clip(void);
+extern void scale_64_274_bot_clip(void);
+extern void scale_64_275_top_clip(void);
+extern void scale_64_275_bot_clip(void);
+extern void scale_64_276_top_clip(void);
+extern void scale_64_276_bot_clip(void);
+extern void scale_64_277_top_clip(void);
+extern void scale_64_277_bot_clip(void);
+extern void scale_64_278_top_clip(void);
+extern void scale_64_278_bot_clip(void);
+extern void scale_64_279_top_clip(void);
+extern void scale_64_279_bot_clip(void);
+extern void scale_64_280_top_clip(void);
+extern void scale_64_280_bot_clip(void);
+extern void scale_64_281_top_clip(void);
+extern void scale_64_281_bot_clip(void);
+extern void scale_64_282_top_clip(void);
+extern void scale_64_282_bot_clip(void);
+extern void scale_64_283_top_clip(void);
+extern void scale_64_283_bot_clip(void);
+extern void scale_64_284_top_clip(void);
+extern void scale_64_284_bot_clip(void);
+extern void scale_64_285_top_clip(void);
+extern void scale_64_285_bot_clip(void);
+extern void scale_64_286_top_clip(void);
+extern void scale_64_286_bot_clip(void);
+extern void scale_64_287_top_clip(void);
+extern void scale_64_287_bot_clip(void);
+extern void scale_64_288_top_clip(void);
+extern void scale_64_288_bot_clip(void);
+extern void scale_64_289_top_clip(void);
+extern void scale_64_289_bot_clip(void);
+extern void scale_64_290_top_clip(void);
+extern void scale_64_290_bot_clip(void);
+extern void scale_64_291_top_clip(void);
+extern void scale_64_291_bot_clip(void);
+extern void scale_64_292_top_clip(void);
+extern void scale_64_292_bot_clip(void);
+extern void scale_64_293_top_clip(void);
+extern void scale_64_293_bot_clip(void);
+extern void scale_64_294_top_clip(void);
+extern void scale_64_294_bot_clip(void);
+extern void scale_64_295_top_clip(void);
+extern void scale_64_295_bot_clip(void);
+extern void scale_64_296_top_clip(void);
+extern void scale_64_296_bot_clip(void);
+extern void scale_64_297_top_clip(void);
+extern void scale_64_297_bot_clip(void);
+extern void scale_64_298_top_clip(void);
+extern void scale_64_298_bot_clip(void);
+extern void scale_64_299_top_clip(void);
+extern void scale_64_299_bot_clip(void);
+extern void scale_64_300_top_clip(void);
+extern void scale_64_300_bot_clip(void);
+extern void scale_64_301_top_clip(void);
+extern void scale_64_301_bot_clip(void);
+extern void scale_64_302_top_clip(void);
+extern void scale_64_302_bot_clip(void);
+extern void scale_64_303_top_clip(void);
+extern void scale_64_303_bot_clip(void);
+extern void scale_64_304_top_clip(void);
+extern void scale_64_304_bot_clip(void);
+extern void scale_64_305_top_clip(void);
+extern void scale_64_305_bot_clip(void);
+extern void scale_64_306_top_clip(void);
+extern void scale_64_306_bot_clip(void);
+extern void scale_64_307_top_clip(void);
+extern void scale_64_307_bot_clip(void);
+extern void scale_64_308_top_clip(void);
+extern void scale_64_308_bot_clip(void);
+extern void scale_64_309_top_clip(void);
+extern void scale_64_309_bot_clip(void);
+extern void scale_64_310_top_clip(void);
+extern void scale_64_310_bot_clip(void);
+extern void scale_64_311_top_clip(void);
+extern void scale_64_311_bot_clip(void);
+extern void scale_64_312_top_clip(void);
+extern void scale_64_312_bot_clip(void);
+extern void scale_64_313_top_clip(void);
+extern void scale_64_313_bot_clip(void);
+extern void scale_64_314_top_clip(void);
+extern void scale_64_314_bot_clip(void);
+extern void scale_64_315_top_clip(void);
+extern void scale_64_315_bot_clip(void);
+extern void scale_64_316_top_clip(void);
+extern void scale_64_316_bot_clip(void);
+extern void scale_64_317_top_clip(void);
+extern void scale_64_317_bot_clip(void);
+extern void scale_64_318_top_clip(void);
+extern void scale_64_318_bot_clip(void);
+extern void scale_64_319_top_clip(void);
+extern void scale_64_319_bot_clip(void);
+extern void scale_64_320_top_clip(void);
+extern void scale_64_320_bot_clip(void);
+extern void scale_64_321_top_clip(void);
+extern void scale_64_321_bot_clip(void);
+extern void scale_64_322_top_clip(void);
+extern void scale_64_322_bot_clip(void);
+extern void scale_64_323_top_clip(void);
+extern void scale_64_323_bot_clip(void);
+extern void scale_64_324_top_clip(void);
+extern void scale_64_324_bot_clip(void);
+extern void scale_64_325_top_clip(void);
+extern void scale_64_325_bot_clip(void);
+extern void scale_64_326_top_clip(void);
+extern void scale_64_326_bot_clip(void);
+extern void scale_64_327_top_clip(void);
+extern void scale_64_327_bot_clip(void);
+extern void scale_64_328_top_clip(void);
+extern void scale_64_328_bot_clip(void);
+extern void scale_64_329_top_clip(void);
+extern void scale_64_329_bot_clip(void);
+extern void scale_64_330_top_clip(void);
+extern void scale_64_330_bot_clip(void);
+extern void scale_64_331_top_clip(void);
+extern void scale_64_331_bot_clip(void);
+extern void scale_64_332_top_clip(void);
+extern void scale_64_332_bot_clip(void);
+extern void scale_64_333_top_clip(void);
+extern void scale_64_333_bot_clip(void);
+extern void scale_64_334_top_clip(void);
+extern void scale_64_334_bot_clip(void);
+extern void scale_64_335_top_clip(void);
+extern void scale_64_335_bot_clip(void);
+extern void scale_64_336_top_clip(void);
+extern void scale_64_336_bot_clip(void);
+extern void scale_64_337_top_clip(void);
+extern void scale_64_337_bot_clip(void);
+extern void scale_64_338_top_clip(void);
+extern void scale_64_338_bot_clip(void);
+extern void scale_64_339_top_clip(void);
+extern void scale_64_339_bot_clip(void);
+extern void scale_64_340_top_clip(void);
+extern void scale_64_340_bot_clip(void);
+extern void scale_64_341_top_clip(void);
+extern void scale_64_341_bot_clip(void);
+extern void scale_64_342_top_clip(void);
+extern void scale_64_342_bot_clip(void);
+extern void scale_64_343_top_clip(void);
+extern void scale_64_343_bot_clip(void);
+extern void scale_64_344_top_clip(void);
+extern void scale_64_344_bot_clip(void);
+extern void scale_64_345_top_clip(void);
+extern void scale_64_345_bot_clip(void);
+extern void scale_64_346_top_clip(void);
+extern void scale_64_346_bot_clip(void);
+extern void scale_64_347_top_clip(void);
+extern void scale_64_347_bot_clip(void);
+extern void scale_64_348_top_clip(void);
+extern void scale_64_348_bot_clip(void);
+extern void scale_64_349_top_clip(void);
+extern void scale_64_349_bot_clip(void);
+extern void scale_64_350_top_clip(void);
+extern void scale_64_350_bot_clip(void);
+extern void scale_64_351_top_clip(void);
+extern void scale_64_351_bot_clip(void);
+extern void scale_64_352_top_clip(void);
+extern void scale_64_352_bot_clip(void);
+extern void scale_64_353_top_clip(void);
+extern void scale_64_353_bot_clip(void);
+extern void scale_64_354_top_clip(void);
+extern void scale_64_354_bot_clip(void);
+extern void scale_64_355_top_clip(void);
+extern void scale_64_355_bot_clip(void);
+extern void scale_64_356_top_clip(void);
+extern void scale_64_356_bot_clip(void);
+extern void scale_64_357_top_clip(void);
+extern void scale_64_357_bot_clip(void);
+extern void scale_64_358_top_clip(void);
+extern void scale_64_358_bot_clip(void);
+extern void scale_64_359_top_clip(void);
+extern void scale_64_359_bot_clip(void);
+extern void scale_64_360_top_clip(void);
+extern void scale_64_360_bot_clip(void);
+extern void scale_64_361_top_clip(void);
+extern void scale_64_361_bot_clip(void);
+extern void scale_64_362_top_clip(void);
+extern void scale_64_362_bot_clip(void);
+extern void scale_64_363_top_clip(void);
+extern void scale_64_363_bot_clip(void);
+extern void scale_64_364_top_clip(void);
+extern void scale_64_364_bot_clip(void);
+extern void scale_64_365_top_clip(void);
+extern void scale_64_365_bot_clip(void);
+extern void scale_64_366_top_clip(void);
+extern void scale_64_366_bot_clip(void);
+extern void scale_64_367_top_clip(void);
+extern void scale_64_367_bot_clip(void);
+extern void scale_64_368_top_clip(void);
+extern void scale_64_368_bot_clip(void);
+extern void scale_64_369_top_clip(void);
+extern void scale_64_369_bot_clip(void);
+extern void scale_64_370_top_clip(void);
+extern void scale_64_370_bot_clip(void);
+extern void scale_64_371_top_clip(void);
+extern void scale_64_371_bot_clip(void);
+extern void scale_64_372_top_clip(void);
+extern void scale_64_372_bot_clip(void);
+extern void scale_64_373_top_clip(void);
+extern void scale_64_373_bot_clip(void);
+extern void scale_64_374_top_clip(void);
+extern void scale_64_374_bot_clip(void);
+extern void scale_64_375_top_clip(void);
+extern void scale_64_375_bot_clip(void);
+extern void scale_64_376_top_clip(void);
+extern void scale_64_376_bot_clip(void);
+extern void scale_64_377_top_clip(void);
+extern void scale_64_377_bot_clip(void);
+extern void scale_64_378_top_clip(void);
+extern void scale_64_378_bot_clip(void);
+extern void scale_64_379_top_clip(void);
+extern void scale_64_379_bot_clip(void);
+extern void scale_64_380_top_clip(void);
+extern void scale_64_380_bot_clip(void);
+extern void scale_64_381_top_clip(void);
+extern void scale_64_381_bot_clip(void);
+extern void scale_64_382_top_clip(void);
+extern void scale_64_382_bot_clip(void);
+extern void scale_64_383_top_clip(void);
+extern void scale_64_383_bot_clip(void);
+extern void scale_64_384_top_clip(void);
+extern void scale_64_384_bot_clip(void);
+extern void scale_64_385_top_clip(void);
+extern void scale_64_385_bot_clip(void);
+extern void scale_64_386_top_clip(void);
+extern void scale_64_386_bot_clip(void);
+extern void scale_64_387_top_clip(void);
+extern void scale_64_387_bot_clip(void);
+extern void scale_64_388_top_clip(void);
+extern void scale_64_388_bot_clip(void);
+extern void scale_64_389_top_clip(void);
+extern void scale_64_389_bot_clip(void);
+extern void scale_64_390_top_clip(void);
+extern void scale_64_390_bot_clip(void);
+extern void scale_64_391_top_clip(void);
+extern void scale_64_391_bot_clip(void);
+extern void scale_64_392_top_clip(void);
+extern void scale_64_392_bot_clip(void);
+extern void scale_64_393_top_clip(void);
+extern void scale_64_393_bot_clip(void);
+extern void scale_64_394_top_clip(void);
+extern void scale_64_394_bot_clip(void);
+extern void scale_64_395_top_clip(void);
+extern void scale_64_395_bot_clip(void);
+extern void scale_64_396_top_clip(void);
+extern void scale_64_396_bot_clip(void);
+extern void scale_64_397_top_clip(void);
+extern void scale_64_397_bot_clip(void);
+extern void scale_64_398_top_clip(void);
+extern void scale_64_398_bot_clip(void);
+extern void scale_64_399_top_clip(void);
+extern void scale_64_399_bot_clip(void);
+extern void scale_64_400_top_clip(void);
+extern void scale_64_400_bot_clip(void);
+extern void scale_64_401_top_clip(void);
+extern void scale_64_401_bot_clip(void);
+extern void scale_64_402_top_clip(void);
+extern void scale_64_402_bot_clip(void);
+extern void scale_64_403_top_clip(void);
+extern void scale_64_403_bot_clip(void);
+extern void scale_64_404_top_clip(void);
+extern void scale_64_404_bot_clip(void);
+extern void scale_64_405_top_clip(void);
+extern void scale_64_405_bot_clip(void);
+extern void scale_64_406_top_clip(void);
+extern void scale_64_406_bot_clip(void);
+extern void scale_64_407_top_clip(void);
+extern void scale_64_407_bot_clip(void);
+extern void scale_64_408_top_clip(void);
+extern void scale_64_408_bot_clip(void);
+extern void scale_64_409_top_clip(void);
+extern void scale_64_409_bot_clip(void);
+extern void scale_64_410_top_clip(void);
+extern void scale_64_410_bot_clip(void);
+extern void scale_64_411_top_clip(void);
+extern void scale_64_411_bot_clip(void);
+extern void scale_64_412_top_clip(void);
+extern void scale_64_412_bot_clip(void);
+extern void scale_64_413_top_clip(void);
+extern void scale_64_413_bot_clip(void);
+extern void scale_64_414_top_clip(void);
+extern void scale_64_414_bot_clip(void);
+extern void scale_64_415_top_clip(void);
+extern void scale_64_415_bot_clip(void);
+extern void scale_64_416_top_clip(void);
+extern void scale_64_416_bot_clip(void);
+extern void scale_64_417_top_clip(void);
+extern void scale_64_417_bot_clip(void);
+extern void scale_64_418_top_clip(void);
+extern void scale_64_418_bot_clip(void);
+extern void scale_64_419_top_clip(void);
+extern void scale_64_419_bot_clip(void);
+extern void scale_64_420_top_clip(void);
+extern void scale_64_420_bot_clip(void);
+extern void scale_64_421_top_clip(void);
+extern void scale_64_421_bot_clip(void);
+extern void scale_64_422_top_clip(void);
+extern void scale_64_422_bot_clip(void);
+extern void scale_64_423_top_clip(void);
+extern void scale_64_423_bot_clip(void);
+extern void scale_64_424_top_clip(void);
+extern void scale_64_424_bot_clip(void);
+extern void scale_64_425_top_clip(void);
+extern void scale_64_425_bot_clip(void);
+extern void scale_64_426_top_clip(void);
+extern void scale_64_426_bot_clip(void);
+extern void scale_64_427_top_clip(void);
+extern void scale_64_427_bot_clip(void);
+extern void scale_64_428_top_clip(void);
+extern void scale_64_428_bot_clip(void);
+extern void scale_64_429_top_clip(void);
+extern void scale_64_429_bot_clip(void);
+extern void scale_64_430_top_clip(void);
+extern void scale_64_430_bot_clip(void);
+extern void scale_64_431_top_clip(void);
+extern void scale_64_431_bot_clip(void);
+extern void scale_64_432_top_clip(void);
+extern void scale_64_432_bot_clip(void);
+extern void scale_64_433_top_clip(void);
+extern void scale_64_433_bot_clip(void);
+extern void scale_64_434_top_clip(void);
+extern void scale_64_434_bot_clip(void);
+extern void scale_64_435_top_clip(void);
+extern void scale_64_435_bot_clip(void);
+extern void scale_64_436_top_clip(void);
+extern void scale_64_436_bot_clip(void);
+extern void scale_64_437_top_clip(void);
+extern void scale_64_437_bot_clip(void);
+extern void scale_64_438_top_clip(void);
+extern void scale_64_438_bot_clip(void);
+extern void scale_64_439_top_clip(void);
+extern void scale_64_439_bot_clip(void);
+extern void scale_64_440_top_clip(void);
+extern void scale_64_440_bot_clip(void);
+extern void scale_64_441_top_clip(void);
+extern void scale_64_441_bot_clip(void);
+extern void scale_64_442_top_clip(void);
+extern void scale_64_442_bot_clip(void);
+extern void scale_64_443_top_clip(void);
+extern void scale_64_443_bot_clip(void);
+extern void scale_64_444_top_clip(void);
+extern void scale_64_444_bot_clip(void);
+extern void scale_64_445_top_clip(void);
+extern void scale_64_445_bot_clip(void);
+extern void scale_64_446_top_clip(void);
+extern void scale_64_446_bot_clip(void);
+extern void scale_64_447_top_clip(void);
+extern void scale_64_447_bot_clip(void);
+extern void scale_64_448_top_clip(void);
+extern void scale_64_448_bot_clip(void);
+extern void scale_64_449_top_clip(void);
+extern void scale_64_449_bot_clip(void);
+extern void scale_64_450_top_clip(void);
+extern void scale_64_450_bot_clip(void);
+extern void scale_64_451_top_clip(void);
+extern void scale_64_451_bot_clip(void);
+extern void scale_64_452_top_clip(void);
+extern void scale_64_452_bot_clip(void);
+extern void scale_64_453_top_clip(void);
+extern void scale_64_453_bot_clip(void);
+extern void scale_64_454_top_clip(void);
+extern void scale_64_454_bot_clip(void);
+extern void scale_64_455_top_clip(void);
+extern void scale_64_455_bot_clip(void);
+extern void scale_64_456_top_clip(void);
+extern void scale_64_456_bot_clip(void);
+extern void scale_64_457_top_clip(void);
+extern void scale_64_457_bot_clip(void);
+extern void scale_64_458_top_clip(void);
+extern void scale_64_458_bot_clip(void);
+extern void scale_64_459_top_clip(void);
+extern void scale_64_459_bot_clip(void);
+extern void scale_64_460_top_clip(void);
+extern void scale_64_460_bot_clip(void);
+extern void scale_64_461_top_clip(void);
+extern void scale_64_461_bot_clip(void);
+extern void scale_64_462_top_clip(void);
+extern void scale_64_462_bot_clip(void);
+extern void scale_64_463_top_clip(void);
+extern void scale_64_463_bot_clip(void);
+extern void scale_64_464_top_clip(void);
+extern void scale_64_464_bot_clip(void);
+extern void scale_64_465_top_clip(void);
+extern void scale_64_465_bot_clip(void);
+extern void scale_64_466_top_clip(void);
+extern void scale_64_466_bot_clip(void);
+extern void scale_64_467_top_clip(void);
+extern void scale_64_467_bot_clip(void);
+extern void scale_64_468_top_clip(void);
+extern void scale_64_468_bot_clip(void);
+extern void scale_64_469_top_clip(void);
+extern void scale_64_469_bot_clip(void);
+extern void scale_64_470_top_clip(void);
+extern void scale_64_470_bot_clip(void);
+extern void scale_64_471_top_clip(void);
+extern void scale_64_471_bot_clip(void);
+extern void scale_64_472_top_clip(void);
+extern void scale_64_472_bot_clip(void);
+extern void scale_64_473_top_clip(void);
+extern void scale_64_473_bot_clip(void);
+extern void scale_64_474_top_clip(void);
+extern void scale_64_474_bot_clip(void);
+extern void scale_64_475_top_clip(void);
+extern void scale_64_475_bot_clip(void);
+extern void scale_64_476_top_clip(void);
+extern void scale_64_476_bot_clip(void);
+extern void scale_64_477_top_clip(void);
+extern void scale_64_477_bot_clip(void);
+extern void scale_64_478_top_clip(void);
+extern void scale_64_478_bot_clip(void);
+extern void scale_64_479_top_clip(void);
+extern void scale_64_479_bot_clip(void);
+extern void scale_64_480_top_clip(void);
+extern void scale_64_480_bot_clip(void);
+extern void scale_64_481_top_clip(void);
+extern void scale_64_481_bot_clip(void);
+extern void scale_64_482_top_clip(void);
+extern void scale_64_482_bot_clip(void);
+extern void scale_64_483_top_clip(void);
+extern void scale_64_483_bot_clip(void);
+extern void scale_64_484_top_clip(void);
+extern void scale_64_484_bot_clip(void);
+extern void scale_64_485_top_clip(void);
+extern void scale_64_485_bot_clip(void);
+extern void scale_64_486_top_clip(void);
+extern void scale_64_486_bot_clip(void);
+extern void scale_64_487_top_clip(void);
+extern void scale_64_487_bot_clip(void);
+extern void scale_64_488_top_clip(void);
+extern void scale_64_488_bot_clip(void);
+extern void scale_64_489_top_clip(void);
+extern void scale_64_489_bot_clip(void);
+extern void scale_64_490_top_clip(void);
+extern void scale_64_490_bot_clip(void);
+extern void scale_64_491_top_clip(void);
+extern void scale_64_491_bot_clip(void);
+extern void scale_64_492_top_clip(void);
+extern void scale_64_492_bot_clip(void);
+extern void scale_64_493_top_clip(void);
+extern void scale_64_493_bot_clip(void);
+extern void scale_64_494_top_clip(void);
+extern void scale_64_494_bot_clip(void);
+extern void scale_64_495_top_clip(void);
+extern void scale_64_495_bot_clip(void);
+extern void scale_64_496_top_clip(void);
+extern void scale_64_496_bot_clip(void);
+extern void scale_64_497_top_clip(void);
+extern void scale_64_497_bot_clip(void);
+extern void scale_64_498_top_clip(void);
+extern void scale_64_498_bot_clip(void);
+extern void scale_64_499_top_clip(void);
+extern void scale_64_499_bot_clip(void);
+extern void scale_64_500_top_clip(void);
+extern void scale_64_500_bot_clip(void);
+extern void scale_64_501_top_clip(void);
+extern void scale_64_501_bot_clip(void);
+extern void scale_64_502_top_clip(void);
+extern void scale_64_502_bot_clip(void);
+extern void scale_64_503_top_clip(void);
+extern void scale_64_503_bot_clip(void);
+extern void scale_64_504_top_clip(void);
+extern void scale_64_504_bot_clip(void);
+extern void scale_64_505_top_clip(void);
+extern void scale_64_505_bot_clip(void);
+extern void scale_64_506_top_clip(void);
+extern void scale_64_506_bot_clip(void);
+extern void scale_64_507_top_clip(void);
+extern void scale_64_507_bot_clip(void);
+extern void scale_64_508_top_clip(void);
+extern void scale_64_508_bot_clip(void);
+extern void scale_64_509_top_clip(void);
+extern void scale_64_509_bot_clip(void);
+extern void scale_64_510_top_clip(void);
+extern void scale_64_510_bot_clip(void);
+extern void scale_64_511_top_clip(void);
+extern void scale_64_511_bot_clip(void);
+extern void scale_64_512_top_clip(void);
+extern void scale_64_512_bot_clip(void);
+
+const void const* jump_table_top_clip_lut[513] = {
+scale_64_0_top_clip,
+scale_64_1_top_clip, scale_64_2_top_clip, scale_64_3_top_clip, scale_64_4_top_clip, scale_64_5_top_clip, scale_64_6_top_clip, scale_64_7_top_clip, scale_64_8_top_clip,
+scale_64_9_top_clip, scale_64_10_top_clip, scale_64_11_top_clip, scale_64_12_top_clip, scale_64_13_top_clip, scale_64_14_top_clip, scale_64_15_top_clip, scale_64_16_top_clip,
+scale_64_17_top_clip, scale_64_18_top_clip, scale_64_19_top_clip, scale_64_20_top_clip, scale_64_21_top_clip, scale_64_22_top_clip, scale_64_23_top_clip, scale_64_24_top_clip,
+scale_64_25_top_clip, scale_64_26_top_clip, scale_64_27_top_clip, scale_64_28_top_clip, scale_64_29_top_clip, scale_64_30_top_clip, scale_64_31_top_clip, scale_64_32_top_clip,
+scale_64_33_top_clip, scale_64_34_top_clip, scale_64_35_top_clip, scale_64_36_top_clip, scale_64_37_top_clip, scale_64_38_top_clip, scale_64_39_top_clip, scale_64_40_top_clip,
+scale_64_41_top_clip, scale_64_42_top_clip, scale_64_43_top_clip, scale_64_44_top_clip, scale_64_45_top_clip, scale_64_46_top_clip, scale_64_47_top_clip, scale_64_48_top_clip,
+scale_64_49_top_clip, scale_64_50_top_clip, scale_64_51_top_clip, scale_64_52_top_clip, scale_64_53_top_clip, scale_64_54_top_clip, scale_64_55_top_clip, scale_64_56_top_clip,
+scale_64_57_top_clip, scale_64_58_top_clip, scale_64_59_top_clip, scale_64_60_top_clip, scale_64_61_top_clip, scale_64_62_top_clip, scale_64_63_top_clip, scale_64_64_top_clip,
+scale_64_65_top_clip, scale_64_66_top_clip, scale_64_67_top_clip, scale_64_68_top_clip, scale_64_69_top_clip, scale_64_70_top_clip, scale_64_71_top_clip, scale_64_72_top_clip,
+scale_64_73_top_clip, scale_64_74_top_clip, scale_64_75_top_clip, scale_64_76_top_clip, scale_64_77_top_clip, scale_64_78_top_clip, scale_64_79_top_clip, scale_64_80_top_clip,
+scale_64_81_top_clip, scale_64_82_top_clip, scale_64_83_top_clip, scale_64_84_top_clip, scale_64_85_top_clip, scale_64_86_top_clip, scale_64_87_top_clip, scale_64_88_top_clip,
+scale_64_89_top_clip, scale_64_90_top_clip, scale_64_91_top_clip, scale_64_92_top_clip, scale_64_93_top_clip, scale_64_94_top_clip, scale_64_95_top_clip, scale_64_96_top_clip,
+scale_64_97_top_clip, scale_64_98_top_clip, scale_64_99_top_clip, scale_64_100_top_clip, scale_64_101_top_clip, scale_64_102_top_clip, scale_64_103_top_clip, scale_64_104_top_clip,
+scale_64_105_top_clip, scale_64_106_top_clip, scale_64_107_top_clip, scale_64_108_top_clip, scale_64_109_top_clip, scale_64_110_top_clip, scale_64_111_top_clip, scale_64_112_top_clip,
+scale_64_113_top_clip, scale_64_114_top_clip, scale_64_115_top_clip, scale_64_116_top_clip, scale_64_117_top_clip, scale_64_118_top_clip, scale_64_119_top_clip, scale_64_120_top_clip,
+scale_64_121_top_clip, scale_64_122_top_clip, scale_64_123_top_clip, scale_64_124_top_clip, scale_64_125_top_clip, scale_64_126_top_clip, scale_64_127_top_clip, scale_64_128_top_clip,
+scale_64_129_top_clip, scale_64_130_top_clip, scale_64_131_top_clip, scale_64_132_top_clip, scale_64_133_top_clip, scale_64_134_top_clip, scale_64_135_top_clip, scale_64_136_top_clip,
+scale_64_137_top_clip, scale_64_138_top_clip, scale_64_139_top_clip, scale_64_140_top_clip, scale_64_141_top_clip, scale_64_142_top_clip, scale_64_143_top_clip, scale_64_144_top_clip,
+scale_64_145_top_clip, scale_64_146_top_clip, scale_64_147_top_clip, scale_64_148_top_clip, scale_64_149_top_clip, scale_64_150_top_clip, scale_64_151_top_clip, scale_64_152_top_clip,
+scale_64_153_top_clip, scale_64_154_top_clip, scale_64_155_top_clip, scale_64_156_top_clip, scale_64_157_top_clip, scale_64_158_top_clip, scale_64_159_top_clip, scale_64_160_top_clip,
+scale_64_161_top_clip, scale_64_162_top_clip, scale_64_163_top_clip, scale_64_164_top_clip, scale_64_165_top_clip, scale_64_166_top_clip, scale_64_167_top_clip, scale_64_168_top_clip,
+scale_64_169_top_clip, scale_64_170_top_clip, scale_64_171_top_clip, scale_64_172_top_clip, scale_64_173_top_clip, scale_64_174_top_clip, scale_64_175_top_clip, scale_64_176_top_clip,
+scale_64_177_top_clip, scale_64_178_top_clip, scale_64_179_top_clip, scale_64_180_top_clip, scale_64_181_top_clip, scale_64_182_top_clip, scale_64_183_top_clip, scale_64_184_top_clip,
+scale_64_185_top_clip, scale_64_186_top_clip, scale_64_187_top_clip, scale_64_188_top_clip, scale_64_189_top_clip, scale_64_190_top_clip, scale_64_191_top_clip, scale_64_192_top_clip,
+scale_64_193_top_clip, scale_64_194_top_clip, scale_64_195_top_clip, scale_64_196_top_clip, scale_64_197_top_clip, scale_64_198_top_clip, scale_64_199_top_clip, scale_64_200_top_clip,
+scale_64_201_top_clip, scale_64_202_top_clip, scale_64_203_top_clip, scale_64_204_top_clip, scale_64_205_top_clip, scale_64_206_top_clip, scale_64_207_top_clip, scale_64_208_top_clip,
+scale_64_209_top_clip, scale_64_210_top_clip, scale_64_211_top_clip, scale_64_212_top_clip, scale_64_213_top_clip, scale_64_214_top_clip, scale_64_215_top_clip, scale_64_216_top_clip,
+scale_64_217_top_clip, scale_64_218_top_clip, scale_64_219_top_clip, scale_64_220_top_clip, scale_64_221_top_clip, scale_64_222_top_clip, scale_64_223_top_clip, scale_64_224_top_clip,
+scale_64_225_top_clip, scale_64_226_top_clip, scale_64_227_top_clip, scale_64_228_top_clip, scale_64_229_top_clip, scale_64_230_top_clip, scale_64_231_top_clip, scale_64_232_top_clip,
+scale_64_233_top_clip, scale_64_234_top_clip, scale_64_235_top_clip, scale_64_236_top_clip, scale_64_237_top_clip, scale_64_238_top_clip, scale_64_239_top_clip, scale_64_240_top_clip,
+scale_64_241_top_clip, scale_64_242_top_clip, scale_64_243_top_clip, scale_64_244_top_clip, scale_64_245_top_clip, scale_64_246_top_clip, scale_64_247_top_clip, scale_64_248_top_clip,
+scale_64_249_top_clip, scale_64_250_top_clip, scale_64_251_top_clip, scale_64_252_top_clip, scale_64_253_top_clip, scale_64_254_top_clip, scale_64_255_top_clip, scale_64_256_top_clip,
+scale_64_257_top_clip, scale_64_258_top_clip, scale_64_259_top_clip, scale_64_260_top_clip, scale_64_261_top_clip, scale_64_262_top_clip, scale_64_263_top_clip, scale_64_264_top_clip,
+scale_64_265_top_clip, scale_64_266_top_clip, scale_64_267_top_clip, scale_64_268_top_clip, scale_64_269_top_clip, scale_64_270_top_clip, scale_64_271_top_clip, scale_64_272_top_clip,
+scale_64_273_top_clip, scale_64_274_top_clip, scale_64_275_top_clip, scale_64_276_top_clip, scale_64_277_top_clip, scale_64_278_top_clip, scale_64_279_top_clip, scale_64_280_top_clip,
+scale_64_281_top_clip, scale_64_282_top_clip, scale_64_283_top_clip, scale_64_284_top_clip, scale_64_285_top_clip, scale_64_286_top_clip, scale_64_287_top_clip, scale_64_288_top_clip,
+scale_64_289_top_clip, scale_64_290_top_clip, scale_64_291_top_clip, scale_64_292_top_clip, scale_64_293_top_clip, scale_64_294_top_clip, scale_64_295_top_clip, scale_64_296_top_clip,
+scale_64_297_top_clip, scale_64_298_top_clip, scale_64_299_top_clip, scale_64_300_top_clip, scale_64_301_top_clip, scale_64_302_top_clip, scale_64_303_top_clip, scale_64_304_top_clip,
+scale_64_305_top_clip, scale_64_306_top_clip, scale_64_307_top_clip, scale_64_308_top_clip, scale_64_309_top_clip, scale_64_310_top_clip, scale_64_311_top_clip, scale_64_312_top_clip,
+scale_64_313_top_clip, scale_64_314_top_clip, scale_64_315_top_clip, scale_64_316_top_clip, scale_64_317_top_clip, scale_64_318_top_clip, scale_64_319_top_clip, scale_64_320_top_clip,
+scale_64_321_top_clip, scale_64_322_top_clip, scale_64_323_top_clip, scale_64_324_top_clip, scale_64_325_top_clip, scale_64_326_top_clip, scale_64_327_top_clip, scale_64_328_top_clip,
+scale_64_329_top_clip, scale_64_330_top_clip, scale_64_331_top_clip, scale_64_332_top_clip, scale_64_333_top_clip, scale_64_334_top_clip, scale_64_335_top_clip, scale_64_336_top_clip,
+scale_64_337_top_clip, scale_64_338_top_clip, scale_64_339_top_clip, scale_64_340_top_clip, scale_64_341_top_clip, scale_64_342_top_clip, scale_64_343_top_clip, scale_64_344_top_clip,
+scale_64_345_top_clip, scale_64_346_top_clip, scale_64_347_top_clip, scale_64_348_top_clip, scale_64_349_top_clip, scale_64_350_top_clip, scale_64_351_top_clip, scale_64_352_top_clip,
+scale_64_353_top_clip, scale_64_354_top_clip, scale_64_355_top_clip, scale_64_356_top_clip, scale_64_357_top_clip, scale_64_358_top_clip, scale_64_359_top_clip, scale_64_360_top_clip,
+scale_64_361_top_clip, scale_64_362_top_clip, scale_64_363_top_clip, scale_64_364_top_clip, scale_64_365_top_clip, scale_64_366_top_clip, scale_64_367_top_clip, scale_64_368_top_clip,
+scale_64_369_top_clip, scale_64_370_top_clip, scale_64_371_top_clip, scale_64_372_top_clip, scale_64_373_top_clip, scale_64_374_top_clip, scale_64_375_top_clip, scale_64_376_top_clip,
+scale_64_377_top_clip, scale_64_378_top_clip, scale_64_379_top_clip, scale_64_380_top_clip, scale_64_381_top_clip, scale_64_382_top_clip, scale_64_383_top_clip, scale_64_384_top_clip,
+scale_64_385_top_clip, scale_64_386_top_clip, scale_64_387_top_clip, scale_64_388_top_clip, scale_64_389_top_clip, scale_64_390_top_clip, scale_64_391_top_clip, scale_64_392_top_clip,
+scale_64_393_top_clip, scale_64_394_top_clip, scale_64_395_top_clip, scale_64_396_top_clip, scale_64_397_top_clip, scale_64_398_top_clip, scale_64_399_top_clip, scale_64_400_top_clip,
+scale_64_401_top_clip, scale_64_402_top_clip, scale_64_403_top_clip, scale_64_404_top_clip, scale_64_405_top_clip, scale_64_406_top_clip, scale_64_407_top_clip, scale_64_408_top_clip,
+scale_64_409_top_clip, scale_64_410_top_clip, scale_64_411_top_clip, scale_64_412_top_clip, scale_64_413_top_clip, scale_64_414_top_clip, scale_64_415_top_clip, scale_64_416_top_clip,
+scale_64_417_top_clip, scale_64_418_top_clip, scale_64_419_top_clip, scale_64_420_top_clip, scale_64_421_top_clip, scale_64_422_top_clip, scale_64_423_top_clip, scale_64_424_top_clip,
+scale_64_425_top_clip, scale_64_426_top_clip, scale_64_427_top_clip, scale_64_428_top_clip, scale_64_429_top_clip, scale_64_430_top_clip, scale_64_431_top_clip, scale_64_432_top_clip,
+scale_64_433_top_clip, scale_64_434_top_clip, scale_64_435_top_clip, scale_64_436_top_clip, scale_64_437_top_clip, scale_64_438_top_clip, scale_64_439_top_clip, scale_64_440_top_clip,
+scale_64_441_top_clip, scale_64_442_top_clip, scale_64_443_top_clip, scale_64_444_top_clip, scale_64_445_top_clip, scale_64_446_top_clip, scale_64_447_top_clip, scale_64_448_top_clip,
+scale_64_449_top_clip, scale_64_450_top_clip, scale_64_451_top_clip, scale_64_452_top_clip, scale_64_453_top_clip, scale_64_454_top_clip, scale_64_455_top_clip, scale_64_456_top_clip,
+scale_64_457_top_clip, scale_64_458_top_clip, scale_64_459_top_clip, scale_64_460_top_clip, scale_64_461_top_clip, scale_64_462_top_clip, scale_64_463_top_clip, scale_64_464_top_clip,
+scale_64_465_top_clip, scale_64_466_top_clip, scale_64_467_top_clip, scale_64_468_top_clip, scale_64_469_top_clip, scale_64_470_top_clip, scale_64_471_top_clip, scale_64_472_top_clip,
+scale_64_473_top_clip, scale_64_474_top_clip, scale_64_475_top_clip, scale_64_476_top_clip, scale_64_477_top_clip, scale_64_478_top_clip, scale_64_479_top_clip, scale_64_480_top_clip,
+scale_64_481_top_clip, scale_64_482_top_clip, scale_64_483_top_clip, scale_64_484_top_clip, scale_64_485_top_clip, scale_64_486_top_clip, scale_64_487_top_clip, scale_64_488_top_clip,
+scale_64_489_top_clip, scale_64_490_top_clip, scale_64_491_top_clip, scale_64_492_top_clip, scale_64_493_top_clip, scale_64_494_top_clip, scale_64_495_top_clip, scale_64_496_top_clip,
+scale_64_497_top_clip, scale_64_498_top_clip, scale_64_499_top_clip, scale_64_500_top_clip, scale_64_501_top_clip, scale_64_502_top_clip, scale_64_503_top_clip, scale_64_504_top_clip,
+scale_64_505_top_clip, scale_64_506_top_clip, scale_64_507_top_clip, scale_64_508_top_clip, scale_64_509_top_clip, scale_64_510_top_clip, scale_64_511_top_clip, scale_64_512_top_clip,
+};
+
+
+const void const* jump_table_bot_clip_lut[513] = {
+scale_64_0_bot_clip,
+scale_64_1_bot_clip, scale_64_2_bot_clip, scale_64_3_bot_clip, scale_64_4_bot_clip, scale_64_5_bot_clip, scale_64_6_bot_clip, scale_64_7_bot_clip, scale_64_8_bot_clip,
+scale_64_9_bot_clip, scale_64_10_bot_clip, scale_64_11_bot_clip, scale_64_12_bot_clip, scale_64_13_bot_clip, scale_64_14_bot_clip, scale_64_15_bot_clip, scale_64_16_bot_clip,
+scale_64_17_bot_clip, scale_64_18_bot_clip, scale_64_19_bot_clip, scale_64_20_bot_clip, scale_64_21_bot_clip, scale_64_22_bot_clip, scale_64_23_bot_clip, scale_64_24_bot_clip,
+scale_64_25_bot_clip, scale_64_26_bot_clip, scale_64_27_bot_clip, scale_64_28_bot_clip, scale_64_29_bot_clip, scale_64_30_bot_clip, scale_64_31_bot_clip, scale_64_32_bot_clip,
+scale_64_33_bot_clip, scale_64_34_bot_clip, scale_64_35_bot_clip, scale_64_36_bot_clip, scale_64_37_bot_clip, scale_64_38_bot_clip, scale_64_39_bot_clip, scale_64_40_bot_clip,
+scale_64_41_bot_clip, scale_64_42_bot_clip, scale_64_43_bot_clip, scale_64_44_bot_clip, scale_64_45_bot_clip, scale_64_46_bot_clip, scale_64_47_bot_clip, scale_64_48_bot_clip,
+scale_64_49_bot_clip, scale_64_50_bot_clip, scale_64_51_bot_clip, scale_64_52_bot_clip, scale_64_53_bot_clip, scale_64_54_bot_clip, scale_64_55_bot_clip, scale_64_56_bot_clip,
+scale_64_57_bot_clip, scale_64_58_bot_clip, scale_64_59_bot_clip, scale_64_60_bot_clip, scale_64_61_bot_clip, scale_64_62_bot_clip, scale_64_63_bot_clip, scale_64_64_bot_clip,
+scale_64_65_bot_clip, scale_64_66_bot_clip, scale_64_67_bot_clip, scale_64_68_bot_clip, scale_64_69_bot_clip, scale_64_70_bot_clip, scale_64_71_bot_clip, scale_64_72_bot_clip,
+scale_64_73_bot_clip, scale_64_74_bot_clip, scale_64_75_bot_clip, scale_64_76_bot_clip, scale_64_77_bot_clip, scale_64_78_bot_clip, scale_64_79_bot_clip, scale_64_80_bot_clip,
+scale_64_81_bot_clip, scale_64_82_bot_clip, scale_64_83_bot_clip, scale_64_84_bot_clip, scale_64_85_bot_clip, scale_64_86_bot_clip, scale_64_87_bot_clip, scale_64_88_bot_clip,
+scale_64_89_bot_clip, scale_64_90_bot_clip, scale_64_91_bot_clip, scale_64_92_bot_clip, scale_64_93_bot_clip, scale_64_94_bot_clip, scale_64_95_bot_clip, scale_64_96_bot_clip,
+scale_64_97_bot_clip, scale_64_98_bot_clip, scale_64_99_bot_clip, scale_64_100_bot_clip, scale_64_101_bot_clip, scale_64_102_bot_clip, scale_64_103_bot_clip, scale_64_104_bot_clip,
+scale_64_105_bot_clip, scale_64_106_bot_clip, scale_64_107_bot_clip, scale_64_108_bot_clip, scale_64_109_bot_clip, scale_64_110_bot_clip, scale_64_111_bot_clip, scale_64_112_bot_clip,
+scale_64_113_bot_clip, scale_64_114_bot_clip, scale_64_115_bot_clip, scale_64_116_bot_clip, scale_64_117_bot_clip, scale_64_118_bot_clip, scale_64_119_bot_clip, scale_64_120_bot_clip,
+scale_64_121_bot_clip, scale_64_122_bot_clip, scale_64_123_bot_clip, scale_64_124_bot_clip, scale_64_125_bot_clip, scale_64_126_bot_clip, scale_64_127_bot_clip, scale_64_128_bot_clip,
+scale_64_129_bot_clip, scale_64_130_bot_clip, scale_64_131_bot_clip, scale_64_132_bot_clip, scale_64_133_bot_clip, scale_64_134_bot_clip, scale_64_135_bot_clip, scale_64_136_bot_clip,
+scale_64_137_bot_clip, scale_64_138_bot_clip, scale_64_139_bot_clip, scale_64_140_bot_clip, scale_64_141_bot_clip, scale_64_142_bot_clip, scale_64_143_bot_clip, scale_64_144_bot_clip,
+scale_64_145_bot_clip, scale_64_146_bot_clip, scale_64_147_bot_clip, scale_64_148_bot_clip, scale_64_149_bot_clip, scale_64_150_bot_clip, scale_64_151_bot_clip, scale_64_152_bot_clip,
+scale_64_153_bot_clip, scale_64_154_bot_clip, scale_64_155_bot_clip, scale_64_156_bot_clip, scale_64_157_bot_clip, scale_64_158_bot_clip, scale_64_159_bot_clip, scale_64_160_bot_clip,
+scale_64_161_bot_clip, scale_64_162_bot_clip, scale_64_163_bot_clip, scale_64_164_bot_clip, scale_64_165_bot_clip, scale_64_166_bot_clip, scale_64_167_bot_clip, scale_64_168_bot_clip,
+scale_64_169_bot_clip, scale_64_170_bot_clip, scale_64_171_bot_clip, scale_64_172_bot_clip, scale_64_173_bot_clip, scale_64_174_bot_clip, scale_64_175_bot_clip, scale_64_176_bot_clip,
+scale_64_177_bot_clip, scale_64_178_bot_clip, scale_64_179_bot_clip, scale_64_180_bot_clip, scale_64_181_bot_clip, scale_64_182_bot_clip, scale_64_183_bot_clip, scale_64_184_bot_clip,
+scale_64_185_bot_clip, scale_64_186_bot_clip, scale_64_187_bot_clip, scale_64_188_bot_clip, scale_64_189_bot_clip, scale_64_190_bot_clip, scale_64_191_bot_clip, scale_64_192_bot_clip,
+scale_64_193_bot_clip, scale_64_194_bot_clip, scale_64_195_bot_clip, scale_64_196_bot_clip, scale_64_197_bot_clip, scale_64_198_bot_clip, scale_64_199_bot_clip, scale_64_200_bot_clip,
+scale_64_201_bot_clip, scale_64_202_bot_clip, scale_64_203_bot_clip, scale_64_204_bot_clip, scale_64_205_bot_clip, scale_64_206_bot_clip, scale_64_207_bot_clip, scale_64_208_bot_clip,
+scale_64_209_bot_clip, scale_64_210_bot_clip, scale_64_211_bot_clip, scale_64_212_bot_clip, scale_64_213_bot_clip, scale_64_214_bot_clip, scale_64_215_bot_clip, scale_64_216_bot_clip,
+scale_64_217_bot_clip, scale_64_218_bot_clip, scale_64_219_bot_clip, scale_64_220_bot_clip, scale_64_221_bot_clip, scale_64_222_bot_clip, scale_64_223_bot_clip, scale_64_224_bot_clip,
+scale_64_225_bot_clip, scale_64_226_bot_clip, scale_64_227_bot_clip, scale_64_228_bot_clip, scale_64_229_bot_clip, scale_64_230_bot_clip, scale_64_231_bot_clip, scale_64_232_bot_clip,
+scale_64_233_bot_clip, scale_64_234_bot_clip, scale_64_235_bot_clip, scale_64_236_bot_clip, scale_64_237_bot_clip, scale_64_238_bot_clip, scale_64_239_bot_clip, scale_64_240_bot_clip,
+scale_64_241_bot_clip, scale_64_242_bot_clip, scale_64_243_bot_clip, scale_64_244_bot_clip, scale_64_245_bot_clip, scale_64_246_bot_clip, scale_64_247_bot_clip, scale_64_248_bot_clip,
+scale_64_249_bot_clip, scale_64_250_bot_clip, scale_64_251_bot_clip, scale_64_252_bot_clip, scale_64_253_bot_clip, scale_64_254_bot_clip, scale_64_255_bot_clip, scale_64_256_bot_clip,
+scale_64_257_bot_clip, scale_64_258_bot_clip, scale_64_259_bot_clip, scale_64_260_bot_clip, scale_64_261_bot_clip, scale_64_262_bot_clip, scale_64_263_bot_clip, scale_64_264_bot_clip,
+scale_64_265_bot_clip, scale_64_266_bot_clip, scale_64_267_bot_clip, scale_64_268_bot_clip, scale_64_269_bot_clip, scale_64_270_bot_clip, scale_64_271_bot_clip, scale_64_272_bot_clip,
+scale_64_273_bot_clip, scale_64_274_bot_clip, scale_64_275_bot_clip, scale_64_276_bot_clip, scale_64_277_bot_clip, scale_64_278_bot_clip, scale_64_279_bot_clip, scale_64_280_bot_clip,
+scale_64_281_bot_clip, scale_64_282_bot_clip, scale_64_283_bot_clip, scale_64_284_bot_clip, scale_64_285_bot_clip, scale_64_286_bot_clip, scale_64_287_bot_clip, scale_64_288_bot_clip,
+scale_64_289_bot_clip, scale_64_290_bot_clip, scale_64_291_bot_clip, scale_64_292_bot_clip, scale_64_293_bot_clip, scale_64_294_bot_clip, scale_64_295_bot_clip, scale_64_296_bot_clip,
+scale_64_297_bot_clip, scale_64_298_bot_clip, scale_64_299_bot_clip, scale_64_300_bot_clip, scale_64_301_bot_clip, scale_64_302_bot_clip, scale_64_303_bot_clip, scale_64_304_bot_clip,
+scale_64_305_bot_clip, scale_64_306_bot_clip, scale_64_307_bot_clip, scale_64_308_bot_clip, scale_64_309_bot_clip, scale_64_310_bot_clip, scale_64_311_bot_clip, scale_64_312_bot_clip,
+scale_64_313_bot_clip, scale_64_314_bot_clip, scale_64_315_bot_clip, scale_64_316_bot_clip, scale_64_317_bot_clip, scale_64_318_bot_clip, scale_64_319_bot_clip, scale_64_320_bot_clip,
+scale_64_321_bot_clip, scale_64_322_bot_clip, scale_64_323_bot_clip, scale_64_324_bot_clip, scale_64_325_bot_clip, scale_64_326_bot_clip, scale_64_327_bot_clip, scale_64_328_bot_clip,
+scale_64_329_bot_clip, scale_64_330_bot_clip, scale_64_331_bot_clip, scale_64_332_bot_clip, scale_64_333_bot_clip, scale_64_334_bot_clip, scale_64_335_bot_clip, scale_64_336_bot_clip,
+scale_64_337_bot_clip, scale_64_338_bot_clip, scale_64_339_bot_clip, scale_64_340_bot_clip, scale_64_341_bot_clip, scale_64_342_bot_clip, scale_64_343_bot_clip, scale_64_344_bot_clip,
+scale_64_345_bot_clip, scale_64_346_bot_clip, scale_64_347_bot_clip, scale_64_348_bot_clip, scale_64_349_bot_clip, scale_64_350_bot_clip, scale_64_351_bot_clip, scale_64_352_bot_clip,
+scale_64_353_bot_clip, scale_64_354_bot_clip, scale_64_355_bot_clip, scale_64_356_bot_clip, scale_64_357_bot_clip, scale_64_358_bot_clip, scale_64_359_bot_clip, scale_64_360_bot_clip,
+scale_64_361_bot_clip, scale_64_362_bot_clip, scale_64_363_bot_clip, scale_64_364_bot_clip, scale_64_365_bot_clip, scale_64_366_bot_clip, scale_64_367_bot_clip, scale_64_368_bot_clip,
+scale_64_369_bot_clip, scale_64_370_bot_clip, scale_64_371_bot_clip, scale_64_372_bot_clip, scale_64_373_bot_clip, scale_64_374_bot_clip, scale_64_375_bot_clip, scale_64_376_bot_clip,
+scale_64_377_bot_clip, scale_64_378_bot_clip, scale_64_379_bot_clip, scale_64_380_bot_clip, scale_64_381_bot_clip, scale_64_382_bot_clip, scale_64_383_bot_clip, scale_64_384_bot_clip,
+scale_64_385_bot_clip, scale_64_386_bot_clip, scale_64_387_bot_clip, scale_64_388_bot_clip, scale_64_389_bot_clip, scale_64_390_bot_clip, scale_64_391_bot_clip, scale_64_392_bot_clip,
+scale_64_393_bot_clip, scale_64_394_bot_clip, scale_64_395_bot_clip, scale_64_396_bot_clip, scale_64_397_bot_clip, scale_64_398_bot_clip, scale_64_399_bot_clip, scale_64_400_bot_clip,
+scale_64_401_bot_clip, scale_64_402_bot_clip, scale_64_403_bot_clip, scale_64_404_bot_clip, scale_64_405_bot_clip, scale_64_406_bot_clip, scale_64_407_bot_clip, scale_64_408_bot_clip,
+scale_64_409_bot_clip, scale_64_410_bot_clip, scale_64_411_bot_clip, scale_64_412_bot_clip, scale_64_413_bot_clip, scale_64_414_bot_clip, scale_64_415_bot_clip, scale_64_416_bot_clip,
+scale_64_417_bot_clip, scale_64_418_bot_clip, scale_64_419_bot_clip, scale_64_420_bot_clip, scale_64_421_bot_clip, scale_64_422_bot_clip, scale_64_423_bot_clip, scale_64_424_bot_clip,
+scale_64_425_bot_clip, scale_64_426_bot_clip, scale_64_427_bot_clip, scale_64_428_bot_clip, scale_64_429_bot_clip, scale_64_430_bot_clip, scale_64_431_bot_clip, scale_64_432_bot_clip,
+scale_64_433_bot_clip, scale_64_434_bot_clip, scale_64_435_bot_clip, scale_64_436_bot_clip, scale_64_437_bot_clip, scale_64_438_bot_clip, scale_64_439_bot_clip, scale_64_440_bot_clip,
+scale_64_441_bot_clip, scale_64_442_bot_clip, scale_64_443_bot_clip, scale_64_444_bot_clip, scale_64_445_bot_clip, scale_64_446_bot_clip, scale_64_447_bot_clip, scale_64_448_bot_clip,
+scale_64_449_bot_clip, scale_64_450_bot_clip, scale_64_451_bot_clip, scale_64_452_bot_clip, scale_64_453_bot_clip, scale_64_454_bot_clip, scale_64_455_bot_clip, scale_64_456_bot_clip,
+scale_64_457_bot_clip, scale_64_458_bot_clip, scale_64_459_bot_clip, scale_64_460_bot_clip, scale_64_461_bot_clip, scale_64_462_bot_clip, scale_64_463_bot_clip, scale_64_464_bot_clip,
+scale_64_465_bot_clip, scale_64_466_bot_clip, scale_64_467_bot_clip, scale_64_468_bot_clip, scale_64_469_bot_clip, scale_64_470_bot_clip, scale_64_471_bot_clip, scale_64_472_bot_clip,
+scale_64_473_bot_clip, scale_64_474_bot_clip, scale_64_475_bot_clip, scale_64_476_bot_clip, scale_64_477_bot_clip, scale_64_478_bot_clip, scale_64_479_bot_clip, scale_64_480_bot_clip,
+scale_64_481_bot_clip, scale_64_482_bot_clip, scale_64_483_bot_clip, scale_64_484_bot_clip, scale_64_485_bot_clip, scale_64_486_bot_clip, scale_64_487_bot_clip, scale_64_488_bot_clip,
+scale_64_489_bot_clip, scale_64_490_bot_clip, scale_64_491_bot_clip, scale_64_492_bot_clip, scale_64_493_bot_clip, scale_64_494_bot_clip, scale_64_495_bot_clip, scale_64_496_bot_clip,
+scale_64_497_bot_clip, scale_64_498_bot_clip, scale_64_499_bot_clip, scale_64_500_bot_clip, scale_64_501_bot_clip, scale_64_502_bot_clip, scale_64_503_bot_clip, scale_64_504_bot_clip,
+scale_64_505_bot_clip, scale_64_506_bot_clip, scale_64_507_bot_clip, scale_64_508_bot_clip, scale_64_509_bot_clip, scale_64_510_bot_clip, scale_64_511_bot_clip, scale_64_512_bot_clip,
 };
