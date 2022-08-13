@@ -6,7 +6,9 @@
 #define CONSOLE_NUM_MESSAGES 4
 #define CONSOLE_NUM_MESSAGES_MASK 0b111
 
-#define NUM_TILES 32
+#define NUM_TILES 18
+
+//#define CONSOLE_SPRITES 
 
 tile* tile_buf;
 
@@ -31,10 +33,11 @@ static u16 used_sprites;
 
 
 uint16_t console_init(uint16_t start_addr) {
-
+    #ifdef CONSOLE_SPRITES
     u16 available_sprites = VDP_getAvailableSprites();
     used_sprites = 80 - available_sprites;
     rendered_sprites_idx = VDP_allocateSprites(32);
+    #endif
 
     rendered_tiles_are_dirty = 0;
     tiles_to_draw = 0;
@@ -91,8 +94,11 @@ void console_push_message_high_priority(char *msg, int len, uint16_t ticks) {
 //21
 
 void console_render() {
-    //tiles_to_draw = vwf_count_tiles(message.msg, message.len);
+    #ifdef CONSOLE_SPRITES
     tiles_to_draw = message.len;
+    #else 
+    tiles_to_draw = vwf_count_tiles(message.msg, message.len);
+    #endif 
 
     if(tiles_to_draw > NUM_TILES) {
         tiles_to_draw = NUM_TILES;
@@ -103,9 +109,11 @@ void console_render() {
     //for(int i = 0; i < tiles_to_draw; i++) {
     //    memcpy(tile_buf+(i*32), skybox_gradient.tileset->tiles, 32);
     //}
-
-    //vwf_render_tiles(message.msg, message.len, tile_buf, tiles_to_draw);
+    #ifdef CONSOLE_SPRITES
     vwf_render_to_separate_tiles(message.msg, message.len, tile_buf, tiles_to_draw);
+    #else 
+    vwf_render_tiles(message.msg, message.len, tile_buf, tiles_to_draw);
+    #endif 
 
     VDP_loadTileData(&(tile_buf[0].rows[0]), start_vram_addr, tiles_to_draw, DMA_QUEUE);
     
@@ -115,6 +123,7 @@ void console_render() {
 
     u16 cur_x_pos = CONSOLE_BASE_X*8;
 
+    #ifdef CONSOLE_SPRITES
     for(int i = 0; i < tiles_to_draw; i++) {
         u16 char_width = charmap[message.msg[i]-32].width*2;
 
@@ -142,15 +151,17 @@ void console_render() {
     //VDP_linkSprites(0, used_sprites+tiles_to_draw-1);
 
     VDP_updateSprites(used_sprites+tiles_to_draw, DMA_QUEUE);
+    #else 
+
     // load rendered tiles into VRAM
-    //const u16 base_tile = TILE_ATTR_FULL(3, 1, 0, 0, start_vram_addr);
-    //VDP_fillTileMapRectInc(BG_B, base_tile, CONSOLE_BASE_X, CONSOLE_BASE_Y, tiles_to_draw, 1);
+    const u16 base_tile = TILE_ATTR_FULL(3, 1, 0, 0, start_vram_addr);
+    VDP_fillTileMapRectInc(BG_B, base_tile, CONSOLE_BASE_X, CONSOLE_BASE_Y, tiles_to_draw, 1);
 
     // clear unused tiles
-    //int clear_tiles = NUM_TILES-tiles_to_draw;
-    //const u16 clear_base_tile = TILE_ATTR_FULL(3, 0, 0, 0, 0x390); //0x39E);
-    //VDP_fillTileMapRect(BG_B, clear_base_tile, CONSOLE_BASE_X+tiles_to_draw, CONSOLE_BASE_Y, clear_tiles, 1);
-
+    int clear_tiles = NUM_TILES-tiles_to_draw;
+    const u16 clear_base_tile = TILE_ATTR_FULL(3, 0, 0, 0, 0x390); //0x39E);
+    VDP_fillTileMapRect(BG_B, clear_base_tile, CONSOLE_BASE_X+tiles_to_draw, CONSOLE_BASE_Y, clear_tiles, 1);
+    #endif
     
 
     rendered_tiles_are_dirty = 0;
@@ -220,19 +231,23 @@ void console_tick() {
         }
         
         if(message.ticks_left-- == 1) {
-            //const u16 clear_base_tile = TILE_ATTR_FULL(3, 0, 0, 0, 0x390);
-            //VDP_fillTileMapRect(BG_B, clear_base_tile, CONSOLE_BASE_X, CONSOLE_BASE_Y, tiles_to_draw, 1);
-            
+            #ifdef CONSOLE_SPRITES
             //VDP_linkSprites(0, used_sprites);
             VDP_setSpriteLink(used_sprites-1, 0);
             VDP_updateSprites(used_sprites+tiles_to_draw, DMA_QUEUE);
             //VDP_releaseSprites(rendered_sprites_idx, 1);
 
+            #else
+            const u16 clear_base_tile = TILE_ATTR_FULL(3, 0, 0, 0, 0x390);
+            VDP_fillTileMapRect(BG_B, clear_base_tile, CONSOLE_BASE_X, CONSOLE_BASE_Y, tiles_to_draw, 1);
+            
+            #endif
             message.ticks_left = 0;
             message.len = 0;
         } else {
-            
+            #ifdef CONSOLE_SPRITES
             //swizzle_sprites();
+            #endif
         }
     }
 }
