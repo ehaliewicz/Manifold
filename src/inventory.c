@@ -76,7 +76,7 @@ u32 load_item(const Image* img, item_type type, u32 tile_loc) {
 
 u32 load_inventory_items_to_vram(u32 tile_loc) {    
     hud_tile_loc = tile_loc;
-    VDP_loadTileSet(hud.tileset, hud_tile_loc, CPU);
+    VDP_loadTileSet(hud.tileset, hud_tile_loc, DMA);
 
     PAL_setPalette(PAL2, hud.palette->data);
     tile_loc += hud.tileset->numTile;
