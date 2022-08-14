@@ -1179,47 +1179,44 @@ void draw_masked(s16 x1, s16 x2, s16 ytop, s16 ybot,
         // should be loaded from clip buffer
         u8 col_drawn = is_column_drawn(min_drawable_y, max_drawable_y);
         if(!col_drawn) {
-            if(top_draw_y < bot_draw_y) {
-                u8 top_draw_y = clamp(ytop, min_drawable_y, max_drawable_y);
-                u8 bot_draw_y = clamp(ybot, min_drawable_y, max_drawable_y);
-                
-                u32 clipped_y_pix_top, clipped_y_pix_bot;
-                u8 skipped_texels;
+            u8 top_draw_y = clamp(ytop, min_drawable_y, max_drawable_y);
+            u8 bot_draw_y = clamp(ybot, min_drawable_y, max_drawable_y);
+            
+            u32 clipped_y_pix_top, clipped_y_pix_bot;
+            u8 skipped_texels;
 
-                clipped_y_pix_top = clipped_y_pix_bot = 0;
+            clipped_y_pix_top = clipped_y_pix_bot = 0;
 
-                //clipped_y_pix_bot = 0;
+            //clipped_y_pix_bot = 0;
 
-                //u8 skipped_bot_texels = 33;
-                //(y_per_texels_fix * skipped_bot_texels) >> 16;
+            //u8 skipped_bot_texels = 33;
+            //(y_per_texels_fix * skipped_bot_texels) >> 16;
 
-                // get texture column 
-                u32 tex_col = ((u_fix<<TEX_WIDTH_SHIFT)>>16); //TEX_WIDTH_SHIFT)>>16);
-                u32 tex_idx = tex_col<<TEX_HEIGHT_SHIFT; //TEX_HEIGHT_SHIFT;
-                const u16* tex_column = &tex[tex_idx+1];
+            // get texture column 
+            u32 tex_col = ((u_fix<<TEX_WIDTH_SHIFT)>>16); //TEX_WIDTH_SHIFT)>>16);
+            u32 tex_idx = tex_col<<TEX_HEIGHT_SHIFT; //TEX_HEIGHT_SHIFT;
+            const u16* tex_column = &tex[tex_idx+1];
 
-                // this sprite only has 28 columns of non-transparent pixels :)
-                
-                if(tex_col > 27) {
-                    break;
-                } else if (tex_col < 4) {
-                    skipped_texels = 8;
-                    clipped_y_pix_top = ((y_per_texels_fix << 3)>>16)+1;
-                } else if (tex_col >= 24) {
-                    skipped_texels = 28;
-                    clipped_y_pix_top = ((y_per_texels_fix * skipped_texels)>>16)+1; 
-                }
-
-                //draw_bottom_clipped_texture_with_tex_chunk(
-                //    chk, 
-                //    ytop, top_draw_y, //+clipped_y_pix_top, 
-                //    ybot, bot_draw_y, 
-                //    col_ptr, tex_column);
-                //draw_bottom_clipped_texture_vertical_line(top_y_int, top_draw_y+clipped_y_pix_top, bot_y_int, bot_draw_y, col_ptr, tex_column);
-                draw_bottom_clipped_texture_vertical_line(ytop, top_draw_y+clipped_y_pix_top, ybot, bot_draw_y, col_ptr, tex_column);
-
-
+            // this sprite only has 28 columns of non-transparent pixels :)
+            
+            if(tex_col > 27) {
+                break;
+            } else if (tex_col < 4) {
+                skipped_texels = 8;
+                clipped_y_pix_top = ((y_per_texels_fix << 3)>>16)+1;
+            } else if (tex_col >= 24) {
+                skipped_texels = 28;
+                clipped_y_pix_top = ((y_per_texels_fix * skipped_texels)>>16)+1; 
             }
+
+            //draw_bottom_clipped_texture_with_tex_chunk(
+            //    chk, 
+            //    ytop, top_draw_y, //+clipped_y_pix_top, 
+            //    ybot, bot_draw_y, 
+            //    col_ptr, tex_column);
+            //draw_bottom_clipped_texture_vertical_line(top_y_int, top_draw_y+clipped_y_pix_top, bot_y_int, bot_draw_y, col_ptr, tex_column);
+            draw_bottom_clipped_texture_vertical_line(ytop, top_draw_y+clipped_y_pix_top, ybot, bot_draw_y, col_ptr, tex_column);
+
         }
         u_fix += u_per_x;
 
@@ -2484,15 +2481,14 @@ void draw_upper_step(s16 x1, s16 x1_ytop, s16 nx1_ytop, s16 x2, s16 x2_ytop, s16
             ntop_y_int = ntop_y_fix >> 16;
             u8 min_drawable_y = *yclip_ptr;
             u8 max_drawable_y = *(yclip_ptr+1);
-            //if(min_drawable_y >= max_drawable_y) { continue; }
-            u8 top_draw_y = clamp(top_y_int, min_drawable_y, max_drawable_y);
-            u8 bot_draw_y = clamp(ntop_y_int, min_drawable_y, max_drawable_y);
 
 
             u8* col_ptr = *offset_ptr++;
             u8 col_drawn = is_column_drawn(min_drawable_y, max_drawable_y);
 
             if(!col_drawn) {
+                u8 top_draw_y = clamp(top_y_int, min_drawable_y, max_drawable_y);
+                u8 bot_draw_y = clamp(ntop_y_int, min_drawable_y, max_drawable_y);
                 //u8 clip_top = max(top_draw_y, bot_draw_y);
                 if(min_drawable_y < top_draw_y) {
                     u8* ret_ptr = ceil_func(min_drawable_y, top_draw_y, col_ptr, params);
@@ -2591,8 +2587,6 @@ void draw_top_pegged_textured_upper_step(s16 x1, s16 x1_ytop, s16 nx1_ytop, s16 
         ntop_y_int = ntop_y_fix >> 16;
         u8 min_drawable_y = *yclip_ptr;
         u8 max_drawable_y = *(yclip_ptr+1);
-        u8 top_draw_y = clamp(top_y_int, min_drawable_y, max_drawable_y);
-        u8 bot_draw_y = clamp(ntop_y_int, min_drawable_y, max_drawable_y);
 
 
         u8* col_ptr = *offset_ptr++;
@@ -2600,6 +2594,8 @@ void draw_top_pegged_textured_upper_step(s16 x1, s16 x1_ytop, s16 nx1_ytop, s16 
         u16 one_over_z_16 = *tex_col_ptr++;
         u16 tex_idx = *tex_col_ptr++;
         if(!col_drawn) {
+            u8 top_draw_y = clamp(top_y_int, min_drawable_y, max_drawable_y);
+            u8 bot_draw_y = clamp(ntop_y_int, min_drawable_y, max_drawable_y);
             if(top_draw_y < bot_draw_y) {
                 s16 pegged_top_y_int = pegged_top_y_fix>>16;
                 const u16* tex_column;
@@ -2710,14 +2706,14 @@ void draw_bottom_pegged_textured_lower_step(
         u8 min_drawable_y = *yclip_ptr;
         u8 max_drawable_y = *(yclip_ptr+1);
 
-        u8 bot_draw_y = clamp(bot_y_int, min_drawable_y, max_drawable_y);
-        u8 top_draw_y = clamp(nbot_y_int, min_drawable_y, max_drawable_y);
 
         u8* col_ptr = *offset_ptr++;
         u8 col_drawn = is_column_drawn(min_drawable_y, max_drawable_y);
         u16 one_over_z_16 = *tex_col_ptr++;
         u16 tex_idx = *tex_col_ptr++;
         if(!col_drawn) {
+            u8 bot_draw_y = clamp(bot_y_int, min_drawable_y, max_drawable_y);
+            u8 top_draw_y = clamp(nbot_y_int, min_drawable_y, max_drawable_y);
             if(top_draw_y < bot_draw_y) {
                 s16 pegged_bot_y_int = pegged_bot_y_fix>>16;
                 
@@ -2850,12 +2846,12 @@ void draw_lower_step(s16 x1, s16 x1_ybot, s16 nx1_ybot, s16 x2, s16 x2_ybot, s16
             u8 min_drawable_y = *yclip_ptr;
             u8 max_drawable_y = *(yclip_ptr+1);
 
-            u8 bot_draw_y = clamp(bot_y_int, min_drawable_y, max_drawable_y);
-            u8 top_draw_y = clamp(nbot_y_int, min_drawable_y, max_drawable_y);
 
             u8* col_ptr = *offset_ptr++;
             u8 col_drawn = is_column_drawn(min_drawable_y, max_drawable_y);
             if(!col_drawn) {
+                u8 bot_draw_y = clamp(bot_y_int, min_drawable_y, max_drawable_y);
+                u8 top_draw_y = clamp(nbot_y_int, min_drawable_y, max_drawable_y);
                 if(max_drawable_y > bot_draw_y) {
                     floor_func(bot_draw_y, max_drawable_y, col_ptr, params);
                     *(yclip_ptr+1) = bot_draw_y;
@@ -3491,8 +3487,6 @@ void draw_top_pegged_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
         u8 min_drawable_y = *yclip_ptr++;
         u8 max_drawable_y = *yclip_ptr++;
 
-        u8 top_draw_y = clamp(top_y_int, min_drawable_y, max_drawable_y);
-        u8 bot_draw_y = clamp(bot_y_int, min_drawable_y, max_drawable_y);
 
         u8* col_ptr = *offset_ptr++;
         u8 col_drawn = is_column_drawn(min_drawable_y, max_drawable_y);
@@ -3501,6 +3495,8 @@ void draw_top_pegged_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
         u16 tex_idx = *tex_col_ptr++;
 
         if(!col_drawn) {
+            u8 top_draw_y = clamp(top_y_int, min_drawable_y, max_drawable_y);
+            u8 bot_draw_y = clamp(bot_y_int, min_drawable_y, max_drawable_y);
             if(min_drawable_y < top_draw_y) {
                 ceil_func(min_drawable_y, top_draw_y, col_ptr, ceil_params);
             }
@@ -3625,14 +3621,14 @@ void draw_bot_pegged_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
         
         u8 col_drawn = is_column_drawn(min_drawable_y, max_drawable_y);
 
-        u8 top_draw_y = clamp(top_y_int, min_drawable_y, max_drawable_y);
-        u8 bot_draw_y = clamp(bot_y_int, min_drawable_y, max_drawable_y);
 
         
         u8* col_ptr = *offset_ptr++;
         u16 one_over_z_16 = *tex_col_ptr++;
         u16 tex_idx = *tex_col_ptr++;
         if(!col_drawn) {
+            u8 top_draw_y = clamp(top_y_int, min_drawable_y, max_drawable_y);
+            u8 bot_draw_y = clamp(bot_y_int, min_drawable_y, max_drawable_y);
             if(min_drawable_y < top_draw_y) {
                 ceil_func(min_drawable_y, top_draw_y, col_ptr, ceil_params);
             }
