@@ -6,6 +6,7 @@
 u32* active_sectors;
 
 void init_active_sectors() {
+    // 64 bytes
     active_sectors = MEM_alloc(MAX_SECTOR_GROUPS/8);
 }
 

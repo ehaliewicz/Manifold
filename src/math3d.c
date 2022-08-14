@@ -1,5 +1,4 @@
 #include <genesis.h>
-#include "counter.h"
 #include "div_lut.h"
 #include "math3d.h"
 #include "game.h"

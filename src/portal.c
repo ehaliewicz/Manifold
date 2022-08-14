@@ -4,7 +4,6 @@
 #include "colors.h"
 #include "common.h"
 #include "config.h"
-#include "counter.h"
 #include "debug.h"
 #include "div_lut.h"
 #include "draw.h"

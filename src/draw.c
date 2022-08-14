@@ -3,7 +3,6 @@
 #include "my_bmp.h"
 #include "clip_buf.h"
 #include "colors.h"
-#include "counter.h"
 #include "div_lut.h"
 #include "draw.h"
 #include "game.h"

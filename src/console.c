@@ -6,7 +6,7 @@
 #define CONSOLE_NUM_MESSAGES 4
 #define CONSOLE_NUM_MESSAGES_MASK 0b111
 
-#define NUM_TILES 18
+#define NUM_TILES 14
 
 //#define CONSOLE_SPRITES 
 
@@ -48,6 +48,8 @@ uint16_t console_init(uint16_t start_addr) {
     message.ticks_left = 0;
     message.msg[0] = 0;
 
+    // 14*32 = 448 bytes!
+    // should trim this down
     tile_buf = MEM_alloc(sizeof(tile)*NUM_TILES);
 
 

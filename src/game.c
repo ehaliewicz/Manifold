@@ -5,7 +5,6 @@
 #include "clip_buf.h"
 #include "colors.h"
 #include "config.h"
-#include "counter.h"
 #include "debug.h"
 #include "game.h"
 #include "game_mode.h"
@@ -104,25 +103,7 @@ void showStats(u16 float_display)
     //sprintf(str, "sg: %i", sector_group(cur_player_pos.cur_sector, cur_portal_map));
     //VDP_drawTextBG(BG_B, str, 1, y++);
 
-    
-    
-    //sprintf(str, "coarse back. cull: %i ", get_counter(COARSE_BACKFACE_CULL_COUNTER));
-    //VDP_drawTextBG(BG_B, str, 1, 7);
-    //reset_counter(COARSE_BACKFACE_CULL_COUNTER);
-    /*
-    sprintf(str, "frus. cull: %i ", get_counter(PRE_PROJ_FRUSTUM_CULL_COUNTER));
-    VDP_drawTextBG(BG_B, str, 1, 8);
-    reset_counter(PRE_PROJ_FRUSTUM_CULL_COUNTER);
-    
-    sprintf(str, "near cull: %i ", get_counter(NEAR_Z_CULL_COUNTER));
-    VDP_drawTextBG(BG_B, str, 1, 9);
-    reset_counter(NEAR_Z_CULL_COUNTER);
 
-    
-    sprintf(str, "post-proj. back. cull: %i ", get_counter(POST_PROJ_BACKFACE_CULL_COUNTER));
-    VDP_drawTextBG(BG_B, str, 1, 10);
-    reset_counter(POST_PROJ_BACKFACE_CULL_COUNTER);
-    */
 
 
 
