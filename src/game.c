@@ -562,6 +562,7 @@ void init_game() {
 
     }
 
+
     init_clip_buffer_list();
 
     cur_palette = two_light_levels_pal.data;
@@ -594,6 +595,8 @@ void init_game() {
     
     VDP_waitVSync();
 
+
+    init_sprite_draw_cache();
     init_2d_buffers();
 
     init_portal_renderer();

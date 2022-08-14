@@ -119,7 +119,7 @@ const object_template object_types[3] = {
     {.init_state = 1,
      .sprite_col = ((RED_IDX << 4) | RED_IDX), 
      .name = "first enemy type ",
-    .size = 20, .from_floor_draw_offset = 20<<4, .width=64, .height=64<<4},
+    .size = 20, .from_floor_draw_offset = 20<<4, .width=48, .height=64<<4},
 };
 
 fix32 dist_sqr(object_pos posa, object_pos origin) {

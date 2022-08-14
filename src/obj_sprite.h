@@ -21,6 +21,8 @@ u16 render_object_to_sprite(s16 left_x,s16 top_y, u16 scaled_size, const rle_obj
 
 void obj_sprite_init(u16 free_tile_loc);
 const u32 scaled_sprite_run_lengths[64*513];
-const u32 scaled_sprite_texel_per_pixel_lut[512];
+const u32 scaled_sprite_texel_per_pixel_lut[513];
+
+const u16* sprite_scale_coefficients_pointer_lut[513];
 
 #endif
