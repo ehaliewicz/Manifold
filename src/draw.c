@@ -16,7 +16,6 @@
 
 
 u8* yclip;
-u8** bmp_ptr_buf;
 
 
 u8** buf_0_column_offset_table;
@@ -33,11 +32,13 @@ void init_column_offset_table() {
 }
 
 void init_2d_buffers() {
+    // 128 bytes
     yclip = MEM_alloc(RENDER_WIDTH*2); //256); //SCREEN_WIDTH*2*sizeof(u8));
-    bmp_ptr_buf = MEM_alloc(sizeof(u8*) * SCREEN_WIDTH/2);
+    // 256 bytes
     
-    buf_0_column_offset_table = MEM_alloc(sizeof(u8*) * SCREEN_WIDTH/2);
-    buf_1_column_offset_table = MEM_alloc(sizeof(u8*) * SCREEN_WIDTH/2);
+    // 256 bytes each!
+    buf_0_column_offset_table = MEM_alloc(sizeof(u8*) * RENDER_WIDTH);
+    buf_1_column_offset_table = MEM_alloc(sizeof(u8*) * RENDER_WIDTH);
     init_column_offset_table();
 }
 
@@ -51,12 +52,7 @@ void clear_2d_buffers() {
 
     // 128 bytes need to be moved
     
-    if(bmp_buffer_write == bmp_buffer_0) {
-        memcpy(bmp_ptr_buf, buf_0_column_offset_table, RENDER_WIDTH*sizeof(u8*));
-    } else {
-        memcpy(bmp_ptr_buf, buf_1_column_offset_table, RENDER_WIDTH*sizeof(u8*));
-    }
-    
+
     //u8** offset_ptr = (bmp_buffer_write == bmp_buffer_0) ? (&buf_0_column_offset_table[x]) : (&buf_1_column_offset_table[x]);
     
     
@@ -139,6 +135,19 @@ void clear_2d_buffers() {
     */
 }
 
+void set_column_drawn(u8* after_column_yclip_ptr) {
+    __asm volatile(
+        "move.w #0, -2(%0)"
+        :
+        : "a" (after_column_yclip_ptr)
+    ); 
+}
+
+u8 is_column_drawn(u8 min_drawable_y, u8 max_drawable_y) {
+    return min_drawable_y >= max_drawable_y;
+}
+
+
 void copy_2d_buffer(u16 left, u16 right, clip_buf* dest) {
     int bytes_to_copy = ((right+1)-left)*2;
     memcpy(&(dest->y_clip_buffer[left<<1]), &yclip[left<<1], bytes_to_copy); //bytes_to_copy); //128);
@@ -146,7 +155,7 @@ void copy_2d_buffer(u16 left, u16 right, clip_buf* dest) {
 
 void release_2d_buffers() {
     MEM_free(yclip);
-    MEM_free(buf_1_column_offset_table);
+    MEM_free(buf_0_column_offset_table);
     MEM_free(buf_1_column_offset_table);
 }
 
@@ -1002,9 +1011,6 @@ void draw_rle_sprite(s16 x1, s16 x2, s16 ytop, s16 ybot,
     s16 x = beginx;
     u8* yclip_ptr = &(clipping_buffer->y_clip_buffer[x<<1]);
 
-    //u8** offset_ptr = (bmp_buffer_write == bmp_buffer_0) ? (&buf_0_column_offset_table[x]) : (&buf_1_column_offset_table[x]);
-    //u8** offset_ptr = &bmp_ptr_buf[x];
-    // CANNOT USE bmp_ptr_buf because it's overwritten by opaque walls to be filled with NULL ptrs
     u8** offset_ptr = (bmp_buffer_write == bmp_buffer_0) ? (&buf_0_column_offset_table[x]) : (&buf_1_column_offset_table[x]);
 
 
@@ -1032,21 +1038,14 @@ void draw_rle_sprite(s16 x1, s16 x2, s16 ytop, s16 ybot,
         u8* col_ptr = *offset_ptr++;
         // TODO: information about whether this column was filled in front of the object 
         // should be loaded from clip buffer
-        //u8 col_drawn = (col_ptr == NULL);
+        u8 col_drawn = is_column_drawn(min_drawable_y, max_drawable_y);
 
-
-        if(1) { //!col_drawn) {
-            if(1) { //top_draw_y < bot_draw_y) {
-                // texels_per_scaled_vpixel
-                draw_col(top_draw_y, bot_draw_y, unclipped_dy, u_fix, texels_per_scaled_vpixel, y_per_texels_fix, col_ptr, obj, scaled_run_lengths_lut);
-            }
+        if(!col_drawn) {
+            draw_col(top_draw_y, bot_draw_y, unclipped_dy, u_fix, texels_per_scaled_vpixel, y_per_texels_fix, col_ptr, obj, scaled_run_lengths_lut);
         }
         u_fix += cols_per_scaled_hpixel;
-        if(1) { //!col_drawn) {
-            if(1) { //top_draw_y < bot_draw_y) {
-                // texels_per_scaled_vpixel
-                draw_col(top_draw_y, bot_draw_y, unclipped_dy, u_fix, texels_per_scaled_vpixel, y_per_texels_fix, col_ptr+1, obj, scaled_run_lengths_lut);
-            }
+        if(!col_drawn) {
+            draw_col(top_draw_y, bot_draw_y, unclipped_dy, u_fix, texels_per_scaled_vpixel, y_per_texels_fix, col_ptr+1, obj, scaled_run_lengths_lut);
         }
         u_fix += cols_per_scaled_hpixel;
 
@@ -1089,9 +1088,6 @@ void draw_masked(s16 x1, s16 x2, s16 ytop, s16 ybot,
     s16 x = beginx;
     u8* yclip_ptr = &(clipping_buffer->y_clip_buffer[x<<1]);
 
-    //u8** offset_ptr = (bmp_buffer_write == bmp_buffer_0) ? (&buf_0_column_offset_table[x]) : (&buf_1_column_offset_table[x]);
-    //u8** offset_ptr = &bmp_ptr_buf[x];
-    // CANNOT USE bmp_ptr_buf because it's overwritten by opaque walls to be filled with NULL ptrs
     u8** offset_ptr = (bmp_buffer_write == bmp_buffer_0) ? (&buf_0_column_offset_table[x]) : (&buf_1_column_offset_table[x]);
 
 
@@ -1113,8 +1109,8 @@ void draw_masked(s16 x1, s16 x2, s16 ytop, s16 ybot,
         u8* col_ptr = *offset_ptr++;
         // TODO: information about whether this column was filled in front of the object 
         // should be loaded from clip buffer
-        //u8 col_drawn = (col_ptr == NULL);
-        if(1) { //!col_drawn) {
+        u8 col_drawn = is_column_drawn(min_drawable_y, max_drawable_y);
+        if(!col_drawn) {
             if(top_draw_y < bot_draw_y) {
                 u8 top_draw_y = clamp(ytop, min_drawable_y, max_drawable_y);
                 u8 bot_draw_y = clamp(ybot, min_drawable_y, max_drawable_y);
@@ -1181,8 +1177,7 @@ void draw_forcefield(s16 x1, s16 x2,
 
     u8* yclip_ptr = &(clipping_buffer->y_clip_buffer[x<<1]);
 
-    //u8** offset_ptr = (bmp_buffer_write == bmp_buffer_0) ? (&buf_0_column_offset_table[x]) : (&buf_1_column_offset_table[x]);
-    u8** offset_ptr = bmp_ptr_buf;
+    u8** offset_ptr = (bmp_buffer_write == bmp_buffer_0) ? (&buf_0_column_offset_table[x]) : (&buf_1_column_offset_table[x]);
 
     for(;x < endx; x++) {
         u8 min_drawable_y = *yclip_ptr++;
@@ -2395,8 +2390,7 @@ void draw_upper_step(s16 x1, s16 x1_ytop, s16 nx1_ytop, s16 x2, s16 x2_ytop, s16
     //u32 mid_color = get_mid_dark_color(upper_color, light_level);
     u32 light_color = get_light_color(upper_color, light_level);
 
-    //u8** offset_ptr = (bmp_buffer_write == bmp_buffer_0) ? (&buf_0_column_offset_table[x]) : (&buf_1_column_offset_table[x]);
-    u8** offset_ptr = &bmp_ptr_buf[x];
+    u8** offset_ptr = (bmp_buffer_write == bmp_buffer_0) ? (&buf_0_column_offset_table[x]) : (&buf_1_column_offset_table[x]);
 
     u8* light_ptr = light_levels;
     for(int i = 0; i < num_light_levels; i++) {
@@ -2428,9 +2422,8 @@ void draw_upper_step(s16 x1, s16 x1_ytop, s16 nx1_ytop, s16 x2, s16 x2_ytop, s16
 
 
             u8* col_ptr = *offset_ptr++;
-            u8 col_drawn = (col_ptr == NULL);
+            u8 col_drawn = is_column_drawn(min_drawable_y, max_drawable_y);
 
-            //u8 col_drawn = *drawn_buf_ptr++;
             if(!col_drawn) {
                 //u8 clip_top = max(top_draw_y, bot_draw_y);
                 if(min_drawable_y < top_draw_y) {
@@ -2445,7 +2438,6 @@ void draw_upper_step(s16 x1, s16 x1_ytop, s16 nx1_ytop, s16 x2, s16 x2_ytop, s16
                 }
             }
             yclip_ptr += 2;
-            //offset_ptr++;
 
             top_y_fix += top_dy_per_dx;
             ntop_y_fix += ntop_dy_per_dx;
@@ -2522,10 +2514,8 @@ void draw_top_pegged_textured_upper_step(s16 x1, s16 x1_ytop, s16 nx1_ytop, s16 
     s16 x = beginx;
     u16 cnt = endx-x;
     u8* yclip_ptr = &(yclip[x<<1]);
-    //u8* drawn_buf_ptr = &(drawn_buf[x]);
     
-    u8** offset_ptr = &bmp_ptr_buf[x];
-    //(bmp_buffer_write == bmp_buffer_0) ? (&buf_0_column_offset_table[x]) : (&buf_1_column_offset_table[x]);
+    u8** offset_ptr = (bmp_buffer_write == bmp_buffer_0) ? (&buf_0_column_offset_table[x]) : (&buf_1_column_offset_table[x]);
     u16* tex_col_ptr = tex_col_buffer;
 
     while(cnt--) {
@@ -2533,14 +2523,12 @@ void draw_top_pegged_textured_upper_step(s16 x1, s16 x1_ytop, s16 nx1_ytop, s16 
         ntop_y_int = ntop_y_fix >> 16;
         u8 min_drawable_y = *yclip_ptr;
         u8 max_drawable_y = *(yclip_ptr+1);
-        //if(min_drawable_y >= max_drawable_y) { continue; }
         u8 top_draw_y = clamp(top_y_int, min_drawable_y, max_drawable_y);
         u8 bot_draw_y = clamp(ntop_y_int, min_drawable_y, max_drawable_y);
 
-        //u8 col_drawn = *drawn_buf_ptr++;
 
         u8* col_ptr = *offset_ptr++;
-        u8 col_drawn = (col_ptr == NULL);
+        u8 col_drawn = is_column_drawn(min_drawable_y, max_drawable_y);
         u16 one_over_z_16 = *tex_col_ptr++;
         u16 tex_idx = *tex_col_ptr++;
         if(!col_drawn) {
@@ -2644,10 +2632,8 @@ void draw_bottom_pegged_textured_lower_step(
     s16 x = beginx;
     u16 cnt = endx-x;
     u8* yclip_ptr = &(yclip[x<<1]);
-    //u8* drawn_buf_ptr = &(drawn_buf[x]);
 
-    u8** offset_ptr = &bmp_ptr_buf[x];
-    //u8** offset_ptr = (bmp_buffer_write == bmp_buffer_0) ? (&buf_0_column_offset_table[x]) : (&buf_1_column_offset_table[x]);
+    u8** offset_ptr = (bmp_buffer_write == bmp_buffer_0) ? (&buf_0_column_offset_table[x]) : (&buf_1_column_offset_table[x]);
     u16* tex_col_ptr = tex_col_buffer;
 
     while(cnt--) {
@@ -2660,8 +2646,7 @@ void draw_bottom_pegged_textured_lower_step(
         u8 top_draw_y = clamp(nbot_y_int, min_drawable_y, max_drawable_y);
 
         u8* col_ptr = *offset_ptr++;
-        //u8 col_drawn = *drawn_buf_ptr++;
-        u8 col_drawn = (col_ptr == NULL);
+        u8 col_drawn = is_column_drawn(min_drawable_y, max_drawable_y);
         u16 one_over_z_16 = *tex_col_ptr++;
         u16 tex_idx = *tex_col_ptr++;
         if(!col_drawn) {
@@ -2769,8 +2754,7 @@ void draw_lower_step(s16 x1, s16 x1_ybot, s16 nx1_ybot, s16 x2, s16 x2_ybot, s16
     u16 cnt = endx-x;
     calculate_light_levels_for_wall(cnt, cur_fix_inv_z, inv_z2, fix_inv_dz_per_dx, light_level);
 
-    //u8** offset_ptr = (bmp_buffer_write == bmp_buffer_0) ? (&buf_0_column_offset_table[x]) : (&buf_1_column_offset_table[x]);
-    u8** offset_ptr = &bmp_ptr_buf[x];
+    u8** offset_ptr = (bmp_buffer_write == bmp_buffer_0) ? (&buf_0_column_offset_table[x]) : (&buf_1_column_offset_table[x]);
 
     u8* light_ptr = light_levels;
         for(int i = 0; i < num_light_levels; i++) {
@@ -2802,8 +2786,7 @@ void draw_lower_step(s16 x1, s16 x1_ybot, s16 nx1_ybot, s16 x2, s16 x2_ybot, s16
             u8 top_draw_y = clamp(nbot_y_int, min_drawable_y, max_drawable_y);
 
             u8* col_ptr = *offset_ptr++;
-            u8 col_drawn = (col_ptr == NULL);
-            //u8 col_drawn = *drawn_buf_ptr++;
+            u8 col_drawn = is_column_drawn(min_drawable_y, max_drawable_y);
             if(!col_drawn) {
                 if(max_drawable_y > bot_draw_y) {
                     floor_func(bot_draw_y, max_drawable_y, col_ptr, params);
@@ -2864,11 +2847,11 @@ void draw_ceiling_update_clip(s16 x1, s16 x1_ytop, s16 x2, s16 x2_ytop,
 
     s16 x = beginx;
     u8* yclip_ptr = &(yclip[x<<1]);
-    //u8* drawn_buf_ptr = &(drawn_buf[x]);
 
     int cnt = endx-beginx;
 
-    u8** offset_ptr = &bmp_ptr_buf[x];
+    u8** offset_ptr = (bmp_buffer_write == bmp_buffer_0) ? (&buf_0_column_offset_table[x]) : (&buf_1_column_offset_table[x]);
+
     while(cnt--) {
         top_y_int = top_y_fix >> 16;
         u8 min_drawable_y = *yclip_ptr;
@@ -2876,7 +2859,7 @@ void draw_ceiling_update_clip(s16 x1, s16 x1_ytop, s16 x2, s16 x2_ytop,
         u8 top_draw_y = clamp(top_y_int, min_drawable_y, max_drawable_y);
 
         u8* col_ptr = *offset_ptr++;
-        u8 col_drawn = (col_ptr == NULL);
+        u8 col_drawn = is_column_drawn(min_drawable_y, max_drawable_y);
 
         if(min_drawable_y < top_draw_y && !col_drawn) {
             ceil_func(min_drawable_y, top_draw_y, col_ptr, params);
@@ -2927,10 +2910,8 @@ void draw_floor_update_clip(s16 x1, s16 x1_ybot, s16 x2, s16 x2_ybot,
 
     s16 x = beginx;
     u8* yclip_ptr = &(yclip[x<<1]);
-    //u8* drawn_buf_ptr = &(drawn_buf[x]);
 
-    //u8** offset_ptr = (bmp_buffer_write == bmp_buffer_0) ? (&buf_0_column_offset_table[x]) : (&buf_1_column_offset_table[x]);
-    u8** offset_ptr = &bmp_ptr_buf[x];
+    u8** offset_ptr = (bmp_buffer_write == bmp_buffer_0) ? (&buf_0_column_offset_table[x]) : (&buf_1_column_offset_table[x]);
 
     for(;x < endx; x++) {
         bot_y_int = bot_y_fix >> 16;
@@ -2941,8 +2922,7 @@ void draw_floor_update_clip(s16 x1, s16 x1_ybot, s16 x2, s16 x2_ybot,
         u8 bot_draw_y = clamp(bot_y_int, min_drawable_y, max_drawable_y);
 
         u8* col_ptr = *offset_ptr++;
-        //u8 col_drawn = *drawn_buf_ptr++;
-        u8 col_drawn = (col_ptr == NULL);
+        u8 col_drawn = is_column_drawn(min_drawable_y, max_drawable_y);
         
 
         if(max_drawable_y > bot_draw_y && !col_drawn) {
@@ -3032,10 +3012,8 @@ void draw_solid_color_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
     s16 x = beginx;
     u16 cnt = endx-x;
 
-    //u8** offset_ptr = (bmp_buffer_write == bmp_buffer_0) ? (&buf_0_column_offset_table[x]) : (&buf_1_column_offset_table[x]);
-    u8** offset_ptr = &bmp_ptr_buf[x];
+    u8** offset_ptr = (bmp_buffer_write == bmp_buffer_0) ? (&buf_0_column_offset_table[x]) : (&buf_1_column_offset_table[x]);
     u8* yclip_ptr = &(yclip[(x<<1)]);
-    //u8* drawn_buf_ptr = &(drawn_buf[x]);
 
     calculate_light_levels_for_wall(cnt, cur_fix_inv_z, inv_z2, fix_inv_dz_per_dx, light_level);
     
@@ -3071,12 +3049,12 @@ void draw_solid_color_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
             //if(min_drawable_y >= max_drawable_y) { continue; }
 
             
-            u8* col_ptr = *offset_ptr;
-            //u8 col_drawn = *drawn_buf_ptr;
-            u8 col_drawn = (col_ptr == NULL);
+            u8* col_ptr = *offset_ptr++;
+            u8 min_drawable_y = *yclip_ptr++;
+            u8 max_drawable_y = *yclip_ptr++;
+
+            u8 col_drawn = is_column_drawn(min_drawable_y, max_drawable_y);
             if(!col_drawn) {
-                u8 min_drawable_y = *yclip_ptr++;
-                u8 max_drawable_y = *yclip_ptr++;
                 u8 top_draw_y = clamp(top_y_int, min_drawable_y, max_drawable_y);
                 u8 bot_draw_y = clamp(bot_y_int, min_drawable_y, max_drawable_y);
                 if(min_drawable_y < top_draw_y) {
@@ -3088,12 +3066,8 @@ void draw_solid_color_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
                 if(bot_draw_y < max_drawable_y) {
                     floor_func(bot_draw_y, max_drawable_y, col_ptr, floor_params);
                 }
-                *offset_ptr++ = NULL;
-            } else {
-                offset_ptr++;
-                yclip_ptr += 2;
+                set_column_drawn(yclip_ptr);
             }
-
             top_y_fix += top_dy_per_dx;
             bot_y_fix += bot_dy_per_dx;
         }
@@ -3183,10 +3157,8 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
     s16 x = beginx;
     u16 cnt = endx-x;
 
-    //u8** offset_ptr = (bmp_buffer_write == bmp_buffer_0) ? (&buf_0_column_offset_table[x]) : (&buf_1_column_offset_table[x]);
-    u8** offset_ptr = &bmp_ptr_buf[x];
+    u8** offset_ptr = (bmp_buffer_write == bmp_buffer_0) ? (&buf_0_column_offset_table[x]) : (&buf_1_column_offset_table[x]);
     u8* yclip_ptr = &(yclip[(x<<1)]);
-    //u8* drawn_buf_ptr = &(drawn_buf[x]);
 
     //u32* tex_col_ptr = tex_col_buffer;
     u16* tex_col_ptr = tex_col_buffer;
@@ -3208,9 +3180,10 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
             top_y_int = top_y_fix >> 16;
             bot_y_int = bot_y_fix >> 16;
             
-            u8* col_ptr = *offset_ptr;
-            u8 col_drawn = (col_ptr == NULL);
-            *offset_ptr++ = NULL;
+            u8* col_ptr = *offset_ptr++;
+            u8 min_drawable_y = *yclip_ptr++;
+            u8 max_drawable_y = *yclip_ptr++;
+            u8 col_drawn = is_column_drawn(min_drawable_y, max_drawable_y);
 
             top_y_fix += top_dy_per_dx;
             bot_y_fix += bot_dy_per_dx;
@@ -3219,8 +3192,8 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
             u16 tex_idx = *tex_col_ptr++;
 
             if(!col_drawn) {
-                u8 min_drawable_y = *yclip_ptr++;
-                u8 max_drawable_y = *yclip_ptr++;
+                
+                set_column_drawn(yclip_ptr);
                 s16 ctop = min_drawable_y;
                 s16 cbot = top_y_int;
                 if(ctop < cbot) {
@@ -3276,8 +3249,6 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
                         }   
                     }
                 }
-            } else {
-                yclip_ptr += 2;
             }
         }
     } else {
@@ -3287,9 +3258,11 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
             bot_y_int = bot_y_fix >> 16;
 
 
-            u8* col_ptr = *offset_ptr;
-            u8 col_drawn = (col_ptr == NULL);
-            *offset_ptr++ = NULL;
+            u8* col_ptr = *offset_ptr++;
+
+            u8 min_drawable_y = *yclip_ptr++;
+            u8 max_drawable_y = *yclip_ptr++;
+            u8 col_drawn = is_column_drawn(min_drawable_y, max_drawable_y);
 
             top_y_fix += top_dy_per_dx;
             bot_y_fix += bot_dy_per_dx;
@@ -3298,9 +3271,7 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
             u16 tex_idx = *tex_col_ptr++;
 
             if(!col_drawn) {
-                u8 min_drawable_y = *yclip_ptr++;
-                u8 max_drawable_y = *yclip_ptr++;
-
+                set_column_drawn(yclip_ptr);
                 s16 ctop = min_drawable_y;
                 s16 cbot = top_y_int;
                 if(ctop < cbot) {
@@ -3355,8 +3326,6 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
                         }   
                     }
                 }
-            } else {
-                yclip_ptr += 2;
             }
 
         }
@@ -3441,11 +3410,9 @@ void draw_top_pegged_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
     s16 x = beginx;
     u16 cnt = endx-x;
 
-    u8** offset_ptr = &bmp_ptr_buf[x];
-    //u8** offset_ptr = (bmp_buffer_write == bmp_buffer_0) ? (&buf_0_column_offset_table[x]) : (&buf_1_column_offset_table[x]);
+    u8** offset_ptr = (bmp_buffer_write == bmp_buffer_0) ? (&buf_0_column_offset_table[x]) : (&buf_1_column_offset_table[x]);
 
     u8* yclip_ptr = &(yclip[(x<<1)]);
-    //u8* drawn_buf_ptr = &(drawn_buf[x]);
 
     u16* tex_col_ptr = tex_col_buffer;
 
@@ -3455,12 +3422,12 @@ void draw_top_pegged_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
 
         u8 min_drawable_y = *yclip_ptr++;
         u8 max_drawable_y = *yclip_ptr++;
-        //if(min_drawable_y >= max_drawable_y) { continue; }
+
         u8 top_draw_y = clamp(top_y_int, min_drawable_y, max_drawable_y);
         u8 bot_draw_y = clamp(bot_y_int, min_drawable_y, max_drawable_y);
 
-        u8* col_ptr = *offset_ptr;
-        u8 col_drawn = col_ptr == NULL; //*drawn_buf_ptr;
+        u8* col_ptr = *offset_ptr++;
+        u8 col_drawn = is_column_drawn(min_drawable_y, max_drawable_y);
             
         u16 one_over_z_16 = *tex_col_ptr++;
         u16 tex_idx = *tex_col_ptr++;
@@ -3487,11 +3454,7 @@ void draw_top_pegged_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
             if(bot_draw_y < max_drawable_y) {
                 floor_func(bot_draw_y, max_drawable_y, col_ptr, floor_params);
             }
-            *offset_ptr++ = NULL;
-            //*drawn_buf_ptr++ = 1;
-        } else {
-            offset_ptr++;
-            //drawn_buf_ptr++;
+            set_column_drawn(yclip_ptr);
         }
 
         top_y_fix += top_dy_per_dx;
@@ -3580,10 +3543,8 @@ void draw_bot_pegged_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
     s16 x = beginx;
     u16 cnt = endx-x;
 
-    u8** offset_ptr = &bmp_ptr_buf[x];
-    //u8** offset_ptr = (bmp_buffer_write == bmp_buffer_0) ? (&buf_0_column_offset_table[x]) : (&buf_1_column_offset_table[x]);
+    u8** offset_ptr = (bmp_buffer_write == bmp_buffer_0) ? (&buf_0_column_offset_table[x]) : (&buf_1_column_offset_table[x]);
     u8* yclip_ptr = &(yclip[(x<<1)]);
-    //u8* drawn_buf_ptr = &(drawn_buf[x]);
 
     u16* tex_col_ptr = tex_col_buffer;
 
@@ -3593,14 +3554,14 @@ void draw_bot_pegged_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
 
         u8 min_drawable_y = *yclip_ptr++;
         u8 max_drawable_y = *yclip_ptr++;
-        //if(min_drawable_y >= max_drawable_y) { continue; }
+        
+        u8 col_drawn = is_column_drawn(min_drawable_y, max_drawable_y);
+
         u8 top_draw_y = clamp(top_y_int, min_drawable_y, max_drawable_y);
         u8 bot_draw_y = clamp(bot_y_int, min_drawable_y, max_drawable_y);
 
         
-        u8* col_ptr = *offset_ptr;
-        u8 col_drawn = (col_ptr == NULL);
-        //u8 col_drawn = *drawn_buf_ptr;
+        u8* col_ptr = *offset_ptr++;
         u16 one_over_z_16 = *tex_col_ptr++;
         u16 tex_idx = *tex_col_ptr++;
         if(!col_drawn) {
@@ -3625,11 +3586,7 @@ void draw_bot_pegged_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
             if(bot_draw_y < max_drawable_y) {
                 floor_func(bot_draw_y, max_drawable_y, col_ptr, floor_params);
             }
-            *offset_ptr++ = NULL;
-            //*drawn_buf_ptr++ = 1;
-        } else {
-            offset_ptr++;
-            //drawn_buf_ptr++;
+            set_column_drawn(yclip_ptr);
         }
         
         top_y_fix += top_dy_per_dx;
