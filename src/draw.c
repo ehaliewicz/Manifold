@@ -738,282 +738,173 @@ void flip() {
   }
 }
 
-#define MAX_CACHE_INSTRUCTIONS 240
-// 2400 bytes
-u8 sprite_draw_cache[240*6+2]; // [(400*6)+2];//[3072+2]; // extra 2 bytes are for a RTS at the end // 0x4E75;
-// u8* sprite_draw_cache;
-
+#define MAX_CACHE_INSTRUCTIONS 256
+// 1536+2 bytes
+u8 sprite_draw_cache[256*6+2]; // [(400*6)+2];//[3072+2]; // extra 2 bytes are for a RTS at the end // 0x4E75;
 extern const u8* sprite_draw_cache_lookup[512];
 extern const u16 sprite_draw_cache_size_lookup[512];
 
 #define RTS_OPCODE 0x4E75 
+#define SPRITE_MOVE_OPCODE 0x1368
 
 void init_sprite_draw_cache() {
-    //sprite_draw_cache = MEM_alloc((400*6)+2);
-    KLog_U1("allocated pointer: ", sprite_draw_cache);
+    // sprite_draw_cache is a table of 256 move.b X(a0), Y(a1) instructions
+    // Y increments by 2 every instruction, so that it draws to the next byte lower in the framebuffer
     u16* ptr = (u16*)sprite_draw_cache;
     for(int i = 0; i < MAX_CACHE_INSTRUCTIONS; i++) {
-        *ptr++ = 0x1368; // move.b X(a0), X(a1)
-        *ptr++ = 0;
+        *ptr++ = SPRITE_MOVE_OPCODE; // move.b X(a0), X(a1)
+        *ptr++ = 0;      // texel offset initialized to 0, will be patched in set_up_scale_routine
         *ptr++ = (i<<1); // set up offset to column pointer
     }
-    *ptr++ = RTS_OPCODE; // terminate cache with return
+    *ptr++ = RTS_OPCODE; // terminate cache with return instruction
 }
 
-s32 prev_rts_slot = -1;
-u16 prev_rts_val = 0;
+// the encoding of `move.b X(a0), Y(a1) instructions is 1368 XXXX YYYY (in hex)
+// we only want to update XXXX, so we update at an offset of 2, and increment the pointer by 6, as each instruction is 6 bytes
+#define COPY_CASE                                           \
+    case MAX_CACHE_INSTRUCTIONS-__COUNTER__:                \
+        __asm volatile(                                     \
+            "move.w (%0)+, 2(%1)\t\n                        \
+            addq.l #6, %1"                                  \
+            : "+a" (scale_routine_coefficients), "+a" (ptr) \
+        )
 
-/*
-#define ASM_BLOCK \ 
+#define SIXTEEN_COPY_CASES \
+    COPY_CASE; COPY_CASE; COPY_CASE; COPY_CASE; COPY_CASE; COPY_CASE; COPY_CASE; COPY_CASE; \
+    COPY_CASE; COPY_CASE; COPY_CASE; COPY_CASE; COPY_CASE; COPY_CASE; COPY_CASE; COPY_CASE
 
-
-#define SCALE_CASE(n) \
-    case n: \   
-*/
-
-
+#define TWO_HUNDRED_FIFTY_SIX_COPY_CASES \
+    SIXTEEN_COPY_CASES; SIXTEEN_COPY_CASES; SIXTEEN_COPY_CASES; SIXTEEN_COPY_CASES; SIXTEEN_COPY_CASES; SIXTEEN_COPY_CASES; SIXTEEN_COPY_CASES; SIXTEEN_COPY_CASES; \
+    SIXTEEN_COPY_CASES; SIXTEEN_COPY_CASES; SIXTEEN_COPY_CASES; SIXTEEN_COPY_CASES; SIXTEEN_COPY_CASES; SIXTEEN_COPY_CASES; SIXTEEN_COPY_CASES; SIXTEEN_COPY_CASES
+    
 void set_up_scale_routine(s16 unclipped_dy) {
+    // this routine looks up the table of X coefficients/offsets for the scaled height of the sprite we are about to draw 
+    // (unclipped_dy means the number of unclipped pixels this sprite is scaled to)
+    // and copies them into sprite_draw_cache.  the loop is fully unrolled.
     u16* scale_routine_coefficients = sprite_scale_coefficients_pointer_lut[unclipped_dy];
-    u16 words_to_copy = unclipped_dy;
+    u16 instructions_to_update = unclipped_dy;
     u16* ptr = sprite_draw_cache;
 
+    // if we previously called this function, we left an RTS at the end of the required number of pixels
+    // here we reset it to a move opcode, in case our new copy reaches that point
+    // neglecting this would cause pixel spans to be cut off early by returning early, in some cases
+    static s32 prev_rts_slot = -1;
     if(prev_rts_slot != -1) {
-        ptr[prev_rts_slot] = prev_rts_val;
+        ptr[prev_rts_slot] = SPRITE_MOVE_OPCODE; 
     }
-
-    while(words_to_copy--) {
-        ptr++;
-        *ptr++ = *scale_routine_coefficients++;
-        ptr++;
+    // update YYYY offsets in the sprite_draw_cache table, not touching the opcodes
+    switch(instructions_to_update) {
+        TWO_HUNDRED_FIFTY_SIX_COPY_CASES;
     }
+    // store the slot at which we are writing a RTS opcode to terminate the array, so that it can be patched later.
     prev_rts_slot = ptr-((u16*)sprite_draw_cache);
-    prev_rts_val = *ptr;
-    *ptr++ = 0x4E75;
+    *ptr++ = RTS_OPCODE;
+}
 
-    //KLog("done.");
+void call_sprite_cache_for_run(u16* jump_tgt, u8* cur_texel_ptr, u8* cur_column_ptr) {
+    register const a0 asm ("%a0") = (u32)cur_texel_ptr;   // this lets me make sure a0 and a1 are initialized correctly
+    register const a1 asm ("%a1") = (u32)cur_column_ptr;
+    //"move.w #0x4E75, (%0, %3.w)\t\n\
+    //move.w #0x1368, (%0, %3.w)"
+
+    __asm volatile(
+        "jsr (%0)\t\n\
+        "
+        : : "a" (jump_tgt), "a" (a0), "a" (a1) // instructions are 6 bytes long, so multiply patch index by 6
+    );
+}
+
+void call_sprite_cache_for_wide_run(u16* jump_tgt, u8* cur_texel_ptr, u8* cur_column_ptr) {
+    register const a0 asm ("%a0") = (u32)cur_texel_ptr;   // this lets me make sure a0 and a1 are initialized correctly
+    register const a1 asm ("%a1") = (u32)cur_column_ptr;
+    
+    // move.w #0x4E75, (%0, %3.w)\t\n\\
+    //move.w #0x1368, (%0, %3.w)
+        
+    __asm volatile(
+        "jsr (%0)\t\n\
+        addq.l #1, %2\t\n\
+        jsr (%0)\t\n\
+        "
+        : : "a" (jump_tgt), "a" (a0), "a" (a1) // instructions are 6 bytes long, so multiply patch index by 6
+    );
 }
 
 
-void draw_col(s16 ytop, s16 ybot, s16 unclipped_dy, u32 u_fix, u32 texels_per_scaled_vpixel, u32 y_per_texels_fix, u8* col_ptr, const rle_object* obj, u32* scaled_run_lengths_lut) {
+void draw_col(s16 ytop, s16 ybot, 
+              s16 unclipped_dy, 
+              column* col,
+              u32 texels_per_scaled_vpixel, u32 y_per_texels_fix, 
+              u8* col_ptr, u32* scaled_run_lengths_lut,
+              const u8 draw_wide
+               ) {
     u8 top_draw_y = ytop; //clamp(ytop, min_drawable_y, max_drawable_y);
     u8 bot_draw_y = ybot; //clamp(ybot, min_drawable_y, max_drawable_y);
     
     u32 cur_y_fix = ytop<<16;
     
-    const column* c = &obj->columns[(u_fix>>16)];
-    const u16* span_ptr = c->spans;
+    const u16* span_ptr = col->spans;
 
-    const u8* base_texel_ptr = c->texels;
+    const u8* base_texel_ptr = col->texels;
     const u8* cur_texel_ptr = base_texel_ptr;
+    u8 num_spans = col->num_spans;
 
 
-    for(int i = 0; i < c->num_spans; i++) {
+    for(int i = 0; i < num_spans; i++) {
         u16 skip = *span_ptr++;
         u16 len = *span_ptr++;
 
         u32 scaled_skip = scaled_run_lengths_lut[skip];
         u32 num_scaled_pixels_fix = scaled_run_lengths_lut[len];
         u16 num_scaled_pixels = num_scaled_pixels_fix>>16;
-
-
-
-
+        
         cur_y_fix += scaled_skip; //y_per_texels_fix * skip;
 
-        u16 clipped_virtual_pixels = unclipped_dy - (num_scaled_pixels_fix>>16);
-        //KLog_U1("clipped_virtual_pixels: ", clipped_virtual_pixels);
+        u16 span_draw_top = (cur_y_fix>>16);
 
-        // texels_per_scaled_pixel would be (64<<16)/128, or .5, so this result would be 56 in 16.16
-        
-        u32 reverse_offset_texels = clipped_virtual_pixels * texels_per_scaled_vpixel;
-        //KLog_U1("reverse_offset_texels: ", reverse_offset_texels);
-        
-        u16* reverse_offsetted_texel_ptr = cur_texel_ptr - (reverse_offset_texels>>16);
-        //KLog_U1("cur_texel_ptr: ", cur_texel_ptr);
-        //KLog_U1("cur texel idx: ", cur_texel_ptr - c->texels);
-        //KLog_U1("reverse_offsetted_texel_ptr: ", reverse_offsetted_texel_ptr);
-        //KLog_S1("reverse offsetted texel idx: ", reverse_offsetted_texel_ptr - c->texels);
-        
-        u16 span_draw_top_clipped = (cur_y_fix>>16);
-        u16 span_draw_top_unclipped = span_draw_top_clipped-clipped_virtual_pixels;
-        //KLog_U1("unclipped ytop: ", ytop);
-        //KLog_U1("Starting drawing from: ", ytop+clipped_virtual_pixels);
-        
-        //draw_texture_vertical_line(span_draw_top_unclipped, span_draw_top_clipped, ybot, col_ptr, reverse_offsetted_texel_ptr);
-
-
-        u8* cur_col_ptr = &col_ptr[span_draw_top_clipped<<1];
         
         u8 clipped_bot = 0;
-        s16 bot = (span_draw_top_clipped+num_scaled_pixels);
+        s16 bot = (span_draw_top+num_scaled_pixels);
 
 
+        volatile u16* jump_tgt = (u16*)sprite_draw_cache;
         s16 clip_bot = 0;
         s16 clip_top = 0;
         if(bot >= ybot) {
             clip_bot = (bot-ybot);
-            //num_scaled_pixels -= max(0, (bot-ybot));
-
+            num_scaled_pixels -= clip_bot;
             clipped_bot = 1;
         }
-        if(span_draw_top_clipped < ytop) {
-            clip_top = ytop - span_draw_top_clipped;
-            cur_col_ptr += (clip_top<<1);
+        if(span_draw_top < ytop) {
+            clip_top = ytop - span_draw_top;
+            span_draw_top += clip_top;
+            num_scaled_pixels -= clip_top;
+            jump_tgt += (clip_top*3);
+            //cur_col_ptr += (clip_top<<1);
+        }
+        u8* cur_col_ptr = &col_ptr[span_draw_top<<1];
+
+        //volatile u16* sprite_word_ptr = (u16*)sprite_draw_cache;
+        jump_tgt[num_scaled_pixels*3] = RTS_OPCODE;
+
+        if(draw_wide) {
+            call_sprite_cache_for_wide_run(jump_tgt, cur_texel_ptr, cur_col_ptr);
+        } else {
+            call_sprite_cache_for_run(jump_tgt, cur_texel_ptr, cur_col_ptr);
         }
 
-        
-
-        u16* jump_tgt = (u16*)sprite_draw_cache;
-        u16 num_pix_times_3; //= num_scaled_pixels;
-
-        //num_pix_times_3 = (num_scaled_pixels*3);
-        
-        // if unclipped dy = 32
-        // and scaled len = 6
-        // we want to put a RTS in the 6th slot
-
-        // if we want to skip 32
-        // 
-        register const a0 asm ("%a0") = ((u32)cur_texel_ptr);
-        register const a1 asm ("%a1") = (u32)cur_col_ptr;
-
-        __asm volatile(
-            "move.w %4, %3\t\n\
-            add.w %4, %3\t\n\
-            add.w %4, %3\t\n\
-            add.w %3, %3\t\n\
-            move.w #20085, (%0, %3.w)\t\n\
-            jsr (%0)\t\n\
-            move.w #4968, (%0, %3.w)\t\n\
-            "
-            :
-            : "a" (jump_tgt), "a" (a0), "a" (a1), "a" (num_pix_times_3),
-              "a" (num_scaled_pixels)
-        );
-        
-
+        jump_tgt[num_scaled_pixels*3] = SPRITE_MOVE_OPCODE;
 
         //KLog_U2("restoring: ", prev_val, " to slot: ", num_pix_times_3);
         //jump_tgt[num_pix_times_3] = prev_val;
 
 
-
         if(clipped_bot) {
-            //return;
+            return;
         }
 
-        //continue;
-        goto bottom_of_loop;
-
-        u32 cur_tex_fix = 0; //cur_texel_ptr-base_texel_ptr;
-        
-        u8 remainder_pix = num_scaled_pixels & 0b11;
-        switch(remainder_pix) {
-            case 3:
-                //*cur_col_ptr++ = cur_texel_ptr[cur_tex_fix>>16];
-                //cur_col_ptr++;
-                //cur_tex_fix += texels_per_scaled_vpixel;
-                __asm volatile(
-                    "swap %1\t\n\
-                    move.b 0(%2, %1.w), (%0)+\t\n\
-                    addq #1, %0\t\n\
-                    swap %1\t\n\
-                    add.l %3, %1"
-                    : "+a" (cur_col_ptr), "+d" (cur_tex_fix)
-                    : "a" (cur_texel_ptr), "d" (texels_per_scaled_vpixel)
-                );
-            case 2:
-                __asm volatile(
-                    "swap %1\t\n\
-                    move.b 0(%2, %1.w), (%0)+\t\n\
-                    addq #1, %0\t\n\
-                    swap %1\t\n\
-                    add.l %3, %1"
-                    : "+a" (cur_col_ptr), "+d" (cur_tex_fix)
-                    : "a" (cur_texel_ptr), "d" (texels_per_scaled_vpixel)
-                );
-            case 1:
-                __asm volatile(
-                    "swap %1\t\n\
-                    move.b 0(%2, %1.w), (%0)+\t\n\
-                    addq #1, %0\t\n\
-                    swap %1\t\n\
-                    add.l %3, %1"
-                    : "+a" (cur_col_ptr), "+d" (cur_tex_fix)
-                    : "a" (cur_texel_ptr), "d" (texels_per_scaled_vpixel)
-                );
-
-            case 0:
-                break;
-        }
-        num_scaled_pixels >>= 2; // divide by 8
-        u32 texels_per_scaled_vpixel_times_four = texels_per_scaled_vpixel<<2;
-        
-
-        u32 tmp;
-        while(num_scaled_pixels--) {
-            
-            /*
-            *cur_col_ptr++ = cur_texel_ptr[cur_tex_fix>>16];
-            cur_tex_fix += texels_per_scaled_vpixel;
-            cur_col_ptr[1] = cur_texel_ptr[cur_tex_fix>>16];
-            cur_tex_fix += texels_per_scaled_vpixel;
-            cur_col_ptr[3] = cur_texel_ptr[cur_tex_fix>>16];
-            cur_tex_fix += texels_per_scaled_vpixel;
-            cur_col_ptr[5] = cur_texel_ptr[cur_tex_fix>>16];
-            cur_tex_fix += texels_per_scaled_vpixel;
-            cur_col_ptr += 7;
-            */
-           u32 tmp_cur_tex_fix = cur_tex_fix;
-        
-           __asm volatile(
-                "add.w %3, %1\t\n\
-                swap %3\t\n\
-                swap %1\t\n\
-                move.b (%2, %1.w), (%0)+\t\n\
-                addx.l %3, %1\t\n\
-                move.b (%2, %1.w), 1(%0)\t\n\
-                addx.l %3, %1\t\n\
-                move.b (%2, %1.w), 3(%0)\t\n\
-                addx.l %3, %1\t\n\
-                move.b (%2, %1.w), 5(%0)\t\n\
-                addx.l %3, %1\t\n\
-                addq.l #7, %0\t\n\
-                swap %3\t\n\
-                "
-            : "+a" (cur_col_ptr), "+d" (tmp_cur_tex_fix)
-            : "a" (cur_texel_ptr), "d" (texels_per_scaled_vpixel)
-           );
-           cur_tex_fix += texels_per_scaled_vpixel_times_four;
-            /*
-            __asm volatile(
-                "swap %4\t\n\
-                move.b 0(%1, %4.w), (%0)\t\n\
-                swap %4\t\n\
-                addq #2, %0\t\n\
-                "
-                :  "+a" (cur_col_ptr)
-                : "a" (cur_texel_ptr), "d" (texels_per_scaled_vpixel), "d" (tmp), "d" (cur_tex_fix)
-            );
-            //cur_col_ptr++;
-            
-            //u8 texel = cur_texel_ptr[cur_tex_fix>>16];
-            //*cur_col_ptr++ = texel; //cur_texel_ptr[cur_tex_fix>>16];
-            //cur_col_ptr++;
-            cur_tex_fix += texels_per_scaled_vpixel;
-            */
-        }
-        
-    bottom_of_loop:
-        //if(clipped_bot) {
-        //    return;
-        //}
-        //draw_bottom_clipped_texture_vertical_line(span_draw_top_clipped, span_draw_top_clipped, bot, bot-clipped_virtual_pixels, col_ptr, cur_texel_ptr);
-
-        // now we skip past texels and pixels again
-        
         cur_y_fix += num_scaled_pixels_fix;
-        cur_texel_ptr += len;
+        cur_texel_ptr += len;       
 
     }
 
@@ -1108,14 +999,56 @@ void draw_rle_sprite(s16 x1, s16 x2, s16 ytop, s16 ybot,
         // should be loaded from clip buffer
         u8 col_drawn = is_column_drawn(min_drawable_y, max_drawable_y);
 
-        if(!col_drawn) {
-            draw_col(top_draw_y, bot_draw_y, unclipped_dy, u_fix, texels_per_scaled_vpixel, y_per_texels_fix, col_ptr, obj, scaled_run_lengths_lut);
+        if(col_drawn) {
+            u_fix += cols_per_scaled_hpixel;
+            u_fix += cols_per_scaled_hpixel;
+        } else {
+            u_fix += cols_per_scaled_hpixel;
+            u16 mid_u_int = u_fix>>16;
+            u_fix += cols_per_scaled_hpixel;
+            u16 end_u_int = u_fix>>16;
+            
+            
+            if(mid_u_int == end_u_int) {
+                column* col = &obj->columns[mid_u_int];
+                draw_col(
+                    top_draw_y, bot_draw_y, 
+                    unclipped_dy, col,
+                    texels_per_scaled_vpixel, y_per_texels_fix,
+                    col_ptr, scaled_run_lengths_lut, 1
+                );
+            } else {
+                column* col = &obj->columns[mid_u_int];
+                draw_col(
+                    top_draw_y, bot_draw_y, 
+                    unclipped_dy, col,
+                    texels_per_scaled_vpixel, y_per_texels_fix,
+                    col_ptr, scaled_run_lengths_lut, 0
+                );
+                col = &obj->columns[end_u_int];
+                draw_col(
+                    top_draw_y, bot_draw_y, 
+                    unclipped_dy, col,
+                    texels_per_scaled_vpixel, y_per_texels_fix,
+                    col_ptr+1, scaled_run_lengths_lut, 0
+                );
+            }
+
+        }
+        flip();
+        /*
+        if(!col_drawn) {            
+            u16 u_int = u_fix>>16;
+            column* col = obj->columns[u_int];
+            draw_col(top_draw_y, bot_draw_y, unclipped_dy, col, texels_per_scaled_vpixel, y_per_texels_fix, col_ptr, obj, scaled_run_lengths_lut);
         }
         u_fix += cols_per_scaled_hpixel;
         if(!col_drawn) {
-            draw_col(top_draw_y, bot_draw_y, unclipped_dy, u_fix, texels_per_scaled_vpixel, y_per_texels_fix, col_ptr+1, obj, scaled_run_lengths_lut);
+            u16 u_int = u_fix>>16;
+            draw_col(top_draw_y, bot_draw_y, unclipped_dy, u_int, texels_per_scaled_vpixel, y_per_texels_fix, col_ptr+1, obj, scaled_run_lengths_lut);
         }
         u_fix += cols_per_scaled_hpixel;
+        */
 
     }
 

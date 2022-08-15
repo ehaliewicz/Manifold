@@ -639,7 +639,7 @@ game_mode run_game() {
 
     u32 start_ticks = getTick();
     
-    process_all_objects(cur_frame);
+    //process_all_objects(cur_frame);
 
     console_tick();
     inventory_draw();
