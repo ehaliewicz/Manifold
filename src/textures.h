@@ -10,7 +10,7 @@ extern const lit_texture door_mid;
 
 #define NUM_TEXTURES 5
 
-extern lit_texture* textures[8*5];
+extern lit_texture* const textures[8*5];
 
 const u16 raw_key_mid[2048];
 const u16 raw_key_32_32_mid[2048];

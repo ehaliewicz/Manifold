@@ -23,6 +23,6 @@ void obj_sprite_init(u16 free_tile_loc);
 const u32 scaled_sprite_run_lengths[64*513];
 const u32 scaled_sprite_texel_per_pixel_lut[513];
 
-const u16* sprite_scale_coefficients_pointer_lut[513];
+const u16* const sprite_scale_coefficients_pointer_lut[513];
 
 #endif

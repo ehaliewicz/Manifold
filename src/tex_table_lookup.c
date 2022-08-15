@@ -5187,7 +5187,7 @@ const u8 skip_64_512[512] = {
 120, 120, 120, 120, 120, 120, 120, 122, 122, 122, 122, 122, 122, 122, 122, 124, 124, 124, 124, 124, 124, 124, 124, 126, 126, 126, 126, 126, 126, 126, 126, };
 
 
-const u8* skip_table_lut[513] = {
+const u8* const skip_table_lut[513] = {
     skip_64_0, skip_64_1, skip_64_2, skip_64_3, skip_64_4, skip_64_5, skip_64_6, skip_64_7, skip_64_8, skip_64_9, skip_64_10, skip_64_11, skip_64_12, skip_64_13, skip_64_14, skip_64_15, skip_64_16, skip_64_17, skip_64_18, skip_64_19, skip_64_20, 
 skip_64_21, skip_64_22, skip_64_23, skip_64_24, skip_64_25, skip_64_26, skip_64_27, skip_64_28, skip_64_29, skip_64_30, skip_64_31, skip_64_32, skip_64_33, skip_64_34, skip_64_35, skip_64_36, skip_64_37, skip_64_38, skip_64_39, skip_64_40, 
 skip_64_41, skip_64_42, skip_64_43, skip_64_44, skip_64_45, skip_64_46, skip_64_47, skip_64_48, skip_64_49, skip_64_50, skip_64_51, skip_64_52, skip_64_53, skip_64_54, skip_64_55, skip_64_56, skip_64_57, skip_64_58, skip_64_59, skip_64_60, 
@@ -6246,7 +6246,7 @@ extern void scale_64_511_bot_clip(void);
 extern void scale_64_512_top_clip(void);
 extern void scale_64_512_bot_clip(void);
 
-const void const* jump_table_top_clip_lut[513] = {
+const void* const jump_table_top_clip_lut[513] = {
 scale_64_0_top_clip,
 scale_64_1_top_clip, scale_64_2_top_clip, scale_64_3_top_clip, scale_64_4_top_clip, scale_64_5_top_clip, scale_64_6_top_clip, scale_64_7_top_clip, scale_64_8_top_clip,
 scale_64_9_top_clip, scale_64_10_top_clip, scale_64_11_top_clip, scale_64_12_top_clip, scale_64_13_top_clip, scale_64_14_top_clip, scale_64_15_top_clip, scale_64_16_top_clip,
@@ -6315,7 +6315,7 @@ scale_64_505_top_clip, scale_64_506_top_clip, scale_64_507_top_clip, scale_64_50
 };
 
 
-const void const* jump_table_bot_clip_lut[513] = {
+const void* const jump_table_bot_clip_lut[513] = {
 scale_64_0_bot_clip,
 scale_64_1_bot_clip, scale_64_2_bot_clip, scale_64_3_bot_clip, scale_64_4_bot_clip, scale_64_5_bot_clip, scale_64_6_bot_clip, scale_64_7_bot_clip, scale_64_8_bot_clip,
 scale_64_9_bot_clip, scale_64_10_bot_clip, scale_64_11_bot_clip, scale_64_12_bot_clip, scale_64_13_bot_clip, scale_64_14_bot_clip, scale_64_15_bot_clip, scale_64_16_bot_clip,

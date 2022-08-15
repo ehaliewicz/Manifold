@@ -489,7 +489,7 @@ const lit_texture lit_tex_15col_tex_5_light = {
   .dark = raw_tex_15col_tex_5_mid, .mid = raw_tex_15col_tex_5_mid, .light = raw_tex_15col_tex_5_mid
 };
 
-const lit_texture* textures[8*8] = {
+const lit_texture* const textures[8*8] = {
     //{
         &lit_tex_15col_tex_0_dark, 
         &lit_tex_15col_tex_0_mid,

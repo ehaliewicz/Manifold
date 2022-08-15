@@ -7638,7 +7638,7 @@ const u16 sprite_scale_512_table[512] = {
 56,56,56,56,56,56,56,56,57,57,57,57,57,57,57,57,58,58,58,58,58,58,58,58,59,59,59,59,59,59,59,59,
 60,60,60,60,60,60,60,60,61,61,61,61,61,61,61,61,62,62,62,62,62,62,62,62,63,63,63,63,63,63,63,63,
 };
-const u16* sprite_scale_coefficients_pointer_lut[513] = {
+const u16* const sprite_scale_coefficients_pointer_lut[513] = {
 NULL, sprite_scale_1_table, sprite_scale_2_table, sprite_scale_3_table,
 sprite_scale_4_table, sprite_scale_5_table, sprite_scale_6_table, sprite_scale_7_table,
 sprite_scale_8_table, sprite_scale_9_table, sprite_scale_10_table, sprite_scale_11_table,
