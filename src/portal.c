@@ -10,7 +10,7 @@
 #include "math3D.h"
 #include "obj_sprite.h"
 #include "portal_map.h"
-#include "sector.h"
+#include "sector_group.h"
 #include "textures.h"
 #include "utils.h"
 #include "vertex.h"

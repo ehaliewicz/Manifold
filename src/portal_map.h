@@ -2,7 +2,7 @@
 #define PORTAL_MAP_H
 
 #include <genesis.h>
-#include "sector.h"
+#include "sector_group.h"
 #include "texture.h"
 #include "vertex.h"
 

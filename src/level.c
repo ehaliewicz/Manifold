@@ -1,7 +1,7 @@
 #include <genesis.h>
 #include "math3d.h"
 #include "portal_map.h"
-#include "sector.h"
+#include "sector_group.h"
 
 //const level* cur_level = NULL;
 portal_map* cur_portal_map = NULL;

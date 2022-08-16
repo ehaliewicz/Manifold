@@ -4,7 +4,9 @@
 #include "level.h"
 #include "portal_map.h"
 #include "random.h"
-#include "sector.h"
+#include "sector_group.h"
+
+
 
 s16* live_sector_group_parameters;
 

@@ -1,5 +1,5 @@
-#ifndef SECTOR_H
-#define SECTOR_H
+#ifndef SECTOR_GROUP_H
+#define SECTOR_GROUP_H
 
 #include <genesis.h>
 #include "portal_map.h"

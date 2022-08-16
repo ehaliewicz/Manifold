@@ -19,7 +19,7 @@
 #include "object.h"
 #include "portal.h"
 #include "portal_map.h"
-#include "sector.h"
+#include "sector_group.h"
 #include "sys.h"
 #include "utils.h"
 #include "vwf.h"
