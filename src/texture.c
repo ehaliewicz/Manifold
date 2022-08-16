@@ -65,7 +65,7 @@ typedef u8* (*top_clip_wall_fill_func)(u8* col_ptr, u16* tex_column, u16 clip_to
 typedef u8* (*bot_clip_wall_fill_func)(u8* col_ptr, u16* tex_column, u16 clip_top, u16 clip_bot);
 
 
-u8* draw_texture_vertical_line(s16 unclipped_y0, u16 y0, s16 unclipped_y1, u8* col_ptr, const u16* tex_column) {
+void draw_texture_vertical_line(s16 unclipped_y0, u16 y0, s16 unclipped_y1, u8* col_ptr, const u16* tex_column) {
 
     u16 unclipped_dy = unclipped_y1;
     __asm volatile(             
@@ -74,7 +74,7 @@ u8* draw_texture_vertical_line(s16 unclipped_y0, u16 y0, s16 unclipped_y1, u8* c
         : "d" (unclipped_y0)               
     );
 
-    if(unclipped_dy > 512) { return col_ptr; }
+    if(unclipped_dy > 512) { return; }
     __asm volatile(
         "add.l %1, %0\t\n\
         add.l %1, %0"
@@ -90,12 +90,11 @@ u8* draw_texture_vertical_line(s16 unclipped_y0, u16 y0, s16 unclipped_y1, u8* c
     );
     u16 f;// = unclipped_dy;
 
-    register const u16* a0 asm ("%a0") = ((u32)tex_column);
-    register const u8* a1 asm ("%a1") = (u32)col_ptr;
+    register const u16* a0 asm ("%a0") = tex_column;
+    register const u8* a1 asm ("%a1") = col_ptr;
 
     register const u16 d0 asm ("%d0") = clip_top;
 
-    u32 tmp;
     __asm volatile(
         "lsl.l #2, %6\t\n\
         move.l 0(%5, %6.w), %1\t\n\
@@ -103,13 +102,12 @@ u8* draw_texture_vertical_line(s16 unclipped_y0, u16 y0, s16 unclipped_y1, u8* c
         : "+a" (col_ptr)
         : "a" (f), "a" (a0), "a" (a1), "d" (d0), "a" (jump_table_top_clip_lut), "d" (unclipped_dy)
     );
-    return a1;
 
 }
 
 
 
-u8* draw_bottom_clipped_texture_vertical_line(s16 unclipped_y0, u16 y0, s16 unclipped_y1, u16 y1, u8* col_ptr, const u16* tex_column) {
+void draw_bottom_clipped_texture_vertical_line(s16 unclipped_y0, u16 y0, s16 unclipped_y1, u16 y1, u8* col_ptr, const u16* tex_column) {
 
     u16 unclipped_dy = unclipped_y1;
     __asm volatile(             
@@ -118,9 +116,9 @@ u8* draw_bottom_clipped_texture_vertical_line(s16 unclipped_y0, u16 y0, s16 uncl
         : "d" (unclipped_y0)               
     );      
 
-    if(unclipped_dy > 512) { return col_ptr; }
+    if(unclipped_dy > 512) { return; }
     s16 clipped_dy = y1-y0;
-    if(clipped_dy <= 0) { return col_ptr; }
+    if(clipped_dy <= 0) { return; }
     __asm volatile(
         "add.l %1, %0\t\n\
         add.l %1, %0"
@@ -140,8 +138,8 @@ u8* draw_bottom_clipped_texture_vertical_line(s16 unclipped_y0, u16 y0, s16 uncl
     u16 f;
     register const u16 d0 asm ("%d0") = clip_top;
     register const u16 d1 asm ("%d1") = clip_bot;
-    register const u16* a0 asm ("%a0") = ((u32)tex_column);
-    register const u8* a1 asm ("%a1") = (u32)col_ptr;
+    register const u16* a0 asm ("%a0") = tex_column;
+    register const u8* a1 asm ("%a1") = col_ptr;
 
 
     __asm volatile(
@@ -152,7 +150,6 @@ u8* draw_bottom_clipped_texture_vertical_line(s16 unclipped_y0, u16 y0, s16 uncl
         : "+a" (col_ptr)
         : "a" (f), "a" (a0), "a" (a1), "d" (d0), "d" (d1), "a" (jump_table_bot_clip_lut), "d" (unclipped_dy)
     );
-    return a1;
   
 }
     

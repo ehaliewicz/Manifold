@@ -799,8 +799,8 @@ void set_up_scale_routine(s16 unclipped_dy) {
 }
 
 void call_sprite_cache_for_run(u16* jump_tgt, u8* cur_texel_ptr, u8* cur_column_ptr) {
-    register const a0 asm ("%a0") = (u32)cur_texel_ptr;   // this lets me make sure a0 and a1 are initialized correctly
-    register const a1 asm ("%a1") = (u32)cur_column_ptr;
+    register const u8* a0 asm ("%a0") = cur_texel_ptr;   // this lets me make sure a0 and a1 are initialized correctly
+    register const u8* a1 asm ("%a1") = cur_column_ptr;
 
     __asm volatile(
         "jsr (%0)\t\n\

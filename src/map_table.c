@@ -50,7 +50,7 @@ void load_map(char* map_name) {
     u8 num_directory_entries = wad_area[idx++];
     for(int i = 0; i < num_directory_entries; i++) {
         u8 namelen = wad_area[idx++];
-        if(strcmp(map_name, &wad_area[idx+1]) == 0) {
+        if(strcmp(map_name, (char*)(&wad_area[idx+1])) == 0) {
             u32 len = read_u32(idx); idx+=4;
             u32 offset = read_u32(idx); idx+=4;
 

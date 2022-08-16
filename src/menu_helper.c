@@ -16,7 +16,7 @@ void draw_line(char* txt) {
     cur_line += 2;
 }
 
-int find_first_selectable_item(menu* m) {
+int find_first_selectable_item(const menu* m) {
     for(int i = 0; i < m->num_items; i++) {
         if(m->items[i].selectable) {
             return i;

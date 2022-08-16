@@ -173,7 +173,7 @@ void run_stairs(s16* params) {
 
     s16 cur_height = params[SECTOR_PARAM_FLOOR_HEIGHT_IDX];
     s16 orig_stairs_height = params[SECTOR_PARAM_ORIG_HEIGHT_IDX];
-    s16 ticks = params[SECTOR_PARAM_TICKS_LEFT_IDX]++;
+    //s16 ticks = params[SECTOR_PARAM_TICKS_LEFT_IDX]++; // ticks no longer necessary, just increase until we're at the right height.
     switch(state) {
         case STAIRS_LOWERED: do {
         } while(0);

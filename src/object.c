@@ -40,6 +40,15 @@ object* pop(object** lst) {
   return head;
 }
 
+void push_to_front(object* new_head, object** lst) {
+    object* prev_head = *lst;
+    new_head->next = prev_head;
+    if(prev_head != NULL) {
+        prev_head->prev = new_head;
+    }
+    *lst = new_head;
+}
+
 void push(object* new_head, object** lst) {
   object* head = *lst;
   new_head->next = head;
@@ -118,7 +127,7 @@ const object_template object_types[3] = {
     {.init_state = 1,
      .sprite_col = ((RED_IDX << 4) | RED_IDX), 
      .name = "first enemy type ",
-    .size = 20, .from_floor_draw_offset = 20<<4, .width=48, .height=64<<4},
+    .size = 20, .from_floor_draw_offset = 20<<4, .width=32, .height=64<<4},
 };
 
 fix32 dist_sqr(object_pos posa, object_pos origin) {
@@ -175,7 +184,7 @@ object* alloc_object_in_sector(object_pos cur_player_pos, int sector_num, fix32 
     */
     //return NULL;
 
-  push(res, sector_list_obj);
+  push_to_front(res, sector_list_obj);
   return res;
 } 
 
@@ -372,7 +381,7 @@ void process_all_objects(uint32_t cur_frame) {
             if(!live) { 
                 // TODO: make work with more than one object
                 // this will only work with a single object
-                push(cur_object, free_list);
+                push_to_front(cur_object, &free_list);
                 sector_lists[sect] = NULL;
             }
             cur_object = cur_object->next;

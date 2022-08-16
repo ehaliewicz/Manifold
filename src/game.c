@@ -200,7 +200,7 @@ void set_gun_pos() {
     s16 bobOffX = gun_bobs[idx].x<<1;
     s16 bobOffY = gun_bobs[idx].y<<1;
 
-    /*
+    
     AnimationFrame *frame1 = shotgun.animations[0]->frames[0];
     FrameVDPSprite** f = frame1->frameInfos[0].frameVDPSprites;
     for(int i = 0; i < shotgun_num_sprites; i++) {
@@ -211,7 +211,7 @@ void set_gun_pos() {
         );
     }
     VDP_updateSprites(shotgun_num_sprites, DMA_QUEUE);
-    */
+    
    
 }
 
