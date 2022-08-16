@@ -2,9 +2,7 @@
 #include <kdebug.h>
 #include "clip_buf.h"
 #include "colors.h"
-#include "common.h"
 #include "config.h"
-#include "debug.h"
 #include "div_lut.h"
 #include "draw.h"
 #include "game.h"
@@ -14,6 +12,7 @@
 #include "portal_map.h"
 #include "sector.h"
 #include "textures.h"
+#include "utils.h"
 #include "vertex.h"
 
 
@@ -1249,15 +1248,18 @@ void portal_rend(u16 src_sector, u32 cur_frame) {
     #endif
 
     #ifdef H32_MODE
-    //visit_graph(src_sector, src_sector, 7, RENDER_WIDTH-7-1, cur_frame, 0);
+        if(cur_portal_map->has_pvs) {
+        pvs_scan(src_sector, 0, RENDER_WIDTH-7-1, cur_frame);
+        } else {
+            visit_graph(src_sector, src_sector, 0, RENDER_WIDTH-7-1, cur_frame, 0);
+        }
+        //visit_graph(src_sector, src_sector, 7, RENDER_WIDTH-7-1, cur_frame, 0);
     #else
     sectors_scanned = 0;
     //clear_light_cache();
 
     if(cur_portal_map->has_pvs) {
         pvs_scan(src_sector, 0, RENDER_WIDTH, cur_frame);
-
-        //pvs_scan_with_objects(src_sector, 0, RENDER_WIDTH, cur_frame);
     } else {
         visit_graph(src_sector, src_sector, 0, RENDER_WIDTH, cur_frame, 0);
     }

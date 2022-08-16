@@ -2,7 +2,6 @@
 #define FONT_H
 
 #include <genesis.h>
-#include "common.h"
 #include "tile.h"
 
 #define NUM_CHARS 96

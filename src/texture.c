@@ -90,10 +90,10 @@ u8* draw_texture_vertical_line(s16 unclipped_y0, u16 y0, s16 unclipped_y1, u8* c
     );
     u16 f;// = unclipped_dy;
 
-    register const a0 asm ("%a0") = ((u32)tex_column);
-    register const a1 asm ("%a1") = (u32)col_ptr;
+    register const u16* a0 asm ("%a0") = ((u32)tex_column);
+    register const u8* a1 asm ("%a1") = (u32)col_ptr;
 
-    register const d0 asm ("%d0") = clip_top;
+    register const u16 d0 asm ("%d0") = clip_top;
 
     u32 tmp;
     __asm volatile(
@@ -138,10 +138,10 @@ u8* draw_bottom_clipped_texture_vertical_line(s16 unclipped_y0, u16 y0, s16 uncl
         : "d" (unclipped_y0), "d" (y1)
     );
     u16 f;
-    register d0 asm ("%d0") = clip_top;
-    register d1 asm ("%d1") = clip_bot;
-    register const a0 asm ("%a0") = ((u32)tex_column);
-    register const a1 asm ("%a1") = (u32)col_ptr;
+    register const u16 d0 asm ("%d0") = clip_top;
+    register const u16 d1 asm ("%d1") = clip_bot;
+    register const u16* a0 asm ("%a0") = ((u32)tex_column);
+    register const u8* a1 asm ("%a1") = (u32)col_ptr;
 
 
     __asm volatile(

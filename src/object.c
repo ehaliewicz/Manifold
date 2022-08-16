@@ -2,7 +2,6 @@
 #include "colors.h"
 #include "collision.h"
 #include "console.h"
-#include "debug.h"
 #include "game.h"
 #include "inventory.h"
 #include "level.h"

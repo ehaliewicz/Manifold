@@ -65,5 +65,8 @@ inline u16 fastLength16(s16 dx, s16 dy) {
     */
 }
 
+void die(char* msg);
+
+#define clamp(a, mi,ma)      min(max(a,mi),ma)
 
 #endif

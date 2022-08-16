@@ -5,7 +5,6 @@
 #include "clip_buf.h"
 #include "colors.h"
 #include "config.h"
-#include "debug.h"
 #include "game.h"
 #include "game_mode.h"
 #include "inventory.h"
@@ -22,6 +21,7 @@
 #include "portal_map.h"
 #include "sector.h"
 #include "sys.h"
+#include "utils.h"
 #include "vwf.h"
 
 #include "graphics_res.h"

@@ -121,11 +121,11 @@ void console_render() {
     
     
 
-    int spr_idx = rendered_sprites_idx;
 
-    u16 cur_x_pos = CONSOLE_BASE_X*8;
 
     #ifdef CONSOLE_SPRITES
+    int spr_idx = rendered_sprites_idx;
+    u16 cur_x_pos = CONSOLE_BASE_X*8;
     for(int i = 0; i < tiles_to_draw; i++) {
         u16 char_width = charmap[message.msg[i]-32].width*2;
 

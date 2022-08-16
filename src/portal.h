@@ -2,7 +2,6 @@
 #define PORTAL_H
 
 #include <genesis.h>
-#include "common.h"
 #include "game.h"
 #include "portal_map.h"
 #include "vertex.h"
