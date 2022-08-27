@@ -23,8 +23,8 @@ const u8 rndtable[256] = {
     197, 242,  98,  43,  39, 175, 254, 145, 190,  84, 118, 222, 187, 136 ,
     120, 163, 236, 249
 };
-u8 fx_idx = 0;
-u8 det_idx = 0;
+static u8 fx_idx = 0;
+static u8 det_idx = 0;
 
 // randomness for effects
 u8 fxrandom() {

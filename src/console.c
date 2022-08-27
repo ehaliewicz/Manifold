@@ -10,7 +10,7 @@
 
 //#define CONSOLE_SPRITES 
 
-tile* tile_buf;
+static tile* tile_buf;
 
 static uint16_t start_vram_addr;
 

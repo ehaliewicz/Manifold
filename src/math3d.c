@@ -324,7 +324,7 @@ u16 get_texture_repetitions(s16 v1x, s16 v1y, s16 v2x, s16 v2y) {
     return repetitions;
 }
 
-clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2, texmap_params* tmap) {
+clip_result clip_map_vertex_16(Vect2D_s16* __restrict__ trans_v1, Vect2D_s16* __restrict__ trans_v2, texmap_params* __restrict__ tmap) {
     // TODO: adjust texture coordinates here as well
     
 

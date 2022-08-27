@@ -3,7 +3,7 @@
 #include "portal_map.h"
 
 
-u32* active_sectors;
+static u32* active_sectors;
 
 void init_active_sectors() {
     // 64 bytes

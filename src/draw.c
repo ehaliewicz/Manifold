@@ -15,11 +15,11 @@
 #include "utils.h"
 
 
-u8* yclip;
+static u8* yclip;
 
 
-u8** buf_0_column_offset_table;
-u8** buf_1_column_offset_table;
+static u8** buf_0_column_offset_table;
+static u8** buf_1_column_offset_table;
 
 void init_column_offset_table() {
   // offset from last column
@@ -89,8 +89,7 @@ void clear_2d_buffers() {
         move.l %1, (%0)+\t\n\
         move.l %1, (%0)+\t\n\
         move.l %1, (%0)+\t\n\
-        move.l %1, (%0)+\t\n\
-         "
+        move.l %1, (%0)+"
         : "+a" (yclip_ptr)
         : "d" (u32val)
     ); 
@@ -383,7 +382,7 @@ void draw_native_vertical_transparent_line_unrolled(s16 y0, s16 y1, u8 col, u8* 
 
 
 
-u8* draw_native_double_vertical_line_unrolled(s16 y0, s16 y1, s16 y2, u32 full_col1, u32 full_col2, u8* col_ptr) {
+void draw_native_double_vertical_line_unrolled(s16 y0, s16 y1, s16 y2, u32 full_col1, u32 full_col2, u8* col_ptr) {
     col_ptr = col_ptr + (y0 << 1);
     u16 dy1 = (y1-y0);
     u16 dy2 = (y2-y1);
@@ -591,7 +590,7 @@ movel_draw_table_%=:\t\n\
 }
 
 
-u8* draw_native_vertical_line_unrolled(s16 y0, s16 y1, u32 full_col,  u8* col_ptr) {
+void draw_native_vertical_line_unrolled(s16 y0, s16 y1, u32 full_col,  u8* col_ptr) {
 
 
     col_ptr = col_ptr + (y0<<1);
@@ -699,7 +698,6 @@ movel_draw_table_%=:\t\n\
     
 
 
-    return col_ptr;
 }
 
 
@@ -1043,7 +1041,7 @@ void draw_rle_sprite(s16 x1, s16 x2, s16 ytop, s16 ybot,
         }
     }
 
-    flip();
+    //flip();
 
     return; 
 }
@@ -1330,11 +1328,11 @@ void cache_ceil_light_params(s16 rel_ceil_height, u8 ceil_col, s8 light_level, l
 // draw med and dark
 // draw light, med, dark
 
-u8* draw_lit_floor_light_only(s16 floor_top_y, s16 floor_bot_y, u8* col_ptr, light_params* params) {
-  return draw_native_vertical_line_unrolled(floor_top_y, floor_bot_y, params->light_color, col_ptr);
+void draw_lit_floor_light_only(s16 floor_top_y, s16 floor_bot_y, u8* col_ptr, light_params* params) {
+    draw_native_vertical_line_unrolled(floor_top_y, floor_bot_y, params->light_color, col_ptr);
 }
 
-u8* draw_lit_floor(s16 floor_top_y, s16 floor_bot_y, u8* col_ptr, light_params* params) {
+void draw_lit_floor(s16 floor_top_y, s16 floor_bot_y, u8* col_ptr, light_params* params) {
     
     //return draw_lit_floor_light_only(floor_top_y, floor_bot_y, col_ptr, params);
     #ifndef FLATS_DIST_LIGHTING
@@ -1407,14 +1405,13 @@ u8* draw_lit_floor(s16 floor_top_y, s16 floor_bot_y, u8* col_ptr, light_params* 
         draw_native_vertical_line_unrolled(draw_light_top, draw_light_bot, params->light_color, col_ptr);
     }
 
-    return col_ptr;
 }
 
-u8* draw_lit_ceil_light_only(s16 ceil_top_y, s16 ceil_bot_y, u8* col_ptr, light_params* params) {
+void draw_lit_ceil_light_only(s16 ceil_top_y, s16 ceil_bot_y, u8* col_ptr, light_params* params) {
     return draw_native_vertical_line_unrolled(ceil_top_y, ceil_bot_y, params->light_color, col_ptr);
 }
 
-u8*  draw_lit_ceiling(s16 ceil_top_y, s16 ceil_bot_y, u8* col_ptr, light_params* params) {
+void draw_lit_ceiling(s16 ceil_top_y, s16 ceil_bot_y, u8* col_ptr, light_params* params) {
     //return draw_lit_ceil_light_only(ceil_top_y, ceil_bot_y, col_ptr, params);
     #ifndef FLATS_DIST_LIGHTING
     s16 mid = ((ceil_bot_y-ceil_top_y)<<1)+ceil_top_y;
@@ -1453,10 +1450,9 @@ u8*  draw_lit_ceiling(s16 ceil_top_y, s16 ceil_bot_y, u8* col_ptr, light_params*
 
 
 
-    return col_ptr;
 }
 
-typedef u8* (*draw_lit_plane_fp)(s16 top_y, s16 bot_y, u8* col_ptr, light_params* params);
+typedef void (*draw_lit_plane_fp)(s16 top_y, s16 bot_y, u8* col_ptr, light_params* params);
 
 
 
@@ -2180,42 +2176,7 @@ void calculate_light_levels_for_wall(u32 clipped_dx, s16 inv_z1, s16 inv_z2, s16
 
     u8 cur_span = 0;
 
-    /*
 
-    while(cnt--) {
-        u8 next_light; 
-        if (cur_inv_z <= FIX_0_16_INV_DARK_DIST) {
-            next_light = DARK;
-        } else if (cur_inv_z <= FIX_0_16_INV_MID_DIST) {
-            next_light = MID;
-        } else {
-            next_light = LIGHT;
-        }
-
-        if(cur_light == next_light) {
-            cur_span++;
-        } else {
-            __asm volatile(
-                "move.b %1, (%0)+\t\n\
-                move.b %2, (%0)+"
-                : "+a" (out_ptr)
-                : "d" (cur_light), "d" (cur_span)
-            );
-            // *out_ptr++ = cur_light;
-            // *out_ptr++ = cur_span;
-            cur_light = next_light;
-            cur_span = 1;
-
-
-            if(end_light == cur_light) {
-                cur_span += cnt;
-                break;
-            }
-        }
-        cur_inv_z += fix_inv_dz_per_dx;
-        
-    }
-    */
    #define OUTPUT_SPAN(nxt) do {\
     __asm volatile(     \
         "move.b %1, (%0)+\t\n\
@@ -2227,63 +2188,7 @@ void calculate_light_levels_for_wall(u32 clipped_dx, s16 inv_z1, s16 inv_z2, s16
     cur_span = 1;           \
    } while(0) \
 
-    
-    //u8 next_light;
-    /*
-    //if(cnt <= 0) {
-    //    goto finished;
-    //}
-    //cnt--;
 
-    __asm volatile("\t\n\
-        tst.l %5\t\n\
-        ble.b exit%=\t\n\
-    loop%=:\t\n\
-        cmp.w #65536/350, %3\t\n\
-        ble.b next_is_dark%=\t\n\
-        cmp.w #65536/150, %3\t\n\
-        ble.b next_is_mid%=\t\n\
-    next_is_light%=:\t\n\
-        moveq #2, %0\t\n\
-        bra.b end_dist_test%=\t\n\
-    next_is_dark%=:\t\n\
-        moveq #0, %0\t\n\
-        bra.b end_dist_test%=\t\n\
-    next_is_mid%=:\t\n\
-        moveq #1, %0\t\n\
-    end_dist_test%=:\t\n\
-        cmp.w %0, %1\t\n\
-        bne.b diff_light_level%=\t\n\
-    \t\n\
-    \t\n\
-    same_light_level%=:\t\n\
-        addq #1, %2\t\n\
-        add.w %7, %3\t\n\
-        dbra %5, loop%=\t\n\
-        bra.b exit%=\t\n\
-    \t\n\
-    \t\n\
-    diff_light_level%=:\t\n\
-        move.b %1, (%4)+ | *out_ptr++ = cur_light \t\n\
-        move.b %2, (%4)+ | *out_ptr++ = cur_span \t\n\
-        move.b %0, %1    | cur_light = next_light \t\n\
-        moveq #1, %2     | cur_span = 1 \t\n\
-        cmp.b %1, %6     | cur_light == end_light? \t\n\
-        beq.b end_loop_end_light%= \t\n\
-        add.w %7, %3     | cur_inv_z += fix_inv_dz_per_dx \t\n\
-        dbra %5, loop%=\t\n\
-        bra.b exit%=\t\n\
-    \t\n\
-    end_loop_end_light%=:\t\n\
-        add.b %5, %2  | cur_span += cnt\t\n\
-    \t\n\
-    exit%=:\t\n\
-    "
-        : "+d" (next_light), "+d" (cur_light), "+d" (cur_span), "+a" (cur_inv_z), "+a" (out_ptr), "+d" (cnt)
-        : "d" (end_light), "a" (fix_inv_dz_per_dx)
-    );
-    */
-    // 
 
     while(cnt--) {
         u8 next_light; 
@@ -2415,14 +2320,12 @@ void draw_upper_step(s16 x1, s16 x1_ytop, s16 nx1_ytop, s16 x2, s16 x2_ytop, s16
                 u8 bot_draw_y = clamp(ntop_y_int, min_drawable_y, max_drawable_y);
                 //u8 clip_top = max(top_draw_y, bot_draw_y);
                 if(min_drawable_y < top_draw_y) {
-                    u8* ret_ptr = ceil_func(min_drawable_y, top_draw_y, col_ptr, params);
+                    ceil_func(min_drawable_y, top_draw_y, col_ptr, params);
                     *yclip_ptr = top_draw_y;
-                    //*offset_ptr = ret_ptr;
                 }
                 if(top_draw_y < bot_draw_y) {
-                    u8* ret_ptr = draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, color, col_ptr);
+                    draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, color, col_ptr);
                     *yclip_ptr = bot_draw_y;
-                    //*offset_ptr = ret_ptr;
                 }
             }
             yclip_ptr += 2;
@@ -3066,13 +2969,6 @@ void draw_solid_color_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
     return; 
 }
 
-u16 to_u_col(u16 one_over_z_16, u16 u_over_z_16) {
-    u16 u_7 = divu_32_by_16(u_over_z_16<<7, one_over_z_16);
-    u_7 <<= 4;
-    u_7 &= 1984;
-    return u_7;
-}
-
 
 void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
               s16 x2, s16 x2_ytop, s16 x2_ybot,
@@ -3093,9 +2989,10 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
     bot_y_fix = x1_ybot<<12;
     u16 dx = x2-x1;
 
-
+    
     fix32 top_dy_per_dx = (top_dy_fix<<12) / dx; // 16.16 / 16 -> 16.16 
     fix32 bot_dy_per_dx = (bot_dy_fix<<12) / dx;
+    
     //fix16 top_dy_per_dx_8 = divs_32_by_16((top_dy_fix<<4), dx);
     //fix16 bot_dy_per_dx_8 = divs_32_by_16(bot_dy_fix<<4, dx);
     //fix32 top_dy_per_dx = top_dy_per_dx_8<<8;
@@ -3180,7 +3077,9 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
             u16 tex_idx = *tex_col_ptr++;
 
             if(!col_drawn) {
-                
+                if(min_drawable_y >= max_drawable_y) {
+                    __builtin_unreachable();
+                }
                 set_column_drawn(yclip_ptr);
                 s16 ctop = min_drawable_y;
                 s16 cbot = top_y_int;

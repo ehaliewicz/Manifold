@@ -77,9 +77,7 @@ void render_object_to_tile_column(u32 tex_per_pix, u32* tex_per_pix_table_ptr, s
             cur_tex_offset += tex_per_pix;
         }
         
-        
-        //dra
-        //draw_texture_vertical_line(pixel, pixel, pixel_end, tile_buf->bytes, texel_ptr);
+
 
 
     }
@@ -93,8 +91,6 @@ u16 render_object_to_sprite(s16 left_x,s16 top_y, u16 scaled_size, const rle_obj
     u32 tex_per_pix = tex_per_pix_table_ptr[1];
     //u32
     
-    //u32 col_per_pix = (obj->num_columns<<16)/scaled_size;
-    //render_object_to_tile_column(tex_per_pix, tex_per_pix_table_ptr, top_y, 0, 143, obj->columns, tile_buf);
 
 
 
