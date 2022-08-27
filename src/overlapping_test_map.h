@@ -4,5 +4,6 @@
 #include "portal_map.h"
 
 extern const portal_map overlapping_map;
+void update_wall_vertex();
 
 #endif

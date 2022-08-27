@@ -570,7 +570,9 @@ void init_game() {
     // palette 0 is weapon palette
     PAL_setPalette(PAL0, shotgun.palette->data);
     // palette 1 is 3d palette
-    PAL_setPalette(PAL1, cur_palette);
+    //PAL_setPalette(PAL1, cur_palette);
+    PAL_setPalette(PAL1, sprite_pal.data);
+
     // palette 2 is HUD palette, set in inventory_init
     // palette 3 is sprite palette
     PAL_setPalette(PAL3, sprite_pal.data);
@@ -639,7 +641,7 @@ game_mode run_game() {
 
     u32 start_ticks = getTick();
     
-    //process_all_objects(cur_frame);
+    process_all_objects(cur_frame);
 
     console_tick();
     inventory_draw();
@@ -658,6 +660,11 @@ game_mode run_game() {
 
 
     maybe_set_palette(two_light_levels_pal.data);
+
+    // hack for door in overlapping room test map
+    if(init_load_level == OVERLAPPING_ROOMS) {
+        update_wall_vertex();
+    }
     draw_3d_view(cur_frame);
 
     //SPR_update();

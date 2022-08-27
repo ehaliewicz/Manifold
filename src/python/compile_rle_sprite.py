@@ -165,7 +165,8 @@ if __name__ == '__main__':
 
     name = "test_texture"
     #columns = compile_image("./res/textures/sprites.png")
-    columns = compile_image("./res/textures/doobguy_3d_palette.png")
+    #columns = compile_image("./res/textures/doobguy_3d_palette.png")
+    columns = compile_image("./res/textures/doobguy.png")
     output = ""
     array_cols = []
 

@@ -25,7 +25,10 @@ static const s16 sectors[17*SECTOR_SIZE] = {
     69, 56, 4, 13,
     74, 60, 4, 14,
     79, 64, 5, 15,
-    85, 69, 4, 16,
+
+    //85, 69, 7, 16,
+    85, 69, 8, 16,
+    //85, 69, 4, 16,
 };
 
 
@@ -63,7 +66,7 @@ static const s16 sector_group_params[NUM_SECTOR_PARAMS*17] = {
     
     -2, 0, 0, 0,   0<<4, 100<<4, RED_IDX,  LIGHT_RED_IDX,
 
-    -2, 0, 0, 0,   0<<4, 100<<4, TRANSPARENT_IDX,  STEEL_IDX,
+    -2, 0, 0, 0,   0<<4, 100<<4, TRANSPARENT_IDX,  TRANSPARENT_IDX,
 };
 
 static const s16 sector_group_triggers[17*8] = {
@@ -88,7 +91,9 @@ static const s16 sector_group_triggers[17*8] = {
 
 
 
-static const u16 walls[90] = {
+//static const u16 walls[90] = {
+//static const u16 walls[93] = {
+static const u16 walls[94] = {
      0,  1,  2,  3,  4,  5,  0, 
      2,  6,  7, 21,  3,  2, 
      4,  8,  9,  5,  4, 
@@ -105,10 +110,15 @@ static const u16 walls[90] = {
     30, 32, 33, 31, 30, 
     32, 34, 35, 33, 32, 
     34, 36, 37, 38, 35, 34, 
-    36, 39, 40, 37, 36, 
+    // new sector 16 walls (plus one more for extra door!)
+    //36,39,42,43,44,40,37,36
+    36,39,42,43,44,40,37,45,36,
+    //36, 39, 40, 37, 36, 
 };
 
-static const s16 portals[73] = {
+//static const s16 portals[73] = {
+//static const s16 portals[76] = {
+static const s16 portals[77] = {
     -1, -1, 1, -1, 2, -1, 
     -1, 11, -1, 8, 0, 
     -1, 3, -1, 0, 
@@ -125,10 +135,19 @@ static const s16 portals[73] = {
     -1, 14, -1, 12, 
     -1, 15, -1, 13, 
     -1, 16, -1, -1, 14, 
-    -1, -1, -1, 15, 
+    
+    -1, -1, 
+    // three new walls 
+    -1, -1, -1,
+    // end new walls
+    -1,
+    // new door in 16th sector :^)
+    -1, 15, 
 };
 
-static const u8 wall_normal_quadrants[73] ={
+//static const u8 wall_normal_quadrants[73] = { 
+//static const u8 wall_normal_quadrants[76] = {
+static const u8 wall_normal_quadrants[77] = {
     FACING_DOWN,
     FACING_LEFT,
     FACING_LEFT,
@@ -200,18 +219,27 @@ static const u8 wall_normal_quadrants[73] ={
     QUADRANT_2,
     FACING_LEFT,
     QUADRANT_0,
+    // three new vertexes here
+    QUADRANT_0,
+    QUADRANT_0,
+    QUADRANT_0,
+    // end new vertexes
     QUADRANT_3,
+    // new door in last sector
+    QUADRANT_2,
     QUADRANT_2,
 };
 
 
-static const u8 wall_colors[73 * WALL_COLOR_NUM_PARAMS] = {
-    0, 0, 0, 0,
-    0, 0, 0, 0,
-    3, LIGHT_GREEN_IDX, GREEN_IDX, 0,
-    0, 0, 0, 0,
-    3, LIGHT_GREEN_IDX, LIGHT_GREEN_IDX, 0,
-    0, 0, 0, 0,
+//static const u8 wall_colors[73 * WALL_COLOR_NUM_PARAMS] = {
+//static const u8 wall_colors[76 * WALL_COLOR_NUM_PARAMS] = {
+static const u8 wall_colors[77 * WALL_COLOR_NUM_PARAMS] = {
+    4, 0, 0, 0,
+    4, 0, 0, 0,
+    1, LIGHT_GREEN_IDX, GREEN_IDX, 0,
+    4, 0, 0, 0,
+    1, LIGHT_GREEN_IDX, LIGHT_GREEN_IDX, 0,
+    4, 0, 0, 0,
     // sector 1 walls
     2, 0, 0, 0,
     2, GREEN_IDX, GREEN_IDX, 0,
@@ -224,83 +252,93 @@ static const u8 wall_colors[73 * WALL_COLOR_NUM_PARAMS] = {
     3, 0, 0, 0,
     3, STEEL_IDX, STEEL_IDX, 0,
     // sector 3 walls
-    2, 0, 0, 0,
-    2, STEEL_IDX, STEEL_IDX, 0,
-    2, 0, 0, 0,
-    2, STEEL_IDX, STEEL_IDX, 0,
+    0, 0, 0, 0,
+    0, STEEL_IDX, STEEL_IDX, 0,
+    0, 0, 0, 0,
+    0, STEEL_IDX, STEEL_IDX, 0,
     // sector 4 walls
-    5, 0, 0, 0,
-    5, STEEL_IDX, STEEL_IDX, 0,
-    5, 0, 0, 0,
-    5, STEEL_IDX, STEEL_IDX, 0,
+    0, 0, 0, 0,
+    0, STEEL_IDX, STEEL_IDX, 0,
+    0, 0, 0, 0,
+    0, STEEL_IDX, STEEL_IDX, 0,
     // sector 5 walls
-    5, 0, 0, 0,
-    5, STEEL_IDX, STEEL_IDX, 0,
-    5, 0, 0, 0,
-    5, STEEL_IDX, STEEL_IDX, 0,
+    0, 0, 0, 0,
+    0, STEEL_IDX, STEEL_IDX, 0,
+    0, 0, 0, 0,
+    0, STEEL_IDX, STEEL_IDX, 0,
     // sector 6 walls
-    5, 0, 0, 0,
-    5, STEEL_IDX, STEEL_IDX, 0,
-    5, 0, 0, 0,
-    5, STEEL_IDX, STEEL_IDX, 0,
+    0, 0, 0, 0,
+    0, STEEL_IDX, STEEL_IDX, 0,
+    0, 0, 0, 0,
+    0, STEEL_IDX, STEEL_IDX, 0,
     // sector 7 walls
-    1, 0, 0, 0,
-    1, STEEL_IDX, STEEL_IDX, 0,
-    1, 0, 0, 0,
-    1, 0, 0, 0,
-    1, STEEL_IDX, STEEL_IDX, 0,
+    4, 0, 0, 0,
+    4, STEEL_IDX, STEEL_IDX, 0,
+    4, 0, 0, 0,
+    4, 0, 0, 0,
+    4, STEEL_IDX, STEEL_IDX, 0,
     // sector 8 walls
-    4, 0, 0, 0,
+    3, 0, 0, 0,
     3, STEEL_IDX, STEEL_IDX, 0,
-    4, 0, 0, 0,
+    3, 0, 0, 0,
     3, STEEL_IDX, STEEL_IDX, 0,
     // sector 9 walls
-    5, 0, 0, 0,
-    5, 0, 0, 0,
-    5, 0, 0, 0,
-    5, STEEL_IDX, STEEL_IDX, 0,
-    // sector 10 walls
     2, 0, 0, 0,
     2, 0, 0, 0,
     2, 0, 0, 0,
     2, STEEL_IDX, STEEL_IDX, 0,
+    // sector 10 walls
+    4, 0, 0, 0,
+    4, 0, 0, 0,
+    4, 0, 0, 0,
+    4, STEEL_IDX, STEEL_IDX, 0,
     // sector 11 walls
-    4, 0, 0, 0,
-    3, STEEL_IDX, STEEL_IDX, 0,
-    4, 0, 0, 0,
-    3, STEEL_IDX, STEEL_IDX, 0,
+    0, 0, 0, 0,
+    0, STEEL_IDX, STEEL_IDX, 0,
+    0, 0, 0, 0,
+    0, STEEL_IDX, STEEL_IDX, 0,
     // sector 12 walls
-    1, 0, 0, 0,
-    1, STEEL_IDX, STEEL_IDX, 0,
-    1, 0, 0, 0,
-    1, STEEL_IDX, STEEL_IDX, 0,
+    3, 0, 0, 0,
+    3, STEEL_IDX, STEEL_IDX, 0,
+    3, 0, 0, 0,
+    3, STEEL_IDX, STEEL_IDX, 0,
     // sector 13 walls
     0, 0, 0, 0,
     0, STEEL_IDX, STEEL_IDX, 0,
     0, 0, 0, 0,
     0, STEEL_IDX, STEEL_IDX, 0,
     // sector 14 walls
-    5, 0, 0, 0,
-    5, STEEL_IDX, STEEL_IDX, 0,
-    5, 0, 0, 0,
-    5, GREEN_IDX, GREEN_IDX, 0,
+    3, 0, 0, 0,
+    3, STEEL_IDX, STEEL_IDX, 0,
+    3, 0, 0, 0,
+    3, GREEN_IDX, GREEN_IDX, 0,
     // sector 15 walls
-    4, 0, 0, 0,
-    4, STEEL_IDX, STEEL_IDX, 0,
-    4, 0, 0, 0,
-    4, 0, 0, 0,
-    4, STEEL_IDX, STEEL_IDX, 0,
+    3, 0, 0, 0,
+    3, STEEL_IDX, STEEL_IDX, 0,
+    3, 0, 0, 0,
+    3, 0, 0, 0,
+    3, STEEL_IDX, STEEL_IDX, 0,
     // sector 16
-    5, 0, 0, 0,
-    5, 0, 0, 0,
-    5, 0, 0, 0,
-    5, STEEL_IDX, STEEL_IDX, 0,
+    2, 0, 0, 0,
+    2, 0, 0, 0,
+    // 3 new walls here?
+    2, 0, 0, 0,
+    2, 0, 0, 0,
+    2, 0, 0, 0,
+    // end new vertexes
+    2, 0, 0, 0,
+    // yet another new wall :)
+    3, 0, 0, 0,
+
+    2, STEEL_IDX, STEEL_IDX, 0,
 };
 
 // #define VERT(x1,y1) { .x = (x1 * 6), .y = ((-y1) * 6) } 
 
 #define VERT(x1,y1) { .x = (x1 * 2), .y = ((-y1) * 2) }
-static const vertex vertexes[42] = {
+//static vertex vertexes[45] = {
+static vertex vertexes[46] = {
+//static const vertex vertexes[42] = {
     VERT(70,60),
     VERT(170,60),
     VERT(170,110),
@@ -336,15 +374,76 @@ static const vertex vertexes[42] = {
     VERT(370,220),
     VERT(330,210),
     VERT(350,250),
-    VERT(310,230),
-    VERT(320,300),
-    VERT(240,260),
-    VERT(270,210),
-    VERT(320,400),
-    VERT(140,320),
-    VERT(0,0),
+    VERT(310,230), // 35
+    VERT(320,300), // 36
+    VERT(240,260), // 37
+    VERT(270,210), // 38
+    VERT(320,400), // 39
+    VERT(140,320), // 40
+    VERT(0,0), // 41
+    VERT((320+(-45*1)), (400+(-20*1))), // 42
+    VERT((320+(-45*2)), (400+(-20*2))), // 43
+    VERT((320+(-45*3)), (400+(-20*3))), // 44
+
+    // moving vertex for new door!
+    VERT(240,260), // 45
+
 };
 
+s16 init_x, init_y;
+s16 end_x, end_y;
+
+s32 fix_x, fix_y;
+s32 dx, dy;
+
+#define VERT(x1,y1) { .x = (x1 * 2), .y = ((-y1) * 2) }
+static state = 0;
+
+static int init = 0;
+static int cnt = 0;
+
+#define DOOR_STEPS 10
+
+void update_wall_vertex() {
+    if(!init) {
+        init_x = vertexes[37].x;
+        init_y = vertexes[37].y;
+        end_x = vertexes[36].x;
+        end_y = vertexes[36].y;
+        dx = ((end_x-init_x)<<16)/DOOR_STEPS;
+        dy = ((end_y-init_y)<<16)/DOOR_STEPS;
+        fix_x = init_x << 16;
+        fix_y = init_y << 16;
+        init = 1;
+        state = 0;
+        cnt = 0;
+       
+    }
+
+    switch(state) {
+        case 0:
+            // closing
+            fix_x += dx;
+            fix_y += dy;
+            cnt += 1;
+            if(cnt == DOOR_STEPS) {
+                state = 1;
+                cnt = 0;
+            }
+            break;
+        case 1:
+            fix_x -= dx;
+            fix_y -= dy;
+            cnt += 1;
+            if(cnt == DOOR_STEPS) {
+                state = 0;
+                cnt = 0;
+            }
+            break;
+    }
+    vertexes[45].x = fix_x>>16;
+    vertexes[45].y = fix_y>>16;
+}
 
 static const u8 sector_group_types[17] = {
     NO_TYPE,
@@ -369,8 +468,8 @@ static const u8 sector_group_types[17] = {
 const portal_map overlapping_map = {
     .num_sector_groups = 17,
     .num_sectors = 17,
-    .num_walls = 73,
-    .num_verts = 42,
+    .num_walls = 77,//737
+    .num_verts = 46,//45,
     .sectors = sectors,
     .sector_group_types = sector_group_types,
     .sector_group_params = sector_group_params,

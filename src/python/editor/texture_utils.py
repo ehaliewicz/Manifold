@@ -54,7 +54,9 @@ def gen_textures_from_atlas(name, atlas_file):
     TEX_SIZE = 64
     
     atlas_width, atlas_height = atlas.size
-    assert atlas_width == TEX_SIZE*2
+    
+    #assert atlas_width == TEX_SIZE*2
+    
     num_textures = atlas_height//TEX_SIZE
     assert num_textures * TEX_SIZE == atlas_height
 
@@ -165,12 +167,9 @@ def gen_mip_image(name, light_file, mid_file, dark_file):
 if __name__ == '__main__':
 
 
+
+
+    #gen_textures_from_atlas("tex_15col", "./res/textures/texture_atlas.png")
     
-    #norm_f = "C:\\Users\\Erik\\code\\genesis\\DOOM\\res\\textures\\WALLA_15COL.png"
-    #mid_f = "C:\\Users\\Erik\\code\\genesis\\DOOM\\res\\textures\\WALLA_15COL.png"
-    #dark_f = "C:\\Users\\Erik\\code\\genesis\\DOOM\\res\\textures\\WALLA_15COL.png"
-    #name = "walla_15col"
-    #gen_mip_image(name, norm_f, mid_f, dark_f)
+    gen_textures_from_atlas("texture_atlas_sprite_palette", "./res/textures/texture_atlas_sprite_palette.png")
 
-
-    gen_textures_from_atlas("tex_15col", "C:\\Users\\Erik\\code\\genesis\\DOOM\\res\\textures\\texture_atlas.png")

@@ -3,10 +3,10 @@
 #include "config.h"
 #include "div_lut.h"
 #include "math3d.h"
-#include "utils.h"
 #include "texture.h"
 #include "textures.h"
 #include "tex_tables_lookup.h"
+#include "utils.h"
 
 
 // 64 pixels tall

@@ -9,17 +9,17 @@
 #include "portal_map.h"
 #include "utils.h"
 
-int next_obj_id = 0; 
+static int next_obj_id = 0; 
 
 
 #define MAX_OBJECTS 64
 
-object* objects;
-object *free_list = NULL; 
+static object* objects;
+static object *free_list = NULL; 
 
-object** sector_lists;
+static object** sector_lists;
 
-int num_sector_lists;
+static int num_sector_lists;
 
 object* pop(object** lst) {
   object* head = *lst;
@@ -127,7 +127,7 @@ const object_template object_types[3] = {
     {.init_state = 1,
      .sprite_col = ((RED_IDX << 4) | RED_IDX), 
      .name = "first enemy type ",
-    .size = 20, .from_floor_draw_offset = 10<<4, .width=40, .height=80<<4},
+    .size = 20, .from_floor_draw_offset = 10<<4, .width=46, .height=80<<4},
 };
 
 fix32 dist_sqr(object_pos posa, object_pos origin) {
