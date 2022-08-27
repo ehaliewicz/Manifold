@@ -51,8 +51,6 @@ Module.symvers
 Mkfile.old
 dkms.conf
 out/
-*.vgm
-*.bmp
 
 # cached python modules, and cached wads loaded by python tool
 *.pyc
@@ -71,3 +69,4 @@ imgui.ini
 src/python/dist.7z
 src/python/editor/dist/
 res/textures/texture_atlas_contest.png
+*.vgm
