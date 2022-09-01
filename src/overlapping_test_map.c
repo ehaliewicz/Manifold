@@ -50,7 +50,7 @@ static const s16 sector_group_params[NUM_SECTOR_PARAMS*17] = {
     
     0, 0, 0, 0, 200<<4, 350<<4, DARK_BLUE_IDX, BLUE_IDX,
     
-    -1, 0, 0, 0,  60<<4, 200<<4, STEEL_IDX, STEEL_IDX,
+    -1, 0, 0, 0,  60<<4, 200<<4, 0x4, 0x4,
     
     -2, 0, 0, 0, 100<<4, 200<<4, BLUE_IDX, BLUE_IDX,
     
