@@ -10,6 +10,8 @@ class Wall():
         self.v2 = v2
         self.sector_idx = sector_idx
         self.adj_sector_idx = adj_sector_idx
+
+        self.texture_idx = 0
         #self.index = index
         self.up_color = 1
         self.low_color = 1
@@ -125,6 +127,7 @@ def draw_line_mode(cur_state):
 
         
         color_opts = ["{}".format(col_names[idx]) for idx in range(16)]
+        texture_idxs = ["{}".format(i) for i in range(32)]
         
         
         v1_changed,new_v1_idx = imgui.core.combo("v1", cur_wall.v1.index, vert_opts)
@@ -138,6 +141,7 @@ def draw_line_mode(cur_state):
         up_col_changed, new_up_col = imgui.core.combo("upper color", cur_wall.up_color, color_opts)
         mid_col_changed, new_mid_col = imgui.core.combo("middle color", cur_wall.mid_color, color_opts)
         low_col_changed, new_low_col = imgui.core.combo("lower color", cur_wall.low_color, color_opts)
+        tex_idx_changed, new_tex_idx = imgui.core.combo("texture idx", cur_wall.texture_idx, texture_idxs)
         
         if v1_changed and new_v1_idx != v2_idx:
             cur_wall.v1 = cur_state.map_data.vertexes[new_v1_idx]
@@ -155,6 +159,8 @@ def draw_line_mode(cur_state):
             cur_wall.mid_color = new_mid_col
         if low_col_changed:
             cur_wall.low_color = new_low_col
+        if tex_idx_changed:
+            cur_wall.texture_idx = new_tex_idx
             
         
     def set_cur_wall(idx):

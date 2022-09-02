@@ -1,4 +1,5 @@
 #import glfw
+from random import randrange
 import sdl2
 from sdl2 import *
 import ctypes
@@ -69,19 +70,40 @@ class Map():
 """
         
                 
-        res += "static const s16 sectors[{}] =".format(num_sectors * NUM_SECTOR_ATTRIBUTES) + "{\n"
+        res += "static const s16 sectors[{}*SECTOR_SIZE] = ".format(num_sectors) + "{\n"
 
         wall_offset = 0
         portal_offset = 0
         for sect in self.sectors:
             sect_num_walls = len(sect.walls)
-            res += "    {}, {}, {}, {}<<4, {}<<4, {}, {},\n".format(wall_offset, portal_offset, sect_num_walls,
-                                                                    sect.floor_height, sect.ceil_height,
-                                                                    sect.floor_color, sect.ceil_color)
+            res += "    {}, {}, {}, {},\n".format(wall_offset, portal_offset, sect_num_walls, sect.index)
             
+            if len(sect.walls) == 0:
+                continue
             wall_offset += sect_num_walls+1
             portal_offset += sect_num_walls
             
+        res += "};\n\n"
+
+
+        # TODO: implement sector groups w/ all of these flags
+        res += "static const s16 sector_group_params[{}*NUM_SECTOR_PARAMS] = ".format(num_sectors) + "{\n"
+        for sect in self.sectors:
+            # light_level, orig_height, ticks_left, state,
+            # floor_height, ceil_height, floor_color, ceil_color
+            res += "{},{},{},{},{}<<4,{}<<4,{},{},\n".format(
+                0, 0, 0, 0, sect.floor_height, sect.ceil_height, sect.floor_color, sect.ceil_color
+            )
+        res += "};\n\n"
+
+        res += "static const s16 sector_group_triggers[{}*8] = ".format(num_sectors) + "{\n"
+        for sect in self.sectors:
+            res += "0,0,0,0,0,0,0,0,\n"
+        res += "};\n\n"
+
+        res += "static const u8 sector_group_types[{}] = ".format(num_sectors) + "{\n"
+        for sect in self.sectors:
+            res += "NO_TYPE,\n"
         res += "};\n\n"
             
         
@@ -90,6 +112,9 @@ class Map():
         res += "static const u16 walls[{}]".format(num_walls+num_sectors) + " = {\n"
         for sect in self.sectors:
             prev_v2 = None
+            if len(sect.walls) == 0:
+                res += "// sector {} is empty\n".format(sect.index)
+                continue
             first_v1 = sect.walls[0].v1
             res += "    "
             for wall in sect.walls:
@@ -121,37 +146,49 @@ class Map():
         res += "};\n\n"
         
 
-        res += "static const wall_col wall_colors[{}] =".format(num_walls) + "{\n"
+        res += "static const u8 wall_colors[{}*4] =".format(num_walls) + "{\n"
         for sect in self.sectors:
+            if sect.index == 19:
+                pass
             for wall in sect.walls:
-                if wall.adj_sector_idx == -1:
-                    mcol = "0x{}{}".format(wall.mid_color, wall.mid_color)
-                    ucol = "0x{}{}".format(wall.up_color, wall.up_color)
-                    dcol = "0x{}{}".format(wall.low_color, wall.low_color)
-                    res += "    {" + ".mid_col = {}".format(mcol) + "},\n"
-                else:
-                    res += "    {" + ".upper_col = {}, .lower_col = {}".format(ucol, dcol) + "},\n"
+                res += "{}, {}, {}, {},\n".format(
+                    wall.texture_idx, 
+                    wall.up_color, 
+                    wall.low_color, 
+                    wall.mid_color
+                    #randrange(3, 12)
+                    )
                     
         res += "};\n\n"
 
-        res += "#define VERT(x1,y1) { .x = (x1 * 2), .y = ((-y1) * 2) } \n"
+        # !!!! this defines the scale of the map. 
+        # it should be settable within the editor itself
+        # as it generally needs to be tweaked for every map
+        res += "#define VERT(x1,y1) { .x = (x1 * 1.3), .y = ((-y1) * 1.3) } \n"
         
         res += "static const vertex vertexes[{}]".format(num_vertexes) + " = {\n"
         for vert in self.vertexes:
             res += "    VERT({},{}),\n".format(vert.x, vert.y)
         res += "};\n"
+
+
         
         
         res += "const portal_map {} ".format(self.name.replace(" ", "_")) + " = {\n"
         res += "    .num_sectors = {},\n".format(num_sectors)
+        res += "    .num_sector_groups = {},\n".format(num_sectors)
         res += "    .num_walls = {},\n".format(num_walls)
         res += "    .num_verts = {},\n".format(num_vertexes)
         res += "    .sectors = sectors,\n"
+        res += "    .sector_group_types = sector_group_types,\n"
+        res += "    .sector_group_params = sector_group_params,\n"
+        res += "    .sector_group_triggers = sector_group_triggers,\n"
         res += "    .walls = walls,\n"
         res += "    .portals = portals,\n"
         res += "    .vertexes = vertexes,\n"
         res += "    .wall_colors = wall_colors,\n"
-        res += "    .wall_norm_quadrants = wall_normal_quadrants\n"
+        res += "    .wall_norm_quadrants = wall_normal_quadrants,\n"
+        res += "    .has_pvs = 0\n"
         res += "};"
                 
         
@@ -162,7 +199,7 @@ class Map():
 def main_sdl2():
     def pysdl2_init():
         width, height = 1280, 800
-        window_name = "minimal ImGui/SDL2 example"
+        window_name = "portal editor"
         if SDL_Init(SDL_INIT_EVERYTHING) < 0:
             print("Error: SDL could not initialize! SDL Error: " + SDL_GetError())
             exit(1)
@@ -490,7 +527,8 @@ def on_frame():
     mouse_button_clicked = (left_button_clicked or right_button_clicked)
     left_button_down = imgui.is_mouse_down(button=0)
     if mouse_button_clicked:
-        print("clicked left {} right {}".format(left_button_clicked, right_button_clicked))
+        pass
+        #print("clicked left {} right {}".format(left_button_clicked, right_button_clicked))
 
     #else:
     #    print("clearing down_x and down_y")
@@ -508,7 +546,7 @@ def on_frame():
     
     if map_hovered and not tools_hovered and mouse_button_clicked:
         x,y = imgui.get_mouse_pos()
-        print("interpreting click at {},{}".format(x,y))
+        #print("interpreting click at {},{}".format(x,y))
         interpret_click(x+cur_state.camera_x,y+cur_state.camera_y, LEFT_BUTTON if left_button_clicked else RIGHT_BUTTON)
     elif map_hovered and left_button_down:
         got_hold_last_frame = True
@@ -538,7 +576,14 @@ def old_vertexes_to_new_vertexes(vertexes):
     return [old_vertex_to_new_vertex(v) for v in vertexes]
 
 def old_wall_to_new_wall(wall):
-    return line.Wall(old_vertex_to_new_vertex(wall.v1), old_vertex_to_new_vertex(wall.v2), wall.sector_idx, wall.adj_sector_idx)
+    nw = line.Wall(old_vertex_to_new_vertex(wall.v1), 
+    old_vertex_to_new_vertex(wall.v2), wall.sector_idx, wall.adj_sector_idx)
+    nw.low_color = wall.low_color
+    nw.mid_color = wall.mid_color
+    nw.up_color = wall.up_color
+    nw.texture_idx = wall.texture_idx
+    return nw
+
 
 def old_walls_to_new_walls(walls):
     return [old_wall_to_new_wall(w) for w in walls]

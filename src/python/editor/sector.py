@@ -10,6 +10,7 @@ class Sector():
         self.ceil_height = ceil_height
         self.floor_color = floor_color
         self.ceil_color = ceil_color
+        self.sector_group_idx = 0
 
         if walls is not None:
             self.walls = walls

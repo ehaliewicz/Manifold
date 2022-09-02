@@ -70,3 +70,4 @@ src/python/dist.7z
 src/python/editor/dist/
 res/textures/texture_atlas_contest.png
 *.vgm
+*.ini
