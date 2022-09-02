@@ -2150,9 +2150,10 @@ void calculate_light_levels_for_wall(u32 clipped_dx, s16 inv_z1, s16 inv_z2, s16
 
     #ifndef WALLS_DIST_LIGHTING
         // just average lighting
-        s32 avg_z = (inv_z1+inv_z2)>>1;
-        CHECK_DIST(avg_z, cur_light);
-        *out_ptr++ = cur_light;
+        //s32 avg_z = (inv_z1+inv_z2)>>1;
+        //CHECK_DIST(avg_z, cur_light);
+        
+        *out_ptr++ = LIGHT; //cur_light;
         *out_ptr++ = cnt;
         num_light_levels = 1;
         return;
@@ -2237,9 +2238,11 @@ void draw_upper_step(s16 x1, s16 x1_ytop, s16 nx1_ytop, s16 x2, s16 x2_ytop, s16
 
     u16 far_inv_z = min(inv_z1, inv_z2);
     draw_lit_plane_fp ceil_func = &draw_lit_ceil_light_only;
+    #ifdef FLATS_LIGHTING
     if(far_inv_z <= FIX_0_16_INV_MID_DIST) {
         ceil_func = &draw_lit_ceiling;
     }
+    #endif
 
     // 4 subpixel bits here
     s16 top_dy_fix = x2_ytop - x1_ytop;
@@ -2353,9 +2356,11 @@ void draw_top_pegged_textured_upper_step(s16 x1, s16 x1_ytop, s16 nx1_ytop, s16 
 
     u16 far_inv_z = min(inv_z1, inv_z2);
     draw_lit_plane_fp ceil_func = &draw_lit_ceil_light_only;
+    #ifdef FLATS_LIGHTING
     if(far_inv_z <= FIX_0_16_INV_MID_DIST) {
         ceil_func = &draw_lit_ceiling;
     }
+    #endif
 
     // 4 subpixel bits here
     s16 top_dy_fix = x2_ytop - x1_ytop;
@@ -2471,9 +2476,11 @@ void draw_bottom_pegged_textured_lower_step(
     
     u16 far_inv_z = min(inv_z1, inv_z2);
     draw_lit_plane_fp floor_func = &draw_lit_floor_light_only;
+    #ifdef FLATS_LIGHTING
     if(far_inv_z <= FIX_0_16_INV_MID_DIST) {
         floor_func = &draw_lit_floor;
     }
+    #endif
 
     s16 bot_dy_fix = x2_ybot - x1_ybot;
     s16 nbot_dy_fix = nx2_ybot - nx1_ybot;
@@ -2586,9 +2593,12 @@ void draw_lower_step(s16 x1, s16 x1_ybot, s16 nx1_ybot, s16 x2, s16 x2_ybot, s16
     
     u16 far_inv_z = min(inv_z1, inv_z2);
     draw_lit_plane_fp floor_func = &draw_lit_floor_light_only;
+    
+    #ifdef FLATS_LIGHTING
     if(far_inv_z <= FIX_0_16_INV_MID_DIST) {
         floor_func = &draw_lit_floor;
     }
+    #endif
 
     s16 bot_dy_fix = x2_ybot - x1_ybot;
     s16 nbot_dy_fix = nx2_ybot - nx1_ybot;
@@ -2711,9 +2721,11 @@ void draw_ceiling_update_clip(s16 x1, s16 x1_ytop, s16 x2, s16 x2_ytop,
                               u16 window_min, u16 window_max, light_params* params) {
       
     draw_lit_plane_fp ceil_func = &draw_lit_ceil_light_only;
+    #ifdef FLATS_LIGHTING
     if(far_inv_z <= FIX_0_16_INV_MID_DIST) {
         ceil_func = &draw_lit_ceiling;
     }
+    #endif
 
 
     // 4 subpixel bits here
@@ -2777,9 +2789,12 @@ void draw_floor_update_clip(s16 x1, s16 x1_ybot, s16 x2, s16 x2_ybot,
 
 
     draw_lit_plane_fp floor_func = &draw_lit_floor_light_only;
+    
+    #ifdef FLATS_LIGHTING
     if(far_inv_z <= FIX_0_16_INV_MID_DIST) {
         floor_func = &draw_lit_floor;
     }
+    #endif
     // 4 subpixel bits here
     s16 bot_dy_fix = x2_ybot - x1_ybot;
 
@@ -2845,10 +2860,12 @@ void draw_solid_color_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
     const u8 light_floor_ceil = (far_inv_z <= FIX_0_16_INV_MID_DIST);
     draw_lit_plane_fp floor_func = &draw_lit_floor_light_only;
     draw_lit_plane_fp ceil_func = &draw_lit_ceil_light_only;
+    #ifdef FLATS_LIGHTING
     if(light_floor_ceil) {
         floor_func = &draw_lit_floor;
         ceil_func = &draw_lit_ceiling;
     }
+    #endif
 
 
     // 4 subpixel bits here
@@ -3053,9 +3070,11 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
     //u16 far_inv_z = min(inv_z1, inv_z2);
     //draw_lit_plane_fp floor_func = &draw_lit_floor_light_only;
     //draw_lit_plane_fp ceil_func = &draw_lit_ceil_light_only;
-
+    #ifdef FLATS_LIGHTING
     const u8 light_floor_ceil = ((inv_z1 <= FIX_0_16_INV_MID_DIST) || (inv_z2 <= FIX_0_16_INV_MID_DIST));
-
+    #else 
+    const u8 light_floor_ceil = 0;
+    #endif
 
     //u8* light_ptr = light_levels;
         
@@ -3237,13 +3256,15 @@ void draw_top_pegged_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
     u16 far_inv_z = min(inv_z1, inv_z2);
  
     draw_lit_plane_fp floor_func = &draw_lit_floor_light_only;
+    draw_lit_plane_fp ceil_func = &draw_lit_ceil_light_only;
+    #ifdef FLATS_LIGHTING
     if(far_inv_z <= FIX_0_16_INV_MID_DIST) {
         floor_func = &draw_lit_floor;
     }
-    draw_lit_plane_fp ceil_func = &draw_lit_ceil_light_only;
     if(far_inv_z <= FIX_0_16_INV_MID_DIST) {
         ceil_func = &draw_lit_ceiling;
     }
+    #endif
 
     // 4 subpixel bits here
     s16 top_dy_fix, bot_dy_fix;
@@ -3368,13 +3389,15 @@ void draw_bot_pegged_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
     u16 far_inv_z = min(inv_z1, inv_z2);
  
     draw_lit_plane_fp floor_func = &draw_lit_floor_light_only;
+    draw_lit_plane_fp ceil_func = &draw_lit_ceil_light_only;
+    #ifdef FLATS_LIGHTING
     if(far_inv_z <= FIX_0_16_INV_MID_DIST) {
         floor_func = &draw_lit_floor;
     }
-    draw_lit_plane_fp ceil_func = &draw_lit_ceil_light_only;
     if(far_inv_z <= FIX_0_16_INV_MID_DIST) {
         ceil_func = &draw_lit_ceiling;
     }
+    #endif
 
     // 4 subpixel bits here
     s16 top_dy_fix, bot_dy_fix;
