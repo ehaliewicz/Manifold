@@ -31,6 +31,8 @@ extern s16* live_sector_group_parameters;
 //extern sector_param* live_sector_parameters;
 
 
+s16* get_sector_group_pointer(u16 sect_group);
+
 s16 get_sector_group_orig_height(u16 sect_idx);
 s8 get_sector_group_light_level(u16 sect_idx);
 u16 get_sector_group_ticks_left(u16 sect_idx);

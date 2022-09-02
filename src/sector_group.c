@@ -19,6 +19,9 @@ void set_sector_group_light_level(u16 sect_group, s8 light_level) {
     live_sector_group_parameters[(sect_group<<NUM_SECTOR_PARAMS_SHIFT)+SECTOR_PARAM_LIGHT_IDX] = light_level;
 }
 
+s16* get_sector_group_pointer(u16 sect_group) {
+    return &live_sector_group_parameters[(sect_group<<NUM_SECTOR_PARAMS_SHIFT)];
+}
 
 s16 get_sector_group_orig_height(u16 sect_group) {
     return live_sector_group_parameters[(sect_group<<NUM_SECTOR_PARAMS_SHIFT)+SECTOR_PARAM_ORIG_HEIGHT_IDX];

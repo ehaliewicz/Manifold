@@ -707,6 +707,7 @@ int debug_draw_cleared = 0;
 
 int last_pressed_a = 0;
 void flip() {  
+    return;
   //u8* dst_buf = (bmp_buffer_write == bmp_buffer_0) ? bmp_buffer_1 : bmp_buffer_0;
   //return;
   if(JOY_readJoypad(JOY_1) & BUTTON_A) {
@@ -1041,7 +1042,7 @@ void draw_rle_sprite(s16 x1, s16 x2, s16 ytop, s16 ybot,
         }
     }
 
-    //flip();
+    flip();
 
     return; 
 }
@@ -1144,7 +1145,7 @@ void draw_masked(s16 x1, s16 x2, s16 ytop, s16 ybot,
 
     }
     
-    //flip();
+    flip();
 
     return; 
 }
@@ -1181,7 +1182,7 @@ void draw_forcefield(s16 x1, s16 x2,
     }
 
     
-    //flip();
+    flip();
 
     return; 
 }
@@ -2339,7 +2340,7 @@ void draw_upper_step(s16 x1, s16 x1_ytop, s16 nx1_ytop, s16 x2, s16 x2_ytop, s16
 
     }
     
-    //flip();
+    flip();
 
     return; 
 }
@@ -2459,7 +2460,7 @@ void draw_top_pegged_textured_upper_step(s16 x1, s16 x1_ytop, s16 nx1_ytop, s16 
         pegged_top_y_fix += pegged_top_dy_per_dx;
     }
     
-    //flip();
+    flip();
 
     return; 
 }
@@ -2581,7 +2582,7 @@ void draw_bottom_pegged_textured_lower_step(
         pegged_bot_y_fix += pegged_bot_dy_per_dx;
     }
     
-    //flip();
+    flip();
 
     return; 
 }
@@ -2709,7 +2710,7 @@ void draw_lower_step(s16 x1, s16 x1_ybot, s16 nx1_ybot, s16 x2, s16 x2_ybot, s16
         }
     }
     
-    //flip();
+    flip();
 
     return; 
 }
@@ -2777,7 +2778,7 @@ void draw_ceiling_update_clip(s16 x1, s16 x1_ytop, s16 x2, s16 x2_ytop,
         top_y_fix += top_dy_per_dx;
     }
     
-    //flip();
+    flip();
 
     return; 
 }
@@ -2841,7 +2842,7 @@ void draw_floor_update_clip(s16 x1, s16 x1_ybot, s16 x2, s16 x2_ybot,
         bot_y_fix += bot_dy_per_dx;
     }
     
-    //flip();
+    flip();
 
     return; 
 }
@@ -2981,7 +2982,7 @@ void draw_solid_color_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
         }
     }
     
-    //flip();
+    flip();
 
     return; 
 }
@@ -3237,7 +3238,7 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
         }
     }    
 
-    //flip();
+    flip();
 
     return; 
 }
@@ -3371,7 +3372,7 @@ void draw_top_pegged_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
     }
     
 
-    //flip();
+    flip();
 
     return; 
 }
@@ -3506,7 +3507,7 @@ void draw_bot_pegged_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
 
     
 
-    //flip();
+    flip();
 
     return; 
 }

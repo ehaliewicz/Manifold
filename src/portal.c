@@ -67,8 +67,13 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
     portal_map* map = cur_portal_map;
 
     // if this sector has been visited 32 times, or is already being currently rendered, skip it
+    
     if(sector_visited_cache[sector] & 0b1) { //} & 0b101) { //0x21) {
             return; // Odd = still rendering, 0x20 = give up
+    }
+    // if we've visited this sector 7 times in one frame (lol)
+    if(sector_visited_cache[sector] >= 14) {
+        return;
     }
 
     sector_visited_cache[sector]++; // = cur_frame;
@@ -229,7 +234,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
             .repetitions = wall_tex_repetitions[portal_idx],
             .needs_texture = !is_solid_color
         };
-        u8 wall_col = tex_idx;
+        u8 wall_col = is_solid_color; //tex_idx;
         if(!is_solid_color) {
             lit_texture *tex = get_texture(tex_idx, light_level);
             tmap_info.tex = tex;
@@ -239,8 +244,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
 
         u16 z_recip_v1 = z_recip_table_16[trans_v1.y>>TRANS_Z_FRAC_BITS];
         u16 z_recip_v2 = z_recip_table_16[trans_v2.y>>TRANS_Z_FRAC_BITS];
-        s16 neighbor_floor_height;
-        s16 neighbor_ceil_height;
+        s16 neighbor_floor_height, neighbor_ceil_height;
 
         if(clipped == OFFSCREEN) {
             
@@ -355,15 +359,20 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
 
         s16 x1_pegged, x2_pegged;
 
+        //u16 neighbor_sect_group; 
+        s16 *neighbor_sect_group_param_pointer;
 
         if(is_portal) {
             u16 neighbor_sect_group = sector_group(portal_sector, map);
+            neighbor_sect_group_param_pointer = get_sector_group_pointer(neighbor_sect_group);
+
             //u8 neighbor_sector_group_type = cur_portal_map->sector_group_types[neighbor_sect_group];
             //s16 neighbor_ceil_color = get_sector_group_floor_color(neighbor_sect_group);
             //s16 neighbor_floor_color = get_sector_group_floor_color(neighbor_sect_group);
 
-            neighbor_floor_height = get_sector_group_floor_height(neighbor_sect_group);
-            neighbor_ceil_height = get_sector_group_ceil_height(neighbor_sect_group);
+            neighbor_floor_height = neighbor_sect_group_param_pointer[SECTOR_PARAM_FLOOR_HEIGHT_IDX]; //get_sector_group_floor_height(neighbor_sect_group);
+            neighbor_ceil_height = neighbor_sect_group_param_pointer[SECTOR_PARAM_CEIL_HEIGHT_IDX]; //get_sector_group_ceil_height(neighbor_sect_group);
+
 
 
             x1_ybot = project_and_adjust_y_fix(floor_height, z_recip_v1);
@@ -427,8 +436,9 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
             KLog_S2("portal in sector: ", sector, " drawn with wall idx: ", i);
             #endif
             // draw step down from ceiling
-            u16 neighbor_sector_group = sector_group(portal_sector, map);
-            u8 neighbor_sector_group_type = cur_portal_map->sector_group_types[neighbor_sector_group];
+            
+            u16 nsect_group = sector_group(portal_sector, map);
+            u8 neighbor_sector_group_type = cur_portal_map->sector_group_types[nsect_group];
             if(neighbor_ceil_height < ceil_height) {
 
                 s16 nx1_ytop = project_and_adjust_y_fix(neighbor_ceil_height, z_recip_v1);
@@ -436,7 +446,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
 
                 if(neighbor_sector_group_type == DOOR) {
 
-                    s16 orig_door_height = get_sector_group_orig_height(neighbor_sector_group);
+                    s16 orig_door_height = neighbor_sect_group_param_pointer[SECTOR_PARAM_ORIG_HEIGHT_IDX]; //get_sector_group_orig_height(neighbor_sect_group);
                     s16 orig_height_diff = orig_door_height - neighbor_floor_height;
                     x1_pegged = project_and_adjust_y_fix(neighbor_ceil_height+orig_height_diff, z_recip_v1);
                     x2_pegged = project_and_adjust_y_fix(neighbor_ceil_height+orig_height_diff, z_recip_v2);
@@ -464,9 +474,12 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
 
                 }
             } else {
-                draw_ceiling_update_clip(x1, x1_ytop, x2, x2_ytop,
-                                        min(z_recip_v1, z_recip_v2),
-                                        window_min, window_max, &ceil_params);
+                u16 neighbor_ceil_color = neighbor_sect_group_param_pointer[SECTOR_PARAM_CEIL_COLOR_IDX]; //get_sector_group_ceil_color(neighbor_sect_group);
+                if(neighbor_ceil_color != ceil_color || neighbor_ceil_height != ceil_height) {
+                    draw_ceiling_update_clip(x1, x1_ytop, x2, x2_ytop,
+                                            min(z_recip_v1, z_recip_v2),
+                                            window_min, window_max, &ceil_params);
+                }
             }
 
             // not sure if this logic is correct
@@ -477,7 +490,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
 
                 if(neighbor_sector_group_type == LIFT) {
 
-                    s16 orig_lift_height = get_sector_group_orig_height(neighbor_sector_group);
+                    s16 orig_lift_height = neighbor_sect_group_param_pointer[SECTOR_PARAM_ORIG_HEIGHT_IDX]; //get_sector_group_orig_height(neighbor_sect_group);
                     s16 orig_height_diff = neighbor_ceil_height - orig_lift_height;
                     x1_pegged = project_and_adjust_y_fix(neighbor_floor_height-orig_height_diff, z_recip_v1);
                     x2_pegged = project_and_adjust_y_fix(neighbor_floor_height-orig_height_diff, z_recip_v2);
@@ -499,10 +512,13 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
                                     z_recip_v1, z_recip_v2,
                                     window_min, window_max, lower_color, light_level, &floor_params);
                 }
-            } else {
-                draw_floor_update_clip(x1, x1_ybot, x2, x2_ybot,
-                                    min(z_recip_v1, z_recip_v2),
-                                    window_min, window_max, &floor_params);
+            } else {            
+                u16 neighbor_floor_color = neighbor_sect_group_param_pointer[SECTOR_PARAM_FLOOR_COLOR_IDX]; //get_sector_group_floor_color(neighbor_sect_group);
+                if(neighbor_floor_color != floor_color || neighbor_floor_height != floor_height) {
+                    draw_floor_update_clip(x1, x1_ybot, x2, x2_ybot,
+                                        min(z_recip_v1, z_recip_v2),
+                                        window_min, window_max, &floor_params);
+                }
             }
 
             //if(render_forcefield) {
@@ -619,7 +635,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
 
         free_clip_buffer(obj_clip_buf);
     }
-    
+    sector_visited_cache[sector]++;
 }
 
 /*
@@ -1063,7 +1079,7 @@ void pvs_scan(u16 src_sector, s16 window_min, s16 window_max, u32 cur_frame) {
 
             u8 tex_idx = map->wall_colors[(portal_idx<<WALL_COLOR_NUM_PARAMS_SHIFT)+WALL_TEXTURE_IDX];
             u8 is_solid_color = map->wall_colors[(portal_idx<<WALL_COLOR_NUM_PARAMS_SHIFT)+WALL_SOLID_COLOR_IDX];
-            u8 wall_col = tex_idx;
+            u8 wall_col = is_solid_color;
             texmap_params tmap_info = {
                 .repetitions = wall_tex_repetitions[portal_idx], 
                 .needs_texture = !is_solid_color
