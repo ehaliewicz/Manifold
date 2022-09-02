@@ -230,6 +230,9 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
 
         u8 tex_idx = map->wall_colors[(portal_idx<<WALL_COLOR_NUM_PARAMS_SHIFT)+WALL_TEXTURE_IDX];
         u8 is_solid_color = map->wall_colors[(portal_idx<<WALL_COLOR_NUM_PARAMS_SHIFT)+WALL_SOLID_COLOR_IDX];
+        //KLog_U1("solid color: ", is_solid_color);
+
+        
         texmap_params tmap_info = {
             .repetitions = wall_tex_repetitions[portal_idx],
             .needs_texture = !is_solid_color
@@ -475,7 +478,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
                 }
             } else {
                 u16 neighbor_ceil_color = neighbor_sect_group_param_pointer[SECTOR_PARAM_CEIL_COLOR_IDX]; //get_sector_group_ceil_color(neighbor_sect_group);
-                if(neighbor_ceil_color != ceil_color || neighbor_ceil_height != ceil_height) {
+                if(neighbor_ceil_color != ceil_color || neighbor_ceil_height != ceil_height || !recur) {
                     draw_ceiling_update_clip(x1, x1_ytop, x2, x2_ytop,
                                             min(z_recip_v1, z_recip_v2),
                                             window_min, window_max, &ceil_params);
@@ -514,7 +517,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
                 }
             } else {            
                 u16 neighbor_floor_color = neighbor_sect_group_param_pointer[SECTOR_PARAM_FLOOR_COLOR_IDX]; //get_sector_group_floor_color(neighbor_sect_group);
-                if(neighbor_floor_color != floor_color || neighbor_floor_height != floor_height) {
+                if(neighbor_floor_color != floor_color || neighbor_floor_height != floor_height || !recur) {
                     draw_floor_update_clip(x1, x1_ybot, x2, x2_ybot,
                                         min(z_recip_v1, z_recip_v2),
                                         window_min, window_max, &floor_params);
