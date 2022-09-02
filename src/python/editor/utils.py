@@ -72,9 +72,9 @@ def circle_on_line(x1,y1, x2,y2, cx, cy, r):
 
 
 def draw_list(cur_state, id_str, label, items, select_item, delete_callback = None):
-    plural_label = "{}s".format(label)
+    
     imgui.begin_child(id_str)
-    imgui.text(plural_label)
+    imgui.text(label)
 
     cur_state.hovered_item = None
     
@@ -101,7 +101,6 @@ def draw_list(cur_state, id_str, label, items, select_item, delete_callback = No
 
         if imgui.is_item_hovered():
             cur_state.hovered_item = item
-            cur_state.hovered_item_type = id_str
             
     imgui.end_child()
 
@@ -123,17 +122,3 @@ def input_int2(label, id_str, input_vals, set_vals):
 
     if changed:
         set_vals(new_vals)
-
-def input_select(label, id_str, input_choices, cur_value, set_val):
-    imgui.text(label)
-    imgui.same_line()
-    changed, new_val = imgui.core.combo(id_str, cur_value, input_choices)
-
-    if changed:
-        set_val(new_val)
-
-
-def delay(setter, map_data, sect_group, idx):
-    def internal(val):
-        return setter(map_data, sect_group, idx, val)
-    return internal
