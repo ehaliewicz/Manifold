@@ -126,7 +126,7 @@ def draw_line_mode(cur_state):
         v2_idx = cur_wall.v2.index
 
         
-        color_opts = ["{}".format(col_names[idx]) for idx in range(16)]
+        color_opts = ["{}".format(idx) for idx in range(16)]
         texture_idxs = ["{}".format(i) for i in range(32)]
         
         
