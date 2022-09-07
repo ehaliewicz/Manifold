@@ -25,6 +25,7 @@ import script
 import sector
 import trigger
 import texture
+import tree
 import utils
 import vertex
 
@@ -38,10 +39,12 @@ class Mode(Enum):
     SCRIPT = 'Script'
     TRIGGER = 'Trigger'
     TEXTURE = 'Texture'
+    TREE = 'Tree'
 
 
 class Map():
     def __init__(self, name="placeholder name", sectors=None, vertexes=None):
+        self.bsp = False
         if not sectors:
             self.sectors = []
         else:
@@ -300,7 +303,8 @@ MODE_DRAW_FUNCS = {
     Mode.VERTEX: vertex.draw_vert_mode,
     Mode.SCRIPT: script.draw_script_mode,
     Mode.TRIGGER: trigger.draw_trigger_mode,
-    Mode.TEXTURE: texture.draw_texture_mode
+    Mode.TEXTURE: texture.draw_texture_mode,
+    Mode.TREE: tree.draw_tree_mode
 }
 
 
@@ -332,7 +336,10 @@ wall_default = (1,0,0,1)
 wall_highlight = (1,0,1,1)
 wall_selected = (1,1,0,1)
 
-
+concave_wall = (1,0,0,1)
+concave_portal = (1,0,0,.3)
+convex_wall = (0,0,1,1)
+convex_portal = (0,0,1,.3)
 
 def draw_map_vert(draw_list, vert, highlight=False):
     if highlight:
@@ -346,7 +353,7 @@ def draw_map_vert(draw_list, vert, highlight=False):
 
 
     
-def draw_map_wall(draw_list, wall, highlight=False):
+def draw_map_wall(draw_list, wall, highlight=False, tree_mode=False, concave_sector=False):
     is_portal = wall.adj_sector_idx != -1
     tbl = [
         # not highlighted
@@ -354,7 +361,8 @@ def draw_map_wall(draw_list, wall, highlight=False):
         portal_default,
         # highlighted
         wall_highlight,
-        portal_highlight]
+        portal_highlight,
+    ]
            
     
     color = tbl[(highlight<<1 | is_portal)]
@@ -368,21 +376,38 @@ def draw_map_wall(draw_list, wall, highlight=False):
     cam_x = cur_state.camera_x
     cam_y = cur_state.camera_y
      
-    draw_list.add_line(v1.x-cam_x, v1.y-cam_y, v2.x-cam_x, v2.y-cam_y, imgui.get_color_u32_rgba(*color), 1.0)
-    draw_list.add_line(n1x-cam_x, n1y-cam_y, n2x-cam_x, n2y-cam_y, imgui.get_color_u32_rgba(*color), 1.0)
+
+    if tree_mode:
+        color = None
+        if concave_sector:
+            color = concave_portal if is_portal else concave_wall
+        else:
+            color = convex_portal if is_portal else convex_wall 
+            
+        draw_list.add_line(v1.x-cam_x, v1.y-cam_y, v2.x-cam_x, v2.y-cam_y, imgui.get_color_u32_rgba(*color), 1.0)
+        draw_list.add_line(n1x-cam_x, n1y-cam_y, n2x-cam_x, n2y-cam_y, imgui.get_color_u32_rgba(*color), 1.0)
+    else:
+        draw_list.add_line(v1.x-cam_x, v1.y-cam_y, v2.x-cam_x, v2.y-cam_y, imgui.get_color_u32_rgba(*color), 1.0)
+        draw_list.add_line(n1x-cam_x, n1y-cam_y, n2x-cam_x, n2y-cam_y, imgui.get_color_u32_rgba(*color), 1.0)
+
     
 
 def draw_sector(draw_list, sector, highlight=False):
+    tree_mode = cur_state.mode == Mode.TREE
+
+    concave_sector = False
+    if tree_mode:
+        concave_sector = not tree.is_convex(sector, cur_state.map_data)  
+    
     for wall in sector.walls:
         wall_selected = cur_state.mode == Mode.LINE and cur_state.cur_wall == wall
         wall_hovered = cur_state.hovered_item == wall
-
-        draw_map_wall(draw_list, wall, (highlight or wall_selected or wall_hovered))
         
+        draw_map_wall(draw_list, wall, (highlight or wall_selected or wall_hovered), tree_mode, concave_sector)
 
+        
 # returns true if hovered
 def draw_map():
-        
     draw_list = imgui.get_window_draw_list()
 
     for vertex in cur_state.map_data.vertexes:
