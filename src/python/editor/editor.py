@@ -285,7 +285,8 @@ cur_state = State()
 def add_new_wall(v1, v2):
     num_walls = len(cur_state.cur_sector.walls)
     new_wall = line.Wall(v1=v1, v2=v2, sector_idx=cur_state.cur_sector.index, adj_sector_idx=-1)
-    cur_state.cur_sector.walls.append(new_wall)
+    cur_state.cur_sector.add_wall(new_wall)
+    
     return new_wall
     
 def add_new_vertex(x,y):
@@ -397,8 +398,8 @@ def draw_sector(draw_list, sector, highlight=False):
 
     concave_sector = False
     if tree_mode:
-        concave_sector = not tree.is_convex(sector, cur_state.map_data)  
-    
+        concave_sector = not sector.is_convex()  
+        
     for wall in sector.walls:
         wall_selected = cur_state.mode == Mode.LINE and cur_state.cur_wall == wall
         wall_hovered = cur_state.hovered_item == wall

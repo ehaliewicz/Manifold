@@ -88,7 +88,18 @@ class Wall():
         return circle_on_line(n1x,n1y, n2x,n2y, cx, cy, 5)
 
 
-
+    def find_adjacent_sector(self, map_data):
+        # returns True, wall_ref, sector_ref
+        # or False,None
+        for sector in map_data.sectors:
+            for wall in sector.walls:
+                if wall == self:
+                    continue
+                if wall.v1 == self.v2 and wall.v2 == self.v1:
+                    return True, sector
+        return False, None
+            
+        
 col_names = [
     'TRANSPARENT',
     'LIGHT_RED',
@@ -138,6 +149,13 @@ def draw_line_mode(cur_state):
         
         adj_changed,new_adj_sector_idx = imgui.core.combo("adj sector", cur_wall.adj_sector_idx+1, sector_opts)
 
+        find_adjacent = imgui.button("Find other side for portal")
+        if find_adjacent:
+            has_shared_wall, adj_sect = cur_wall.find_adjacent_sector(cur_state.map_data)
+            if has_shared_wall:
+                cur_wall.adj_sector_idx = adj_sect.index 
+            
+            
         up_col_changed, new_up_col = imgui.core.combo("upper color", cur_wall.up_color, color_opts)
         mid_col_changed, new_mid_col = imgui.core.combo("middle color", cur_wall.mid_color, color_opts)
         low_col_changed, new_low_col = imgui.core.combo("lower color", cur_wall.low_color, color_opts)

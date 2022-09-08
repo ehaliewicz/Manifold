@@ -12,6 +12,9 @@ class Sector():
         self.ceil_color = ceil_color
         self.sector_group_idx = 0
 
+        self.is_convex_memo = False
+        self.convex_calculated = None
+        
         if walls is not None:
             self.walls = walls
         else:
@@ -22,7 +25,47 @@ class Sector():
     def __str__(self):
         return "F: {} C: {}".format(self.floor_height, self.ceil_height)
 
+    def get_vertexes(self):
+        return [wall.v2 for wall in self.walls]
+
+    def add_wall(self, wall):
+        self.convex_calculated = False
+        self.walls.append(wall)
+
+        def is_convex(self):
+        if not self.convex_calculated:
+            self.is_convex_memo = self.is_convex_inner()
+            self.convex_calculated = True
+            
+        return self.is_convex_memo
+
     
+    def is_convex_inner(self):
+        verts = self.get_vertexes()
+        num_verts = len(verts)
+        if num_verts < 3:
+            return False
+        
+        res = 0
+
+        
+        for idx in range(num_verts):
+            p = verts[idx]
+            tmp = verts[(idx+1) % num_verts] # get next wall
+        
+            vx = tmp.x - p.x;
+            vy = tmp.y - p.y;
+
+            u = verts[(idx+2) % num_verts]
+            if idx == 0: # in first loop direction is unknown, so save it in res
+                res = u.x * vy - u.y * vx + vx * p.y - vy * p.x
+            else:
+                newres = u.x * vy - u.y * vx + vx * p.y - vy * p.x
+                if ( (newres > 0 and res < 0) or (newres < 0 and res > 0) ):
+                    return False
+        
+            
+        return True
 
 def add_new_sector(cur_state):
     num_sects = len(cur_state.map_data.sectors)
