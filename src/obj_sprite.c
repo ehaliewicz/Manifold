@@ -22,7 +22,7 @@ void obj_sprite_init(u16 free_tile_loc) {
     available_sprites = VDP_getAvailableSprites();
     prev_sprite_idx = 79 - available_sprites;
     start_sprite_idx = VDP_allocateSprites(available_sprites);
-    KLog_S2("prev sprite idx: ", prev_sprite_idx, " start sprite idX: ", start_sprite_idx);
+    //KLog_S2("prev sprite idx: ", prev_sprite_idx, " start sprite idX: ", start_sprite_idx);
 }
 
 void render_object_to_tile_column(u32 tex_per_pix, u32* tex_per_pix_table_ptr, s16 start_y, u16 min_y, u16 max_y, const column* col, u16* tile_buf_ptr) {

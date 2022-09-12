@@ -30,6 +30,11 @@ void go_to_overlapping_rooms_test_map() {
     target_mode = IN_GAME;
 }
 
+void go_to_building_test_map() {
+    launch_new_mode = 1;
+    init_load_level = BUILDING_TEST_MAP;
+    target_mode = IN_GAME;
+}
 #define TEXT_ITEM(str) {.text = (str), .submenu = NULL, .select = NULL, .render = NULL, .selectable = 0}
 
 const menu load_game_menu = {
@@ -42,10 +47,11 @@ const menu load_game_menu = {
 
 const menu level_select_menu = {
     .header_text = "Level select",
-    .num_items = 2,
+    .num_items = 3,
     .items = {
         {.text = "Slime room test map", .submenu = NULL, .select = &go_to_slime_room_test_map, .selectable=1},
-        {.text = "Overlapping rooms test map", .submenu = NULL, .select = &go_to_overlapping_rooms_test_map, .selectable=1}
+        {.text = "Overlapping rooms test map", .submenu = NULL, .select = &go_to_overlapping_rooms_test_map, .selectable=1},
+        {.text = "Building test map", .submenu = NULL, .select = &go_to_building_test_map, .selectable=1}
 
     }
 };

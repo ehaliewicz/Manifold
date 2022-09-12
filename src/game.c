@@ -437,7 +437,7 @@ void cleanup_pause_menu() {
 u16* cur_palette = NULL;
 
 
-void init_sector_jump_positions() {
+void init_sector_0_jump_position() {
     sector_centers = MEM_alloc(sizeof(Vect2D_f32) * cur_portal_map->num_sectors);
     for(int i = 0; i < cur_portal_map->num_sectors; i++) {
 
@@ -455,6 +455,7 @@ void init_sector_jump_positions() {
         avg_sect_y /= num_walls;
         sector_centers[i].x = intToFix32(avg_sect_x);
         sector_centers[i].y = intToFix32(avg_sect_y);
+        break; 
     }
 }
 
@@ -467,6 +468,7 @@ void init_player_pos() {
     u16 sect_group = sector_group(cur_player_pos.cur_sector, cur_portal_map);
 
     cur_player_pos.z = (get_sector_group_floor_height(sect_group)<<(FIX32_FRAC_BITS-4)) + FIX32(50);
+
 
     cur_player_pos.ang = 0;
 }
@@ -526,6 +528,9 @@ void init_game() {
                 //XGM_setLoopNumber(-1);
             }
             break;
+        case BUILDING_TEST_MAP:
+            load_portal_map((portal_map*)map_table[5]);
+            break;
     }    
     //load_portal_map((portal_map*)map_table[3]);
     /*
@@ -552,10 +557,8 @@ void init_game() {
     if(pause_game) {
         pause_game = 0;
     } else {
-        init_sector_jump_positions();
-        
-        //Message : player x: 270579 y: -687032 z: 194968
-        //Message : player ang: 884 sector: 4
+        //init_sector_jump_positions();
+        init_sector_0_jump_position();
 
         init_player_pos();
 
@@ -592,8 +595,9 @@ void init_game() {
     //VDP_waitVSync();
     
     // palette 2 is HUD palette
-    free_tile_loc = inventory_init(free_tile_loc);
-    inventory_draw();
+    
+    //free_tile_loc = inventory_init(free_tile_loc);
+    //inventory_draw();
     
     VDP_waitVSync();
 
@@ -644,7 +648,7 @@ game_mode run_game() {
     process_all_objects(cur_frame);
 
     console_tick();
-    inventory_draw();
+    //inventory_draw();
     run_sector_group_processes();
     calc_movement_speeds();
     handle_input();

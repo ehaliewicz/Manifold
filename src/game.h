@@ -44,6 +44,7 @@ extern s16 playerYInt;
 typedef enum {
     SLIME_ROOM,
     OVERLAPPING_ROOMS,
+    BUILDING_TEST_MAP
 } selected_level;
 
 selected_level init_load_level;
