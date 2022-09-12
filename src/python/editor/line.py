@@ -19,7 +19,7 @@ class Wall():
         
     def __str__(self):
         return "v1: {} v2: {}".format(self.v1.index, self.v2.index)
-
+    
     def rough_mid_point(self):
         v1 = self.v1
         v2 = self.v2
@@ -88,7 +88,7 @@ class Wall():
         return circle_on_line(n1x,n1y, n2x,n2y, cx, cy, 5)
 
 
-    def find_adjacent_sector(self, map_data):
+    def find_adjacent_wall(self, map_data):
         # returns True, wall_ref, sector_ref
         # or False,None
         for sector in map_data.sectors:
@@ -96,7 +96,7 @@ class Wall():
                 if wall == self:
                     continue
                 if wall.v1 == self.v2 and wall.v2 == self.v1:
-                    return True, sector
+                    return True, wall
         return False, None
             
         
@@ -151,9 +151,9 @@ def draw_line_mode(cur_state):
 
         find_adjacent = imgui.button("Find other side for portal")
         if find_adjacent:
-            has_shared_wall, adj_sect = cur_wall.find_adjacent_sector(cur_state.map_data)
+            has_shared_wall, adj_wall = cur_wall.find_adjacent_wall(cur_state.map_data)
             if has_shared_wall:
-                cur_wall.adj_sector_idx = adj_sect.index 
+                cur_wall.adj_sector_idx = adj_wall.sector_idx 
             
             
         up_col_changed, new_up_col = imgui.core.combo("upper color", cur_wall.up_color, color_opts)

@@ -22,6 +22,7 @@ class Sector():
         
         self.index = index
 
+
     def __str__(self):
         return "F: {} C: {}".format(self.floor_height, self.ceil_height)
 
@@ -32,7 +33,7 @@ class Sector():
         self.convex_calculated = False
         self.walls.append(wall)
 
-        def is_convex(self):
+    def is_convex(self):
         if not self.convex_calculated:
             self.is_convex_memo = self.is_convex_inner()
             self.convex_calculated = True
