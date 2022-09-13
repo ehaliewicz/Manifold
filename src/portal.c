@@ -202,12 +202,12 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
                 backfacing = (intPx < v1.x);
                 break;
         }
-        */
         if(backfacing) {
             //inc_counter(COARSE_BACKFACE_CULL_COUNTER);
             continue;
         } else {
         }
+        */
 
 
 

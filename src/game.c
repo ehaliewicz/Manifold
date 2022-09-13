@@ -462,7 +462,7 @@ void init_sector_0_jump_position() {
 
 void init_player_pos() {
     cur_player_pos.x = sector_centers[0].x;
-    cur_player_pos.y = sector_centers[0].y; 
+    cur_player_pos.y = sector_centers[0].y;
     cur_player_pos.cur_sector = 0;
 
     u16 sect_group = sector_group(cur_player_pos.cur_sector, cur_portal_map);
@@ -557,7 +557,6 @@ void init_game() {
     if(pause_game) {
         pause_game = 0;
     } else {
-        //init_sector_jump_positions();
         init_sector_0_jump_position();
 
         init_player_pos();

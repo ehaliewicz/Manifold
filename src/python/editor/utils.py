@@ -85,7 +85,6 @@ def draw_list(cur_state, id_str, label, items, select_item, delete_callback = No
         
         imgui.begin_group()
         if imgui.button(sel_btn_id):
-            print("clicked {}".format(idx))
             select_item(idx)
         imgui.same_line()
         
