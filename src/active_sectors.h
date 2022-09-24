@@ -6,7 +6,7 @@
 typedef void(*active_sector_callback)(u16 sect_group);
 
 
-void init_active_sectors();
+void init_active_sectors(u16 num_sect_groups);
 
 void cleanup_active_sectors();
 

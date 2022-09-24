@@ -5,6 +5,7 @@
 #include "graphics_res.h"
 #include "joy_helper.h"
 #include "music_res.h"
+#include "utils.h"
 
 //#define FIRE_WIDTH 64
 #define FIRE_WIDTH 128 //64
@@ -32,7 +33,7 @@ void reset_scroll() {
 
 void init_fire_lut() {
     // allocate 2.3 KB
-    lookup_table_base = MEM_alloc(256*3); //9);
+    lookup_table_base = malloc(256*3, "fire lookup table"); //9);
     table_0 = lookup_table_base+(256*0);
     table_1 = lookup_table_base+(256*1);
     table_2 = lookup_table_base+(256*2);
@@ -256,7 +257,7 @@ game_mode run_fire() {
 }
 
 void cleanup_fire() {
-    MEM_free(lookup_table_base);
+    free(lookup_table_base, "fire lookup table");
     bmp_end();
     VDP_clearPlane(BG_B, 1);
     MEM_pack();

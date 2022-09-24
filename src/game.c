@@ -438,7 +438,9 @@ u16* cur_palette = NULL;
 
 
 void init_sector_0_jump_position() {
-    sector_centers = MEM_alloc(sizeof(Vect2D_f32) * cur_portal_map->num_sectors);
+    sector_centers = malloc(sizeof(Vect2D_f32) * cur_portal_map->num_sectors,
+                            "sector center table");
+    
     for(int i = 0; i < cur_portal_map->num_sectors; i++) {
 
         int avg_sect_x = 0;
@@ -620,7 +622,8 @@ void init_game() {
 
     vwf_init();
     free_tile_loc = console_init(free_tile_loc);
-    obj_sprite_init(free_tile_loc);
+
+    //obj_sprite_init(free_tile_loc);
 
     //const char* init_str = "game initialized!";
     console_push_message("game initialized!", 17, 30);
@@ -630,6 +633,7 @@ void init_game() {
     u16 free_bytes = MEM_getFree();
     //while(1) {}
     KLog_U1("free bytes of RAM after init: ", free_bytes);
+    MEM_dump();
 
 }
 
@@ -681,7 +685,7 @@ game_mode run_game() {
 
 void cleanup_game() { 
     bmp_end();
-    MEM_free(sector_centers);
+    free(sector_centers, "sector center table");
     cleanup_portal_renderer();
     free_clip_buffer_list();
     release_2d_buffers();

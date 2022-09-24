@@ -1,5 +1,6 @@
 #include <genesis.h>
 #include "graphics_res.h"
+#include "utils.h"
 #include "vwf.h"
 
 #define CONSOLE_MAX_MSG_SIZE 49
@@ -44,13 +45,13 @@ uint16_t console_init(uint16_t start_addr) {
 
 
     //read = write = 0;
-    //messages = MEM_alloc(sizeof(console_msg)*CONSOLE_NUM_MESSAGES);
+    //messages = malloc(sizeof(console_msg)*CONSOLE_NUM_MESSAGES, "console message buffer");
     message.ticks_left = 0;
     message.msg[0] = 0;
 
     // 14*32 = 448 bytes!
     // should trim this down
-    tile_buf = MEM_alloc(sizeof(tile)*NUM_TILES);
+    tile_buf = malloc(sizeof(tile)*NUM_TILES, "console vwf tile buffer");
 
 
     start_vram_addr = start_addr;
@@ -63,8 +64,8 @@ uint16_t console_init(uint16_t start_addr) {
 }
 
 void console_cleanup() {
-    //MEM_free(messages);
-    MEM_free(tile_buf);
+    //free(messages);
+    free(tile_buf, "console vwf tile buffer");
 }
 
 void copy_console_message(char *msg, int len, uint16_t ticks) {

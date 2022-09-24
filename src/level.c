@@ -2,6 +2,7 @@
 #include "math3d.h"
 #include "portal_map.h"
 #include "sector_group.h"
+#include "utils.h"
 
 //const level* cur_level = NULL;
 portal_map* cur_portal_map = NULL;
@@ -11,22 +12,24 @@ portal_map* cur_portal_map = NULL;
     
     u16 num_sector_groups = map->num_sector_groups;
     u16 num_bytes = num_sector_groups * sizeof(s16) * NUM_SECTOR_PARAMS;
-    live_sector_group_parameters = MEM_alloc(num_bytes);
+    live_sector_group_parameters = malloc(num_bytes, "live sector group params table");
     memcpy(live_sector_group_parameters, cur_portal_map->sector_group_params, num_bytes);
  }
 
+u16 *wall_tex_repetitions;
+
  void clean_sector_parameters() {
-     MEM_free(live_sector_group_parameters);
-     live_sector_group_parameters = NULL;
+    free(live_sector_group_parameters, "live sector group params table");
+    free(wall_tex_repetitions, "texture repeat table");
+    live_sector_group_parameters = NULL;
  }
 
 
-u16 *wall_tex_repetitions;
 
 
 void init_wall_tex_repetitions(portal_map* map) {
     u16 num_walls = map->num_walls;
-    wall_tex_repetitions = MEM_alloc(sizeof(u16)*num_walls);
+    wall_tex_repetitions = malloc(sizeof(u16)*num_walls, "texture repeat table");
     u16 num_sectors = map->num_sectors;
 
     for(int sector = 0; sector < num_sectors; sector++) {

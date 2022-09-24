@@ -9,9 +9,8 @@ clip_buf* clip_buf_list_head = NULL;
 
 static int sp;
 
-
 void init_clip_buffer_list() {
-    clip_buffers = MEM_alloc(sizeof(clip_buf) * NUM_CLIP_BUFS);
+    clip_buffers = malloc(sizeof(clip_buf) * NUM_CLIP_BUFS, "silhouette clip buffers");
     sp = 0;
     clip_buf_list_head = &clip_buffers[0];
     for(int i = 0; i < NUM_CLIP_BUFS; i++) {
@@ -20,10 +19,8 @@ void init_clip_buffer_list() {
 }
 
 void free_clip_buffer_list() {
-    MEM_free(clip_buffers);
+    free(clip_buffers, "silhouette clip buffers");
 }
-
-
 
 clip_buf* alloc_clip_buffer() {
     if(sp >= NUM_CLIP_BUFS) {
@@ -31,7 +28,6 @@ clip_buf* alloc_clip_buffer() {
     }
     return &clip_buffers[sp++];
 }
-
 
 void free_clip_buffer(clip_buf* buf) {
     clip_buf* freed = &clip_buffers[--sp];

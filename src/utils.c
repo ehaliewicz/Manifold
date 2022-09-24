@@ -55,3 +55,16 @@ void die(char* msg) {
         VDP_waitVInt();
     }
 }
+
+static char buf[80];
+void* malloc(u16 size, const char* thing) {
+    sprintf(buf, "allocating %i bytes for %s", size, thing);
+    KLog(buf);
+    return MEM_alloc(size);
+}
+
+void free(void* thing, const char* thing2) {
+    sprintf(buf, "freeing %s", thing2);
+    KLog(buf);
+    MEM_free(thing);
+}

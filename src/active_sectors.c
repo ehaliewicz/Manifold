@@ -1,17 +1,18 @@
 #include <genesis.h>
 #include "active_sectors.h"
 #include "portal_map.h"
+#include "utils.h"
 
 
 static u32* active_sectors;
 
-void init_active_sectors() {
+void init_active_sectors(u16 num_sect_groups) {
     // 64 bytes
-    active_sectors = MEM_alloc(MAX_SECTOR_GROUPS/8);
+    active_sectors = malloc(MAX_SECTOR_GROUPS/8, "active_sector_bitmap");
 }
 
 void cleanup_active_sectors() {
-    MEM_free(active_sectors);
+    free(active_sectors, "active_sector_bitmap");
 }
 
 void register_sect_group_as_active(u16 sect_group) {

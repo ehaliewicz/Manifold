@@ -93,9 +93,9 @@ void swap_with_prev(object* o) {
 void init_object_lists(int num_sectors) {
 
     num_sector_lists = num_sectors;
-    objects = MEM_alloc(sizeof(object)*MAX_OBJECTS); //[MAX_OBJECTS];
+    objects = malloc(sizeof(object)*MAX_OBJECTS, "object list");
 
-    sector_lists = MEM_alloc(sizeof(object*)*num_sectors); //[NUM_SECTORS]; 
+    sector_lists = malloc(sizeof(object*)*num_sectors, "sector object lists");
     for(int i = 0; i < MAX_OBJECTS; i++) {
         objects[i].prev = (i == 0 ? NULL : &(objects[i-1]));
         objects[i].next = (i == (MAX_OBJECTS-1) ? NULL : &(objects[i+1]));
@@ -109,8 +109,8 @@ void init_object_lists(int num_sectors) {
 
 
 void clear_object_lists() {
-    MEM_free(objects);
-    MEM_free(sector_lists);
+    free(objects, "object list");
+    free(sector_lists, "sector object lists");
 }
 
 

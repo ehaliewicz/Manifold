@@ -28,8 +28,8 @@ static u32* sector_visited_cache; // i don't know if this helps much, but we mig
 
 
 void init_portal_renderer() {
-    //vert_transform_cache = MEM_alloc(sizeof(u32) * cur_portal_map->num_verts);
-    sector_visited_cache = MEM_alloc(sizeof(u32) * cur_portal_map->num_sectors);
+    //vert_transform_cache = malloc(sizeof(u32) * cur_portal_map->num_verts, "vertex transform cache");
+    sector_visited_cache = malloc(sizeof(u32) * cur_portal_map->num_sectors, "sector visited cache");
 }
 
 
@@ -38,7 +38,7 @@ void clear_portal_cache() {
 }
 
 void cleanup_portal_renderer() {
-    MEM_free(sector_visited_cache);
+    free(sector_visited_cache, "sector visited cache");
 }
 
 

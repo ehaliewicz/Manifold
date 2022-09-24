@@ -518,10 +518,10 @@ void bmp_reset_vertical() {
 	
     // allocate bitmap buffer if needed
 	if (!bmp_buffer_0) {
-		bmp_buffer_0 = MEM_alloc(BMP_PITCH * BMP_VERTICAL_HEIGHT * sizeof(u8));
+		bmp_buffer_0 = malloc(BMP_PITCH * BMP_VERTICAL_HEIGHT * sizeof(u8), "vertical bmp_buffer_0");
 	}
 	if (!bmp_buffer_1) {
-		bmp_buffer_1 = MEM_alloc(BMP_PITCH * BMP_VERTICAL_HEIGHT * sizeof(u8));
+		bmp_buffer_1 = malloc(BMP_PITCH * BMP_VERTICAL_HEIGHT * sizeof(u8), "vertical bmp_buffer_1");
 	}
 	
     // need 64x64 cells sized plane
@@ -589,10 +589,10 @@ void bmp_reset_horizontal() {
 	
     // allocate bitmap buffer if needed
 	if (!bmp_buffer_0) {
-		bmp_buffer_0 = MEM_alloc(BMP_PITCH * BMP_HEIGHT * sizeof(u8));
+		bmp_buffer_0 = malloc(BMP_PITCH * BMP_HEIGHT * sizeof(u8), "horizontal bmp_buffer_0");
 	}
 	if (!bmp_buffer_1) {
-		bmp_buffer_1 = MEM_alloc(BMP_PITCH * BMP_HEIGHT * sizeof(u8));
+		bmp_buffer_1 = malloc(BMP_PITCH * BMP_HEIGHT * sizeof(u8), "horizontal bmp_buffer_1");
 	}
 	
     // need 64x64 cells sized plane
@@ -713,12 +713,12 @@ void bmp_end()
     // release memory
     if (bmp_buffer_0)
     {
-        MEM_free(bmp_buffer_0);
+        free(bmp_buffer_0, "bmp_buffer_0");
         bmp_buffer_0 = NULL;
     }
     if (bmp_buffer_1)
     {
-        MEM_free(bmp_buffer_1);
+        free(bmp_buffer_1, "bmp_buffer_0");
         bmp_buffer_1 = NULL;
     }
 

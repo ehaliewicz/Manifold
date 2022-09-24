@@ -544,16 +544,6 @@ const lit_texture* const textures[6*8] = {
         NULL,
         NULL,
     //}
-    //{
-        &lit_texture_atlas_sprite_palette_tex_5_dark, 
-        &lit_texture_atlas_sprite_palette_tex_5_mid,
-        &lit_texture_atlas_sprite_palette_tex_5_mid,
-        &lit_texture_atlas_sprite_palette_tex_5_mid,
-        &lit_texture_atlas_sprite_palette_tex_5_light,
-        NULL,
-        NULL,
-        NULL,
-    //}
 };
 
 lit_texture* get_texture(u8 tex_idx, s8 light_level) {

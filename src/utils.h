@@ -69,4 +69,6 @@ void die(char* msg);
 
 #define clamp(a, mi,ma)      min(max(a,mi),ma)
 
+void* malloc(u16 size, const char* thing);
+
 #endif

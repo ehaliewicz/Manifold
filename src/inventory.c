@@ -1,6 +1,7 @@
 #include <genesis.h>
 #include "hud.h"
 #include "inventory.h"
+#include "utils.h"
 
 #define MAX_ITEMS 8 
 
@@ -93,8 +94,8 @@ u32 load_inventory_items_to_vram(u32 tile_loc) {
 }
 
 u32 inventory_init(u32 free_tile_loc) {
-    inventory = MEM_alloc(sizeof(item_type) * MAX_ITEMS);
-    item_vram_addresses = MEM_alloc(sizeof(u16) * NUM_ITEM_TYPES);
+    inventory = malloc(sizeof(item_type) * MAX_ITEMS, "inventory table");
+    item_vram_addresses = malloc(sizeof(u16) * NUM_ITEM_TYPES, "inventory item vram addr table");
     u32 new_free_tile_loc = load_inventory_items_to_vram(free_tile_loc);
 
     for(int y = 0; y < hud.tilemap->h; y++) {
@@ -115,6 +116,6 @@ u32 inventory_init(u32 free_tile_loc) {
 }
 
 void inventory_cleanup() {
-    MEM_free(inventory);
-    MEM_free(item_vram_addresses);
+    free(inventory, "inventory table");
+    free(item_vram_addresses, "inventory item vram addr table");
 }

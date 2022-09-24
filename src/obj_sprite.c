@@ -16,7 +16,7 @@ s16 available_sprites;
 
 void obj_sprite_init(u16 free_tile_loc) {
     start_vram_addr = free_tile_loc;
-    sprite_tile_buf = MEM_alloc(sizeof(tile)*64);
+    sprite_tile_buf = malloc(sizeof(tile)*64, "obj_sprite renderer buf");
 
     
     available_sprites = VDP_getAvailableSprites();
