@@ -3,7 +3,7 @@
 
 #include <genesis.h>
 
-typedef struct {
+typedef struct __attribute__((__packed__)) {
     s16 x, y;
 } vertex;
 

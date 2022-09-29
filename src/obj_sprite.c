@@ -2,7 +2,7 @@
 #include "obj_sprite.h"
 #include "texture.h"
 #include "tile.h"
-
+#include "utils.h"
 
 
 tile* sprite_tile_buf;

@@ -9,20 +9,24 @@
 
 
 
-const __UINTPTR_TYPE__ map_table[NUM_MAPS+3] = {
+const uint32_t map_table[NUM_MAPS+3] = {
     0xDEADBEEF,
-    4, // number of maps
-    NUM_MAPS,
+    3, // number of maps
     &overlapping_map,
     &editor_test_map, 
     &building_test_map, 
-    0//&empty_map_1, //&empty_map_2, &empty_map_3,
+    0
+    //&empty_map_1, //&empty_map_2, &empty_map_3,
 };
 
 
+
 // 2MB of space for map, texture, sprite, and palette data
-const uint8_t wad_area[2048*256] = { 'W','A','D','?' };
+const uint8_t wad_area[2048*256] = { 
+    'W','A','D','?',
+    };
 // 2048*1024
+
 
 
 #define WAD_BASE_IDX 4

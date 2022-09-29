@@ -572,5 +572,6 @@ const portal_map editor_test_map  = {
     .sector_group_triggers = sector_group_triggers,
     .has_pvs = 1,
     .pvs = pvs,
-    .raw_pvs = raw_pvs
+    .raw_pvs = raw_pvs,
+    .name = "slime room test",
 };

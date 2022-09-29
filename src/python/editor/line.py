@@ -40,6 +40,20 @@ class Wall():
         scale = 10/mag
         return int(-dy*scale),int(dx*scale)
 
+    def normal_quadrant_int(self):
+        quad = self.normal_quadrant()
+        tbl = {
+            "QUADRANT_0":0,
+            "QUADRANT_1":1,
+            "QUADRANT_2":2,
+            "QUADRANT_3":3,
+            "FACING_UP":4,
+            "FACING_LEFT":5,
+            "FACING_DOWN":6,
+            "FACING_RIGHT":7
+        }
+        return tbl[quad]
+
     def normal_quadrant(self):
         nx,ny = self.normal()
         rads = math.atan2(-ny, nx)

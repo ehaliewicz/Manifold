@@ -8,15 +8,15 @@ typedef struct menu menu;
 typedef struct {
     char* text;
     const menu* submenu;
-    void (*select)();
-    char* (*render)();
+    void (*select)(int menu_idx);
+    char* (*render)(int menu_idx);
     int selectable;
 } menu_item;
 
 struct menu {
     char* header_text;
     int num_items;
-    const menu_item items[];
+    menu_item items[];
 };
 
 typedef struct {

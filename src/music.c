@@ -12,6 +12,6 @@ const char const* song_names[2] = {
 	"E1M4"
 };	
 
-void toggle_music() {
+void toggle_music(int menu_idx) {
 	music_on = !music_on;
 }

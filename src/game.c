@@ -481,9 +481,11 @@ void do_vint_flip();
 
 u16 free_tile_loc = 0x390;
 
-
-selected_level init_load_level = SLIME_ROOM;
-
+const int init_load_level_array[2] = {
+    0xBEEFFEED,
+    0
+};
+//int init_load_level = 0;
 
 
 void init_game() {
@@ -513,27 +515,10 @@ void init_game() {
     
 	VDP_setBackgroundColor(10);
 
-    switch(init_load_level) {
-        case SLIME_ROOM:
-            load_portal_map((portal_map*)map_table[4]);
-            if(music_on) {
-                //SND_startPlay_PCM(interference_wav, sizeof(interference_wav), SOUND_RATE_11025, SOUND_PAN_CENTER, 1);
-                //XGM_startPlay(xgm_e2m2);
-                //XGM_setLoopNumber(-1);
-            }
-            break;
-        case OVERLAPPING_ROOMS:
-            load_portal_map((portal_map*)map_table[3]);
-            if(music_on) {
-                //SND_startPlay_PCM(interference_wav, sizeof(interference_wav), SOUND_RATE_11025, SOUND_PAN_CENTER, 1);
-                //XGM_startPlay(xgm_sysdoom);
-                //XGM_setLoopNumber(-1);
-            }
-            break;
-        case BUILDING_TEST_MAP:
-            load_portal_map((portal_map*)map_table[5]);
-            break;
-    }    
+    volatile u32* vp_init_load_level_arr = init_load_level_array;
+    volatile int init_load_level = vp_init_load_level_arr[1];
+    load_portal_map((portal_map*)map_table[2+init_load_level]);
+  
     //load_portal_map((portal_map*)map_table[3]);
     /*
     KLog_U1("map table address: ", map_table);
@@ -669,9 +654,9 @@ game_mode run_game() {
     maybe_set_palette(two_light_levels_pal.data);
 
     // hack for door in overlapping room test map
-    if(init_load_level == OVERLAPPING_ROOMS) {
-        update_wall_vertex();
-    }
+    //if(init_load_level == OVERLAPPING_ROOMS) {
+    //    update_wall_vertex();
+    //}
     draw_3d_view(cur_frame);
 
     //SPR_update();

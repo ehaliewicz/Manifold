@@ -4,6 +4,6 @@
 #include "portal_map.h"
 
 #define NUM_MAPS 4
-const __UINTPTR_TYPE__ map_table[NUM_MAPS+3];
+const uint32_t map_table[NUM_MAPS+3];
 
 #endif

@@ -572,5 +572,6 @@ const portal_map building_test_map  = {
     .vertexes = vertexes,
     .wall_colors = wall_colors,
     .wall_norm_quadrants = wall_normal_quadrants,
-    .has_pvs = 0
+    .has_pvs = 0,
+    .name = "building test"
 };

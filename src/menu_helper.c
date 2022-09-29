@@ -57,22 +57,22 @@ void run_menu(menu_state* st) {
 
     for(int i = 0; i < cur_menu->num_items; i++) {
         const menu_item* rend_item = &(cur_menu->items[i]);
-        char* rend_str = (rend_item->render == NULL ? "" : rend_item->render());
+        char* rend_str = (rend_item->render == NULL ? "" : rend_item->render(i));
         char* cursor = (cur_item == i) ? ">" : " ";
        
         sprintf(buf, "%s %s %s", cursor, rend_item->text, rend_str);
         draw_line(buf);
     }
 
+    int selectable = cur_menu->items[cur_item].selectable != 0;
 
     if(joy_button_newly_pressed(BUTTON_UP) && (cur_item != -1))  {
         cur_item = ((st->cur_item == 0) ? cur_item : cur_item-1);
     } else if (joy_button_newly_pressed(BUTTON_DOWN) && (cur_item != -1)) {
         cur_item = ((st->cur_item == cur_menu->num_items-1) ? cur_item : st->cur_item+1);
-    } else if(joy_button_newly_pressed(BUTTON_A) || joy_button_newly_pressed(BUTTON_START)) {
-
+    } else if(joy_button_newly_pressed(BUTTON_A) || joy_button_newly_pressed(BUTTON_START) && selectable) {
         if(cur_menu->items[cur_item].select != NULL) {
-            cur_menu->items[cur_item].select();
+            cur_menu->items[cur_item].select(cur_item);
         }
 
         if (cur_menu->items[cur_item].submenu != NULL) {
