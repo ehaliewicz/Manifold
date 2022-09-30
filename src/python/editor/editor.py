@@ -217,7 +217,7 @@ def main_sdl2():
         window_name = "portal editor"
         if SDL_Init(SDL_INIT_EVERYTHING) < 0:
             print("Error: SDL could not initialize! SDL Error: " + SDL_GetError())
-            exit(1)
+            sys.exit(1)
         SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1)
         SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24)
         SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8)
@@ -236,15 +236,15 @@ def main_sdl2():
                                 SDL_WINDOW_OPENGL|SDL_WINDOW_RESIZABLE)
         if window is None:
             print("Error: Window could not be created! SDL Error: " + SDL_GetError())
-            exit(1)
+            sys.exit(1)
         gl_context = SDL_GL_CreateContext(window)
         if gl_context is None:
             print("Error: Cannot create OpenGL Context! SDL Error: " + SDL_GetError())
-            exit(1)
+            sys.exit(1)
         SDL_GL_MakeCurrent(window, gl_context)
         if SDL_GL_SetSwapInterval(1) < 0:
             print("Warning: Unable to set VSync! SDL Error: " + SDL_GetError())
-            exit(1)
+            sys.exit(1)
         return window, gl_context
     window, gl_context = pysdl2_init()
     renderer = SDL2Renderer(window)
@@ -524,7 +524,7 @@ def on_frame():
                 "Quit", 'Cmd+Q', False, True
             )
             if clicked_quit:
-                exit(1)
+                sys.exit(1)
                 
             clicked_load, selected_load = imgui.menu_item(
                 "Load", "", False, True
