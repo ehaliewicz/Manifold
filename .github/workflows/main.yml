@@ -19,8 +19,8 @@ jobs:
       with:
         path: src/python/editor
 
-  - name: Tar files
-    run: tar -cvf editor.tar src/python/editor/dist/editor
+    - name: Tar files
+      run: tar -cvf editor.tar src/python/editor/dist/editor
 
     - uses: actions/upload-artifact@v2
       with:
