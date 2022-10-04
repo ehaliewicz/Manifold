@@ -23,7 +23,7 @@ jobs:
       run: ls -R ./
 
     - name: Tar files
-      run: tar -cvzf editor.tar.gz .src/python/editor/dist/windows
+      run: tar -cvzf editor.tar.gz ./src/python/editor/dist/windows/editor
 
     - uses: actions/upload-artifact@v2
       with:
