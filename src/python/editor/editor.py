@@ -295,9 +295,11 @@ cur_state = State()
 
         
 def add_new_wall(v1, v2):
-    num_walls = len(cur_state.cur_sector.walls)
     new_wall = line.Wall(v1=v1, v2=v2, sector_idx=cur_state.cur_sector.index, adj_sector_idx=-1)
     cur_state.cur_sector.add_wall(new_wall)
+
+    new_wall.link_with_adjacent_wall_if_exists(cur_state.map_data)
+    
     
     return new_wall
     
@@ -305,6 +307,7 @@ def add_new_vertex(x,y):
     num_verts = len(cur_state.map_data.vertexes)
     new_vert = vertex.Vertex(x, y, index=num_verts)
     cur_state.map_data.vertexes.append(new_vert)
+
     return new_vert
     
 
@@ -468,6 +471,7 @@ def interpret_click(x,y,button):
                 return
             elif button == RIGHT_BUTTON:
                 clicked_vertex = vert
+                break
             
     # then walls
     if button == LEFT_BUTTON:

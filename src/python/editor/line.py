@@ -112,6 +112,13 @@ class Wall():
                 if wall.v1 == self.v2 and wall.v2 == self.v1:
                     return True, wall
         return False, None
+
+    def link_with_adjacent_wall_if_exists(self, map_data):
+        has_shared_wall, adj_wall = self.find_adjacent_wall(map_data)
+        if has_shared_wall:
+            self.adj_sector_idx = adj_wall.sector_idx
+            adj_wall.adj_sector_idx = self.sector_idx
+        return has_shared_wall, adj_wall
             
         
 col_names = [
@@ -165,9 +172,7 @@ def draw_line_mode(cur_state):
 
         find_adjacent = imgui.button("Find other side for portal")
         if find_adjacent:
-            has_shared_wall, adj_wall = cur_wall.find_adjacent_wall(cur_state.map_data)
-            if has_shared_wall:
-                cur_wall.adj_sector_idx = adj_wall.sector_idx 
+            cur_wall.link_with_adjacent_wall_if_exists(cur_state.map_data)
             
             
         up_col_changed, new_up_col = imgui.core.combo("upper color", cur_wall.up_color, color_opts)
