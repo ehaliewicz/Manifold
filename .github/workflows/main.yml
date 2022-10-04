@@ -19,6 +19,9 @@ jobs:
       with:
         path: src/python/editor
 
+    - name: Print directory
+      run: ls -R ./
+
     - name: Tar files
       run: tar -cvf editor.tar ./dist/windows
 
