@@ -1,18 +1,28 @@
-#import glfw
-from random import randrange
-from unittest.mock import patch
-import sdl2
+import os 
+import sys 
+
+print(os.getcwd())
+print(sys.executable)
+
+if "editor.exe" in sys.executable:
+    cur_path = ".\\"
+    os.environ['PYSDL2_DLL_PATH'] = cur_path #".\\" 
+else:
+    
+    cur_path = os.path.join(os.getcwd(), "src", "python", "editor")
+#else:
+#    current_path = ".\src\\python\\editor\\"
+
+
 from sdl2 import *
 import ctypes
 
 import imgui
 #from imgui.integrations.glfw import GlfwRenderer
 from imgui.integrations.sdl2 import SDL2Renderer
-import math
 
 import OpenGL.GL as gl
 from enum import Enum
-import sys
 
 import tkinter as tk
 from tkinter import filedialog, messagebox
@@ -27,12 +37,11 @@ import sector
 import trigger
 import texture
 import tree
-import utils
 import vertex
 
 import struct 
 import subprocess
-
+import configparser
 
 # commands
 
@@ -64,7 +73,6 @@ class Map():
             self.vertexes = vertexes
 
         self.name = name
-        self.emulator_path = ""
 
     def generate_c_from_map(self):
         num_sectors = len(self.sectors)
@@ -286,12 +294,31 @@ class State(object):
         self.camera_x = 0
         self.camera_y = 0
         self.zoom = 0
+        self.emulator_path = ""
         
 
         self.hovered_item = None
 
+def load_config():
+    global cur_state
+    conf_exists = os.path.exists("conf.ini")
+    if not conf_exists:
+        print("No configuration file, using defaults!")
+        return 
+    config = configparser.ConfigParser()
+    conf_file_path = os.path.join(cur_path, "conf.ini")
+    config.read(conf_file_path)
+    cur_state.emulator_path = config.get("Default Settings", "emulator-path")
+
+
+
+def reset_state():
+    global cur_state
+    cur_state = State()
+    load_config()
     
-cur_state = State()
+reset_state()
+    
 
         
 def add_new_wall(v1, v2):
@@ -330,9 +357,9 @@ def draw_mode():
     if changed:
         cur_state.map_data.name = text_val
 
-    chg_emu, emu_val = imgui.input_text("Emulator: ", cur_state.map_data.emulator_path, buffer_length=128)
+    chg_emu, emu_val = imgui.input_text("Emulator: ", cur_state.emulator_path, buffer_length=128)
     if chg_emu:
-        cur_state.map_data.emulator_path = emu_val
+        cur_state.emulator_path = emu_val
         
         
     imgui.text("{} mode".format(cur_state.mode.value))
@@ -508,6 +535,7 @@ last_frame_y = None
 got_hold_last_frame = False
 
 
+
 def on_frame():
     global cur_state, last_frame_x, last_frame_y, got_hold_last_frame
 
@@ -560,14 +588,14 @@ def on_frame():
             )
             if selected_export_launch:
                 rom_name = export_map_to_rom(set_launch_flags=True)
-                launch_emulator(cur_state.map_data.emulator_path, rom_name)
+                launch_emulator(cur_state.emulator_path, rom_name)
 
 
             clicked_reset, selected_reset = imgui.menu_item(
                 "Reset", "", False, True
             )
             if selected_reset:
-                cur_state = State()
+                reset_state()
             
             
             imgui.end_menu()
@@ -661,12 +689,13 @@ def load_map_from_file(f):
     old_state = pickle.load(f)
     old_map = old_state.map_data
 
+    
 
     new_map = Map(name=old_map.name,
                   sectors=old_sectors_to_new_sectors(old_map.sectors),
                   vertexes=old_vertexes_to_new_vertexes(old_map.vertexes))                      
 
-    cur_state = old_state
+    reset_state()
     cur_state.map_data = new_map
 
     cur_state.cur_sector = None
@@ -933,7 +962,12 @@ def export_map_to_rom(set_launch_flags=False):
             first_v1 = sect.walls[0].v1
             for wall in sect.walls:
                 if prev_v2 is not None:
-                    assert prev_v2 == wall.v1 
+                    if prev_v2 != wall.v1:
+                        messagebox.showerror(
+                            title="Error",
+                            message="Sector {}".format(sect.index)
+                        )
+                    
                 write_u16(f, wall.v1.index)
                 prev_v2 = wall.v2 
             write_u16(f, first_v1.index)

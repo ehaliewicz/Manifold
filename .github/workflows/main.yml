@@ -19,13 +19,13 @@ jobs:
       with:
         path: src/python/editor
 
-    - name: Print directory
-      run: ls -R ./
+    - name: Copy config file
+      run: sudo cp src/python/editor/conf.ini src/python/editor/dist/windows/conf.ini
 
-    - name: Tar files
-      run: tar -cvzf editor.tar.gz ./src/python/editor/dist/windows/editor
+    - name: Copy engine binary
+      run: sudo cp built_rom.bin src/python/editor/dist/windows/rom.bin
 
     - uses: actions/upload-artifact@v2
       with:
         name: portal-editor
-        path: editor.tar.gz
+        path: src/python/editor/dist/windows/*

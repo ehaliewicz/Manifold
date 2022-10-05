@@ -11,11 +11,11 @@ class Wall():
         self.sector_idx = sector_idx
         self.adj_sector_idx = adj_sector_idx
 
-        self.texture_idx = 0
+        self.texture_idx = 3
         #self.index = index
-        self.up_color = 1
-        self.low_color = 1
-        self.mid_color = 1
+        self.up_color = 3
+        self.low_color = 3
+        self.mid_color = 0
         
     def __str__(self):
         return "v1: {} v2: {}".format(self.v1.index, self.v2.index)
