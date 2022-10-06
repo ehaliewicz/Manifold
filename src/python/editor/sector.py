@@ -121,6 +121,7 @@ def draw_sector_mode(cur_state):
                 # patch portal references to the deleted sector,
                 # or any references to sectors after the deleted sector
                 for wall in sector.walls:
+                    wall.sector_idx = idx
                     if wall.adj_sector_idx == deleted_idx:
                         wall.adj_sector_idx = -1 
                         # remove portal references to the deleted sector
