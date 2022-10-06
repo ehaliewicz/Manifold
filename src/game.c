@@ -620,6 +620,10 @@ void init_game() {
     KLog_U1("free bytes of RAM after init: ", free_bytes);
     MEM_dump();
 
+    if(cur_portal_map->xgm_track != NULL) {
+        XGM_startPlay(cur_portal_map->xgm_track);
+    } 
+
 }
 
 void maybe_set_palette(u16* new_palette) {

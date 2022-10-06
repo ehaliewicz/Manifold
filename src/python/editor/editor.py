@@ -33,6 +33,7 @@ import pickle
 
 
 import line
+import music
 import script
 import sector
 import trigger
@@ -55,6 +56,7 @@ class Mode(Enum):
     TRIGGER = 'Trigger'
     TEXTURE = 'Texture'
     TREE = 'Tree'
+    MUSIC = 'Music'
 
 
 class Map():
@@ -75,6 +77,7 @@ class Map():
             self.vertexes = vertexes
 
         self.name = name
+        self.music_path = ""
 
     def generate_c_from_map(self):
         num_sectors = len(self.sectors)
@@ -315,7 +318,7 @@ class State(object):
         self.camera_y = 0
         self.zoom = 0
         self.emulator_path = ""
-        
+        self.xgmtool_path = ""
 
         self.hovered_item = None
 
@@ -329,7 +332,7 @@ def load_config():
     config = configparser.ConfigParser()
     config.read(conf_file_path)
     cur_state.emulator_path = config.get("Default Settings", "emulator-path")
-
+    cur_state.xgmtool_path = config.get("Default Settings", "xgmtool-path")
 
 def reset_state():
     global cur_state, last_exported_rom_file, last_saved_map_file
@@ -368,7 +371,8 @@ MODE_DRAW_FUNCS = {
     Mode.SCRIPT: script.draw_script_mode,
     Mode.TRIGGER: trigger.draw_trigger_mode,
     Mode.TEXTURE: texture.draw_texture_mode,
-    Mode.TREE: tree.draw_tree_mode
+    Mode.TREE: tree.draw_tree_mode,
+    Mode.MUSIC: music.draw_music_mode
 }
 
 
@@ -381,7 +385,6 @@ def draw_mode():
     chg_emu, emu_val = imgui.input_text("Emulator: ", cur_state.emulator_path, buffer_length=128)
     if chg_emu:
         cur_state.emulator_path = emu_val
-        
         
     imgui.text("{} mode".format(cur_state.mode.value))
 
@@ -932,6 +935,7 @@ def export_map_to_rom(set_launch_flags=False):
                 message="Couldn't find init load table, is this a correct ROM file?"
             )
             return
+        
 
         data = cur_state.map_data
         for sect in data.sectors:
@@ -994,6 +998,8 @@ def export_map_to_rom(set_launch_flags=False):
         pvs_ptr_offset = write_u32(f, 0)
         raw_pvs_ptr_offset = write_u32(f, 0) 
         name_ptr_offset = pointer_placeholder(f)
+        music_ptr_offset = pointer_placeholder(f)
+
 
         patch_pointer_to_current_offset(
             f, sectors_ptr_offset
@@ -1106,6 +1112,22 @@ def export_map_to_rom(set_launch_flags=False):
             f.write(str.encode(char))
         # null terminate name
         f.write(b'\x00')
+
+        # write NULL to music data pointer
+        write_u32(f, 0)
+        if data.music_path != "" and cur_state.xgmtool_path != "":
+            patch_pointer_to_current_offset(f, music_ptr_offset)
+            # write music data
+            output_path = os.path.join(cur_path, "xgm_output.bin")
+            pid = subprocess.Popen([cur_state.xgmtool_path, data.music_path, output_path])
+            while pid.poll() is None:
+                import time
+                time.sleep(0.01)
+
+            with open(output_path, "rb") as xgm_bin_file:
+                xgm_data = xgm_bin_file.read()
+                f.write(xgm_data)
+
 
     return last_exported_rom_file
 
