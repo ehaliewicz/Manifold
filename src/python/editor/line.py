@@ -1,6 +1,7 @@
 import imgui
 from utils import circle_on_line, draw_list
 import math
+import undo
 
 
 
@@ -172,6 +173,7 @@ def draw_line_mode(cur_state):
 
         find_adjacent = imgui.button("Find other side for portal")
         if find_adjacent:
+            undo.push_state(cur_state)
             cur_wall.link_with_adjacent_wall_if_exists(cur_state.map_data)
             
             
@@ -181,22 +183,28 @@ def draw_line_mode(cur_state):
         tex_idx_changed, new_tex_idx = imgui.core.combo("texture idx", cur_wall.texture_idx, texture_idxs)
         
         if v1_changed and new_v1_idx != v2_idx:
+            undo.push_state(cur_state)
             cur_wall.v1 = cur_state.map_data.vertexes[new_v1_idx]
 
         if v2_changed and new_v2_idx != v1_idx:
-            
+            undo.push_state(cur_state)
             cur_wall.v2 = cur_state.map_data.vertexes[new_v2_idx]
             
         if adj_changed:
+            undo.push_state(cur_state)
             cur_wall.adj_sector_idx = new_adj_sector_idx-1
 
         if up_col_changed:
+            undo.push_state(cur_state)
             cur_wall.up_color = new_up_col
         if mid_col_changed:
+            undo.push_state(cur_state)
             cur_wall.mid_color = new_mid_col
         if low_col_changed:
+            undo.push_state(cur_state)
             cur_wall.low_color = new_low_col
         if tex_idx_changed:
+            undo.push_state(cur_state)
             cur_wall.texture_idx = new_tex_idx
             
         
@@ -215,6 +223,7 @@ def draw_line_mode(cur_state):
         for sector in cur_state.map_data.sectors:
             for idx,cur_wall in enumerate(sector.walls):
                 if cur_wall is wall:
+                    undo.push_state(cur_state)
                     del sector.walls[idx]
                     break
 

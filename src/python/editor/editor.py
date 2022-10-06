@@ -10,6 +10,7 @@ if "editor.exe" in sys.executable:
 else:
     
     cur_path = os.path.join(os.getcwd(), "src", "python", "editor")
+    print("cur path: ", cur_path)
 #else:
 #    current_path = ".\src\\python\\editor\\"
 
@@ -37,6 +38,7 @@ import sector
 import trigger
 import texture
 import tree
+import undo
 import vertex
 
 import struct 
@@ -218,7 +220,11 @@ class Map():
         return res
 
 
-    
+
+def set_cur_state(cs):
+    global cur_state
+    cur_state = cs
+
 def main_sdl2():
     def pysdl2_init():
         width, height = 1280, 800
@@ -261,12 +267,26 @@ def main_sdl2():
 
     event = SDL_Event()
 
-    
+    shortcut_tab = {
+        SDLK_z: lambda: undo.undo(cur_state, set_cur_state),
+        SDLK_x: lambda: undo.redo(cur_state, set_cur_state),
+        SDLK_s: save_map,
+        SDLK_l: load_map,
+        SDLK_e: lambda: export_map_to_rom(False),
+        SDLK_r: lambda: export_and_launch(True),
+        SDLK_q: lambda: sys.exit(1)
+    }
     while running:
         while SDL_PollEvent(ctypes.byref(event)) != 0:
             if event.type == SDL_QUIT:
                 running = False
                 break
+            elif event.type == SDL_KEYUP:
+                mod = event.key.keysym.mod
+                sym = event.key.keysym.sym
+                if mod & KMOD_LCTRL:
+                    if sym in shortcut_tab:
+                        shortcut_tab[sym]()
             renderer.process_event(event)
         renderer.process_inputs()
         imgui.new_frame()
@@ -301,27 +321,27 @@ class State(object):
 
 def load_config():
     global cur_state
-    conf_exists = os.path.exists("conf.ini")
+    conf_file_path = os.path.join(cur_path, "conf.ini")
+    conf_exists = os.path.exists(conf_file_path)
     if not conf_exists:
         print("No configuration file, using defaults!")
         return 
     config = configparser.ConfigParser()
-    conf_file_path = os.path.join(cur_path, "conf.ini")
     config.read(conf_file_path)
     cur_state.emulator_path = config.get("Default Settings", "emulator-path")
 
 
-
 def reset_state():
-    global cur_state
+    global cur_state, last_exported_rom_file, last_saved_map_file
+    last_exported_rom_file = None
+    last_saved_map_file = None
     cur_state = State()
     load_config()
     
 reset_state()
-    
 
-        
 def add_new_wall(v1, v2):
+    undo.push_state(cur_state)
     new_wall = line.Wall(v1=v1, v2=v2, sector_idx=cur_state.cur_sector.index, adj_sector_idx=-1)
     cur_state.cur_sector.add_wall(new_wall)
 
@@ -331,6 +351,7 @@ def add_new_wall(v1, v2):
     return new_wall
     
 def add_new_vertex(x,y):
+    undo.push_state(cur_state)
     num_verts = len(cur_state.map_data.vertexes)
     new_vert = vertex.Vertex(x, y, index=num_verts)
     cur_state.map_data.vertexes.append(new_vert)
@@ -539,6 +560,8 @@ got_hold_last_frame = False
 def on_frame():
     global cur_state, last_frame_x, last_frame_y, got_hold_last_frame
 
+    global last_exported_rom_file, last_saved_map_file
+
     imgui.set_next_window_position(0, 0)
     io = imgui.get_io()
     imgui.set_next_window_size(io.display_size.x, io.display_size.y)
@@ -553,51 +576,86 @@ def on_frame():
     if imgui.begin_main_menu_bar():
         if imgui.begin_menu("File", True):
             clicked_quit, selected_quit = imgui.menu_item(
-                "Quit", 'Cmd+Q', False, True
+                "Quit", 'Ctrl+Q', False, True
             )
             if clicked_quit:
                 sys.exit(1)
                 
-            clicked_load, selected_load = imgui.menu_item(
-                "Load", "", False, True
+            _, selected_load = imgui.menu_item(
+                "Load", "Ctrl-l", False, True
             )
             if selected_load:
                 load_map()
 
                 
-            clicked_save, selected_save = imgui.menu_item(
-                "Save", "", False, True
+            _, selected_save = imgui.menu_item(
+                "Save", "Ctrl-s", False, True
             )
             if selected_save:
                 save_map()
-                
-            clicked_export_c, selected_export_c = imgui.menu_item(
+            
+            _, selected_save_as = imgui.menu_item(
+                "Save as", "", False, True
+            )
+            if selected_save_as:
+                last_saved_map_file = None
+                save_map()
+
+            _, selected_export_c = imgui.menu_item(
                 "Export to C", "", False, True
             )
             if selected_export_c:
                 export_map_to_c()
 
-            clicked_export_rom,selected_export_rom = imgui.menu_item(
-                "Export to ROM", "", False, True
+            _,selected_export_rom = imgui.menu_item(
+                "Export to ROM", "Ctrl-e", False, True
             )
             if selected_export_rom:
                 export_map_to_rom()
 
+            _, selected_export_as = imgui.menu_item(
+                "Export to ROM as", "", False, True)
+            if selected_export_as:
+                last_exported_rom_file = None
+                export_map_to_rom()
+            
+
             _,selected_export_launch = imgui.menu_item(
-                "Export to ROM and launch", "", False, True
+                "Export to ROM and launch", "Ctrl-r", False, True
             )
             if selected_export_launch:
-                rom_name = export_map_to_rom(set_launch_flags=True)
-                launch_emulator(cur_state.emulator_path, rom_name)
+                export_and_launch(set_launch_flags=True)
+
+            _, selected_export_launch_as = imgui.menu_item(
+                "Export to ROM and launch as", "", False, True
+            )
+            if selected_export_launch_as:
+                last_exported_rom_file = None
+                export_and_launch(set_launch_flags=True)
 
 
-            clicked_reset, selected_reset = imgui.menu_item(
+            _, selected_reset = imgui.menu_item(
                 "Reset", "", False, True
             )
-            if selected_reset:
+            if selected_reset:    
+                undo.push_state(cur_state)
                 reset_state()
-            
-            
+
+
+            _, selected_undo = imgui.menu_item(
+                "Undo", "", False, undo.can_undo()
+            )
+            if selected_undo:
+                undo.undo(cur_state, set_cur_state)
+
+            _, selected_redo = imgui.menu_item(
+                "Redo", "", False, undo.can_redo()
+            )     
+            if selected_redo:
+                undo.redo(cur_state, set_cur_state)   
+
+
+
             imgui.end_menu()
         imgui.end_main_menu_bar()
     
@@ -703,13 +761,27 @@ def load_map_from_file(f):
     cur_state.cur_wall = None
     
         
+last_saved_map_file = None
 
 def save_map():
-    f = filedialog.asksaveasfile(mode="wb")
+    global last_saved_map_file
+    if last_saved_map_file is None:
+        f = filedialog.asksaveasfile(mode="wb")
+    else:
+        f = open(last_saved_map_file, mode="wb")
+
     if f is not None:
+        last_saved_map_file = os.path.realpath(f.name)
         pickle.dump(cur_state, f)
         f.close()
-    print(f)
+
+def save_map_as():
+    f = filedialog.asksaveasfile(mode="wb")
+    if f is not None:
+        last_saved_map_file = os.path.realpath(f.name)
+        save_map()
+
+
 
     
 def export_map_to_c():
@@ -807,15 +879,23 @@ def launch_emulator(emu_path, rom_path):
         print("error launching {}".format(e))
         return
 
+last_exported_rom_file = None
+
 def export_map_to_rom(set_launch_flags=False):
-    f = filedialog.asksaveasfile(mode="r")
+    global last_exported_rom_file
+    if last_exported_rom_file is None:
+        f = filedialog.asksaveasfile(mode="r")
+    else:
+        f = open(last_exported_rom_file, "r")
     if f is None:
         return 
 
-    name = f.name 
+    last_exported_rom_file = os.path.realpath(f.name)
+
+
     f.close()
 
-    with open(name, "rb+") as f:
+    with open(last_exported_rom_file, "rb+") as f:
         s = f.read()
         map_table_base = s.find(b'\xDE\xAD\xBE\xEF') 
         #s.find(b'mapt') 
@@ -1017,13 +1097,14 @@ def export_map_to_rom(set_launch_flags=False):
         # null terminate name
         f.write(b'\x00')
 
-    return name
+    return last_exported_rom_file
 
+
+
+def export_and_launch(set_launch_flags):
+    rom_name = export_map_to_rom(set_launch_flags=set_launch_flags)
+    launch_emulator(cur_state.emulator_path, rom_name)
                 
-
-
-
-
 
 if __name__ == '__main__':
     

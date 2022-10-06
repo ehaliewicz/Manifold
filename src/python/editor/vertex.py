@@ -1,5 +1,6 @@
 from utils import point_in_circle, input_int2, draw_list
 import imgui
+import undo
 
 
 class Vertex():
@@ -31,16 +32,13 @@ class Vertex():
     
 def draw_vert_mode(cur_state):
     
-    #if imgui.button("New vertex"):
-    #    cur_state.cur_vertex = add_new_vertex()
-    
-    
     if cur_state.cur_vertex is not None:
 
         cur_vertex = cur_state.cur_vertex
         imgui.text("Vertex {}".format(cur_vertex.index))
 
         def set_xy(xy):
+            undo.push_state(cur_state)
             (x,y) = xy
             cur_state.cur_vertex.x = x
             cur_state.cur_vertex.y = y
@@ -53,5 +51,24 @@ def draw_vert_mode(cur_state):
     def set_cur_vertex(idx):
         cur_state.cur_vertex = cur_state.map_data.vertexes[idx]
 
-    draw_list(cur_state, "Vertexes", "Vertex list", cur_state.map_data.vertexes, set_cur_vertex)
+    def delete_vertex(vert):
+        if cur_state.cur_vertex == vert:
+            cur_state.cur_vertex = None
+        deleted_idx = None 
+        for idx,vertex in enumerate(cur_state.map_data.vertexes):
+            if vert == vertex:
+                undo.push_state(cur_state)
+                del cur_state.map_data.vertexes[idx] 
+                deleted_idx = idx 
+                break
+        if deleted_idx is not None:
+            for idx,vertex in enumerate(cur_state.map_data.vertexes):
+                vertex.index = idx
+
+    # disable deleting vertexes for now
+    # i'm not sure what it should do if you delete a vertex that's used by a line
+    # maybe we should disallow it
+    draw_list(cur_state, "Vertexes", "Vertex list", 
+              cur_state.map_data.vertexes, 
+              set_cur_vertex) #, delete_vertex)
 
