@@ -107,6 +107,8 @@ class Wall():
         # returns True, wall_ref, sector_ref
         # or False,None
         for sector in map_data.sectors:
+            if self.sector_idx == sector.index:
+                continue
             for wall in sector.walls:
                 if wall == self:
                     continue

@@ -932,6 +932,16 @@ def export_map_to_rom(set_launch_flags=False):
                 message="Couldn't find init load table, is this a correct ROM file?"
             )
             return
+
+        data = cur_state.map_data
+        for sect in data.sectors:
+            if not sect.is_convex():
+                messagebox.showerror(
+                    title="Error",
+                    message="Sector {} is not convex".format(sect.index)
+                )
+
+
         init_load_level_off += 4
         if set_launch_flags:
             f.seek(start_in_game_flag_offset)
@@ -956,7 +966,7 @@ def export_map_to_rom(set_launch_flags=False):
         f.seek(map_pointer_offset)
         write_u32(f, map_struct_offset)
 
-        data = cur_state.map_data
+        
         num_sectors = len(data.sectors)
         num_vertexes = len(data.vertexes)
         num_walls = sum(len(sect.walls) for sect in data.sectors)
@@ -1045,7 +1055,7 @@ def export_map_to_rom(set_launch_flags=False):
                     if prev_v2 != wall.v1:
                         messagebox.showerror(
                             title="Error",
-                            message="Sector {}".format(sect.index)
+                            message="Sector {} is not complete".format(sect.index)
                         )
                     
                 write_u16(f, wall.v1.index)
