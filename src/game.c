@@ -558,9 +558,14 @@ void init_game() {
 
     // palette 0 is weapon palette
     PAL_setPalette(PAL0, shotgun.palette->data);
+
     // palette 1 is 3d palette
     //PAL_setPalette(PAL1, cur_palette);
-    PAL_setPalette(PAL1, sprite_pal.data);
+    if(cur_portal_map->palette != NULL) {
+        PAL_setPalette(PAL1, cur_portal_map->palette);
+    } else {
+        PAL_setPalette(PAL1, sprite_pal.data);
+    }
 
     // palette 2 is HUD palette, set in inventory_init
     // palette 3 is sprite palette

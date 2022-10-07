@@ -75,6 +75,7 @@ typedef struct __attribute__((__packed__)){
     const u16* raw_pvs;
     char* name;
     void* xgm_track;
+    u16* palette;
 } portal_map;
 
 s16* sector_data_start(s16 sector_idx, portal_map* mp);
