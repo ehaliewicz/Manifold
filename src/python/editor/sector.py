@@ -72,6 +72,8 @@ def add_new_sector(cur_state):
     undo.push_state(cur_state)
     num_sects = len(cur_state.map_data.sectors)
     new_sect = Sector(num_sects)
+    new_sect.ceil_color = cur_state.default_ceil_color
+    new_sect.floor_color = cur_state.default_floor_color
     cur_state.map_data.sectors.append(new_sect)
     return new_sect
 

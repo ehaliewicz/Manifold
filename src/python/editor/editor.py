@@ -332,6 +332,8 @@ class State(object):
         self.default_low_color = 3
         self.default_mid_color = 0
         self.default_texture_idx = 3
+        self.default_floor_color = 4
+        self.default_ceil_color = 5
 
 def load_config():
     global cur_state
