@@ -1,5 +1,5 @@
 import imgui
-from utils import circle_on_line, draw_list
+import utils 
 import math
 import undo
 
@@ -12,10 +12,10 @@ class Wall():
         self.sector_idx = sector_idx
         self.adj_sector_idx = adj_sector_idx
 
-        self.texture_idx = 3
+        self.texture_idx = 0
         #self.index = index
-        self.up_color = 3
-        self.low_color = 3
+        self.up_color = 0
+        self.low_color = 0
         self.mid_color = 0
         
     def __str__(self):
@@ -93,14 +93,14 @@ class Wall():
         x2 = self.v2.x
         y2 = self.v2.y
 
-        if circle_on_line(x1,y1, x2,y2, cx, cy, 5):
+        if utils.circle_on_line(x1,y1, x2,y2, cx, cy, 5):
             return True
 
         if not collide_with_normal:
             return False
         
         ((n1x,n1y),(n2x,n2y)) = self.centered_normal()
-        return circle_on_line(n1x,n1y, n2x,n2y, cx, cy, 5)
+        return utils.circle_on_line(n1x,n1y, n2x,n2y, cx, cy, 5)
 
 
     def find_adjacent_wall(self, map_data):
@@ -231,6 +231,6 @@ def draw_line_mode(cur_state):
 
 
     if cur_state.cur_sector is not None:
-        draw_list(cur_state, "Lines", "Line list", cur_state.cur_sector.walls, set_cur_wall,
+        utils.draw_list(cur_state, "Lines", "Line list", cur_state.cur_sector.walls, set_cur_wall,
                   delete_callback=delete_line)
     

@@ -53,7 +53,6 @@ DEFAULT_PALETTE = [vdp_color_to_rgb(rgb) for rgb in [
     #[  0,  0,  0],
     #[124,248,155],
 ]]
-print(DEFAULT_PALETTE)
 
 def rgb24_to_vdp_color(color):
     r = (((color + 0x100000 if ((color + 0x100000) < 0xFF0000) else  0xFF0000) >> (20)) & VDPPALETTE_REDMASK) 
@@ -66,10 +65,8 @@ def rgb_to_vdp_color(r,g,b):
 
 
 def draw_palette_mode(cur_state):
-    imgui.begin_child("blah")
     for idx in range(16):
         changed, val = imgui.color_edit3("{}:".format(idx), *cur_state.map_data.palette[idx])
         if changed:
             cur_state.map_data.palette[idx] = val 
-    imgui.end_child()    
 

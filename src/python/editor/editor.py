@@ -32,6 +32,7 @@ import atexit
 import pickle
 
 
+import defaults
 import line
 import music
 import palette
@@ -60,6 +61,7 @@ class Mode(Enum):
     TREE = 'Tree'
     MUSIC = 'Music'
     PALETTE = 'Palette'
+    DEFAULTS = 'Defaults'
 
 
 class Map():
@@ -326,6 +328,11 @@ class State(object):
 
         self.hovered_item = None
 
+        self.default_up_color = 3
+        self.default_low_color = 3
+        self.default_mid_color = 0
+        self.default_texture_idx = 3
+
 def load_config():
     global cur_state
     conf_file_path = os.path.join(cur_path, "conf.ini")
@@ -351,6 +358,11 @@ reset_state()
 def add_new_wall(v1, v2):
     undo.push_state(cur_state)
     new_wall = line.Wall(v1=v1, v2=v2, sector_idx=cur_state.cur_sector.index, adj_sector_idx=-1)
+    new_wall.low_color = cur_state.default_low_color
+    new_wall.up_color = cur_state.default_up_color
+    new_wall.mid_color = cur_state.default_mid_color
+    new_wall.texture_idx = cur_state.default_texture_idx
+
     cur_state.cur_sector.add_wall(new_wall)
 
     new_wall.link_with_adjacent_wall_if_exists(cur_state.map_data)
@@ -378,7 +390,8 @@ MODE_DRAW_FUNCS = {
     Mode.TEXTURE: texture.draw_texture_mode,
     Mode.TREE: tree.draw_tree_mode,
     Mode.MUSIC: music.draw_music_mode,
-    Mode.PALETTE: palette.draw_palette_mode
+    Mode.PALETTE: palette.draw_palette_mode,
+    Mode.DEFAULTS: defaults.draw_defaults_mode
 }
 
 
@@ -626,7 +639,7 @@ def on_frame():
             _, selected_export_as = imgui.menu_item(
                 "Export to ROM as", "", False, True)
             if selected_export_as:
-                rom.export_map_to_rom_at(cur_path, cur_state)
+                rom.export_map_to_rom_as(cur_path, cur_state)
             
 
             _,selected_export_launch = imgui.menu_item(
