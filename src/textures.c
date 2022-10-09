@@ -493,7 +493,9 @@ const lit_texture lit_texture_atlas_sprite_palette_tex_5_light = {
 };
 
 
-const lit_texture* const textures[6*8] = {
+// NOTE: LIMITED TO 64 TEXTURES!
+const lit_texture* const textures[1+ 64*8] = {
+        (lit_texture*)(0xBEEFF00F),
     //{
         &lit_texture_atlas_sprite_palette_tex_0_dark, 
         &lit_texture_atlas_sprite_palette_tex_0_mid,
@@ -547,5 +549,5 @@ const lit_texture* const textures[6*8] = {
 };
 
 lit_texture* get_texture(u8 tex_idx, s8 light_level) {
-  return (lit_texture*)textures[(tex_idx<<3)+light_level+2];
+  return (lit_texture*)textures[(tex_idx<<3)+light_level+2 + 1]; // 1 is for offset past the marker!
 }

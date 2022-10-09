@@ -22,7 +22,7 @@ extern u16* light_texture;
 void tick_texture();
 
 
-typedef struct {
+typedef struct __attribute__((__packed__)) {
     const uint16_t* const dark;
     const uint16_t* const mid;
     const uint16_t* const light;
