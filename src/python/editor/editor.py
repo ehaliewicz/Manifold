@@ -323,8 +323,8 @@ class State(object):
         self.zoom = 0
         self.emulator_path = ""
         self.xgmtool_path = ""
-        self.textures_path = ""
-        self.music_tracks_path = ""
+        self.textures_path = "textures/"
+        self.music_tracks_path = "music/"
 
         self.hovered_item = None
 
@@ -364,7 +364,9 @@ reset_state()
 
 def add_new_wall(v1, v2):
     undo.push_state(cur_state)
-    new_wall = line.Wall(v1=v1, v2=v2, sector_idx=cur_state.cur_sector.index, adj_sector_idx=-1)
+    new_wall = line.Wall(v1=v1, v2=v2, 
+                         sector_idx=cur_state.cur_sector.index, adj_sector_idx=-1, 
+                         default_tex=cur_state.default_texture_file)
     new_wall.low_color = cur_state.default_low_color
     new_wall.up_color = cur_state.default_up_color
     new_wall.mid_color = cur_state.default_mid_color
@@ -747,42 +749,49 @@ def old_vertex_to_new_vertex(v):
 def old_vertexes_to_new_vertexes(vertexes):
     return [old_vertex_to_new_vertex(v) for v in vertexes]
 
-def old_wall_to_new_wall(wall):
-    nw = line.Wall(old_vertex_to_new_vertex(wall.v1), 
-    old_vertex_to_new_vertex(wall.v2), wall.sector_idx, wall.adj_sector_idx)
+def old_wall_to_new_wall(wall, default_texture):
+    nw = line.Wall(
+        old_vertex_to_new_vertex(wall.v1), 
+        old_vertex_to_new_vertex(wall.v2), 
+        wall.sector_idx, wall.adj_sector_idx,
+        default_tex=default_texture
+    )
     nw.low_color = wall.low_color
     nw.mid_color = wall.mid_color
     nw.up_color = wall.up_color
-    nw.texture_idx = wall.texture_idx
+    #nw.texture_idx = wall.texture_idx
+    if hasattr(wall, 'texture_file'):
+        nw.texture_file = wall.texture_file
     return nw
 
 
-def old_walls_to_new_walls(walls):
-    return [old_wall_to_new_wall(w) for w in walls]
+def old_walls_to_new_walls(walls, default_texture):
+    return [old_wall_to_new_wall(w, default_texture) for w in walls]
 
 
-def old_sectors_to_new_sectors(sectors):
+def old_sectors_to_new_sectors(sectors, default_texture):
     return [sector.Sector(
-                index=s.index, walls=old_walls_to_new_walls(s.walls), 
+                index=s.index, walls=old_walls_to_new_walls(s.walls, default_texture), 
                 floor_height=s.floor_height, ceil_height=s.ceil_height,
                 floor_color=s.floor_color, ceil_color=s.ceil_color) for s in sectors]
         
         
 def load_map_from_file(f):
     global cur_state
+    reset_state()
     old_state = pickle.load(f)
     old_map = old_state.map_data
 
 
+    default_tex = cur_state.default_texture_file
 
     new_map = Map(name=old_map.name,
-                  sectors=old_sectors_to_new_sectors(old_map.sectors),
+                  sectors=old_sectors_to_new_sectors(old_map.sectors, default_tex),
                   vertexes=old_vertexes_to_new_vertexes(old_map.vertexes))                      
 
     if hasattr(old_map, 'palette'):
         new_map.palette = old_map.palette
 
-    reset_state()
     cur_state.map_data = new_map
 
     cur_state.cur_sector = None

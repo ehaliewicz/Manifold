@@ -6,13 +6,13 @@ import undo
 
 
 class Wall():
-    def __init__(self, v1, v2, sector_idx, adj_sector_idx): #, index):
+    def __init__(self, v1, v2, sector_idx, adj_sector_idx, default_tex): #, index):
         self.v1 = v1
         self.v2 = v2
         self.sector_idx = sector_idx
         self.adj_sector_idx = adj_sector_idx
 
-        self.texture_file = None
+        self.texture_file = default_tex
         #self.index = index
         self.up_color = 0
         self.low_color = 0

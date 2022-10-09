@@ -364,13 +364,21 @@ def export_map_to_rom(cur_path, cur_state, set_launch_flags=False):
             # write music data
             output_path = os.path.join(cur_path, "xgm_output.bin")
             full_music_path = os.path.join(cur_state.music_tracks_path, data.music_path)
-            pid = subprocess.Popen([cur_state.xgmtool_path, full_music_path, output_path])
-            while pid.poll() is None:
-                time.sleep(0.01)
+            cmd = [cur_state.xgmtool_path, full_music_path, output_path]
+            
+            try:
+                pid = subprocess.Popen(cmd)
+                while pid.poll() is None:
+                    time.sleep(0.01)
 
-            with open(output_path, "rb") as xgm_bin_file:
-                xgm_data = xgm_bin_file.read()
-                f.write(xgm_data)
+                with open(output_path, "rb") as xgm_bin_file:
+                    xgm_data = xgm_bin_file.read()
+                    f.write(xgm_data)
+            except:
+                messagebox.showerror(
+                    title="Error",
+                    message="Error converting or writing music, skipping".format()
+                )
 
         # write palette data
         align(f)
