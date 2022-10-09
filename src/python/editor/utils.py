@@ -1,6 +1,6 @@
 import imgui
 import math
-
+import os
 
 
 
@@ -121,3 +121,23 @@ def input_int2(label, id_str, input_vals, set_vals):
 
     if changed:
         set_vals(new_vals)
+
+def get_files_in_folder(folder_path):
+    return [f for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f))]
+    
+
+def file_selector(label, cur_val, files, changed_cb):
+    cur_idx = files.index(cur_val)
+
+    file_changed, new_file_idx = imgui.core.combo(label, cur_idx, files)
+    if file_changed:
+        changed_cb(files[new_file_idx])
+
+
+def get_texture_files(cur_state):
+    tex_files = [f for f in get_files_in_folder(cur_state.textures_path) if ".png" in f]
+    assert len(tex_files) > 0, "No texture files provided!"
+    return tex_files
+
+def get_music_files(cur_state):
+    return [f for f in get_files_in_folder(cur_state.music_tracks_path) if ".vgm" in f]

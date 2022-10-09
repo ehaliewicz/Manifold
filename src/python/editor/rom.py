@@ -1,10 +1,11 @@
 from tkinter import filedialog, messagebox
-import subprocess
 import os
 import struct 
+import subprocess
 import time
 
 import palette
+import texture_utils
 
 def _read_longword_(f, signed):
     return int.from_bytes(f.read(4), "big", signed)
@@ -150,6 +151,15 @@ def export_map_to_rom(cur_path, cur_state, set_launch_flags=False):
                 message="Couldn't find init load table, is this a correct ROM file?"
             )
             return
+
+        texture_table_off = s.find(b'\xBE\xEF\xF0\x0F')
+        if texture_table_off == -1:
+            messagebox.showerror(
+                title="Error",
+                message="Couldn't find texture table, is this ROM file correct?"
+            )
+            return
+        texture_table_off += 4
         
 
         data = cur_state.map_data
@@ -159,6 +169,7 @@ def export_map_to_rom(cur_path, cur_state, set_launch_flags=False):
                     title="Error",
                     message="Sector {} is not convex".format(sect.index)
                 )
+                return
 
 
         init_load_level_off += 4
@@ -220,6 +231,7 @@ def export_map_to_rom(cur_path, cur_state, set_launch_flags=False):
         patch_pointer_to_current_offset(
             f, sectors_ptr_offset
         )
+
         
         wall_offset = 0
         portal_offset = 0
@@ -294,11 +306,27 @@ def export_map_to_rom(cur_path, cur_state, set_launch_flags=False):
         patch_pointer_to_current_offset(
             f, wall_colors_ptr_offset
         )
+
+        
+        # gather texture files and map to indexes
+        tex_file_to_idx_map = {}
+        tex_file_list = []
+        cur_tex_idx = 0
         for sect in data.sectors:
             for wall in sect.walls:
+                tex_file = wall.texture_file
+                if tex_file not in tex_file_to_idx_map:
+                    tex_file_to_idx_map[tex_file] = cur_tex_idx
+                    tex_file_list.append(tex_file)
+                    cur_tex_idx += 1
+
+
+        for sect in data.sectors:
+            for wall in sect.walls:
+                tex_idx = tex_file_to_idx_map[wall.texture_file]
                 f.write(struct.pack(
                     ">BBBB", 
-                    wall.texture_idx, 
+                    tex_idx, 
                     wall.up_color,
                     wall.low_color,
                     wall.mid_color
@@ -329,13 +357,14 @@ def export_map_to_rom(cur_path, cur_state, set_launch_flags=False):
         # null terminate name
         f.write(b'\x00')
 
-        
+        ### write music data if applicable
         align(f)
         if data.music_path != "" and cur_state.xgmtool_path != "":
             patch_pointer_to_current_offset(f, music_ptr_offset)
             # write music data
             output_path = os.path.join(cur_path, "xgm_output.bin")
-            pid = subprocess.Popen([cur_state.xgmtool_path, data.music_path, output_path])
+            full_music_path = os.path.join(cur_state.music_tracks_path, data.music_path)
+            pid = subprocess.Popen([cur_state.xgmtool_path, full_music_path, output_path])
             while pid.poll() is None:
                 time.sleep(0.01)
 
@@ -343,6 +372,7 @@ def export_map_to_rom(cur_path, cur_state, set_launch_flags=False):
                 xgm_data = xgm_bin_file.read()
                 f.write(xgm_data)
 
+        # write palette data
         align(f)
         print("current offset {}".format(f.tell()))
         patch_pointer_to_current_offset(f, palette_ptr_offset)
@@ -354,6 +384,54 @@ def export_map_to_rom(cur_path, cur_state, set_launch_flags=False):
                                            int(b*255))
             print("writing color {}".format(col))
             write_u16(f, col)
+
+        # write textures to WAD area
+        
+        align(f)
+        tex_pointers_to_write = []
+        for tex_file in tex_file_list:
+            full_tex_path = os.path.join(cur_state.textures_path, tex_file)
+            light_tex_words, dark_tex_words = texture_utils.gen_texture_words_from_file(full_tex_path)
+
+            
+            # write actual textures
+            light_texture_addr = f.tell()
+            for word in light_tex_words:
+                write_u16(f, word)
+            dark_texture_addr = f.tell()
+            for word in dark_tex_words:
+                write_u16(f, word)
+            
+
+            # dark lit_texture struct
+            dark_lit_texture_struct = f.tell()
+            write_u32(f, dark_texture_addr)
+            write_u32(f, dark_texture_addr)
+            write_u32(f, light_texture_addr)
+            # mid lit_texture struct
+            mid_lit_texture_struct = f.tell()
+            write_u32(f, dark_texture_addr)
+            write_u32(f, dark_texture_addr)
+            write_u32(f, light_texture_addr)
+            # light lit_texture struct
+            light_lit_texture_struct = f.tell()
+            write_u32(f, light_texture_addr)
+            write_u32(f, light_texture_addr)
+            write_u32(f, light_texture_addr)
+            tex_pointers_to_write.append(dark_lit_texture_struct)
+            tex_pointers_to_write.append(mid_lit_texture_struct)
+            tex_pointers_to_write.append(mid_lit_texture_struct)
+            tex_pointers_to_write.append(mid_lit_texture_struct)
+            tex_pointers_to_write.append(light_lit_texture_struct)
+            tex_pointers_to_write.append(0)
+            tex_pointers_to_write.append(0)
+            tex_pointers_to_write.append(0)
+
+
+        # write pointers to texture table
+        f.seek(texture_table_off)
+        for ptr in tex_pointers_to_write:
+            write_u32(f, ptr)
 
 
     return last_exported_rom_file

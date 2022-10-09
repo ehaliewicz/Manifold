@@ -67,6 +67,5 @@ src/python/editor/build/
 imgui.ini
 src/python/dist.7z
 src/python/editor/dist/
-res/textures/texture_atlas_contest.png
 *.vgm
 src/python/editor/imgui.ini

@@ -100,6 +100,31 @@ def gen_textures_from_atlas(name, atlas_file):
         dconv = []
 
 
+def gen_texture_words_from_file(file):
+    conv = []
+    dconv = []
+
+    def add_pix(arr, l, r):
+        arr.append((dpix(l) << 8) | dpix(r))
+
+    atlas = Image.open(file)
+    all_pix = atlas.load()
+
+    def pix(x, y):
+        return all_pix[x, y], all_pix[x+64, y]
+    
+    TEX_SIZE = 64
+
+    for x in range(0, TEX_SIZE, 2):
+        lx, rx = x, x + 1
+        for y in range(TEX_SIZE):
+            mid_l, dark_l = pix(lx, y)
+            mid_r, dark_r = pix(rx, y)
+            add_pix(conv, mid_l, mid_r)
+            add_pix(dconv, dark_l, dark_r)
+    return conv, dconv
+    
+
 
 def gen_mip_image(name, light_file, mid_file, dark_file):
     conv = []

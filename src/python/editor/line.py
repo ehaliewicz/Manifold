@@ -12,7 +12,7 @@ class Wall():
         self.sector_idx = sector_idx
         self.adj_sector_idx = adj_sector_idx
 
-        self.texture_idx = 0
+        self.texture_file = None
         #self.index = index
         self.up_color = 0
         self.low_color = 0
@@ -162,7 +162,6 @@ def draw_line_mode(cur_state):
 
         
         color_opts = ["{}".format(idx) for idx in range(16)]
-        texture_idxs = ["{}".format(i) for i in range(32)]
         
         
         v1_changed,new_v1_idx = imgui.core.combo("v1", cur_wall.v1.index, vert_opts)
@@ -182,8 +181,17 @@ def draw_line_mode(cur_state):
         up_col_changed, new_up_col = imgui.core.combo("upper color", cur_wall.up_color, color_opts)
         mid_col_changed, new_mid_col = imgui.core.combo("middle color", cur_wall.mid_color, color_opts)
         low_col_changed, new_low_col = imgui.core.combo("lower color", cur_wall.low_color, color_opts)
-        tex_idx_changed, new_tex_idx = imgui.core.combo("texture idx", cur_wall.texture_idx, texture_idxs)
-        
+
+            
+
+        tex_files = utils.get_texture_files(cur_state)
+
+        def set_tex_file(f):
+            undo.push_state(cur_state)
+            cur_wall.texture_file = f
+        utils.file_selector("texture", cur_wall.texture_file, tex_files, set_tex_file)
+
+
         if v1_changed and new_v1_idx != v2_idx:
             undo.push_state(cur_state)
             cur_wall.v1 = cur_state.map_data.vertexes[new_v1_idx]
@@ -205,10 +213,6 @@ def draw_line_mode(cur_state):
         if low_col_changed:
             undo.push_state(cur_state)
             cur_wall.low_color = new_low_col
-        if tex_idx_changed:
-            undo.push_state(cur_state)
-            cur_wall.texture_idx = new_tex_idx
-            
         
     def set_cur_wall(idx):
         cur_state.cur_wall = cur_state.cur_sector.walls[idx]

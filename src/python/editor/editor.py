@@ -40,13 +40,11 @@ import rom
 import script
 import sector
 import trigger
-import texture
 import tree
 import undo
+import utils
 import vertex
 
-import struct 
-import subprocess
 import configparser
 
 # commands
@@ -325,13 +323,15 @@ class State(object):
         self.zoom = 0
         self.emulator_path = ""
         self.xgmtool_path = ""
+        self.textures_path = ""
+        self.music_tracks_path = ""
 
         self.hovered_item = None
 
         self.default_up_color = 3
         self.default_low_color = 3
         self.default_mid_color = 0
-        self.default_texture_idx = 3
+        self.default_texture_file = None
         self.default_floor_color = 4
         self.default_ceil_color = 5
 
@@ -346,6 +346,8 @@ def load_config():
     config.read(conf_file_path)
     cur_state.emulator_path = config.get("Default Settings", "emulator-path")
     cur_state.xgmtool_path = config.get("Default Settings", "xgmtool-path")
+    cur_state.textures_path = config.get("Default Settings", "textures-path")
+    cur_state.music_tracks_path = config.get("Default Settings", "music-tracks-path")
 
 def reset_state():
     global cur_state, last_saved_map_file
@@ -354,6 +356,9 @@ def reset_state():
     last_saved_map_file = None
     cur_state = State()
     load_config()
+    tex_files = utils.get_texture_files(cur_state)
+    cur_state.default_texture_file = tex_files[0]
+    cur_state.map_data.music_path = ""
     
 reset_state()
 
@@ -363,7 +368,7 @@ def add_new_wall(v1, v2):
     new_wall.low_color = cur_state.default_low_color
     new_wall.up_color = cur_state.default_up_color
     new_wall.mid_color = cur_state.default_mid_color
-    new_wall.texture_idx = cur_state.default_texture_idx
+    new_wall.texture_file = cur_state.default_texture_file
 
     cur_state.cur_sector.add_wall(new_wall)
 
@@ -389,7 +394,6 @@ MODE_DRAW_FUNCS = {
     Mode.VERTEX: vertex.draw_vert_mode,
     Mode.SCRIPT: script.draw_script_mode,
     Mode.TRIGGER: trigger.draw_trigger_mode,
-    Mode.TEXTURE: texture.draw_texture_mode,
     Mode.TREE: tree.draw_tree_mode,
     Mode.MUSIC: music.draw_music_mode,
     Mode.PALETTE: palette.draw_palette_mode,
