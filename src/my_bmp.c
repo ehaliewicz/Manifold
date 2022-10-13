@@ -718,7 +718,7 @@ void bmp_end()
     }
     if (bmp_buffer_1)
     {
-        free(bmp_buffer_1, "bmp_buffer_0");
+        free(bmp_buffer_1, "bmp_buffer_1");
         bmp_buffer_1 = NULL;
     }
 

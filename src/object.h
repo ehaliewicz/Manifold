@@ -3,6 +3,8 @@
 
 #include <genesis.h>
 
+#include "obj_sprite.h"
+
 typedef struct {
     fix32 x;
     fix32 y;
@@ -18,13 +20,16 @@ typedef struct {
     u16 sector;
 } object_tgt;
 
-typedef struct {
-    uint8_t sprite_col;
-    uint8_t size;
+// 4+2+2+2+2+32+2 bytes 
+// 46
+typedef struct  __attribute__((__packed__)) {
+    rle_sprite* sprite;
     uint16_t from_floor_draw_offset;
-    uint8_t width;
+    uint16_t width;
     uint16_t height;
     uint16_t init_state;
+    uint16_t speed; // 3 for claw guy?
+    u16 is_player;
     char name[32];
 } object_template;
 
@@ -48,7 +53,15 @@ void init_object_lists(int num_sectors);
 
 void clear_object_lists();
 
-object* alloc_object_in_sector(object_pos cur_player_pos, int sector_num, fix32 x, fix32 y, fix32 z, uint8_t object_type);
+typedef struct  __attribute__((__packed__)) {
+    u16 sector_num;
+    s16 x;
+    s16 y; 
+    s16 z;
+    u16 type;
+} map_object;
+
+object* alloc_object_in_sector(int sector_num, fix32 x, fix32 y, fix32 z, uint8_t object_type);
 
 void free_object(object* obj);
 

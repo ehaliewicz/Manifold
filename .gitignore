@@ -69,3 +69,6 @@ src/python/dist.7z
 src/python/editor/dist/
 *.vgm
 src/python/editor/imgui.ini
+src/python/editor/sprites/
+src/python/editor/textures/
+res/sprites/

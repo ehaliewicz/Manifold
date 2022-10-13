@@ -60,7 +60,9 @@ static char buf[80];
 void* malloc(u16 size, const char* thing) {
     sprintf(buf, "allocating %i bytes for %s", size, thing);
     KLog(buf);
-    return MEM_alloc(size);
+    void* p = MEM_alloc(size);
+    KLog_U1("allocated pointer: ", p);
+    return p;
 }
 
 void free(void* thing, const char* thing2) {

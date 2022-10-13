@@ -2,6 +2,8 @@
 #define PORTAL_MAP_H
 
 #include <genesis.h>
+
+#include "object.h"
 #include "sector_group.h"
 #include "texture.h"
 #include "vertex.h"
@@ -76,6 +78,8 @@ typedef struct __attribute__((__packed__)){
     char* name;
     void* xgm_track;
     u16* palette;
+    u16 num_things;
+    map_object* things;
 } portal_map;
 
 s16* sector_data_start(s16 sector_idx, portal_map* mp);

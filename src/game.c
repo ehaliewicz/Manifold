@@ -7,6 +7,7 @@
 #include "config.h"
 #include "game.h"
 #include "game_mode.h"
+#include "init.h"
 #include "inventory.h"
 #include "joy_helper.h"
 #include "level.h"
@@ -75,7 +76,8 @@ void showStats(u16 float_display)
 
     if (float_display)
     {
-        fix32ToStr(SYS_getFPSAsFloat(), str, 1);
+        fix32 fps = SYS_getFPSAsFloat();
+        fix32ToStr(fps, str, 1);
         VDP_clearTextBG(BG_B, 1, y, 4);
     }
     else
@@ -481,17 +483,15 @@ void do_vint_flip();
 
 u16 free_tile_loc = 0x390;
 
-const int init_load_level_array[2] = {
-    0xBEEFFEED,
-    0
-};
-//int init_load_level = 0;
+
 
 
 void init_game() {
     render_mode = RENDER_SOLID;
 
     
+    //VDP_clearPlane(BG_B, 1); clears the fps display somehow
+    //VDP_clearPlane(BG_A, 1);
 
     //DMA_doVRamFill(0x0390, 0x0170, 0x00, 1);
     VDP_fillTileData(0x00, 0x0390, 0x170, 1);
@@ -514,11 +514,16 @@ void init_game() {
     cur_frame = 1;
     
 	VDP_setBackgroundColor(10);
+    volatile u32* vp_start_in_game_arr = start_in_game_arr;
 
-    volatile u32* vp_init_load_level_arr = init_load_level_array;
-    volatile int init_load_level = vp_init_load_level_arr[1];
-    load_portal_map((portal_map*)map_table[2+init_load_level]);
-  
+    if(vp_start_in_game_arr[1]) {
+        volatile u32* vp_init_load_level_arr = instant_load_level_array;
+        volatile int init_level = vp_init_load_level_arr[1];
+        load_portal_map((portal_map*)map_table[2+init_level]);
+    } else {
+        load_portal_map((portal_map*)map_table[2+init_load_level]);
+    }
+
     //load_portal_map((portal_map*)map_table[3]);
     /*
     KLog_U1("map table address: ", map_table);
@@ -546,7 +551,6 @@ void init_game() {
     } else {
         init_sector_0_jump_position();
 
-        init_player_pos();
 
 
     }
@@ -598,17 +602,54 @@ void init_game() {
 
     init_portal_renderer();
 
+    KLog_U1("num sectors: ", cur_portal_map->num_sectors);
     init_object_lists(cur_portal_map->num_sectors);
 
     free_tile_loc = init_shotgun(free_tile_loc);
 
-    s16 obj_sect_group = sector_group(10, cur_portal_map);
-    object* cur_obj = alloc_object_in_sector(
-        cur_player_pos, 10, 
-        sector_centers[10].x, sector_centers[10].y, 
-        get_sector_group_floor_height(obj_sect_group), 
-        2);
+    //KLog("allocating object?");
+    s16 obj_sect_group = sector_group(0, cur_portal_map);
 
+    int got_player_thing = 0;
+    map_object* player_thing = NULL;
+    KLog_U1("num objects to allocate: ", cur_portal_map->num_things);
+
+    for(int i = 0; i < cur_portal_map->num_things; i++) {
+        map_object* thg = &cur_portal_map->things[i];
+        KLog_U2("sector: ", thg->sector_num, " object_type: ", thg->type);
+        KLog_S3("x: ", thg->x<<FIX32_FRAC_BITS, " y: ", thg->y<<FIX32_FRAC_BITS, " z: ", thg->z<<FIX32_FRAC_BITS);
+        volatile object_template* typ = &object_types[thg->type];
+        KLog_U2("speed: ", typ->speed, " is player: ", typ->is_player);
+        if(typ->is_player) {
+            KLog("is player type");
+            got_player_thing = 1;
+            player_thing = thg;
+        } else {
+            s16 offset = (random()%64)-32;
+
+            alloc_object_in_sector(
+                thg->sector_num,
+                sector_centers[0].x+FIX32(offset)*(i+1), //thg->x<<FIX32_FRAC_BITS, 
+                sector_centers[0].y+FIX32(offset)*(i+1), // thg->y<<FIX32_FRAC_BITS, 
+                thg->z<<FIX32_FRAC_BITS, 
+                thg->type
+            );
+        }
+    }
+
+    KLog_U1("sector height: ", (get_sector_group_floor_height(0)));
+    KLog_S3("default obj x: ", sector_centers[0].x+10, " y: ", sector_centers[0].y+10, " z: ", get_sector_group_floor_height(0));
+    //object* cur_obj = alloc_object_in_sector(
+    //    0, 
+    //    sector_centers[0].x+10, sector_centers[0].y+10, 
+    //    get_sector_group_floor_height(obj_sect_group), 
+    //    1);
+    
+
+    //object* objects_in_sect = objects_in_sector(0);
+    //KLog_U1("objects in sector 0?: ", objects_in_sect!=NULL);
+
+    init_player_pos();
 
     vwf_init();
     free_tile_loc = console_init(free_tile_loc);

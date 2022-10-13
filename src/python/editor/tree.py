@@ -68,3 +68,51 @@ def draw_tree_mode(cur_state):
             split_concave_sectors(cur_state)
 
             # any sectors connected to this sector
+
+def determine_wall_order(w1, w2, map_data):
+    pass
+
+def calc_pvs(cur_state):
+    map_data = cur_state.map_data
+    all_walls = []
+    for sect in map_data.sectors:
+        all_walls += sect.walls
+
+    for sect in map_data.sector:
+        sect_walls = sect.walls
+
+        wall_draw_order_table = {}
+        # for each pair of two walls, store the order in which they should be drawn
+        # if they occlude each other, and the first order doesn't match a later order, report an error
+        min_x = int(min([min(w.v1.x, w.v2.x) for w in sect_walls]))
+        max_x = int(max([max(w.v1.x, w.v2.x) for w in sect_walls]))
+        min_y = int(min([min(w.v1.y, w.v2.y) for w in sect_walls]))
+        max_y = int(max([max(w.v1.y, w.v2.y) for w in sect_walls]))
+        for x in range(min_x, max_x+1):
+            for y in range(min_y, max_y+1):
+                if not inside_sector(x, y, sect, map_data):
+                    continue
+
+                for w1 in all_walls:
+                    for w2 in all_walls:
+                        if w1 == w2:
+                            continue
+                        wall_set = frozenset((w1, w2))    
+                        draw_order, occlusion = determine_wall_order(w1, w2, map_data)
+                        if wall_set in wall_draw_order_table:
+                            (prev_draw_order, prev_occlusion) = wall_draw_order_table[wall_set]
+                            if occlusion and prev_occlusion:
+                                if draw_order != prev_draw_order:
+                                    assert False, "sorted pvs construction error!"
+                            elif occlusion:
+                                wall_draw_order_table[wall_set] = (draw_order, True)
+                            elif prev_occlusion:
+                                # do nothing
+                                pass
+                            else:
+                                pass
+                        else:
+                            wall_draw_order_table[wall_set] = (draw_order, occlusion)
+                                #wall_draw_order_table[wall_set] = (draw_order, False)
+                
+

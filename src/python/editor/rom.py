@@ -5,6 +5,7 @@ import subprocess
 import time
 
 import palette
+import sprite_utils
 import texture_utils
 
 def _read_longword_(f, signed):
@@ -41,6 +42,7 @@ def _write_word_(f, w, signed):
 def write_u16(f, w):
     _write_word_(f, w, False)
 def write_s16(f, w):
+    assert w >= -32768 and w < 32768
     _write_word_(f, w, True)
 
 
@@ -100,6 +102,14 @@ def reset_last_exported_rom_file():
     global last_exported_rom_file
     last_exported_rom_file = None
 
+def err(msg):
+    messagebox.showerror(
+        title="Error",
+        message=msg,
+    )
+    return
+
+
 def export_map_to_rom(cur_path, cur_state, set_launch_flags=False):
     global last_exported_rom_file
     if last_exported_rom_file is None:
@@ -121,46 +131,32 @@ def export_map_to_rom(cur_path, cur_state, set_launch_flags=False):
         num_maps_offset = map_table_base + 4
         map_pointer_offset =  map_table_base + 20
         if map_table_base == -1:
-            messagebox.showerror(
-                title="Error",
-                message="Couldn't find map table, is this a correct ROM file?"
-            )
-            return
+            return err("Couldn't find map table, is this a correct ROM file?")
         map_data_base = s.find(b'WAD?')
         if map_data_base == -1:
-            messagebox.showerror(
-                title="Error",
-                message="Couldn't find map data table, is this a correct ROM file?"
-            )
-            return
+            return err("Couldn't find map data table, is this a correct ROM file?")
 
         map_struct_offset = map_data_base + 4
 
         start_in_game_flag_offset = s.find(b'\xFE\xED\xBE\xEF')
         if start_in_game_flag_offset == -1:
-            messagebox.showerror(
-                title="Error",
-                message="Couldn't find init flag table, is this a correct ROM file?"
-            )
-            return
+            return err("Couldn't find init flag table, is this a correct ROM file?")
         start_in_game_flag_offset += 4 
         init_load_level_off = s.find(b'\xBE\xEF\xFE\xED')
         if init_load_level_off == -1:
-            messagebox.showerror(
-                title="Error",
-                message="Couldn't find init load table, is this a correct ROM file?"
-            )
-            return
+            return err("Couldn't find init load table, is this a correct ROM file?")
 
         texture_table_off = s.find(b'\xBE\xEF\xF0\x0F')
         if texture_table_off == -1:
-            messagebox.showerror(
-                title="Error",
-                message="Couldn't find texture table, is this ROM file correct?"
-            )
-            return
+            return err("Couldn't find texture table, is this ROM file correct?")
         texture_table_off += 4
+
+        thing_def_table_off = s.find(b"player_object_type")
+        if thing_def_table_off == -1:
+            return err("Couldn't find thing definition table, is this ROM file correct?")
         
+        # skip past name field of object type, which is the last 32 bytes
+        thing_def_table_off += 32
 
         data = cur_state.map_data
         for sect in data.sectors:
@@ -227,6 +223,8 @@ def export_map_to_rom(cur_path, cur_state, set_launch_flags=False):
         music_ptr_offset = pointer_placeholder(f, 0) # define to NULL
         palette_ptr_offset = pointer_placeholder(f, 0) # default to NULL
 
+        write_u16(f, len(cur_state.map_data.things)) # num things
+        thing_ptr_offset = pointer_placeholder(f, 0) # things pointer, NULL for now
 
         patch_pointer_to_current_offset(
             f, sectors_ptr_offset
@@ -382,7 +380,6 @@ def export_map_to_rom(cur_path, cur_state, set_launch_flags=False):
 
         # write palette data
         align(f)
-        print("current offset {}".format(f.tell()))
         patch_pointer_to_current_offset(f, palette_ptr_offset)
         for idx in range(16):
             clr = cur_state.map_data.palette[idx]
@@ -390,7 +387,6 @@ def export_map_to_rom(cur_path, cur_state, set_launch_flags=False):
             col = palette.rgb_to_vdp_color(int(r*255),
                                            int(g*255),
                                            int(b*255))
-            print("writing color {}".format(col))
             write_u16(f, col)
 
         # write textures to WAD area
@@ -437,9 +433,102 @@ def export_map_to_rom(cur_path, cur_state, set_launch_flags=False):
 
 
         # write pointers to texture table
+        prev_wad_ptr = f.tell()
         f.seek(texture_table_off)
         for ptr in tex_pointers_to_write:
             write_u32(f, ptr)
+
+
+        
+        #return last_exported_rom_file
+        # get list of sprites to write to WAD
+        sprite_to_idx_map = {}
+        sprite_to_wad_offset_map = {}
+        sprite_list = []
+        for thing_def in cur_state.map_data.thing_defs:
+            if thing_def.sprite_file not in sprite_to_idx_map:
+                sprite_to_idx_map[thing_def.sprite_file] = len(sprite_list)
+                sprite_list.append(thing_def.sprite_file)
+
+
+
+        # generate sprite rle tables
+        # write sprite rle data to WAD
+        sprite_span_offsets = [] # offsets to span data per column, per sprite
+        sprite_texel_offsets = [] # offsets to texel data per column, per sprite
+        f.seek(prev_wad_ptr)
+        for sprite in sprite_list:
+            align(f)
+
+            columns = sprite_utils.compile_image(os.path.join(cur_state.sprites_path, sprite))
+
+            span_offsets = []
+            texel_offsets = []
+            # write span and texel data for columns
+            for column in columns:
+                align(f)
+                if len(column) == 0:
+                    span_offsets.append(0)
+                    texel_offsets.append(0)
+                    continue
+                span_offsets.append(f.tell())
+                for (skip,length,_) in column:
+                    write_u16(f, skip)
+                    write_u16(f, length)
+                align(f)
+                texel_offsets.append(f.tell())
+                for (_,_,texels) in column:
+                    for texel in texels:
+                        write_u8(f, texel)
+
+            sprite_to_wad_offset_map[sprite] = f.tell()
+            # write number of columns as 2 bytes
+            write_u16(f, len(columns))
+
+            for idx,column in enumerate(columns):
+                span_offset = span_offsets[idx]
+                texel_offset = texel_offsets[idx]
+                # write number of spans as 2 bytes
+                write_u16(f, len(column))
+                #spans_ptr = f.tell()+4
+                #spans_bytes = len(column)*4
+                write_u32(f, span_offset) # kind of a waste, whatever 
+                write_u32(f, texel_offset)
+
+        # write thing definitions to thing def table
+        prev_wad_ptr = f.tell()
+        f.seek(thing_def_table_off)
+        for thing_def in cur_state.map_data.thing_defs:
+            struct_start = f.tell()
+            write_u32(f, sprite_to_wad_offset_map[thing_def.sprite_file])
+            write_u16(f, thing_def.floor_draw_offset*16)
+            write_u16(f, thing_def.width)
+            write_u16(f, thing_def.height*16)
+            write_u16(f, thing_def.init_state)
+            write_u16(f, thing_def.speed)
+            write_u16(f, 0) # not player :^)
+            assert len(thing_def.name) <= 32, "thing def name is too long!"
+            for c in thing_def.name:
+                f.write(str.encode(c))
+            f.seek(struct_start + 48) # skip past this struct 
+
+        f.seek(prev_wad_ptr)
+        # write map things
+        patch_pointer_to_current_offset(f, thing_ptr_offset)
+        for thing in cur_state.map_data.things:
+            write_u16(f, thing.sector_num)
+            #write_s16(f, thing.x)
+            #write_s16(f, thing.y)
+            write_s16(f, int(vert.x*1.3))
+            write_s16(f, int((-vert.y)*1.3))
+            write_s16(f, thing.z)
+            write_u16(f, thing.object_type)
+
+
+        print("Wrote {} bytes".format(prev_wad_ptr - map_data_base))
+
+             
+
 
 
     return last_exported_rom_file

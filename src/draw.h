@@ -120,7 +120,7 @@ void init_sprite_draw_cache();
 void draw_rle_sprite(s16 x1, s16 x2, s16 ytop, s16 ybot,
                  u16 window_min, u16 window_max,
                  clip_buf* clipping_buffer,
-                 const rle_object* obj);
+                 const rle_sprite* obj);
 
 void draw_forcefield(s16 x1, s16 x2,
                      u16 window_min, u16 window_max,

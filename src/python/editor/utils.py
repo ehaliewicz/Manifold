@@ -71,7 +71,7 @@ def circle_on_line(x1,y1, x2,y2, cx, cy, r):
 
 
 
-def draw_list(cur_state, id_str, label, items, select_item, delete_callback = None):
+def draw_list(cur_state, id_str, label, items, select_item, delete_callback = None, print_item=None):
     
     imgui.begin_child(id_str)
     imgui.text(label)
@@ -88,7 +88,10 @@ def draw_list(cur_state, id_str, label, items, select_item, delete_callback = No
             select_item(idx)
         imgui.same_line()
         
-        imgui.text(str(item))
+        if print_item is not None:
+            imgui.text(print_item(item))
+        else:
+            imgui.text(str(item))
         if delete_callback is not None:
             imgui.same_line()
             if imgui.button(del_btn_id):
@@ -128,7 +131,6 @@ def get_files_in_folder(folder_path):
 
 def file_selector(label, cur_val, files, changed_cb):
     cur_idx = files.index(cur_val)
-
     file_changed, new_file_idx = imgui.core.combo(label, cur_idx, files)
     if file_changed:
         changed_cb(files[new_file_idx])
@@ -141,3 +143,8 @@ def get_texture_files(cur_state):
 
 def get_music_files(cur_state):
     return [f for f in get_files_in_folder(cur_state.music_tracks_path) if ".vgm" in f]
+
+def get_sprite_files(cur_state):
+    sprite_files = [f for f in get_files_in_folder(cur_state.sprites_path) if ".png" in f]
+    assert len(sprite_files) > 0, "No sprite files provided!"
+    return sprite_files

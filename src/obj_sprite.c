@@ -83,7 +83,7 @@ void render_object_to_tile_column(u32 tex_per_pix, u32* tex_per_pix_table_ptr, s
     }
 }
 
-u16 render_object_to_sprite(s16 left_x,s16 top_y, u16 scaled_size, const rle_object* obj) {
+u16 render_object_to_sprite(s16 left_x,s16 top_y, u16 scaled_size, const rle_sprite* obj) {
     //return;
 
     u16 texel_lookup_base_offset = scaled_size<<6;

@@ -574,4 +574,5 @@ const portal_map editor_test_map  = {
     .pvs = pvs,
     .raw_pvs = raw_pvs,
     .name = "slime room test",
+    .num_things = 0,
 };

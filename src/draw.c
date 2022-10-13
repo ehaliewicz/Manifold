@@ -718,7 +718,7 @@ int debug_draw_cleared = 0;
 
 int last_pressed_a = 0;
 void flip() {  
-    return;
+    //return;
   //u8* dst_buf = (bmp_buffer_write == bmp_buffer_0) ? bmp_buffer_1 : bmp_buffer_0;
   //return;
   if(JOY_readJoypad(JOY_1) & BUTTON_A) {
@@ -924,7 +924,7 @@ void draw_col(s16 ytop, s16 min_drawable_y, s16 max_drawable_y,
 void draw_rle_sprite(s16 x1, s16 x2, s16 ytop, s16 ybot,
                  u16 window_min, u16 window_max,
                  clip_buf* clipping_buffer,
-                 const rle_object* obj) {
+                 const rle_sprite* obj) {
 
     
     s16 unclipped_dy = ybot-ytop;

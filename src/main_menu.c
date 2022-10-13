@@ -1,6 +1,7 @@
 #include <genesis.h>
 #include "game.h"
 #include "game_mode.h"
+#include "init.h"
 #include "menu_helper.h"
 #include "portal_map.h"
 #include "sfx.h"
@@ -56,7 +57,7 @@ void populate_level_select() {
 
     volatile uint32_t num_maps = map_table[1] >= 6 ? 6 : vmap_table[1];
     KLog_U1("num maps: ", num_maps);
-    for(int i = 0; i < num_maps; i++) { 
+    for(u32 i = 0; i < num_maps; i++) { 
         KLog_U1("setting map for index: ", i);
         portal_map* pm = (portal_map*)vmap_table[2+i];
         level_select_menu.items[i].text = pm->name;

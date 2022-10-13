@@ -41,7 +41,6 @@ extern s16 angleCosFrac12;
 extern s16 playerXInt;
 extern s16 playerYInt;
 
-int init_load_level;
 
 void init_game();
 game_mode run_game();

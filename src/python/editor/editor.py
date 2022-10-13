@@ -39,6 +39,7 @@ import palette
 import rom
 import script
 import sector
+import things
 import trigger
 import tree
 import undo
@@ -60,13 +61,16 @@ class Mode(Enum):
     MUSIC = 'Music'
     PALETTE = 'Palette'
     DEFAULTS = 'Defaults'
+    THING_DEFS = 'Thing Defs'
+    THINGS = 'Things'
 
 
 class Map():
     def __init__(self, 
+    default_sprite,
     name="placeholder name", 
     sectors=None, 
-    vertexes=None):
+    vertexes=None,):
         self.bsp = False
         if not sectors:
             self.sectors = []
@@ -82,6 +86,8 @@ class Map():
         self.name = name
         self.music_path = ""
         self.palette = palette.DEFAULT_PALETTE
+        self.thing_defs = [things.ThingDef(default_sprite) for i in range(31)]
+        self.things = []
 
     def generate_c_from_map(self):
         num_sectors = len(self.sectors)
@@ -313,41 +319,51 @@ def main_sdl2():
 class State(object):
     def __init__(self):
         self.mode = Mode.SECTOR
-        self.map_data = Map()
         self.cur_sector = None
         self.cur_wall = None
         self.cur_vertex = None
+        self.cur_thing = None
 
         self.camera_x = 0
         self.camera_y = 0
         self.zoom = 0
+        
+
         self.emulator_path = ""
         self.xgmtool_path = ""
         self.textures_path = "textures/"
         self.music_tracks_path = "music/"
+        self.sprites_path = "sprites/"
+
+        self.load_config()
+        tex_files = utils.get_texture_files(self)
+        sprite_files = utils.get_sprite_files(self)
 
         self.hovered_item = None
 
         self.default_up_color = 3
         self.default_low_color = 3
         self.default_mid_color = 0
-        self.default_texture_file = None
         self.default_floor_color = 4
         self.default_ceil_color = 5
+        self.default_texture_file = tex_files[0]
+        self.default_sprite_file = sprite_files[0]
 
-def load_config():
-    global cur_state
-    conf_file_path = os.path.join(cur_path, "conf.ini")
-    conf_exists = os.path.exists(conf_file_path)
-    if not conf_exists:
-        print("No configuration file, using defaults!")
-        return 
-    config = configparser.ConfigParser()
-    config.read(conf_file_path)
-    cur_state.emulator_path = config.get("Default Settings", "emulator-path")
-    cur_state.xgmtool_path = config.get("Default Settings", "xgmtool-path")
-    cur_state.textures_path = config.get("Default Settings", "textures-path")
-    cur_state.music_tracks_path = config.get("Default Settings", "music-tracks-path")
+        self.map_data = Map(self.default_sprite_file)
+
+    def load_config(self):
+        conf_file_path = os.path.join(cur_path, "conf.ini")
+        conf_exists = os.path.exists(conf_file_path)
+        if not conf_exists:
+            print("No configuration file, using defaults!")
+            return 
+        config = configparser.ConfigParser()
+        config.read(conf_file_path)
+        self.emulator_path = config.get("Default Settings", "emulator-path")
+        self.xgmtool_path = config.get("Default Settings", "xgmtool-path")
+        self.textures_path = config.get("Default Settings", "textures-path")
+        self.sprites_path = config.get("Default Settings", "sprites-path")
+        self.music_tracks_path = config.get("Default Settings", "music-tracks-path")
 
 def reset_state():
     global cur_state, last_saved_map_file
@@ -355,10 +371,6 @@ def reset_state():
 
     last_saved_map_file = None
     cur_state = State()
-    load_config()
-    tex_files = utils.get_texture_files(cur_state)
-    cur_state.default_texture_file = tex_files[0]
-    cur_state.map_data.music_path = ""
     
 reset_state()
 
@@ -387,6 +399,13 @@ def add_new_vertex(x,y):
 
     return new_vert
     
+def add_new_thing(x, y):
+    undo.push_state(cur_state)
+    num_things = len(cur_state.map_data.things)
+    new_thing = things.Thing(cur_state.cur_sector.index, x, y, cur_state.cur_sector.floor_height, index=num_things)
+    cur_state.map_data.things.append(new_thing)
+
+    return new_thing
 
 
 
@@ -399,7 +418,9 @@ MODE_DRAW_FUNCS = {
     Mode.TREE: tree.draw_tree_mode,
     Mode.MUSIC: music.draw_music_mode,
     Mode.PALETTE: palette.draw_palette_mode,
-    Mode.DEFAULTS: defaults.draw_defaults_mode
+    Mode.DEFAULTS: defaults.draw_defaults_mode,
+    Mode.THING_DEFS: things.draw_thing_defs_mode,
+    Mode.THINGS: things.draw_things_mode
 }
 
 
@@ -428,6 +449,10 @@ vert_default = (1,1,1,1)
 vert_highlight = (1,0,1,1)
 vert_select = (1,1,0,1)
 
+thing_default = (0,1,0,1)
+thing_highlight = (0.5,1,0,1)
+
+
 portal_default = (1,0,0,0.3)
 portal_highlight = (1,1,0,0.3)
 wall_default = (1,0,0,1)
@@ -448,6 +473,16 @@ def draw_map_vert(draw_list, vert, highlight=False):
     cam_x = cur_state.camera_x
     cam_y = cur_state.camera_y
     draw_list.add_circle_filled(vert.x-cam_x, vert.y-cam_y, 2, imgui.get_color_u32_rgba(*color), num_segments=12)
+
+def draw_thing(draw_list, thing, highlight=False):
+    if highlight:
+        color = thing_highlight
+    else:
+        color = thing_default
+
+    cam_x = cur_state.camera_x
+    cam_y = cur_state.camera_y
+    draw_list.add_circle_filled(thing.x-cam_x, thing.y-cam_y, 5, imgui.get_color_u32_rgba(*color), num_segments=12)
 
 
     
@@ -512,7 +547,13 @@ def draw_map():
         
         draw_map_vert(draw_list, vertex, highlight = ((cur_state.mode == Mode.VERTEX and vertex == cur_state.cur_vertex) or vertex == cur_state.hovered_item))
         
-        
+    for thing in cur_state.map_data.things:
+        draw_thing(
+            draw_list, thing, 
+            highlight = (
+                (cur_state.mode == Mode.THINGS and thing == cur_state.cur_thing) 
+                or (thing == cur_state.hovered_item))
+        )
     #for wall in cur_state.map_data.walls:
     #    draw_map_wall(draw_list, wall, highlight = ((cur_state.mode == Mode.LINE and wall==cur_state.cur_wall) or wall == cur_state.hovered_item))
     
@@ -574,7 +615,11 @@ def interpret_click(x,y,button):
     if clicked_vertex is None:
         ix -= ix%10
         iy -= iy%10
-        cur_state.cur_vertex = add_new_vertex(ix, iy)
+        if cur_state.mode == Mode.THINGS:
+            cur_state.cur_thing = add_new_thing(ix, iy)
+        else:
+            cur_state.cur_vertex = add_new_vertex(ix, iy)
+    
         
 
     if prev_cur is not None and prev_cur != cur_state.cur_vertex:
@@ -647,7 +692,7 @@ def on_frame():
             _, selected_export_as = imgui.menu_item(
                 "Export to ROM as", "", False, True)
             if selected_export_as:
-                rom.export_map_to_rom_as(cur_path, cur_state)
+                rom.export_map_to_rom_as(cur_path, cur_state, False)
             
 
             _,selected_export_launch = imgui.menu_item(
@@ -784,20 +829,28 @@ def load_map_from_file(f):
 
 
     default_tex = cur_state.default_texture_file
+    default_sprite = cur_state.default_sprite_file
 
-    new_map = Map(name=old_map.name,
+    new_map = Map(default_sprite=default_sprite,
+                  name=old_map.name,
                   sectors=old_sectors_to_new_sectors(old_map.sectors, default_tex),
                   vertexes=old_vertexes_to_new_vertexes(old_map.vertexes))                      
 
     if hasattr(old_map, 'palette'):
         new_map.palette = old_map.palette
 
+    if hasattr(old_map, 'thing_defs'):
+        new_map.thing_defs = old_map.thing_defs
+
+    if hasattr(old_map, "things"):
+        new_map.things = old_map.things
+
     cur_state.map_data = new_map
 
     cur_state.cur_sector = None
     cur_state.cur_vertex = None
     cur_state.cur_wall = None
-    
+    cur_state.cur_thing = None
         
 last_saved_map_file = None
 
@@ -842,5 +895,5 @@ if __name__ == '__main__':
             f.close()
 
     main_sdl2()
-    
+
     atexit.register(root.destroy)
