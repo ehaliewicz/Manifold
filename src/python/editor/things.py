@@ -110,7 +110,7 @@ def draw_things_mode(cur_state):
         if y_changed:
             cur_thing.y = new_y
 
-        sector_opts = ["-1"] + ["{}".format(idx) for idx in range(len(cur_state.map_data.sectors))]
+        sector_opts = ["{}".format(idx) for idx in range(len(cur_state.map_data.sectors))]
         
         sect_changed,new_sect = imgui.core.combo("sector", cur_thing.sector_num, sector_opts)
         if sect_changed:
