@@ -31,14 +31,14 @@ def rle_comp_seq(seq, max_len, is_empty, debug=False):
             if in_run:
                 finish_span_helper()
 
-            skip_items += 1
             if skip_items == max_len:
                 finish_span_helper()
+            skip_items += 1
         else:
             # if we were just skipping empty pixels so far, start keeping track of solid pixels
-            run_items.append(item)
             if cur_run_len == max_len:
                 finish_span_helper()
+            run_items.append(item)
     
     finish_span_helper()
 
@@ -95,7 +95,7 @@ def compile_image(path):
         rle_compressed_columns.append(
             rle_comp_seq(
                 pix_row,
-                256,
+                63,
                 lambda p: p==0
             )
         )

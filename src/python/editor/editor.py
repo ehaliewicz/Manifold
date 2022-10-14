@@ -349,6 +349,7 @@ class State(object):
         self.default_ceil_color = 5
         self.default_texture_file = tex_files[0]
         self.default_sprite_file = sprite_files[0]
+        self.default_thing_type = 0
 
         self.map_data = Map(self.default_sprite_file)
 
@@ -403,7 +404,7 @@ def add_new_vertex(x,y):
 def add_new_thing(x, y):
     undo.push_state(cur_state)
     num_things = len(cur_state.map_data.things)
-    new_thing = things.Thing(cur_state.cur_sector.index, x, y, cur_state.cur_sector.floor_height, index=num_things)
+    new_thing = things.Thing(cur_state.default_thing_type, cur_state.cur_sector.index, x, y, cur_state.cur_sector.floor_height, index=num_things)
     cur_state.map_data.things.append(new_thing)
 
     return new_thing

@@ -605,7 +605,11 @@ void process_all_objects(uint32_t cur_frame) {
                     push_to_front(cur_object, &free_list);
                     sector_lists[sect] = NULL;
                 } else {
-                    cur_object->activate_tick = 1;
+                    if(object_state_machines[state_idx].action == &idle) {
+                        cur_object->activate_tick = 128;
+                    } else {
+                        cur_object->activate_tick = 1;
+                    }
                 }
             }
             cur_object = cur_object->next;

@@ -98,7 +98,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
     portal_map* map = cur_portal_map;
 
     // if this sector has been visited 32 times, or is already being currently rendered, skip it
-    
+
     if(sector_visited_cache[sector] & 0b1) { //} & 0b101) { //0x21) {
             return; // Odd = still rendering, 0x20 = give up
     }
@@ -141,6 +141,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
 
     clip_buf* obj_clip_buf;
     if(needs_object_clip_buffer) {
+        KLog_U1("allocating clip buffer in sector: ", sector);
         obj_clip_buf = alloc_clip_buffer();
         //KLog_U2("allocating object clip buffer in sector: ", sector, " id: ", obj_clip_buf->id);
         if(obj_clip_buf == NULL) {
@@ -656,8 +657,8 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
             }              
             //  put temp (the original a[i]) in its correct location
             z_buf[j] = temp;
+            }   
         }
-    }
 
         //qsort((void**)&z_buf, buf_idx, compare_z_buf_items);
         /*
@@ -693,7 +694,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
             volatile object_template* type = &object_types[cur_obj->object_type];
             u16 width = type->width;
             u16 height = type->height;
-            u16 half_width = width>>1;
+            u16 half_width = width>>2; // width needs to be pre-halved because we have double pixels, so it's actually a quarter here :)
 
             s16 left_x = project_and_adjust_x(x-half_width, z_recip);
             s16 right_x = project_and_adjust_x(x+half_width, z_recip);

@@ -614,6 +614,8 @@ void init_game() {
     int got_player_thing = 0;
     map_object* player_thing = NULL;
 
+    KLog_U1("allocating objects: ", cur_portal_map->num_things);
+
     for(int i = 0; i < cur_portal_map->num_things; i++) {
         map_object* thg = &cur_portal_map->things[i];
         volatile object_template* typ = &object_types[thg->type];

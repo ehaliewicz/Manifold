@@ -23,6 +23,7 @@ void free_clip_buffer_list() {
 }
 
 clip_buf* alloc_clip_buffer() {
+    //KLog("allocating clip buffer");
     if(sp >= NUM_CLIP_BUFS) {
         return NULL;
     }

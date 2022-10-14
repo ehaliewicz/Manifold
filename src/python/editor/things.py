@@ -16,9 +16,9 @@ class ThingDef(object):
 #    for i in range(cur_state.map_data.things):
 
 class Thing(object): 
-    def __init__(self, sector_num, x, y, z, index):
+    def __init__(self, typ, sector_num, x, y, z, index):
         self.sector_num = sector_num
-        self.object_type = 0
+        self.object_type = typ
         self.x = x
         self.y = y
         self.z = z
@@ -106,7 +106,7 @@ def draw_things_mode(cur_state):
         x_changed, new_x = imgui.input_int("x:##obj_x", cur_thing.x)
         if x_changed:
             cur_thing.x = new_x
-        y_changed, new_y = imgui.input_int("x:##obj_y", cur_thing.y)
+        y_changed, new_y = imgui.input_int("y:##obj_y", cur_thing.y)
         if y_changed:
             cur_thing.y = new_y
 

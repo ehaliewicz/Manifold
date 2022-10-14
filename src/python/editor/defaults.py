@@ -18,6 +18,9 @@ def draw_defaults_mode(cur_state):
     floor_col_changed, new_floor_col = imgui.core.combo("floor color", cur_state.default_floor_color, color_opts)
     ceil_col_changed, new_ceil_col = imgui.core.combo("ceil color ", cur_state.default_ceil_color, color_opts)
 
+    type_options = ['player'] + [ thing.name for thing in cur_state.map_data.thing_defs]
+    thing_type_changed, new_thing_type = imgui.core.combo("thing type ", cur_state.default_thing_type, type_options)
+
     if up_col_changed:
         cur_state.default_up_color = new_up_col
     if mid_col_changed:
@@ -28,3 +31,5 @@ def draw_defaults_mode(cur_state):
         cur_state.default_floor_color = new_floor_col
     if ceil_col_changed:
         cur_state.default_ceil_color = new_ceil_col
+    if thing_type_changed:
+        cur_state.default_thing_type = new_thing_type
