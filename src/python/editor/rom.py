@@ -517,10 +517,8 @@ def export_map_to_rom(cur_path, cur_state, set_launch_flags=False):
         patch_pointer_to_current_offset(f, thing_ptr_offset)
         for thing in cur_state.map_data.things:
             write_u16(f, thing.sector_num)
-            #write_s16(f, thing.x)
-            #write_s16(f, thing.y)
-            write_s16(f, int(vert.x*1.3))
-            write_s16(f, int((-vert.y)*1.3))
+            write_s16(f, int(thing.x*1.3))
+            write_s16(f, int((-thing.y)*1.3))
             write_s16(f, thing.z)
             write_u16(f, thing.object_type)
 

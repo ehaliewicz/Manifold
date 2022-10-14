@@ -7,9 +7,9 @@ class ThingDef(object):
     def __init__(self, default_spr): 
         self.name = ""
         self.sprite_file = default_spr
-        self.width = 32
-        self.height = 32
-        self.floor_draw_offset = 32
+        self.width = 64
+        self.height = 64
+        self.floor_draw_offset = 0
         self.init_state = 0
         self.speed = 3
 #def draw_things_mode(cur_state):
@@ -25,8 +25,17 @@ class Thing(object):
         self.index = index
 
     def __str__(self):
-        return "type: {}, sector: {}, x: {}, y: {}".format(self.object_type, self.sector_num, self.x, self.y)
+        return "type: {}, sector: {}, x,y: {},{}".format(self.object_type, self.sector_num, self.x, self.y)
 
+        
+    def point_collides(self,x,y):
+        radius = 10
+        x1 = self.x
+        y1 = self.y
+        x2 = x
+        y2 = y
+
+        return utils.point_in_circle(x1,y1,x2,y2,radius)
 
 def draw_thing_defs_mode(cur_state):
     
@@ -88,19 +97,32 @@ def draw_thing_defs_mode(cur_state):
 def draw_things_mode(cur_state):
 
     if cur_state.cur_thing is not None:
-        
+        cur_thing = cur_state.cur_thing
         type_options = ['player'] + [ thing.name for thing in cur_state.map_data.thing_defs]
-        obj_type_changed, new_obj_type = imgui.core.combo("object type:##obj_type", cur_state.cur_thing.object_type, type_options)
-        if obj_type_changed:
-            cur_state.cur_thing.object_type = new_obj_type
+        type_changed, new_type = imgui.core.combo("type", cur_thing.object_type, type_options)
+        if type_changed:
+            cur_thing.object_type = new_type
+
+        x_changed, new_x = imgui.input_int("x:##obj_x", cur_thing.x)
+        if x_changed:
+            cur_thing.x = new_x
+        y_changed, new_y = imgui.input_int("x:##obj_y", cur_thing.y)
+        if y_changed:
+            cur_thing.y = new_y
+
+        sector_opts = ["-1"] + ["{}".format(idx) for idx in range(len(cur_state.map_data.sectors))]
+        
+        sect_changed,new_sect = imgui.core.combo("sector", cur_thing.sector_num, sector_opts)
+        if sect_changed:
+            cur_thing.sector_num = new_sect
 
 
     def print_thing(thing):
         if thing.object_type == 0:
             thing_name = ' player'
         else:
-            thing_name = cur_state.map_data.thing_defs[thing.object_type-1]
-        return str(thing) + " type name: {}".format(thing_name)
+            thing_name = cur_state.map_data.thing_defs[thing.object_type-1].name
+        return str(thing) + " name: {}".format(thing_name)
 
 
     def set_cur_thing(idx):

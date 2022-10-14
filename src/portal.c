@@ -63,21 +63,31 @@ int sectors_scanned = 0;
 
 typedef struct {
     s16 x;
-    s16 z;
+    u16 z_recip;
     object* obj;
+    s16 ybot;
+    s16 ytop;
 } buf_obj;
 
-s16 compare_z_buf_items(void* a, void* b) {
-    buf_obj* ab = (buf_obj*) a;
-    buf_obj* bb = (buf_obj*) b;
+typedef struct {
+    u16 z_recip;
+    u16 buf_idx;
+    s16 height
+} z_buf_obj;
 
-    if (ab->z < bb->z) {
+int needs_to_move_right(z_buf_obj j1, z_buf_obj j2) {
+    u16 j1_z_recip = j1.z_recip;
+    u16 j2_z_recip = j2.z_recip;
+    if(j1_z_recip > j2_z_recip) {
         return 1;
-    } else if (ab->z > bb->z) {
-        return -1;
-    } else {
-        return 0;
+    } else if (j1_z_recip == j2_z_recip) {
+        s16 j1_height = j1.height;
+        s16 j2_height = j2.height;
+        if(j1_height > j2_height) {
+            return 1;
+        }
     }
+    return 0;
 }
 
 
@@ -602,12 +612,11 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
 
 
     if(objects_in_sect != NULL) {
-        buf_obj* z_buf[32];
-        buf_obj obj_buf[32];
+        z_buf_obj z_buf[64];
+        buf_obj obj_buf[64];
 
 
         u8 buf_idx = 0;
-        KLog("some objects are in sector");
         object* cur_obj = objects_in_sect;
 
         while(cur_obj != NULL) {
@@ -615,10 +624,21 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
             object_pos pos = cur_obj->pos;
             Vect2D_s16 trans_pos = transform_map_vert_16(fix32ToInt(pos.x), fix32ToInt(pos.y));
             if(trans_pos.y > 0) {
+                u16 z_recip = z_recip_table_16[trans_pos.y>>TRANS_Z_FRAC_BITS];
                 obj_buf[buf_idx].obj = cur_obj;
                 obj_buf[buf_idx].x = trans_pos.x;
-                obj_buf[buf_idx].z = trans_pos.y;
-                z_buf[buf_idx] = &obj_buf[buf_idx];
+                //z_buf[buf_idx] = &obj_buf[buf_idx];
+                volatile object_template* type = &object_types[cur_obj->object_type];
+                u16 floor_draw_offset = type->from_floor_draw_offset;
+                u16 height = type->height;
+                s16 ytop = project_and_adjust_y_fix(pos.z+floor_draw_offset+height, z_recip);
+                s16 ybot = project_and_adjust_y_fix(pos.z+floor_draw_offset, z_recip);
+                obj_buf[buf_idx].ytop = ytop;
+                obj_buf[buf_idx].ybot = ybot;
+
+                z_buf[buf_idx].buf_idx = buf_idx;
+                z_buf[buf_idx].height = ybot-ytop;
+                z_buf[buf_idx].z_recip = z_recip;
                 buf_idx++;
 
             }
@@ -626,26 +646,50 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
             cur_obj = cur_obj->next;
         }
 
+        for (int gap = buf_idx/2; gap > 0; gap /= 2) {
+            for (int i = gap; i < buf_idx; i += 1) {
+            z_buf_obj temp = z_buf[i];
+  
+            int j;            
+            for (j = i; j >= gap && needs_to_move_right(z_buf[j - gap], temp); j -= gap) {
+                z_buf[j] = z_buf[j - gap];
+            }              
+            //  put temp (the original a[i]) in its correct location
+            z_buf[j] = temp;
+        }
+    }
+
         //qsort((void**)&z_buf, buf_idx, compare_z_buf_items);
+        /*
         for(int i = 0; i < buf_idx-1; i++) {
             for(int j = 0; j < buf_idx-i-1; j++) {
-                if(obj_buf[j].z < obj_buf[j+1].z) {
-                    buf_obj tmp = obj_buf[j];
-                    obj_buf[j] = obj_buf[j+1];
-                    obj_buf[j+1] = tmp;
+                u16 j1_z_recip = z_buf[j].z_recip;
+                u16 j2_z_recip = z_buf[j+1].z_recip;
+                if(j1_z_recip > j2_z_recip) {
+                    z_buf_obj tmp = z_buf[j];
+                    z_buf[j] = z_buf[j+1];
+                    z_buf[j+1] = tmp;
+            
+                } else if (j1_z_recip == j2_z_recip) {
+                    s16 j1_height = z_buf[j].height;
+                    s16 j2_height = z_buf[j+1].height;
+                    if(j1_height > j2_height) {
+                        z_buf_obj tmp = z_buf[j];
+                        z_buf[j] = z_buf[j+1];
+                        z_buf[j+1] = tmp;
+                    }
                 }
             }
         }
-        KLog_U1("buf idx: ", buf_idx);
+        */
         for(int i = 0; i < buf_idx; i++) {
-            object* cur_obj = obj_buf[i].obj; 
-            s16 x = obj_buf[i].x;
-            s16 z = obj_buf[i].z;
+            u16 buf_idx = z_buf[i].buf_idx;
+            object* cur_obj = obj_buf[buf_idx].obj; 
+            //u16 z_recip = obj_buf[i].z_recip;
+            u16 z_recip = z_buf[i].z_recip;
+
+            s16 x = obj_buf[buf_idx].x;
             object_pos pos = cur_obj->pos;           
-            u16 z_recip = z_recip_table_16[z>>TRANS_Z_FRAC_BITS];
-            KLog_U1("drawing object of type: ", cur_obj->object_type);
-            //s16 left_x = pr oject_and_adjust_x(trans_pos.x-6, z_recip);
-            //s16 right_x = project_and_adjust_x(trans_pos.x+6, z_recip);
             volatile object_template* type = &object_types[cur_obj->object_type];
             u16 width = type->width;
             u16 height = type->height;
@@ -654,73 +698,25 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
             s16 left_x = project_and_adjust_x(x-half_width, z_recip);
             s16 right_x = project_and_adjust_x(x+half_width, z_recip);
 
-            u16 floor_draw_offset = type->from_floor_draw_offset;
-            s16 top_y = project_and_adjust_y_fix(pos.z+floor_draw_offset+height, z_recip);
-            s16 bot_y = project_and_adjust_y_fix(pos.z+floor_draw_offset, z_recip);
+            //u16 floor_draw_offset = type->from_floor_draw_offset;
+            //s16 top_y = project_and_adjust_y_fix(pos.z+floor_draw_offset+height, z_recip);
+            //s16 bot_y = project_and_adjust_y_fix(pos.z+floor_draw_offset, z_recip);
+            s16 top_y = obj_buf[buf_idx].ytop;
+            s16 bot_y = obj_buf[buf_idx].ybot;
 
-            //while(1) { 
-            //KLog_S1("trans_pos.y: ", trans_pos.y);
-            //KLog_U1("z_recip: ", z_recip);
-            //KLog_S1("left_x: ", left_x);
-            //KLog_S1("right_x: ", right_x);
-            //KLog_S1("top_y: ", top_y);
-            //KLog_S1("bot_y: ", bot_y);
-            //}
-
-                
 
             draw_sprite_obj(left_x, right_x, top_y>>4, bot_y>>4,
                             window_min, window_max,
                             obj_clip_buf, type->sprite);
         }
-        /*
-            u16 z_recip = z_recip_table_16[trans_pos.y>>TRANS_Z_FRAC_BITS];
-            //break;
-            if(trans_pos.y > 0) {
-                KLog_U1("drawing object of type: ", cur_obj->object_type);
-                //s16 left_x = pr oject_and_adjust_x(trans_pos.x-6, z_recip);
-                //s16 right_x = project_and_adjust_x(trans_pos.x+6, z_recip);
-                volatile object_template* type = &object_types[cur_obj->object_type];
-                u16 width = type->width;
-                u16 height = type->height;
-                u16 half_width = width>>1;
 
-                s16 left_x = project_and_adjust_x(trans_pos.x-half_width, z_recip);
-                s16 right_x = project_and_adjust_x(trans_pos.x+half_width, z_recip);
 
-                u16 floor_draw_offset = type->from_floor_draw_offset;
-                s16 top_y = project_and_adjust_y_fix(pos.z+floor_draw_offset+height, z_recip);
-                s16 bot_y = project_and_adjust_y_fix(pos.z+floor_draw_offset, z_recip);
-
-                //while(1) { 
-                //KLog_S1("trans_pos.y: ", trans_pos.y);
-                //KLog_U1("z_recip: ", z_recip);
-                //KLog_S1("left_x: ", left_x);
-                //KLog_S1("right_x: ", right_x);
-                //KLog_S1("top_y: ", top_y);
-                //KLog_S1("bot_y: ", bot_y);
-                //}
-
-                
-
-                draw_sprite_obj(left_x, right_x, top_y>>4, bot_y>>4,
-                                window_min, window_max,
-                                obj_clip_buf, type->sprite);
-
-            }
-            //break;
-            cur_obj = cur_obj->next;
-        }
-        */
-
-        //KLog_U2("freeing clip buf in sector: ", sector, " id: ", obj_clip_buf->id);
         
 
         free_clip_buffer(obj_clip_buf);
     }
     sector_visited_cache[sector]++;
 }
-
 
 
 void draw_sprite_obj(

@@ -12,7 +12,7 @@
 static int next_obj_id = 0; 
 
 
-#define MAX_OBJECTS 16
+#define MAX_OBJECTS 64
 
 static object* objects;
 static object *free_list = NULL; 
@@ -368,7 +368,7 @@ int is_closer(object_pos pos1, object_pos pos2, object_pos origin) {
 // inserts object in sorted position?
 // not important
 // first parameter used to be cur_player_pos
-object* alloc_object_in_sector(int sector_num, fix32 x, fix32 y, fix32 z, uint8_t object_type) {
+object* alloc_object_in_sector(u32 activate_tick, int sector_num, fix32 x, fix32 y, fix32 z, uint8_t object_type) {
     object* res = pop(&free_list);
     if(res == NULL) {
         KLog("free list pop is null? wtf");
@@ -384,7 +384,7 @@ object* alloc_object_in_sector(int sector_num, fix32 x, fix32 y, fix32 z, uint8_
     volatile object_template* tmpl = &object_types[object_type];
     res->current_state = tmpl->init_state; // object_types[object_type].init_state;
     res->object_type = object_type;
-    res->activate_tick = 0;
+    res->activate_tick = activate_tick;
     res->pos.cur_sector = sector_num;
 
     object** sector_list_obj = &sector_lists[sector_num];
@@ -555,25 +555,25 @@ int follow_player(object* cur_obj, uint16_t cur_sector) {
     fix32 dx32 = intToFix32(dx);
     fix32 dy32 = intToFix32(dy);
 
-    collision_result move_res = check_for_collision_radius(pos.x, pos.y, pos.x+dx32, pos.y+dy32, 8, cur_sector); // radius of 8 originally
+    //collision_result move_res = check_for_collision_radius(pos.x, pos.y, pos.x+dx32, pos.y+dy32, 8, cur_sector); // radius of 8 originally
     
     
-    cur_obj->pos.x = move_res.pos.x;
-    cur_obj->pos.y = move_res.pos.y;
+    cur_obj->pos.x = pos.x+dx32;//move_res.pos.x;
+    cur_obj->pos.y = pos.y+dy32;//move_res.pos.y;
 
-
-    //if(dz > 0) {
-    //    cur_obj->pos.z -= FIX32(.1); // intToFix32(min(abs(dz), 4));
-    //} else if (dz < 0) {
-    //    cur_obj->pos.z += FIX32(.1); // intToFix32(min(abs(dz), 4));
-    //}
+    
+    /*
 
     if(move_res.new_sector != cur_sector) {
         move_object_to_sector(cur_obj, move_res.new_sector);
+        u16 sect = cur_obj->pos.cur_sector;
+        u16 sect_group = sector_group(sect, cur_portal_map);
+        cur_obj->pos.z = get_sector_group_floor_height(sect_group);
     }
-    u16 sect = cur_obj->pos.cur_sector;
-    u16 sect_group = sector_group(sect, cur_portal_map);
-    cur_obj->pos.z = get_sector_group_floor_height(sect_group);
+    //u16 sect = cur_obj->pos.cur_sector;
+    //u16 sect_group = sector_group(sect, cur_portal_map);
+    //cur_obj->pos.z = get_sector_group_floor_height(sect_group);
+    */
     return 1;
 }
 
@@ -592,17 +592,25 @@ void process_all_objects(uint32_t cur_frame) {
     for(int sect = 0; sect < num_sector_lists; sect++) {
         object* cur_object = sector_lists[sect];
         while(cur_object != NULL) {
-            KLog_U1("processing object with state: ", cur_object->current_state);
-            uint16_t state_idx = cur_object->current_state;
-            int live = object_state_machines[state_idx].action(cur_object, sect);
-            if(!live) { 
-                // TODO: make work with more than one object
-                // this will only work with a single object
-                push_to_front(cur_object, &free_list);
-                sector_lists[sect] = NULL;
+            if(cur_object->activate_tick != 0) {
+                cur_object->activate_tick--;
+            
+            } else {
+                KLog("processing object");
+                uint16_t state_idx = cur_object->current_state;
+                int live = object_state_machines[state_idx].action(cur_object, sect);
+                if(!live) { 
+                    // TODO: make work with more than one object
+                    // this will only work with a single object
+                    push_to_front(cur_object, &free_list);
+                    sector_lists[sect] = NULL;
+                } else {
+                    cur_object->activate_tick = 1;
+                }
             }
             cur_object = cur_object->next;
             //break;
         }
     }
+    KLog("done processing objects");
 }

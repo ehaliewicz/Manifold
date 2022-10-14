@@ -515,6 +515,7 @@ void init_game() {
     
 	VDP_setBackgroundColor(10);
     volatile u32* vp_start_in_game_arr = start_in_game_arr;
+    KLog_U1("free bytes of RAM before init: ", MEM_getFree());
 
     if(vp_start_in_game_arr[1]) {
         volatile u32* vp_init_load_level_arr = instant_load_level_array;
@@ -612,42 +613,25 @@ void init_game() {
 
     int got_player_thing = 0;
     map_object* player_thing = NULL;
-    KLog_U1("num objects to allocate: ", cur_portal_map->num_things);
 
     for(int i = 0; i < cur_portal_map->num_things; i++) {
         map_object* thg = &cur_portal_map->things[i];
-        KLog_U2("sector: ", thg->sector_num, " object_type: ", thg->type);
-        KLog_S3("x: ", thg->x<<FIX32_FRAC_BITS, " y: ", thg->y<<FIX32_FRAC_BITS, " z: ", thg->z<<FIX32_FRAC_BITS);
         volatile object_template* typ = &object_types[thg->type];
-        KLog_U2("speed: ", typ->speed, " is player: ", typ->is_player);
         if(typ->is_player) {
-            KLog("is player type");
             got_player_thing = 1;
             player_thing = thg;
         } else {
-            s16 offset = (random()%64)-32;
 
             alloc_object_in_sector(
+                i&1, // either 0 or 1, to spread the load
                 thg->sector_num,
-                sector_centers[0].x+FIX32(offset)*(i+1), //thg->x<<FIX32_FRAC_BITS, 
-                sector_centers[0].y+FIX32(offset)*(i+1), // thg->y<<FIX32_FRAC_BITS, 
+                thg->x<<FIX32_FRAC_BITS, 
+                thg->y<<FIX32_FRAC_BITS, 
                 thg->z<<FIX32_FRAC_BITS, 
                 thg->type
             );
         }
     }
-
-    KLog_U1("sector height: ", (get_sector_group_floor_height(0)));
-    KLog_S3("default obj x: ", sector_centers[0].x+10, " y: ", sector_centers[0].y+10, " z: ", get_sector_group_floor_height(0));
-    //object* cur_obj = alloc_object_in_sector(
-    //    0, 
-    //    sector_centers[0].x+10, sector_centers[0].y+10, 
-    //    get_sector_group_floor_height(obj_sect_group), 
-    //    1);
-    
-
-    //object* objects_in_sect = objects_in_sector(0);
-    //KLog_U1("objects in sector 0?: ", objects_in_sect!=NULL);
 
     init_player_pos();
 

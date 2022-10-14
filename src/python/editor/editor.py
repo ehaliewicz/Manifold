@@ -1,3 +1,4 @@
+from http.client import REQUEST_URI_TOO_LONG
 import os 
 import sys
 
@@ -449,8 +450,8 @@ vert_default = (1,1,1,1)
 vert_highlight = (1,0,1,1)
 vert_select = (1,1,0,1)
 
-thing_default = (0,1,0,1)
-thing_highlight = (0.5,1,0,1)
+thing_default = (0,.8,0,.8)
+thing_highlight = (0.7,1,0,1)
 
 
 portal_default = (1,0,0,0.3)
@@ -601,9 +602,16 @@ def interpret_click(x,y,button):
                     cur_state.mode = Mode.LINE
                     # find sector
                     cur_state.cur_sector = cur_state.map_data.sectors[cur_state.cur_wall.sector_idx]
+                    REQUEST_URI_TOO_LONG
+
+        for thing in cur_state.map_data.things:
+            if thing.point_collides(x, y):
+                cur_state.cur_thing = thing
+                
+                if button == LEFT_BUTTON:
+                    cur_state.mode = Mode.THINGS
                     return
         return
-
         
     if not cur_state.cur_sector:
         return

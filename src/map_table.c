@@ -21,7 +21,7 @@ const uint32_t map_table[NUM_MAPS+3] = {
 
 
 // 2MB of space for map, texture, sprite, and palette data
-const uint8_t wad_area[1024*1024*2] = { 
+const uint8_t wad_area[512*1024*2] = { 
     'W','A','D','?',
     };
 // 2048*1024

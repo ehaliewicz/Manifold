@@ -48,6 +48,12 @@ struct object {
     object *next;
 };
 
+struct decoration_object {
+    uint16_t id;
+    uint8_t object_type;
+    object_pos pos;
+}; // doesn't even need a next and prev pointer?
+
 
 void init_object_lists(int num_sectors);
 
@@ -61,7 +67,7 @@ typedef struct  __attribute__((__packed__)) {
     u16 type;
 } map_object;
 
-object* alloc_object_in_sector(int sector_num, fix32 x, fix32 y, fix32 z, uint8_t object_type);
+object* alloc_object_in_sector(u32 activate_tick, int sector_num, fix32 x, fix32 y, fix32 z, uint8_t object_type);
 
 void free_object(object* obj);
 

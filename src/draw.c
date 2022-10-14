@@ -718,7 +718,7 @@ int debug_draw_cleared = 0;
 
 int last_pressed_a = 0;
 void flip() {  
-    //return;
+    return;
   //u8* dst_buf = (bmp_buffer_write == bmp_buffer_0) ? bmp_buffer_1 : bmp_buffer_0;
   //return;
   if(JOY_readJoypad(JOY_1) & BUTTON_A) {
@@ -785,6 +785,9 @@ void init_sprite_draw_cache() {
     SIXTEEN_COPY_CASES; SIXTEEN_COPY_CASES; SIXTEEN_COPY_CASES; SIXTEEN_COPY_CASES; SIXTEEN_COPY_CASES; SIXTEEN_COPY_CASES; SIXTEEN_COPY_CASES; SIXTEEN_COPY_CASES
     
 void set_up_scale_routine(s16 unclipped_dy) {
+    static s16 last_unclipped_dy = -1;
+    if(last_unclipped_dy == unclipped_dy) {  return; }
+    last_unclipped_dy = unclipped_dy;
     // this routine looks up the table of X coefficients/offsets for the scaled height of the sprite we are about to draw 
     // (unclipped_dy means the number of unclipped pixels this sprite is scaled to)
     // and copies them into sprite_draw_cache.  the loop is fully unrolled.
@@ -926,7 +929,6 @@ void draw_rle_sprite(s16 x1, s16 x2, s16 ytop, s16 ybot,
                  clip_buf* clipping_buffer,
                  const rle_sprite* obj) {
 
-    
     s16 unclipped_dy = ybot-ytop;
     if(unclipped_dy > MAX_CACHE_INSTRUCTIONS) { return; }
     if(unclipped_dy > 512) { return; }
@@ -1018,6 +1020,7 @@ void draw_rle_sprite(s16 x1, s16 x2, s16 ytop, s16 ybot,
             u_fix += cols_per_scaled_hpixel;
             u16 end_u_int = u_fix>>16;
             
+            
             if(ytop >= max_drawable_y || ybot <= min_drawable_y) {
                 continue;
             }
@@ -1032,6 +1035,13 @@ void draw_rle_sprite(s16 x1, s16 x2, s16 ytop, s16 ybot,
                     texels_per_scaled_vpixel, y_per_texels_fix,
                     col_ptr, scaled_run_lengths_lut, 1
                 );
+                //draw_col(
+                //    ytop,
+                //    min_drawable_y, max_drawable_y, 
+                //    unclipped_dy, col,
+                //    texels_per_scaled_vpixel, y_per_texels_fix,
+                //    col_ptr+1, scaled_run_lengths_lut, 1
+                //);
             } else {
                 column* col = &obj->columns[mid_u_int];
                 draw_col(
@@ -1041,6 +1051,7 @@ void draw_rle_sprite(s16 x1, s16 x2, s16 ytop, s16 ybot,
                     texels_per_scaled_vpixel, y_per_texels_fix,
                     col_ptr, scaled_run_lengths_lut, 0
                 );
+                if(end_u_int > 63) { end_u_int = 63; }
                 col = &obj->columns[end_u_int];
                 draw_col(
                     ytop,

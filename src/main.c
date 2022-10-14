@@ -10,6 +10,10 @@
 
 int main() {
 	VDP_init();
+	MEM_pack();
+	KLog_U1("allocated mem at start: ", MEM_getAllocated());
+
+	KLog_U1("free bytes of ram at startup: ", MEM_getFree());
 	volatile u32* vp_start_in_game_arr = start_in_game_arr;
 	if(vp_start_in_game_arr[1]) {
 		// i don't know why this is required, I guess some VRAM remapping or something
@@ -20,6 +24,7 @@ int main() {
 		//bmp_init_horizontal(0, BG_A, PAL1, 0);
 	    //bmp_end();
 		//MEM_pack();
+    	DMA_setBufferSize(2048);
 		set_game_mode(IN_GAME);
 	} else {
 		set_game_mode(INTRO);
