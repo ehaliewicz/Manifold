@@ -5,6 +5,10 @@
 
 #include "obj_sprite.h"
 
+
+#define MAX_OBJECTS 64
+
+
 typedef struct {
     fix32 x;
     fix32 y;
@@ -33,6 +37,7 @@ typedef struct  __attribute__((__packed__)) {
     char name[32];
 } object_template;
 
+
 extern const object_template object_types[];
 
 typedef struct object object;
@@ -44,9 +49,10 @@ struct object {
     uint32_t activate_tick;
     object_tgt tgt;
     object_pos pos;
-    object *prev;
-    object *next;
+    uint8_t in_use;
 };
+
+extern object* objects;
 
 struct decoration_object {
     uint16_t id;
@@ -72,6 +78,12 @@ object* alloc_object_in_sector(u32 activate_tick, int sector_num, fix32 x, fix32
 void free_object(object* obj);
 
 object* objects_in_sector(int sector_num);
+
+
+
+void sort_objects();
+
+void print_object_list();
 
 void process_all_objects(uint32_t cur_tick);
 
