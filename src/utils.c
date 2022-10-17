@@ -1,27 +1,6 @@
 #include <genesis.h>
 
 
-u16 divu_32_by_16(u32 num, u16 denom) {
-     __asm volatile(
-        "divu.w %1, %0"
-        : "+d" (num) // output
-        : "d" (denom)
-    );
-
-    s16 res = num;
-    return res;
-}
-
-
-u32 mulu_16_by_16(u16 a, u16 b) {
-    u32 a32 = a;
-     __asm volatile(
-        "mulu.w %1, %0"
-        : "+d" (a32) // output
-        : "d" (b)
-    );
-    return a32;
-}
 
 #define SUB_16_16(a, b) do {    \
     __asm volatile(             \

@@ -962,7 +962,12 @@ void draw_rle_sprite(s16 x1, s16 x2, s16 ytop, s16 ybot,
     u32* scaled_run_lengths_lut = &scaled_sprite_run_lengths[unclipped_dy<<6];
 
     // something slightly 
-    u32 cols_per_scaled_hpixel = (obj->num_columns<<16>>1)/(unclipped_dx);
+    //u32 cols_per_scaled_hpixel = ((obj->num_columns-1)<<16>>1)/(unclipped_dx);
+
+    u16 num_cols_pre_scaled = (obj->num_columns-1)<<8>>1;
+    u16 cols_per_scaled_hpixel_16 = divu_32_by_16(num_cols_pre_scaled, unclipped_dx); // 8.8
+    u32 cols_per_scaled_hpixel = cols_per_scaled_hpixel_16 << 8; // 16.16
+
     //u32 texels_per_scaled_vpixel = (64<<16)/unclipped_dy;
 
     u32 texels_per_scaled_vpixel = scaled_sprite_texel_per_pixel_lut[unclipped_dy];
@@ -974,7 +979,12 @@ void draw_rle_sprite(s16 x1, s16 x2, s16 ytop, s16 ybot,
 
     if(skip_x > 0) {
         // double this here because we have to skip 2 rle columns per screen-pixel
-        u_fix += skip_x * (cols_per_scaled_hpixel<<1); //(skip_x * u_per_x);
+        u32 skip_16_8 = mulu_16_by_16(skip_x, cols_per_scaled_hpixel_16); // skip_x * (cols_per_scaled_hpixel_16);
+        //skip_16_8 <= 1;
+        u32 skip_16_16 = skip_16_8 << 8;
+
+        u_fix += skip_16_16; // skip_x * (cols_per_scaled_hpixel<<1); //(skip_x * u_per_x);
+        u_fix += skip_16_16;
     }
 
 
@@ -996,16 +1006,13 @@ void draw_rle_sprite(s16 x1, s16 x2, s16 ytop, s16 ybot,
 
 
     while(col_dx--) {
-    //for(;x < endx; x++) {    
         u8 min_drawable_y = *yclip_ptr++;
         u8 max_drawable_y = *yclip_ptr++;
-        //if(min_drawable_y >= max_drawable_y) { continue; }
 
         u8 top_draw_y = max(ytop, min_drawable_y);
         u8 bot_draw_y = min(ybot, max_drawable_y);
 
         u8* col_ptr = GET_COLUMN_PTR(offset_ptr, bmp_buffer_write);
-        // *offset_ptr++;
 
         // TODO: information about whether this column was filled in front of the object 
         // should be loaded from clip buffer
@@ -1025,9 +1032,9 @@ void draw_rle_sprite(s16 x1, s16 x2, s16 ytop, s16 ybot,
                 continue;
             }
 
+            column* col = &obj->columns[mid_u_int];
             
             if(mid_u_int == end_u_int) {
-                column* col = &obj->columns[mid_u_int];
                 draw_col(
                     ytop,
                     min_drawable_y, max_drawable_y, 
@@ -1035,15 +1042,7 @@ void draw_rle_sprite(s16 x1, s16 x2, s16 ytop, s16 ybot,
                     texels_per_scaled_vpixel, y_per_texels_fix,
                     col_ptr, scaled_run_lengths_lut, 1
                 );
-                //draw_col(
-                //    ytop,
-                //    min_drawable_y, max_drawable_y, 
-                //    unclipped_dy, col,
-                //    texels_per_scaled_vpixel, y_per_texels_fix,
-                //    col_ptr+1, scaled_run_lengths_lut, 1
-                //);
             } else {
-                column* col = &obj->columns[mid_u_int];
                 draw_col(
                     ytop,
                     min_drawable_y, max_drawable_y, 
@@ -1051,7 +1050,6 @@ void draw_rle_sprite(s16 x1, s16 x2, s16 ytop, s16 ybot,
                     texels_per_scaled_vpixel, y_per_texels_fix,
                     col_ptr, scaled_run_lengths_lut, 0
                 );
-                if(end_u_int > 63) { end_u_int = 63; }
                 col = &obj->columns[end_u_int];
                 draw_col(
                     ytop,
