@@ -669,8 +669,6 @@ game_mode run_game() {
 
     u32 start_ticks = getTick();
     
-    sort_objects();
-    print_object_list();
     process_all_objects(cur_frame);
 
     console_tick();

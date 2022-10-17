@@ -481,6 +481,4 @@ const portal_map overlapping_map = {
     .wall_norm_quadrants = wall_normal_quadrants,
     .has_pvs = 0,
     .name = "portal test map",
-    .num_things = 0,
-    .things = NULL
 };

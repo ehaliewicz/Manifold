@@ -135,6 +135,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
 
     //int render_red_ball = (sector == 10);
     object* objects_in_sect = objects_in_sector(sector);
+    //KLog_U1("objects in sect?: ", objects_in_sect);
     int needs_object_clip_buffer = (objects_in_sect != NULL); //render_red_ball && (objects_in_sect != NULL);
     //int needs_object_clip_buffer = ;
 
@@ -618,10 +619,8 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
 
         u8 buf_idx = 0;
         object* cur_obj = objects_in_sect;
-        for(object* cur_obj = objects_in_sect; ; cur_obj++) {
-            if((cur_obj - objects) >= MAX_OBJECTS) { break; }
-            if(cur_obj->pos.cur_sector != sector) { break; }
-        
+
+        while(cur_obj != NULL) {
 
             object_pos pos = cur_obj->pos;
             Vect2D_s16 trans_pos = transform_map_vert_16(fix32ToInt(pos.x), fix32ToInt(pos.y));
@@ -645,6 +644,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
 
             }
 
+            cur_obj = cur_obj->next;
         }
 
         for (int gap = buf_idx/2; gap > 0; gap /= 2) {
