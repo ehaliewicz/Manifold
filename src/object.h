@@ -5,6 +5,7 @@
 
 #include "obj_sprite.h"
 
+// 16 bytes!
 typedef struct {
     fix32 x;
     fix32 y;
@@ -27,7 +28,7 @@ typedef struct  __attribute__((__packed__)) {
     uint16_t from_floor_draw_offset;
     uint16_t width;
     uint16_t height;
-    uint16_t init_state;
+    uint8_t init_state;
     uint16_t speed; // 3 for claw guy?
     u16 is_player;
     char name[32];
@@ -37,21 +38,27 @@ extern const object_template object_types[];
 
 typedef struct object object;
 
+// 37 or 38 bytes, holy crap
 struct object {
     uint16_t id;
-    uint16_t current_state;
+    uint8_t current_state;
     uint8_t object_type;
     uint32_t activate_tick;
-    object_tgt tgt;
-    object_pos pos;
+    //object_tgt tgt;
+    object* tgt;
+    object_pos pos; // 16 bytes
     object *prev;
     object *next;
 };
 
+typedef struct decoration_object decoration_object;
+
+// 13 or 14 bytes
 struct decoration_object {
-    uint16_t id;
     uint8_t object_type;
-    object_pos pos;
+    s16 x; s16 y; s16 z;
+    u16 cur_sector;
+    decoration_object* next;
 }; // doesn't even need a next and prev pointer?
 
 
