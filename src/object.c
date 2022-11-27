@@ -12,7 +12,8 @@
 static int next_obj_id = 0; 
 
 
-#define MAX_OBJECTS 64
+#define MAX_OBJECTS 32
+#define MAX_DECORATIONS 32
 
 static object* objects;
 static object *free_list = NULL; 
@@ -465,6 +466,7 @@ void free_object(object* obj) {
 */
 
 object* objects_in_sector(int sector_num) {
+    //return NULL; 
     return sector_lists[sector_num];
 }
 
@@ -476,10 +478,12 @@ int look_for_player(object* cur_obj, uint16_t cur_sector) {
     if(cur_player_pos.cur_sector == cur_sector) {
         //cur_obj->object_type = 1;
         cur_obj->current_state++;
-        cur_obj->tgt.sector = cur_sector;
-        cur_obj->tgt.x = cur_player_pos.x;
-        cur_obj->tgt.y = cur_player_pos.y;
-        cur_obj->tgt.z = cur_player_pos.z;
+
+        //cur_obj->tgt.sector = cur_sector;
+        //cur_obj->tgt.x = cur_player_pos.x;
+        //cur_obj->tgt.y = cur_player_pos.y;
+        //cur_obj->tgt.z = cur_player_pos.z;
+
     } else {
         //KLog("player not found");
     }
