@@ -141,7 +141,8 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
 
     clip_buf* obj_clip_buf;
     if(needs_object_clip_buffer) {
-        KLog_U1("allocating clip buffer in sector: ", sector);
+        // this breaks bottom clipped rendering somehow LOL
+        //KLog_U1("allocating clip buffer in sector: ", sector);
         obj_clip_buf = alloc_clip_buffer();
         //KLog_U2("allocating object clip buffer in sector: ", sector, " id: ", obj_clip_buf->id);
         if(obj_clip_buf == NULL) {
