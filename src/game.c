@@ -618,8 +618,10 @@ void init_game() {
 
     for(int i = 0; i < cur_portal_map->num_things; i++) {
         map_object* thg = &cur_portal_map->things[i];
+        KLog_U1("thing type: ", thg->type);
         volatile object_template* typ = &object_types[thg->type];
-        if(typ->is_player) {
+        if(thg->type == 0) { //typ->is_player) {
+            KLog("is player?");
             got_player_thing = 1;
             player_thing = thg;
         } else {

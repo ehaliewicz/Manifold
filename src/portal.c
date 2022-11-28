@@ -9,6 +9,7 @@
 #include "level.h"
 #include "math3D.h"
 #include "obj_sprite.h"
+#include "object.h"
 #include "portal_map.h"
 #include "sector_group.h"
 #include "textures.h"
@@ -60,20 +61,6 @@ void draw_sprite_obj(
     clip_buf* obj_clip_buf, rle_sprite* sprite);
 
 int sectors_scanned = 0;
-
-typedef struct {
-    s16 x;
-    u16 z_recip;
-    object* obj;
-    s16 ybot;
-    s16 ytop;
-} buf_obj;
-
-typedef struct {
-    u16 z_recip;
-    u16 buf_idx;
-    s16 height
-} z_buf_obj;
 
 int needs_to_move_right(z_buf_obj j1, z_buf_obj j2) {
     u16 j1_z_recip = j1.z_recip;
@@ -614,83 +601,64 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
 
 
     if(objects_in_sect != NULL) {
-        z_buf_obj z_buf[64];
-        buf_obj obj_buf[64];
 
 
         u8 buf_idx = 0;
         object* cur_obj = objects_in_sect;
-
+        KLog_U1("got object in sector: ", sector);
         while(cur_obj != NULL) {
 
             object_pos pos = cur_obj->pos;
             Vect2D_s16 trans_pos = transform_map_vert_16(fix32ToInt(pos.x), fix32ToInt(pos.y));
             if(trans_pos.y > 0) {
                 u16 z_recip = z_recip_table_16[trans_pos.y>>TRANS_Z_FRAC_BITS];
-                obj_buf[buf_idx].obj = cur_obj;
-                obj_buf[buf_idx].x = trans_pos.x;
+                obj_sort_buf[buf_idx].obj = cur_obj;
+                obj_sort_buf[buf_idx].x = trans_pos.x;
                 //z_buf[buf_idx] = &obj_buf[buf_idx];
                 volatile object_template* type = &object_types[cur_obj->object_type];
                 u16 floor_draw_offset = type->from_floor_draw_offset;
                 u16 height = type->height;
                 s16 ytop = project_and_adjust_y_fix(pos.z+floor_draw_offset+height, z_recip);
                 s16 ybot = project_and_adjust_y_fix(pos.z+floor_draw_offset, z_recip);
-                obj_buf[buf_idx].ytop = ytop;
-                obj_buf[buf_idx].ybot = ybot;
+                obj_sort_buf[buf_idx].ytop = ytop;
+                obj_sort_buf[buf_idx].ybot = ybot;
 
-                z_buf[buf_idx].buf_idx = buf_idx;
-                z_buf[buf_idx].height = ybot-ytop;
-                z_buf[buf_idx].z_recip = z_recip;
+                z_sort_buf[buf_idx].buf_idx = buf_idx;
+                z_sort_buf[buf_idx].height = ybot-ytop;
+                z_sort_buf[buf_idx].z_recip = z_recip;
                 buf_idx++;
 
+            } else {
+                KLog("Transformed offscreen?");
             }
-
             cur_obj = cur_obj->next;
         }
+        KLog_U1("got objects: ", buf_idx);
 
         for (int gap = buf_idx/2; gap > 0; gap /= 2) {
             for (int i = gap; i < buf_idx; i += 1) {
-            z_buf_obj temp = z_buf[i];
+            z_buf_obj temp = z_sort_buf[i];
   
             int j;            
-            for (j = i; j >= gap && needs_to_move_right(z_buf[j - gap], temp); j -= gap) {
-                z_buf[j] = z_buf[j - gap];
+            for (j = i; j >= gap && needs_to_move_right(z_sort_buf[j - gap], temp); j -= gap) {
+                z_sort_buf[j] = z_sort_buf[j - gap];
             }              
             //  put temp (the original a[i]) in its correct location
-            z_buf[j] = temp;
+            z_sort_buf[j] = temp;
             }   
         }
 
-        //qsort((void**)&z_buf, buf_idx, compare_z_buf_items);
-        /*
-        for(int i = 0; i < buf_idx-1; i++) {
-            for(int j = 0; j < buf_idx-i-1; j++) {
-                u16 j1_z_recip = z_buf[j].z_recip;
-                u16 j2_z_recip = z_buf[j+1].z_recip;
-                if(j1_z_recip > j2_z_recip) {
-                    z_buf_obj tmp = z_buf[j];
-                    z_buf[j] = z_buf[j+1];
-                    z_buf[j+1] = tmp;
-            
-                } else if (j1_z_recip == j2_z_recip) {
-                    s16 j1_height = z_buf[j].height;
-                    s16 j2_height = z_buf[j+1].height;
-                    if(j1_height > j2_height) {
-                        z_buf_obj tmp = z_buf[j];
-                        z_buf[j] = z_buf[j+1];
-                        z_buf[j+1] = tmp;
-                    }
-                }
-            }
-        }
-        */
         for(int i = 0; i < buf_idx; i++) {
-            u16 buf_idx = z_buf[i].buf_idx;
-            object* cur_obj = obj_buf[buf_idx].obj; 
-            //u16 z_recip = obj_buf[i].z_recip;
-            u16 z_recip = z_buf[i].z_recip;
+            KLog_U1("drawing object: ", i);
+            u16 obj_buf_idx = z_sort_buf[i].buf_idx;
+            u16 z_recip = z_sort_buf[i].z_recip;
+            object* cur_obj = obj_sort_buf[obj_buf_idx].obj; 
+            s16 x = obj_sort_buf[obj_buf_idx].x;
+            s16 top_y = obj_sort_buf[obj_buf_idx].ytop;
+            s16 bot_y = obj_sort_buf[obj_buf_idx].ybot;
 
-            s16 x = obj_buf[buf_idx].x;
+            //u16 z_recip = obj_buf[i].z_recip;
+
             object_pos pos = cur_obj->pos;           
             volatile object_template* type = &object_types[cur_obj->object_type];
             u16 width = type->width;
@@ -703,13 +671,12 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
             //u16 floor_draw_offset = type->from_floor_draw_offset;
             //s16 top_y = project_and_adjust_y_fix(pos.z+floor_draw_offset+height, z_recip);
             //s16 bot_y = project_and_adjust_y_fix(pos.z+floor_draw_offset, z_recip);
-            s16 top_y = obj_buf[buf_idx].ytop;
-            s16 bot_y = obj_buf[buf_idx].ybot;
 
 
             draw_sprite_obj(left_x, right_x, top_y>>4, bot_y>>4,
                             window_min, window_max,
                             obj_clip_buf, type->sprite);
+            KLog("drawn?");
         }
 
 

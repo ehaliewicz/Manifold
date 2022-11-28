@@ -22,6 +22,9 @@ static object** sector_lists;
 
 static int num_sector_lists;
 
+z_buf_obj *z_sort_buf;//[64];
+buf_obj *obj_sort_buf;//[64];
+
 object* pop(object** lst) {
   object* head = *lst;
   if(head == NULL) {
@@ -106,6 +109,8 @@ void init_object_lists(int num_sectors) {
     for(int i = 0; i < num_sectors; i++) {
         sector_lists[i] = NULL;
     }
+    z_sort_buf = malloc(sizeof(z_buf_obj) * MAX_OBJECTS, "object z sort buffer");
+    obj_sort_buf = malloc(sizeof(buf_obj) * MAX_OBJECTS, "object sort buffer");
 } 
 
 
@@ -290,7 +295,7 @@ const object_template object_types[32+1] = {
     {.init_state = 1,
      .name = "claw guy", .sprite=&claw_guy_sprite,
     .from_floor_draw_offset = 10<<4, .width=46, .height=80<<4},
-    {.init_state = 0, .is_player = 0},
+    {.init_state = 0,},
     {.init_state = 0, .is_player = 0},
     {.init_state = 0, .is_player = 0},
     {.init_state = 0, .is_player = 0},
@@ -370,6 +375,7 @@ int is_closer(object_pos pos1, object_pos pos2, object_pos origin) {
 // not important
 // first parameter used to be cur_player_pos
 object* alloc_object_in_sector(u32 activate_tick, int sector_num, fix32 x, fix32 y, fix32 z, uint8_t object_type) {
+    KLog_U1("allocating object in sector: ", sector_num);
     object* res = pop(&free_list);
     if(res == NULL) {
         KLog("free list pop is null? wtf");
@@ -600,7 +606,7 @@ void process_all_objects(uint32_t cur_frame) {
                 cur_object->activate_tick--;
             
             } else {
-                KLog("processing object");
+                //KLog("processing object");
                 uint16_t state_idx = cur_object->current_state;
                 int live = object_state_machines[state_idx].action(cur_object, sect);
                 if(!live) { 
@@ -620,5 +626,5 @@ void process_all_objects(uint32_t cur_frame) {
             //break;
         }
     }
-    KLog("done processing objects");
+    //KLog("done processing objects");
 }

@@ -90,5 +90,24 @@ typedef struct {
 } obj_state;
 
 
+// 12 bytes
+typedef struct {
+    s16 x;
+    u16 z_recip;
+    object* obj;
+    s16 ybot;
+    s16 ytop;
+} buf_obj;
+
+// 6 bytes
+typedef struct {
+    u16 z_recip;
+    u16 buf_idx;
+    s16 height
+} z_buf_obj;
+
+
+extern z_buf_obj *z_sort_buf;//[64];
+extern buf_obj *obj_sort_buf;//[64];
 
 #endif
