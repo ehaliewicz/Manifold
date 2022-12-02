@@ -117,8 +117,8 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
 
     u16 prev_v2_idx = init_v1_idx;
 
-    s16 intPx = fix32ToInt(cur_player_pos.x);
-    s16 intPy = fix32ToInt(cur_player_pos.y);
+    //s16 intPx = fix32ToInt(cur_player_pos.x);
+    //s16 intPy = fix32ToInt(cur_player_pos.y);
 
     //int render_red_ball = (sector == 10);
     object* objects_in_sect = objects_in_sector(sector);
@@ -191,9 +191,9 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
         prev_v2_idx = v2_idx;
 
         
-        normal_quadrant normal_dir = map->wall_norm_quadrants[portal_idx];
+        //normal_quadrant normal_dir = map->wall_norm_quadrants[portal_idx];
 
-        u8 backfacing = 0;
+        //u8 backfacing = 0;
         /*
         switch(normal_dir) {
             case QUADRANT_0:
@@ -254,7 +254,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
             lit_texture *tex = get_texture(tex_idx, light_level);
             tmap_info.tex = tex;
         }
-        clip_result clipped = clip_map_vertex_16(&trans_v1, &trans_v2, &tmap_info);
+        clip_result clipped = clip_map_vertex_16((Vect2D_s16*)&trans_v1, (Vect2D_s16*)&trans_v2, &tmap_info);
 
 
         u16 z_recip_v1 = z_recip_table_16[trans_v1.y>>TRANS_Z_FRAC_BITS];
@@ -605,7 +605,6 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
 
         u8 buf_idx = 0;
         object* cur_obj = objects_in_sect;
-        KLog_U1("got object in sector: ", sector);
         while(cur_obj != NULL) {
 
             object_pos pos = cur_obj->pos;
@@ -618,6 +617,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
                 volatile object_template* type = &object_types[cur_obj->object_type];
                 u16 floor_draw_offset = type->from_floor_draw_offset;
                 u16 height = type->height;
+
                 s16 ytop = project_and_adjust_y_fix(pos.z+floor_draw_offset+height, z_recip);
                 s16 ybot = project_and_adjust_y_fix(pos.z+floor_draw_offset, z_recip);
                 obj_sort_buf[buf_idx].ytop = ytop;
@@ -628,12 +628,9 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
                 z_sort_buf[buf_idx].z_recip = z_recip;
                 buf_idx++;
 
-            } else {
-                KLog("Transformed offscreen?");
             }
             cur_obj = cur_obj->next;
         }
-        KLog_U1("got objects: ", buf_idx);
 
         for (int gap = buf_idx/2; gap > 0; gap /= 2) {
             for (int i = gap; i < buf_idx; i += 1) {
@@ -649,7 +646,6 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
         }
 
         for(int i = 0; i < buf_idx; i++) {
-            KLog_U1("drawing object: ", i);
             u16 obj_buf_idx = z_sort_buf[i].buf_idx;
             u16 z_recip = z_sort_buf[i].z_recip;
             object* cur_obj = obj_sort_buf[obj_buf_idx].obj; 
@@ -658,16 +654,13 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
             s16 bot_y = obj_sort_buf[obj_buf_idx].ybot;
 
             //u16 z_recip = obj_buf[i].z_recip;
-
-            object_pos pos = cur_obj->pos;           
+          
             volatile object_template* type = &object_types[cur_obj->object_type];
             u16 width = type->width;
-            u16 height = type->height;
             u16 half_width = width>>2; // width needs to be pre-halved because we have double pixels, so it's actually a quarter here :)
 
             s16 left_x = project_and_adjust_x(x-half_width, z_recip);
             s16 right_x = project_and_adjust_x(x+half_width, z_recip);
-
             //u16 floor_draw_offset = type->from_floor_draw_offset;
             //s16 top_y = project_and_adjust_y_fix(pos.z+floor_draw_offset+height, z_recip);
             //s16 bot_y = project_and_adjust_y_fix(pos.z+floor_draw_offset, z_recip);
@@ -676,7 +669,6 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
             draw_sprite_obj(left_x, right_x, top_y>>4, bot_y>>4,
                             window_min, window_max,
                             obj_clip_buf, type->sprite);
-            KLog("drawn?");
         }
 
 

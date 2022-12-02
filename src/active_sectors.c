@@ -8,7 +8,10 @@ static u32* active_sectors;
 
 void init_active_sectors(u16 num_sect_groups) {
     // 64 bytes
-    active_sectors = malloc(MAX_SECTOR_GROUPS/8, "active_sector_bitmap");
+    if(num_sect_groups > MAX_SECTOR_GROUPS) {
+        die("Too many sector groups!");
+    }
+    active_sectors = malloc((num_sect_groups + (8-1))/8, "active_sector_bitmap");
 }
 
 void cleanup_active_sectors() {

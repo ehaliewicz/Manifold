@@ -397,7 +397,7 @@ s32 fix_x, fix_y;
 s32 dx, dy;
 
 #define VERT(x1,y1) { .x = (x1 * 2), .y = ((-y1) * 2) }
-static state = 0;
+static int state = 0;
 
 static int init = 0;
 static int cnt = 0;

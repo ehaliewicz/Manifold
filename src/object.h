@@ -42,7 +42,7 @@ typedef struct object object;
 struct object {
     uint16_t id;
     uint8_t current_state;
-    uint8_t object_type;
+    uint16_t object_type;
     uint32_t activate_tick;
     //object_tgt tgt;
     object* tgt;
@@ -55,7 +55,7 @@ typedef struct decoration_object decoration_object;
 
 // 13 or 14 bytes
 struct decoration_object {
-    uint8_t object_type;
+    uint16_t object_type;
     s16 x; s16 y; s16 z;
     u16 cur_sector;
     decoration_object* next;
@@ -103,7 +103,7 @@ typedef struct {
 typedef struct {
     u16 z_recip;
     u16 buf_idx;
-    s16 height
+    s16 height;
 } z_buf_obj;
 
 

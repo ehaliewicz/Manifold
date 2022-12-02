@@ -619,6 +619,7 @@ void init_game() {
     for(int i = 0; i < cur_portal_map->num_things; i++) {
         map_object* thg = &cur_portal_map->things[i];
         KLog_U1("thing type: ", thg->type);
+    //cur_player_pos.z = (cur_sector_height<<(FIX32_FRAC_BITS-4)) + FIX32(50);   
         volatile object_template* typ = &object_types[thg->type];
         if(thg->type == 0) { //typ->is_player) {
             KLog("is player?");
@@ -626,12 +627,14 @@ void init_game() {
             player_thing = thg;
         } else {
 
+            s16 cur_sector_height = get_sector_group_floor_height(obj_sect_group);
             alloc_object_in_sector(
                 i&1, // either 0 or 1, to spread the load
                 thg->sector_num,
                 thg->x<<FIX32_FRAC_BITS, 
                 thg->y<<FIX32_FRAC_BITS, 
-                thg->z<<FIX32_FRAC_BITS, 
+                (cur_sector_height<<(FIX32_FRAC_BITS-4)), // + FIX32(50);   
+                //thg->z<<FIX32_FRAC_BITS, 
                 thg->type
             );
         }

@@ -95,7 +95,7 @@ u16 render_object_to_sprite(s16 left_x,s16 top_y, u16 scaled_size, const rle_spr
 
 
     u32 col_16_16 = 0;
-    u16* tile_buf_ptr = sprite_tile_buf->bytes;
+    u16* tile_buf_ptr = (u16*)(sprite_tile_buf->bytes);
 
     u16 words = scaled_size>>2;
 

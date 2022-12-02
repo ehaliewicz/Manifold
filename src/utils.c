@@ -40,7 +40,7 @@ void* malloc(u16 size, const char* thing) {
     sprintf(buf, "allocating %i bytes for %s", size, thing);
     KLog(buf);
     void* p = MEM_alloc(size);
-    KLog_U1("allocated pointer: ", p);
+    KLog_U1("allocated pointer: ", (u32)p);
     return p;
 }
 

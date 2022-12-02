@@ -295,7 +295,7 @@ const object_template object_types[32+1] = {
     {.init_state = 1,
      .name = "claw guy", .sprite=&claw_guy_sprite,
     .from_floor_draw_offset = 10<<4, .width=46, .height=80<<4},
-    {.init_state = 0,},
+    {.init_state = 0, .is_player = 0},
     {.init_state = 0, .is_player = 0},
     {.init_state = 0, .is_player = 0},
     {.init_state = 0, .is_player = 0},
@@ -590,6 +590,7 @@ int follow_player(object* cur_obj, uint16_t cur_sector) {
 
 
 void process_all_objects(uint32_t cur_frame) {
+    return;
     /*
     for(int sect = 0; sect < num_sector_lists; sect++) {
         object* cur_object = sector_lists[sect];
