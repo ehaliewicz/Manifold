@@ -466,8 +466,6 @@ def export_map_to_rom(cur_path, cur_state, set_launch_flags=False):
             texel_offsets = []
             # write span and texel data for columns
             for idx, column in enumerate(columns):
-                if idx == 29:
-                    print("wew")
                 align(f)
                 if len(column) == 0:
                     span_offsets.append(0)
