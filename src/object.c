@@ -13,7 +13,7 @@ static int next_obj_id = 0;
 
 
 #define MAX_OBJECTS 32
-#define MAX_DECORATIONS 32
+//#define MAX_DECORATIONS 32
 
 static object* objects;
 static object *free_list = NULL; 

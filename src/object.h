@@ -21,7 +21,7 @@ typedef struct {
     u16 sector;
 } object_tgt;
 
-// 4+2+2+2+2+32+2 bytes 
+// 4+2+2+2+1+32+2 bytes 
 // 46
 typedef struct  __attribute__((__packed__)) {
     rle_sprite* sprite;
@@ -38,11 +38,12 @@ extern const object_template object_types[];
 
 typedef struct object object;
 
+
 // 37 or 38 bytes, holy crap
 struct object {
     uint16_t id;
     uint8_t current_state;
-    uint16_t object_type;
+    uint8_t object_type;
     uint32_t activate_tick;
     //object_tgt tgt;
     object* tgt;
@@ -71,7 +72,7 @@ typedef struct  __attribute__((__packed__)) {
     s16 x;
     s16 y; 
     s16 z;
-    u16 type;
+    u8 type;
 } map_object;
 
 object* alloc_object_in_sector(u32 activate_tick, int sector_num, fix32 x, fix32 y, fix32 z, uint8_t object_type);
@@ -93,8 +94,7 @@ typedef struct {
 // 12 bytes
 typedef struct {
     s16 x;
-    u16 z_recip;
-    object* obj;
+    u8 obj_type;
     s16 ybot;
     s16 ytop;
 } buf_obj;
@@ -102,8 +102,12 @@ typedef struct {
 // 6 bytes
 typedef struct {
     u16 z_recip;
-    u16 buf_idx;
-    s16 height;
+    //u16 buf_idx;
+    //s16 height;
+    s16 x;
+    u8 obj_type;
+    s16 ybot;
+    s16 ytop;
 } z_buf_obj;
 
 

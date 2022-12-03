@@ -626,7 +626,7 @@ void init_game() {
             got_player_thing = 1;
             player_thing = thg;
         } else {
-
+            KLog_U1("type: ", thg->type);
             s16 cur_sector_height = get_sector_group_floor_height(obj_sect_group);
             alloc_object_in_sector(
                 i&1, // either 0 or 1, to spread the load

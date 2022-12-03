@@ -502,17 +502,27 @@ def export_map_to_rom(cur_path, cur_state, set_launch_flags=False):
         f.seek(thing_def_table_off)
         for thing_def in cur_state.map_data.thing_defs:
             struct_start = f.tell()
+            sz = 0
             write_u32(f, sprite_to_wad_offset_map[thing_def.sprite_file])
+            sz += 4
             write_u16(f, thing_def.floor_draw_offset*16)
+            sz += 2
             write_u16(f, thing_def.width)
+            sz += 2
             write_u16(f, thing_def.height*16)
-            write_u16(f, thing_def.init_state)
+            sz += 2
+            write_u8(f, thing_def.init_state)
+            sz += 1
             write_u16(f, thing_def.speed)
+            sz += 2
             write_u16(f, 0) # not player :^)
+            sz += 2
             assert len(thing_def.name) <= 32, "thing def name is too long!"
             for c in thing_def.name:
                 f.write(str.encode(c))
-            f.seek(struct_start + 48) # skip past this struct 
+            sz += 32
+            assert sz == 47, "{} is not the right size lol".format(sz)
+            f.seek(struct_start + 47) # skip past this struct 
 
         f.seek(prev_wad_ptr)
         # write map things
@@ -522,7 +532,7 @@ def export_map_to_rom(cur_path, cur_state, set_launch_flags=False):
             write_s16(f, int(thing.x*1.3))
             write_s16(f, int((-thing.y)*1.3))
             write_s16(f, thing.z)
-            write_u16(f, thing.object_type)
+            write_u8(f, thing.object_type)
 
 
         print("Wrote {} bytes".format(prev_wad_ptr - map_data_base))
