@@ -630,7 +630,6 @@ void init_game() {
         } else {
             KLog_U1("type: ", thg->type);
             s16 cur_sector_height = get_sector_group_floor_height(obj_sect_group);
-            KLog_S1("sector height for obj: ", cur_sector_height);
             alloc_object_in_sector(
                 i&1, // either 0 or 1, to spread the load
                 thg->sector_num,

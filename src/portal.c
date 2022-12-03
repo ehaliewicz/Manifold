@@ -62,8 +62,8 @@ int needs_to_move_right(z_buf_obj j1, z_buf_obj j2) {
     if(j1_z_recip > j2_z_recip) {
         return 1;
     } else if (j1_z_recip == j2_z_recip) {
-        s16 j1_height = j1.ytop - j1.ybot;//height;
-        s16 j2_height = j2.ytop - j1.ybot; //height;
+        s16 j1_height = j1.height;
+        s16 j2_height = j1.height;
         if(j1_height > j2_height) {
             return 1;
         }
@@ -115,9 +115,9 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
     //s16 intPy = fix32ToInt(cur_player_pos.y);
 
     //int render_red_ball = (sector == 10);
-    object* objects_in_sect = objects_in_sector(sector);
+    object_link objects_in_sect = objects_in_sector(sector);
     //KLog_U1("objects in sect?: ", objects_in_sect);
-    int needs_object_clip_buffer = (objects_in_sect != NULL); //render_red_ball && (objects_in_sect != NULL);
+    int needs_object_clip_buffer = (objects_in_sect != NULL_LINK); //render_red_ball && (objects_in_sect != NULL);
     //int needs_object_clip_buffer = ;
 
     clip_buf* obj_clip_buf;
@@ -594,45 +594,39 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
     
 
 
-    if(objects_in_sect != NULL) {
+    if(objects_in_sect != NULL_LINK) {
 
 
         u8 buf_idx = 0;
-        object* cur_obj = objects_in_sect;
+        object_link cur_obj = objects_in_sect;
         int cnt = 0;
-        while(cur_obj != NULL) {
+        while(cur_obj != NULL_LINK) {
             cnt += 1;
-            KLog("got sprite in list");
-            object_pos pos = cur_obj->pos;
+            object_pos pos = LINK_DEREF(cur_obj).pos;
             Vect2D_s16 trans_pos = transform_map_vert_16(fix32ToInt(pos.x), fix32ToInt(pos.y));
             if(trans_pos.y > 0) {
-                KLog("sprite visible :)");
                 u16 z_recip = z_recip_table_16[trans_pos.y>>TRANS_Z_FRAC_BITS];
                 //z_buf[buf_idx] = &obj_buf[buf_idx];
-                volatile object_template* type = &object_types[cur_obj->object_type];
+                u8 obj_type = LINK_DEREF(cur_obj).object_type;
+                volatile object_template* type = &object_types[obj_type];
                 u16 floor_draw_offset = type->from_floor_draw_offset;
                 u16 height = type->height;
 
                 s16 ytop = project_and_adjust_y_fix(pos.z+floor_draw_offset+height, z_recip);
                 s16 ybot = project_and_adjust_y_fix(pos.z+floor_draw_offset, z_recip);
-                //obj_sort_buf[buf_idx].obj_type = cur_obj->object_type;
-                //obj_sort_buf[buf_idx].x = trans_pos.x;
-                //obj_sort_buf[buf_idx].ytop = ytop;
-                //obj_sort_buf[buf_idx].ybot = ybot;
+                obj_sort_buf[buf_idx].obj_type = obj_type;
+                obj_sort_buf[buf_idx].x = trans_pos.x;
+                obj_sort_buf[buf_idx].ytop = ytop;
+                obj_sort_buf[buf_idx].ybot = ybot;
 
-                //z_sort_buf[buf_idx].buf_idx = buf_idx;
-                //z_sort_buf[buf_idx].height = ybot-ytop;
-                z_sort_buf[buf_idx].ytop = ytop;
-                z_sort_buf[buf_idx].ybot = ybot;
+                z_sort_buf[buf_idx].buf_idx = buf_idx;
+                z_sort_buf[buf_idx].height = ybot-ytop;
                 z_sort_buf[buf_idx].z_recip = z_recip;
-                z_sort_buf[buf_idx].obj_type = cur_obj->object_type;
-                z_sort_buf[buf_idx].x = trans_pos.x;
                 buf_idx++;
 
             }
-            cur_obj = cur_obj->next;
+            cur_obj = LINK_DEREF(cur_obj).next;
         }
-        KLog_U1("found N sprites: ", cnt);
 
         for (int gap = buf_idx/2; gap > 0; gap /= 2) {
             for (int i = gap; i < buf_idx; i += 1) {
@@ -646,21 +640,16 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
             z_sort_buf[j] = temp;
             }   
         }
-        KLog_U1("drawing N sprites: ", buf_idx);
         for(int i = 0; i < buf_idx; i++) {
-            //u16 obj_buf_idx = z_sort_buf[i].buf_idx;
+            u8 obj_buf_idx = z_sort_buf[i].buf_idx;
             u16 z_recip = z_sort_buf[i].z_recip;
-            //u8 cur_obj_type = obj_sort_buf[obj_buf_idx].obj_type;
-            u8 cur_obj_type = z_sort_buf[i].obj_type;
-            s16 x = z_sort_buf[i].x;
-            s16 top_y = z_sort_buf[i].ytop;
-            s16 bot_y = z_sort_buf[i].ybot;
-            //s16 x = obj_sort_buf[obj_buf_idx].x;
-            //s16 top_y = obj_sort_buf[obj_buf_idx].ytop;
-            //s16 bot_y = obj_sort_buf[obj_buf_idx].ybot;
+            u8 cur_obj_type = obj_sort_buf[obj_buf_idx].obj_type;
+            s16 x = obj_sort_buf[obj_buf_idx].x;
+            s16 top_y = obj_sort_buf[obj_buf_idx].ytop;
+            s16 bot_y = obj_sort_buf[obj_buf_idx].ybot;
+            KLog_S2("rendering obj at ytop: ", top_y, " ybot: ", bot_y);
 
             //u16 z_recip = obj_buf[i].z_recip;
-            KLog_U1("obj type: ", cur_obj_type);
             volatile object_template* type = &object_types[cur_obj_type];
             u16 width = type->width;
             u16 half_width = width>>2; // width needs to be pre-halved because we have double pixels, so it's actually a quarter here :)
