@@ -609,7 +609,6 @@ void init_game() {
     free_tile_loc = init_shotgun(free_tile_loc);
 
     //KLog("allocating object?");
-    s16 obj_sect_group = sector_group(0, cur_portal_map);
 
     int got_player_thing = 0;
     map_object* player_thing = NULL;
@@ -619,6 +618,9 @@ void init_game() {
     for(int i = 0; i < cur_portal_map->num_things; i++) {
         map_object* thg = &cur_portal_map->things[i];
         KLog_U1("thing type: ", thg->type);
+        //KLog_U1("in sector: ", )
+        u16 obj_sect_group = sector_group(thg->sector_num, cur_portal_map);
+
     //cur_player_pos.z = (cur_sector_height<<(FIX32_FRAC_BITS-4)) + FIX32(50);   
         volatile object_template* typ = &object_types[thg->type];
         if(thg->type == 0) { //typ->is_player) {
@@ -628,12 +630,13 @@ void init_game() {
         } else {
             KLog_U1("type: ", thg->type);
             s16 cur_sector_height = get_sector_group_floor_height(obj_sect_group);
+            KLog_S1("sector height for obj: ", cur_sector_height);
             alloc_object_in_sector(
                 i&1, // either 0 or 1, to spread the load
                 thg->sector_num,
                 thg->x<<FIX32_FRAC_BITS, 
                 thg->y<<FIX32_FRAC_BITS, 
-                (cur_sector_height<<(FIX32_FRAC_BITS-4)), // + FIX32(50);   
+                cur_sector_height, //(cur_sector_height<<(FIX32_FRAC_BITS-4)), // + FIX32(50);   
                 //thg->z<<FIX32_FRAC_BITS, 
                 thg->type
             );
