@@ -631,9 +631,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
         }
 
         decoration_link cur_dec = decorations_in_sect;
-        KLog("starting loop over decorations");
         while(cur_dec != NULL_DEC_LINK && buf_idx < OBJ_SORT_BUF_SZ) {
-            KLog_U1("cur dec link: ", cur_dec);
             s16 obj_x = DEC_LINK_DEREF(cur_dec).x;
             s16 obj_y = DEC_LINK_DEREF(cur_dec).y;
             s16 obj_z = DEC_LINK_DEREF(cur_dec).z;
@@ -662,15 +660,10 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
 
             }
             decoration_link nxt = DEC_LINK_DEREF(cur_dec).next;
-            
-            if(cur_dec == nxt) {
-                die("infinite loop!");
-            }
 
             cur_dec = nxt;
 
         }
-        KLog("loop finished");
 
         for (int gap = buf_idx/2; gap > 0; gap /= 2) {
             for (int i = gap; i < buf_idx; i += 1) {
