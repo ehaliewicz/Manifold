@@ -68,7 +68,7 @@ void push_object_to_front(object_link new_head, object_link* lst) {
 
 void push_decoration_to_front(decoration_link new_head, decoration_link* lst) {
     decoration_link prev_head = *lst;
-    KLog_U1("attaching decoration to previous head link: ", prev_head);
+    KLog_U2("attaching decoration: ", new_head, " to previous head link: ", prev_head);
     DEC_LINK_DEREF(new_head).next = prev_head;
     *lst = new_head;
 }
@@ -288,7 +288,7 @@ void move_object_to_sector(object_link obj, u16 old_sector, u16 next_sector) {
         OBJ_LINK_DEREF(prev).next = next;
     }
 
-    if(prev == NULL) {
+    if(prev == NULL_OBJ_LINK) {
         sector_object_lists[old_sector] = next;
     }
 

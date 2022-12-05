@@ -117,8 +117,9 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
     //int render_red_ball = (sector == 10);
     object_link objects_in_sect = objects_in_sector(sector);
     decoration_link decorations_in_sect = decorations_in_sector(sector);
-    //KLog_U1("objects in sect?: ", objects_in_sect);
+    //KLog_U1("objects in sect?: ", decorations_in_sect);
     int needs_object_clip_buffer = (objects_in_sect != NULL_OBJ_LINK) || (decorations_in_sect != NULL_DEC_LINK);
+    //KLog_U1("needs object clip buffer?: ", needs_object_clip_buffer);
      //render_red_ball && (objects_in_sect != NULL);
     //int needs_object_clip_buffer = ;
 
@@ -660,6 +661,10 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
 
             }
             decoration_link nxt = DEC_LINK_DEREF(cur_dec).next;
+            
+            //if(cur_dec == nxt) {
+            //    die("infinite loop!");
+            //}
 
             cur_dec = nxt;
 
