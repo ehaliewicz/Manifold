@@ -276,7 +276,7 @@ collision_result check_for_collision_radius(fix32 curx, fix32 cury, fix32 newx, 
 }
 
 
-u16 find_sector(object_pos cur_player_pos) {
+u16 find_sector(player_pos cur_player_pos) {
     // test current sector first
     
     u16 orig_sector = cur_player_pos.cur_sector;

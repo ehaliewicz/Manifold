@@ -29,7 +29,7 @@
 #include "sprites_res.h"
 
 
-object_pos cur_player_pos;
+player_pos cur_player_pos;
 
 fix16 playerXFrac4, playerYFrac4;
 
@@ -333,7 +333,6 @@ void handle_input() {
             cur_player_pos.cur_sector = collision.new_sector;
             sect_group = sector_group(collision.new_sector, cur_portal_map);
             activate_sector_group_enter_trigger(sect_group);
-            
         }
      
         idle_bob_idx = 27;
@@ -630,15 +629,19 @@ void init_game() {
         } else {
             KLog_U1("type: ", thg->type);
             s16 cur_sector_height = get_sector_group_floor_height(obj_sect_group);
-            alloc_object_in_sector(
-                i&1, // either 0 or 1, to spread the load
-                thg->sector_num,
-                thg->x<<FIX32_FRAC_BITS, 
-                thg->y<<FIX32_FRAC_BITS, 
-                cur_sector_height, //(cur_sector_height<<(FIX32_FRAC_BITS-4)), // + FIX32(50);   
-                //thg->z<<FIX32_FRAC_BITS, 
-                thg->type
-            );
+            if(typ->init_state == IDLE_STATE) {
+                alloc_decoration_in_sector(thg->sector_num, thg->x, thg->y, cur_sector_height, thg->type);
+            } else {
+                alloc_object_in_sector(
+                    i&1, // either 0 or 1, to spread the load
+                    thg->sector_num,
+                    thg->x<<FIX32_FRAC_BITS, 
+                    thg->y<<FIX32_FRAC_BITS, 
+                    cur_sector_height, //(cur_sector_height<<(FIX32_FRAC_BITS-4)), // + FIX32(50);   
+                    //thg->z<<FIX32_FRAC_BITS, 
+                    thg->type
+                );
+            }
         }
     }
 

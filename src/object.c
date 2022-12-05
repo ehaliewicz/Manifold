@@ -9,83 +9,112 @@
 #include "portal_map.h"
 #include "utils.h"
 
-static int next_obj_id = 0; 
+static u8 next_object_fingerprint = 0; 
 
-
-#define MAX_OBJECTS 64
-//#define MAX_DECORATIONS 32
 
 object* objects;
-static object_link free_list = NULL_LINK; 
+decoration_object* decorations;
 
-static object_link* sector_lists;
+static object_link object_free_list = NULL_OBJ_LINK; 
+static decoration_link decoration_free_list = NULL_DEC_LINK;
+
+static object_link* sector_object_lists;
+static decoration_link* sector_decoration_lists;
 
 static int num_sector_lists;
 
 z_buf_obj *z_sort_buf;//[64];
 buf_obj *obj_sort_buf;//[64];
 
-object_link pop(object_link* lst) {
-  object_link head = *lst;
-  if(head == NULL_LINK) {
-    return NULL;
+object_link new_object_link() {
+  object_link head = object_free_list;
+  if(head == NULL_OBJ_LINK) {
+    return NULL_OBJ_LINK;
   }
 
-  object_link next = LINK_DEREF(head).next;
-  if(next != NULL_LINK) {
-    LINK_DEREF(next).prev = NULL_LINK;
+  object_link next = OBJ_LINK_DEREF(head).next;
+  if(next != NULL_OBJ_LINK) {
+    OBJ_LINK_DEREF(next).prev = NULL_OBJ_LINK;
   }
 
+  object_free_list = next; // set list to next
 
-  *lst = next; // set list to next
-
-  LINK_DEREF(head).next = NULL_LINK;
-  LINK_DEREF(head).prev = NULL_LINK;
+  OBJ_LINK_DEREF(head).next = NULL_OBJ_LINK;
+  OBJ_LINK_DEREF(head).prev = NULL_OBJ_LINK;
   return head;
 }
 
-void push_to_front(object_link new_head, object_link* lst) {
+decoration_link new_decoration_link() {
+  decoration_link head = decoration_free_list;
+  if(head == NULL_DEC_LINK) {
+    return NULL_DEC_LINK;
+  }
+
+  decoration_link next = DEC_LINK_DEREF(head).next;
+  decoration_free_list = next; // set list to next
+
+  DEC_LINK_DEREF(head).next = NULL_DEC_LINK;
+  return head;
+}
+
+void push_object_to_front(object_link new_head, object_link* lst) {
     object_link prev_head = *lst;
-    LINK_DEREF(new_head).next = prev_head;
-    if(prev_head != NULL_LINK) {
-        LINK_DEREF(prev_head).prev = new_head;
+    OBJ_LINK_DEREF(new_head).next = prev_head;
+    if(prev_head != NULL_OBJ_LINK) {
+        OBJ_LINK_DEREF(prev_head).prev = new_head;
     }
     *lst = new_head;
 }
 
+void push_decoration_to_front(decoration_link new_head, decoration_link* lst) {
+    decoration_link prev_head = *lst;
+    KLog_U1("attaching decoration to previous head link: ", prev_head);
+    DEC_LINK_DEREF(new_head).next = prev_head;
+    *lst = new_head;
+}
 
 // setup objects
 void init_object_lists(int num_sectors) {
 
     num_sector_lists = num_sectors;
+    KLog_U1("size of object: ", sizeof(object));
     objects = malloc(sizeof(object)*MAX_OBJECTS, "object list");
-
-    sector_lists = malloc(sizeof(object_link)*num_sectors, "sector object lists");
+    sector_object_lists = malloc(sizeof(object_link)*num_sectors, "sector object lists");
     for(int i = 0; i < MAX_OBJECTS; i++) {
-        objects[i].prev = (i == 0 ? NULL_LINK : i-1);
-        objects[i].next = (i == (MAX_OBJECTS-1) ? NULL_LINK : i+1);
+        objects[i].prev = (i == 0 ? NULL_OBJ_LINK : i-1);
+        objects[i].next = (i == (MAX_OBJECTS-1) ? NULL_OBJ_LINK : i+1);
     }
-    free_list = 0;
+    object_free_list = 0; // start object link
+
+    decorations = malloc(sizeof(decoration_object)*MAX_DECORATIONS, "static object list");
+    sector_decoration_lists = malloc(sizeof(decoration_link)*num_sectors, "sector decoration lists");
+    for(int i = 0; i < MAX_DECORATIONS; i++) {
+        decorations[i].next = (i == (MAX_DECORATIONS-1) ? NULL_DEC_LINK : i+1);
+    }
+    decoration_free_list = 0; // start decoration link :^)
 
     for(int i = 0; i < num_sectors; i++) {
-        sector_lists[i] = NULL_LINK;
+        sector_object_lists[i] = NULL_OBJ_LINK;
+        sector_decoration_lists[i] = NULL_DEC_LINK;
     }
-    z_sort_buf = malloc(sizeof(z_buf_obj) * MAX_OBJECTS, "object z sort buffer");
-    obj_sort_buf = malloc(sizeof(buf_obj) * MAX_OBJECTS, "object sort buffer");
+
+    z_sort_buf = malloc(sizeof(z_buf_obj) * OBJ_SORT_BUF_SZ, "object z sort buffer");
+    obj_sort_buf = malloc(sizeof(buf_obj) * OBJ_SORT_BUF_SZ, "object sort buffer");
 } 
 
 
 void clear_object_lists() {
     free(objects, "object list");
-    free(sector_lists, "sector object lists");
+    free(sector_object_lists, "sector object lists");
+    free(sector_decoration_lists, "sector decoration lists");
 }
 
 
 
 const object_template object_types[32+1] = {
     // first object type is player
-    {.is_player = 1, .name = "player_object_type"},
-    {.init_state = 1,
+    {.is_player = 0, .name = "player_object_type"},
+    {.init_state = 0,
      .name = "claw guy", //.sprite=&claw_guy_sprite,
     .from_floor_draw_offset = 10<<4, .width=46, .height=80<<4},
     {.init_state = 0, .is_player = 0},
@@ -136,14 +165,14 @@ int maybe_get_picked_up(object_link cur_obj, uint16_t cur_sector);
 int idle(object_link cur_obj, uint16_t cur_sector);
 
 obj_state object_state_machines[] = {
-    {.next_state = 0, .ticks = 3, .action = &look_for_player, },
-    {.next_state = 1, .ticks = 1, .action = &follow_player, },
-    {.next_state = 2, .ticks = 1, .action = &maybe_get_picked_up, },
-    {.next_state = 3, .ticks = 3, .action = &idle, },
+    {.next_state = 0, .ticks = 3, .action = &idle, },
+    {.next_state = 1, .ticks = 3, .action = &look_for_player, },
+    {.next_state = 2, .ticks = 1, .action = &follow_player, },
+    {.next_state = 3, .ticks = 1, .action = &maybe_get_picked_up, },
 };
 
 
-fix32 dist_sqr(object_pos posa, object_pos origin) {
+fix32 dist_sqr(player_pos posa, player_pos origin) {
     //fix16Sqrt();
     fix16 dx1 = fix32ToFix16(posa.x - origin.x);
     fix16 dy1 = fix32ToFix16(posa.y - origin.y);
@@ -151,7 +180,7 @@ fix32 dist_sqr(object_pos posa, object_pos origin) {
 } 
 
 // returns -1 if point 1 is closer than point 2, +1 if opposite, or 0 is they are the same distance
-int is_closer(object_pos pos1, object_pos pos2, object_pos origin) {
+int is_closer(player_pos pos1, player_pos pos2, player_pos origin) {
   fix32 d1 = dist_sqr(pos1, origin);
   fix32 d2 = dist_sqr(pos2, origin);
   if(d1 == d2) {
@@ -164,76 +193,111 @@ int is_closer(object_pos pos1, object_pos pos2, object_pos origin) {
 } 
 
 
-// inserts object in sorted position?
-// not important
-// first parameter used to be cur_player_pos
-object_link alloc_object_in_sector(u16 activate_tick, int sector_num, fix32 x, fix32 y, fix32 z, uint8_t object_type) {
+object_link alloc_object_in_sector(u8 activate_tick, int sector_num, fix32 x, fix32 y, s16 z, uint8_t object_type) {
     KLog_U1("allocating object in sector: ", sector_num);
-    object_link res = pop(&free_list);
-    if(res == NULL) {
+    object_link res = new_object_link();
+    if(res == NULL_OBJ_LINK) {
         KLog("free list pop is null? wtf");
-        return NULL;
+        return NULL_OBJ_LINK;
     }
 
-    LINK_DEREF(res).pos.cur_sector = sector_num;
-    //res->pos.cur_sector = sector_num;
-    LINK_DEREF(res).pos.x = x;
-    LINK_DEREF(res).pos.y = y;
-    LINK_DEREF(res).pos.z = z;
-    LINK_DEREF(res).id = next_obj_id++;
+    OBJ_LINK_DEREF(res).x = x;
+    OBJ_LINK_DEREF(res).y = y;
+    OBJ_LINK_DEREF(res).z = z;
+    //OBJ_LINK_DEREF(res).fingerprint = next_object_fingerprint++;
+
     volatile object_template* tmpl = &object_types[object_type];
-    LINK_DEREF(res).current_state = tmpl->init_state; // object_types[object_type].init_state;
-    LINK_DEREF(res).object_type = object_type;
-    LINK_DEREF(res).activate_tick = activate_tick;
-    LINK_DEREF(res).pos.cur_sector = sector_num;
+    OBJ_LINK_DEREF(res).current_state = tmpl->init_state; // object_types[object_type].init_state;
+    OBJ_LINK_DEREF(res).object_type = object_type;
+    OBJ_LINK_DEREF(res).activate_tick = activate_tick;
 
-    object_link* sector_list_obj = &sector_lists[sector_num];
-    /*
-    while((*sector_list_obj) != NULL) {
-        break; // TODO why does this cause such a performance hit if it's executed just once?
-        object* cur_sect_obj = *sector_list_obj;
-        if(is_closer(res->pos, cur_sect_obj->pos, cur_player_pos) == -1) {
-        // this object is the closest
-            break;
-        }
-        sector_list_obj = &(cur_sect_obj->next);
-    }
-    */
-    //return NULL;
 
-  push_to_front(res, sector_list_obj);
-  return res;
+    object_link* sector_list_ptr = &sector_object_lists[sector_num];
+
+    push_object_to_front(res, sector_list_ptr);
+    return res;
 } 
 
-
-void move_object_to_sector(object_link obj, u16 next_sector) {
-
-    int old_sector = LINK_DEREF(obj).pos.cur_sector;
-
-
-    object_link next = LINK_DEREF(obj).next;
-    object_link prev = LINK_DEREF(obj).prev;
-    LINK_DEREF(obj).prev = NULL_LINK;
-    LINK_DEREF(obj).next = NULL_LINK;
-    LINK_DEREF(obj).pos.cur_sector = next_sector;
-    
-    if(next != NULL_LINK) {
-        LINK_DEREF(next).prev = prev;
+decoration_link alloc_decoration_in_sector(int sector_num, s16 x, s16 y, s16 z, uint8_t object_type) {
+    KLog_U1("allocating decoration in sector: ", sector_num);
+    decoration_link res = new_decoration_link();
+    if(res == NULL_DEC_LINK) {
+        KLog("free list pop is null? wtf");
+        return NULL_DEC_LINK;
     }
-    if(prev != NULL_LINK) {
-        LINK_DEREF(prev).next = next;
+
+    DEC_LINK_DEREF(res).x = x;
+    DEC_LINK_DEREF(res).y = y;
+    DEC_LINK_DEREF(res).z = z;
+    //OBJ_LINK_DEREF(res).fingerprint = next_object_fingerprint++;
+
+    DEC_LINK_DEREF(res).object_type = object_type;
+
+
+    decoration_link* sector_list_ptr = &sector_decoration_lists[sector_num];
+
+    push_decoration_to_front(res, sector_list_ptr);
+    return res;
+} 
+
+void free_object(object_link link) {
+    if(link == NULL_OBJ_LINK) {
+        return;
+    }
+    object_link next = OBJ_LINK_DEREF(link).next;
+    object_link prev = OBJ_LINK_DEREF(link).prev;
+    // patch next object if exists
+    if(next != NULL_OBJ_LINK) {
+        OBJ_LINK_DEREF(next).prev = prev;
+    }
+    // patch prev object if exists
+    if(prev != NULL_OBJ_LINK) {
+        OBJ_LINK_DEREF(prev).next = next;
+    }
+    // clear prev link
+    OBJ_LINK_DEREF(link).prev = NULL_OBJ_LINK;
+    // attach to head of free list
+    OBJ_LINK_DEREF(link).next = object_free_list;
+    object_free_list = link;
+}
+
+
+void free_decoration(decoration_link link) {
+    if(link == NULL_DEC_LINK) {
+        return;
+    }
+    // attach to head of free list
+    DEC_LINK_DEREF(link).next = decoration_free_list;
+    decoration_free_list = link;
+}
+
+
+void move_object_to_sector(object_link obj, u16 old_sector, u16 next_sector) {
+
+
+    object_link next = OBJ_LINK_DEREF(obj).next;
+    object_link prev = OBJ_LINK_DEREF(obj).prev;
+    OBJ_LINK_DEREF(obj).prev = NULL_OBJ_LINK;
+    OBJ_LINK_DEREF(obj).next = NULL_OBJ_LINK;
+    //OBJ_LINK_DEREF(obj).pos.cur_sector = next_sector;
+    
+    if(next != NULL_OBJ_LINK) {
+        OBJ_LINK_DEREF(next).prev = prev;
+    }
+    if(prev != NULL_OBJ_LINK) {
+        OBJ_LINK_DEREF(prev).next = next;
     }
 
     if(prev == NULL) {
-        sector_lists[old_sector] = next;
+        sector_object_lists[old_sector] = next;
     }
 
-    LINK_DEREF(obj).next = sector_lists[next_sector];
-    object_link nxt = LINK_DEREF(obj).next;
-    if(nxt != NULL_LINK) {
-        LINK_DEREF(nxt).prev = obj;
+    OBJ_LINK_DEREF(obj).next = sector_object_lists[next_sector];
+    object_link nxt = OBJ_LINK_DEREF(obj).next;
+    if(nxt != NULL_OBJ_LINK) {
+        OBJ_LINK_DEREF(nxt).prev = obj;
     }
-    sector_lists[next_sector] = obj;
+    sector_object_lists[next_sector] = obj;
 
     //char buf[32];
     //sprintf(buf, "move obj to sect %i ", next_sector);
@@ -254,7 +318,7 @@ void free_object(object* obj) {
     if(prev != NULL) {
         prev->next = next;
     } else {    
-        sector_lists[old_sector] = next;
+        sector_object_lists[old_sector] = next;
     }
     object* next_free = free_object_list;
     if(next_free != NULL) {
@@ -267,7 +331,11 @@ void free_object(object* obj) {
 
 object_link objects_in_sector(int sector_num) {
     //return NULL; 
-    return sector_lists[sector_num];
+    return sector_object_lists[sector_num];
+}
+decoration_link decorations_in_sector(int sector_num) {
+    //return NULL; 
+    return sector_decoration_lists[sector_num];
 }
 
 int idle(object_link cur_obj, uint16_t cur_sector) {
@@ -277,7 +345,7 @@ int idle(object_link cur_obj, uint16_t cur_sector) {
 int look_for_player(object_link cur_obj, uint16_t cur_sector) {
     if(cur_player_pos.cur_sector == cur_sector) {
         //cur_obj->object_type = 1;
-        LINK_DEREF(cur_obj).current_state++;
+        OBJ_LINK_DEREF(cur_obj).current_state++;
 
         //cur_obj->tgt.sector = cur_sector;
         //cur_obj->tgt.x = cur_player_pos.x;
@@ -293,16 +361,18 @@ int look_for_player(object_link cur_obj, uint16_t cur_sector) {
 
 
 int maybe_get_picked_up(object_link cur_obj, uint16_t cur_sector) {  
-    object_pos pos = LINK_DEREF(cur_obj).pos;
-    int dx = fix32ToInt(cur_player_pos.x - pos.x);
-    int dy = fix32ToInt(cur_player_pos.y - pos.y);
+    fix32 obj_x = OBJ_LINK_DEREF(cur_obj).x;
+    fix32 obj_y = OBJ_LINK_DEREF(cur_obj).y;
+
+    int dx = fix32ToInt(cur_player_pos.x - obj_x);
+    int dy = fix32ToInt(cur_player_pos.y - obj_y);
     
     u32 dist = fastLength(dx, dy);
     
     if(dist < 32) { 
         if(inventory_add_item(BLUE_KEY)) {
             char buf[50];
-            int len = sprintf(buf, "picked up the %s!", object_types[LINK_DEREF(cur_obj).object_type].name);
+            int len = sprintf(buf, "picked up the %s!", object_types[OBJ_LINK_DEREF(cur_obj).object_type].name);
             console_push_message_high_priority(buf, len, 30);
         }
 
@@ -312,12 +382,13 @@ int maybe_get_picked_up(object_link cur_obj, uint16_t cur_sector) {
 }
 
 int follow_player(object_link cur_obj, uint16_t cur_sector) {
-    object_pos pos = LINK_DEREF(cur_obj).pos;
+    fix32 obj_x = OBJ_LINK_DEREF(cur_obj).x;
+    fix32 obj_y = OBJ_LINK_DEREF(cur_obj).y;
     // follow player
     //KLog("following player");
 
-    int dx = fix32ToInt(cur_player_pos.x - pos.x);
-    int dy = fix32ToInt(cur_player_pos.y - pos.y);
+    int dx = fix32ToInt(cur_player_pos.x - obj_x);
+    int dy = fix32ToInt(cur_player_pos.y - obj_y);
 
 
     //u32 dist = getApproximatedDistance(dx, dy);
@@ -329,7 +400,7 @@ int follow_player(object_link cur_obj, uint16_t cur_sector) {
 
     //int dz = fix32ToInt(cur_player_pos.z - pos.z);
 
-    volatile object_template* obj_type = &object_types[LINK_DEREF(cur_obj).object_type];
+    volatile object_template* obj_type = &object_types[OBJ_LINK_DEREF(cur_obj).object_type];
 
     s16 speed = obj_type->speed;
     if(dx > 0) {
@@ -362,14 +433,14 @@ int follow_player(object_link cur_obj, uint16_t cur_sector) {
     //collision_result move_res = check_for_collision_radius(pos.x, pos.y, pos.x+dx32, pos.y+dy32, 8, cur_sector); // radius of 8 originally
     
     
-    LINK_DEREF(cur_obj).pos.x = pos.x+dx32;//move_res.pos.x;
-    LINK_DEREF(cur_obj).pos.y = pos.y+dy32;//move_res.pos.y;
+    OBJ_LINK_DEREF(cur_obj).x = obj_x+dx32;//move_res.pos.x;
+    OBJ_LINK_DEREF(cur_obj).y = obj_y+dy32;//move_res.pos.y;
 
     
     /*
 
     if(move_res.new_sector != cur_sector) {
-        move_object_to_sector(cur_obj, move_res.new_sector);
+        move_object_to_sector(cur_obj, cur_sector, move_res.new_sector);
         u16 sect = cur_obj->pos.cur_sector;
         u16 sect_group = sector_group(sect, cur_portal_map);
         cur_obj->pos.z = get_sector_group_floor_height(sect_group);
@@ -395,30 +466,35 @@ void process_all_objects(uint32_t cur_frame) {
     }
     */
     for(int sect = 0; sect < num_sector_lists; sect++) {
-        object_link cur_object = sector_lists[sect];
-        while(cur_object != NULL_LINK) {
-            if(LINK_DEREF(cur_object).activate_tick != 0) {
-                LINK_DEREF(cur_object).activate_tick--;
+        object_link cur_object = sector_object_lists[sect];
+        while(cur_object != NULL_OBJ_LINK) {
+            if(OBJ_LINK_DEREF(cur_object).activate_tick != 0) {
+                OBJ_LINK_DEREF(cur_object).activate_tick--;
             
             } else {
                 //KLog("processing object");
-                uint16_t state_idx = LINK_DEREF(cur_object).current_state;
+                uint16_t state_idx = OBJ_LINK_DEREF(cur_object).current_state;
                 int live = object_state_machines[state_idx].action(cur_object, sect);
                 if(!live) { 
                     // TODO: make work with more than one object
                     // this will only work with a single object
-                    push_to_front(cur_object, &free_list);
-                    sector_lists[sect] = NULL_LINK; // big broken :)
+
+                    // free object needs to remove the object and patch next and prev links if necessary
+                    // and place it on the free list
+                    if(sector_object_lists[sect] == cur_object) {
+                        sector_object_lists[sect] = OBJ_LINK_DEREF(cur_object).next;
+                    }
+                    free_object(cur_object); 
 
                 } else {
                     if(object_state_machines[state_idx].action == &idle) {
-                        LINK_DEREF(cur_object).activate_tick = 128;
+                        OBJ_LINK_DEREF(cur_object).activate_tick = 128;
                     } else {
-                        LINK_DEREF(cur_object).activate_tick = 1;
+                        OBJ_LINK_DEREF(cur_object).activate_tick = 1;
                     }
                 }
             }
-            cur_object = LINK_DEREF(cur_object).next;
+            cur_object = OBJ_LINK_DEREF(cur_object).next;
             //break;
         }
     }

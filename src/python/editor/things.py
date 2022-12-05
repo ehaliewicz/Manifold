@@ -62,7 +62,7 @@ def draw_thing_defs_mode(cur_state):
         speed_changed, new_speed = imgui.input_int("speed:##obj_{}_speed".format(idx), thing_defs[idx].speed)
         floor_draw_off_changed, new_floor_draw_offset = imgui.input_int("floor draw offset:##obj_floor_draw_off{}".format(idx), thing_defs[idx].floor_draw_offset)
 
-        state_options = ["look for player", "follow player", "maybe get picked up", "idle"]
+        state_options = ["idle","look for player", "follow player", "maybe get picked up"]
         init_state_changed, new_init_state = imgui.core.combo("init_state:##obj_{}_init_state".format(idx), thing_def.init_state, state_options)
 
         if name_changed:

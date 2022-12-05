@@ -4,7 +4,7 @@
 #include <genesis.h>
 
 // 128 bytes * 2 = 256 bytes
-#define NUM_CLIP_BUFS 4
+#define NUM_CLIP_BUFS 6
 typedef struct clip_buf clip_buf;
 
 // we could be really fancy and create just one big buffer, and allocate chunks out of that as needed

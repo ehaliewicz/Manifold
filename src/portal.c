@@ -116,8 +116,10 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
 
     //int render_red_ball = (sector == 10);
     object_link objects_in_sect = objects_in_sector(sector);
+    decoration_link decorations_in_sect = decorations_in_sector(sector);
     //KLog_U1("objects in sect?: ", objects_in_sect);
-    int needs_object_clip_buffer = (objects_in_sect != NULL_LINK); //render_red_ball && (objects_in_sect != NULL);
+    int needs_object_clip_buffer = (objects_in_sect != NULL_OBJ_LINK) || (decorations_in_sect != NULL_DEC_LINK);
+     //render_red_ball && (objects_in_sect != NULL);
     //int needs_object_clip_buffer = ;
 
     clip_buf* obj_clip_buf;
@@ -594,26 +596,26 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
     
 
 
-    if(objects_in_sect != NULL_LINK) {
-
-
+    if(objects_in_sect != NULL_OBJ_LINK || decorations_in_sect != NULL_DEC_LINK) {
         u8 buf_idx = 0;
         object_link cur_obj = objects_in_sect;
-        int cnt = 0;
-        while(cur_obj != NULL_LINK) {
-            cnt += 1;
-            object_pos pos = LINK_DEREF(cur_obj).pos;
-            Vect2D_s16 trans_pos = transform_map_vert_16(fix32ToInt(pos.x), fix32ToInt(pos.y));
+        while(cur_obj != NULL_OBJ_LINK && buf_idx < OBJ_SORT_BUF_SZ) {
+            fix32 obj_x = OBJ_LINK_DEREF(cur_obj).x;
+            fix32 obj_y = OBJ_LINK_DEREF(cur_obj).y;
+            s16 obj_z = OBJ_LINK_DEREF(cur_obj).z;
+
+            Vect2D_s16 trans_pos = transform_map_vert_16(fix32ToInt(obj_x), fix32ToInt(obj_y));
             if(trans_pos.y > 0) {
                 u16 z_recip = z_recip_table_16[trans_pos.y>>TRANS_Z_FRAC_BITS];
                 //z_buf[buf_idx] = &obj_buf[buf_idx];
-                u8 obj_type = LINK_DEREF(cur_obj).object_type;
+                u8 obj_type = OBJ_LINK_DEREF(cur_obj).object_type;
                 volatile object_template* type = &object_types[obj_type];
                 u16 floor_draw_offset = type->from_floor_draw_offset;
                 u16 height = type->height;
 
-                s16 ytop = project_and_adjust_y_fix(pos.z+floor_draw_offset+height, z_recip);
-                s16 ybot = project_and_adjust_y_fix(pos.z+floor_draw_offset, z_recip);
+                s16 ytop = project_and_adjust_y_fix(obj_z+floor_draw_offset+height, z_recip);
+                s16 ybot = project_and_adjust_y_fix(obj_z+floor_draw_offset, z_recip);
+
                 obj_sort_buf[buf_idx].obj_type = obj_type;
                 obj_sort_buf[buf_idx].x = trans_pos.x;
                 obj_sort_buf[buf_idx].ytop = ytop;
@@ -625,8 +627,50 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
                 buf_idx++;
 
             }
-            cur_obj = LINK_DEREF(cur_obj).next;
+            cur_obj = OBJ_LINK_DEREF(cur_obj).next;
         }
+
+        decoration_link cur_dec = decorations_in_sect;
+        KLog("starting loop over decorations");
+        while(cur_dec != NULL_DEC_LINK && buf_idx < OBJ_SORT_BUF_SZ) {
+            KLog_U1("cur dec link: ", cur_dec);
+            s16 obj_x = DEC_LINK_DEREF(cur_dec).x;
+            s16 obj_y = DEC_LINK_DEREF(cur_dec).y;
+            s16 obj_z = DEC_LINK_DEREF(cur_dec).z;
+
+            Vect2D_s16 trans_pos = transform_map_vert_16(obj_x, obj_y);
+            if(trans_pos.y > 0) {
+                u16 z_recip = z_recip_table_16[trans_pos.y>>TRANS_Z_FRAC_BITS];
+                //z_buf[buf_idx] = &obj_buf[buf_idx];
+                u8 obj_type = DEC_LINK_DEREF(cur_dec).object_type;
+                volatile object_template* type = &object_types[obj_type];
+                u16 floor_draw_offset = type->from_floor_draw_offset;
+                u16 height = type->height;
+
+                s16 ytop = project_and_adjust_y_fix(obj_z+floor_draw_offset+height, z_recip);
+                s16 ybot = project_and_adjust_y_fix(obj_z+floor_draw_offset, z_recip);
+
+                obj_sort_buf[buf_idx].obj_type = obj_type;
+                obj_sort_buf[buf_idx].x = trans_pos.x;
+                obj_sort_buf[buf_idx].ytop = ytop;
+                obj_sort_buf[buf_idx].ybot = ybot;
+
+                z_sort_buf[buf_idx].buf_idx = buf_idx;
+                z_sort_buf[buf_idx].height = ybot-ytop;
+                z_sort_buf[buf_idx].z_recip = z_recip;
+                buf_idx++;
+
+            }
+            decoration_link nxt = DEC_LINK_DEREF(cur_dec).next;
+            
+            if(cur_dec == nxt) {
+                die("infinite loop!");
+            }
+
+            cur_dec = nxt;
+
+        }
+        KLog("loop finished");
 
         for (int gap = buf_idx/2; gap > 0; gap /= 2) {
             for (int i = gap; i < buf_idx; i += 1) {
@@ -647,7 +691,6 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
             s16 x = obj_sort_buf[obj_buf_idx].x;
             s16 top_y = obj_sort_buf[obj_buf_idx].ytop;
             s16 bot_y = obj_sort_buf[obj_buf_idx].ybot;
-            KLog_S2("rendering obj at ytop: ", top_y, " ybot: ", bot_y);
 
             //u16 z_recip = obj_buf[i].z_recip;
             volatile object_template* type = &object_types[cur_obj_type];

@@ -5,26 +5,24 @@
 
 #include "obj_sprite.h"
 
-// 16 bytes!
+// 13 bytes
 typedef struct {
     fix32 x;
     fix32 y;
     fix32 z;
-    u16 ang;
-    u16 cur_sector;
+    u8 ang;
 } object_pos;
 
 typedef struct {
     fix32 x;
     fix32 y;
     fix32 z;
-    u16 sector;
-} object_tgt;
+    u16 cur_sector;
+    u16 ang;
+} player_pos;
 
 // 4+2+2+2+1+32+2 bytes 
 // 46
-
-
 typedef struct  __attribute__((__packed__)) {
     rle_sprite* sprite;
     uint16_t from_floor_draw_offset;
@@ -38,46 +36,60 @@ typedef struct  __attribute__((__packed__)) {
 
 extern const object_template object_types[];
 
-typedef struct object object;
 
-#define      LINK_MASK (0b0111111)
-#define LINK_NULL_MASK (0b10000000)
-#define OBJ_LINK_IS_NULL(lnk) (LINK_MASK & (lnk))
-#define NULL_LINK LINK_NULL_MASK
+// 64 active objects
+#define NULL_OBJ_LINK 0b00111111
+// 128 static objects
+#define NULL_DEC_LINK 0b01111111
 
-#define LINK_DEREF(lnk) (objects[(lnk)&LINK_MASK])
+// if there's more than 32 objects to draw in a sector, too bad 
+#define OBJ_SORT_BUF_SZ 32
+
 
 typedef u8 object_link;
 
-// 37 or 38 bytes, holy crap
-// with links instead, 31/32 bytes
-// with 16-bit activate tick, 27/28 bytes
+typedef u8 decoration_link;
 
-// 25/26 bytes ?
+// 127 objects! 
+#define MAX_OBJECTS (NULL_OBJ_LINK) 
+// 256 decorations!
+#define MAX_DECORATIONS (NULL_DEC_LINK)
+
+#define OBJ_LINK_DEREF(lnk) (objects[(lnk)])
+#define DEC_LINK_DEREF(lnk) (decorations[(lnk)])
+
+#define IDLE_STATE 0 
+typedef struct object object;
+
+// 22 bytes!, 2772 bytes for objects
 struct object {
-    uint16_t id;
+    
+    fix32 x;
+    fix32 y;
+    s16 z;
+    u8 ang;
+
+    //object_pos pos; // 13 bytes
+    object_link tgt; // top bit is fingerprint
+    object_link prev; // top bit is fingerprint
+    object_link next; // top bit is fingerprint
+
+    uint8_t health;
     uint8_t current_state;
-    uint8_t object_type;
-    uint16_t activate_tick;
-    //object_tgt tgt;
-    uint8_t tgt;
-    object_pos pos; // 16 bytes
-    uint8_t prev;
-    uint8_t next;
-    //object *prev;
-    //object *next;
+    uint8_t object_type;   // top 2 bits are fingerprint
+    uint8_t activate_tick; // top 2 bits are fingerprint
+    u8 fingerprint;
 };
 
 typedef struct decoration_object decoration_object;
 
-// 13 or 14 bytes
+// 8 bytes, 2040 bytes for all objects
 struct decoration_object {
-    uint16_t object_type;
+    uint8_t object_type;
     s16 x; s16 y; s16 z;
-    u16 cur_sector;
-    decoration_object* next;
-}; // doesn't even need a next and prev pointer?
-
+    decoration_link next;
+    u8 fingerprint;
+}; 
 
 void init_object_lists(int num_sectors);
 
@@ -91,11 +103,15 @@ typedef struct  __attribute__((__packed__)) {
     u8 type;
 } map_object;
 
-object_link alloc_object_in_sector(u16 activate_tick, int sector_num, fix32 x, fix32 y, fix32 z, uint8_t object_type);
+object_link alloc_object_in_sector(u8 activate_tick, int sector_num, fix32 x, fix32 y, s16 z, uint8_t object_type);
+decoration_link alloc_decoration_in_sector(int sector_num, s16 x, s16 y, s16 z, uint8_t object_type);
 
 void free_object(object_link obj);
 
 object_link objects_in_sector(int sector_num);
+
+decoration_link decorations_in_sector(int sector_num);
+
 
 void process_all_objects(uint32_t cur_tick);
 
@@ -131,5 +147,6 @@ extern z_buf_obj *z_sort_buf;//[64];
 extern buf_obj *obj_sort_buf;//[64];
 
 extern object* objects;
+extern decoration_object* decorations;
 
 #endif

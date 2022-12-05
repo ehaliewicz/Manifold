@@ -18,7 +18,7 @@ extern u8* bmp_buffer_1;
 
 extern Vect2D_f32 *sector_centers;
 
-extern object_pos cur_player_pos;
+extern player_pos cur_player_pos;
 extern fix16 playerXFrac4;
 extern fix16 playerYFrac4;
 extern s16 playerZ12Frac4;
