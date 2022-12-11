@@ -23,6 +23,12 @@ typedef struct {
 
 // 4+2+2+2+1+32+2 bytes 
 // 46
+
+typedef enum {
+    DECORATION,
+    OBJECT
+} obj_type;
+
 typedef struct  __attribute__((__packed__)) {
     rle_sprite* sprite;
     uint16_t from_floor_draw_offset;
@@ -32,9 +38,11 @@ typedef struct  __attribute__((__packed__)) {
     uint16_t speed; // 3 for claw guy?
     u16 is_player;
     char name[32];
+    obj_type type;
 } object_template;
 
 extern const object_template object_types[];
+
 
 
 // 64 active objects
@@ -129,6 +137,7 @@ typedef struct {
     u8 obj_type;
     s16 ybot;
     s16 ytop;
+    object_link obj_link;
 } buf_obj;
 
 // 6 bytes

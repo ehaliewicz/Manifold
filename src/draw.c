@@ -183,7 +183,6 @@ void draw_vertical_line(s16 y0, s16 y1, u8 col, u8* col_ptr) {
 }
 
 
-
 void draw_native_vertical_transparent_line_unrolled(s16 y0, s16 y1, u8 col, u8* col_ptr, u8 odd) {
 
     col_ptr = col_ptr + (y0<<1);
@@ -811,7 +810,7 @@ void set_up_scale_routine(s16 unclipped_dy) {
     *ptr++ = RTS_OPCODE;
 }
 
-void call_sprite_cache_for_run(u16* jump_tgt, u8* cur_texel_ptr, u8* cur_column_ptr) {
+void call_sprite_cache_for_run(u16* jump_tgt, const u8* cur_texel_ptr, u8* cur_column_ptr) {
     register const u8* a0 asm ("%a0") = cur_texel_ptr;   // this lets me make sure a0 and a1 are initialized correctly
     register const u8* a1 asm ("%a1") = cur_column_ptr;
 
@@ -923,11 +922,21 @@ void draw_col(s16 ytop, s16 min_drawable_y, s16 max_drawable_y,
 }
 
 
+
+obj_type drawn_to_center_cols;
+object_link sprite_on_center_col;
+
+void reset_sprite_hit_info() {
+    sprite_on_center_col = NULL_OBJ_LINK;
+    drawn_to_center_cols = OBJECT;
+}
+
 /* for drawing moving objects */
 void draw_rle_sprite(s16 x1, s16 x2, s16 ytop, s16 ybot,
                  u16 window_min, u16 window_max,
                  clip_buf* clipping_buffer,
-                 const rle_sprite* obj) {
+                 const rle_sprite* obj, 
+                 object_link obj_link, obj_type type) {
 
     s16 unclipped_dy = ybot-ytop;
     if(unclipped_dy > MAX_CACHE_INSTRUCTIONS) { return; }
@@ -1000,10 +1009,15 @@ void draw_rle_sprite(s16 x1, s16 x2, s16 ytop, s16 ybot,
     //s32 dv_per_y_f16 = (64<<16)/unclipped_dy;
     
 
-    u16 col_dx = (endx-beginx);
+    const u16 full_col_dx = (endx-beginx);
+    u16 col_dx = full_col_dx;
     //KLog_U1("col_dx: ", col_dx);
     //return;
 
+
+    u8 cur_x = beginx;
+
+    u8 hit_center = 0;
 
     while(col_dx--) {
         u8 min_drawable_y = *yclip_ptr++;
@@ -1031,6 +1045,15 @@ void draw_rle_sprite(s16 x1, s16 x2, s16 ytop, s16 ybot,
             if(ytop >= max_drawable_y || ybot <= min_drawable_y) {
                 continue;
             }
+
+            u8 within_low = 0;
+            u8 within_high = 0;
+            if(cur_x >= within_low && cur_x <= within_high) {
+                hit_center = 1;
+            }
+            cur_x++;
+
+
 
             column* col = &obj->columns[mid_u_int];
             
@@ -1063,8 +1086,12 @@ void draw_rle_sprite(s16 x1, s16 x2, s16 ytop, s16 ybot,
         }
     }
 
-    flip();
 
+    if(hit_center) {
+        drawn_to_center_cols = type;
+        sprite_on_center_col = obj_link;
+    }
+    flip();
     return; 
 }
 

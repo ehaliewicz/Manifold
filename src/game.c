@@ -118,9 +118,12 @@ void draw_3d_view(u32 cur_frame) {
     
     // for fading, it might be cheaper to just always clear the screen, and not draw faded/transparent pixels
     //if(1) { 
-    if (render_mode == RENDER_WIREFRAME || JOY_readJoypad(JOY_1) & BUTTON_A) {
+    if (render_mode == RENDER_WIREFRAME) { //} || JOY_readJoypad(JOY_1) & BUTTON_A) {
         bmp_vertical_clear();
     }
+    
+    reset_sprite_hit_info();
+
     // clear clipping buffers
     clear_2d_buffers();
 

@@ -4,6 +4,7 @@
 #include <genesis.h>
 #include "clip_buf.h"
 #include "obj_sprite.h"
+#include "object.h"
 #include "texture.h"
 #include "vertex.h"
 
@@ -58,6 +59,16 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
               u16 window_min, u16 window_max, s8 light_level, 
               texmap_params* tmap_info, 
               light_params* floor_params, light_params* ceil_params);
+              
+
+void draw_wireframe_wall(
+                   s16 x1, s16 x1_ytop, s16 x1_ybot, 
+                   s16 x2, s16 x2_ytop, s16 x2_ybot,
+                   u16 window_min, u16 window_max);
+void draw_wireframe_lower_step(
+                   s16 x1, s16 x1_ytop, s16 x1_ybot, 
+                   s16 x2, s16 x2_ytop, s16 x2_ybot,
+                   u16 window_min, u16 window_max);
 
 void draw_top_pegged_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
                           s16 x2, s16 x2_ytop, s16 x2_ybot,
@@ -117,10 +128,18 @@ void draw_masked(s16 x1, s16 x2, s16 ytop, s16 ybot,
 
 void init_sprite_draw_cache();
 
+
+extern obj_type drawn_to_center_cols;
+extern object_link sprite_on_center_col;
+
+// reset whether a sprite was drawn to the center of the screen
+void reset_sprite_hit_info(); 
+
 void draw_rle_sprite(s16 x1, s16 x2, s16 ytop, s16 ybot,
                  u16 window_min, u16 window_max,
                  clip_buf* clipping_buffer,
-                 const rle_sprite* obj);
+                 const rle_sprite* obj, 
+                 object_link obj_link, obj_type obj_type);
 
 void draw_forcefield(s16 x1, s16 x2,
                      u16 window_min, u16 window_max,
@@ -131,4 +150,8 @@ void draw_forcefield(s16 x1, s16 x2,
 void clear_2d_buffers();
 void init_2d_buffers();
 void release_2d_buffers();
+
+
+
+
 #endif

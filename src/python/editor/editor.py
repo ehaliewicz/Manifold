@@ -5,11 +5,14 @@ import sys
 print(os.getcwd())
 print(sys.executable)
 
-if "editor.exe" in sys.executable:
+is_nuitka = "__compiled__" in globals()
+
+if "editor.exe" in sys.executable or is_nuitka:
+    print("running executable")
     cur_path = ".\\"
     os.environ['PYSDL2_DLL_PATH'] = cur_path #".\\" 
 else:
-    
+    print("running through python")
     cur_path = os.path.join(os.getcwd(), "src", "python", "editor")
     print("cur path: ", cur_path)
 #else:

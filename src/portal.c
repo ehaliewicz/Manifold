@@ -111,17 +111,11 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
 
     u16 prev_v2_idx = init_v1_idx;
 
-    //s16 intPx = fix32ToInt(cur_player_pos.x);
-    //s16 intPy = fix32ToInt(cur_player_pos.y);
 
-    //int render_red_ball = (sector == 10);
     object_link objects_in_sect = objects_in_sector(sector);
     decoration_link decorations_in_sect = decorations_in_sector(sector);
-    //KLog_U1("objects in sect?: ", decorations_in_sect);
     int needs_object_clip_buffer = (objects_in_sect != NULL_OBJ_LINK) || (decorations_in_sect != NULL_DEC_LINK);
-    //KLog_U1("needs object clip buffer?: ", needs_object_clip_buffer);
-     //render_red_ball && (objects_in_sect != NULL);
-    //int needs_object_clip_buffer = ;
+
 
     clip_buf* obj_clip_buf;
     if(needs_object_clip_buffer) {
@@ -186,47 +180,6 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
         }
 
         prev_v2_idx = v2_idx;
-
-        
-        //normal_quadrant normal_dir = map->wall_norm_quadrants[portal_idx];
-
-        //u8 backfacing = 0;
-        /*
-        switch(normal_dir) {
-            case QUADRANT_0:
-                backfacing = (intPx < v2.x && intPy < v1.y);
-                break;
-            case QUADRANT_1:
-                backfacing = (intPx > v1.x && intPy < v2.y);
-                break;
-            case QUADRANT_2:
-                backfacing = (intPx > v2.x && intPy > v1.y);
-                break;
-            case QUADRANT_3:
-                backfacing = (intPx < v1.x && intPy > v2.y);
-                break;
-
-            case FACING_UP:
-                backfacing = (intPy < v1.y);
-                break;
-            case FACING_DOWN:
-                backfacing = (intPy > v1.y);
-                break;
-            case FACING_LEFT:
-                backfacing = (intPx > v1.x);
-                break;
-            case FACING_RIGHT:
-                backfacing = (intPx < v1.x);
-                break;
-        }
-        if(backfacing) {
-            //inc_counter(COARSE_BACKFACE_CULL_COUNTER);
-            continue;
-        } else {
-        }
-        */
-
-
 
 
         last_frontfacing_wall = i;
@@ -378,14 +331,8 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
             u16 neighbor_sect_group = sector_group(portal_sector, map);
             neighbor_sect_group_param_pointer = get_sector_group_pointer(neighbor_sect_group);
 
-            //u8 neighbor_sector_group_type = cur_portal_map->sector_group_types[neighbor_sect_group];
-            //s16 neighbor_ceil_color = get_sector_group_floor_color(neighbor_sect_group);
-            //s16 neighbor_floor_color = get_sector_group_floor_color(neighbor_sect_group);
-
             neighbor_floor_height = neighbor_sect_group_param_pointer[SECTOR_PARAM_FLOOR_HEIGHT_IDX]; //get_sector_group_floor_height(neighbor_sect_group);
             neighbor_ceil_height = neighbor_sect_group_param_pointer[SECTOR_PARAM_CEIL_HEIGHT_IDX]; //get_sector_group_ceil_height(neighbor_sect_group);
-
-
 
             x1_ybot = project_and_adjust_y_fix(floor_height, z_recip_v1);
             x2_ybot = project_and_adjust_y_fix(floor_height, z_recip_v2);
@@ -425,22 +372,6 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
         }
 
 
-        // draw floor and ceiling
-        // check if floor and ceiling are on-screen
-        //clip_buf* clipping_buffer = NULL;
-
-
-        //int render_forcefield = (sector == 0 && is_portal && portal_sector == 2) || (sector == 2 && is_portal && portal_sector == 0);
-        //int render_forcefield = (sector == 6 && is_portal && portal_sector == 7) || (sector == 7 && is_portal && portal_sector == 6);
-        //int render_glass = 0; //(sector == 0 && is_portal && portal_sector == 1) || (sector == 1 && is_portal && portal_sector == 0);
-
-        //if (render_forcefield)  {
-        //    clipping_buffer = alloc_clip_buffer();
-        //    if(clipping_buffer == NULL) {
-        //        die("Out of clipping buffers!");
-        //    }
-        //}
-
 
         if (is_portal) {
 
@@ -471,8 +402,6 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
                 //                window_min, window_max, upper_color, light_level, &ceil_params);
 
                 if(neighbor_sector_group_type == DOOR && !is_solid_color) {
-                    //KLog_S2("nx1_ytop: ", nx1_ytop, "nx2_ytop: ", nx2_ytop);
-                    //KLog_S2("x1 door top: ", x1_door_top, "x2 door top: ", x2_door_top);
                     draw_top_pegged_textured_upper_step(x1, x1_ytop, nx1_ytop, x2, x2_ytop, nx2_ytop,
                                                         trans_v1_z_fix, trans_v2_z_fix,
                                                         z_recip_v1, z_recip_v2,
@@ -621,6 +550,8 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
                 obj_sort_buf[buf_idx].x = trans_pos.x;
                 obj_sort_buf[buf_idx].ytop = ytop;
                 obj_sort_buf[buf_idx].ybot = ybot;
+                obj_sort_buf[buf_idx].obj_link = cur_obj;
+                obj_sort_buf[buf_idx].obj_type = OBJECT;
 
                 z_sort_buf[buf_idx].buf_idx = buf_idx;
                 z_sort_buf[buf_idx].height = ybot-ytop;
@@ -653,6 +584,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
                 obj_sort_buf[buf_idx].x = trans_pos.x;
                 obj_sort_buf[buf_idx].ytop = ytop;
                 obj_sort_buf[buf_idx].ybot = ybot;
+                obj_sort_buf[buf_idx].obj_link = cur_obj;
 
                 z_sort_buf[buf_idx].buf_idx = buf_idx;
                 z_sort_buf[buf_idx].height = ybot-ytop;
@@ -702,53 +634,19 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
             //s16 bot_y = project_and_adjust_y_fix(pos.z+floor_draw_offset, z_recip);
 
 
+            object_link obj_link = obj_sort_buf[obj_buf_idx].obj_link;
             draw_rle_sprite(left_x, right_x, top_y>>4, bot_y>>4, 
                             window_min, window_max, 
-                            obj_clip_buf, type->sprite);
+                            obj_clip_buf, type->sprite,
+                            obj_link, type->type);
         }
-
-
-        
 
         free_clip_buffer(obj_clip_buf);
     }
     sector_visited_cache[sector]++;
 }
 
-/*
-int has_clip_buffer_remaining() {
-    return (free_clip_buf_stack != NULL);
-}
 
-clip_buf* pop_free_clip_buf() {
-    clip_buf* ret = free_clip_buf_stack;
-    free_clip_buf_stack = free_clip_buf_stack->next;
-    return ret;
-}
-
-void push_used_clip_buf(clip_buf* buf) {
-    clip_buf* old_head = used_clip_buf_stack;
-    buf->next = old_head;
-    used_clip_buf_stack = buf;
-}
-
-void copy_clipping_state_to_buffer() {
-    // copy 2 bytes for each column, 128 bytes?
-    // copy z buffer, one byte for each column, so 3 bytes
-
-    // z-buffer 1x64 -> 16 longword copies
-
-    // top-y-buffer 1x64 -> 16 longword copies
-
-    // bot-y-buffer 1x64 -> 16 longword copies
-
-    // WAIT
-
-    // all we need it to store clipped columns
-
-
-}
-*/
 
 void pvs_scan(u16 src_sector, s16 window_min, s16 window_max, u32 cur_frame) {
     portal_map* map = cur_portal_map;

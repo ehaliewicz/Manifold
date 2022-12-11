@@ -72,3 +72,5 @@ src/python/editor/imgui.ini
 src/python/editor/sprites/
 src/python/editor/textures/
 res/sprites/
+src/python/editor/editor.build/
+src/python/editor/editor.dist/

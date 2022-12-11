@@ -113,10 +113,11 @@ void clear_object_lists() {
 
 const object_template object_types[32+1] = {
     // first object type is player
-    {.is_player = 0, .name = "player_object_type"},
+    {.is_player = 0, .name = "player_object_type", .type = OBJECT},
     {.init_state = 0,
      .name = "claw guy", //.sprite=&claw_guy_sprite,
-    .from_floor_draw_offset = 10<<4, .width=46, .height=80<<4},
+    .from_floor_draw_offset = 10<<4, .width=46, .height=80<<4,
+    .type = OBJECT},
     {.init_state = 0, .is_player = 0},
     {.init_state = 0, .is_player = 0},
     {.init_state = 0, .is_player = 0},
