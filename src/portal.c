@@ -71,6 +71,110 @@ int needs_to_move_right(z_buf_obj j1, z_buf_obj j2) {
     return 0;
 }
 
+void load_and_transform_verts(u16 num_vertexes, u16* indexes, vertex* map_vertexes, Vect2D_s16* out) {
+
+    s16* vert_component_pointer = (s16*)map_vertexes;
+
+    for(int i = 0; i < num_vertexes; i++) {
+        
+        s16 index = *indexes++;
+        s16 component_index = index+index;
+        s16 x = vert_component_pointer[component_index++];
+        s16 y = vert_component_pointer[component_index++];
+
+        s16 tlx = x - playerXInt; // 16-bit integer
+        s16 tly = y - playerYInt; // 16-bit integer
+
+        s32 rx = (tlx * angleSin16) - (tly * angleCos16); // 22.10 * 16 -> 22.10
+        s32 ry = (tlx * angleCos16) + (tly * angleSin16);
+        s16 res_x = rx>>(FIX16_FRAC_BITS);
+        s16 res_y = ry>>(FIX16_FRAC_BITS-TRANS_Z_FRAC_BITS); // 12.4
+
+        __asm volatile(
+            "move.w %1, (%0)+\t\n\
+             move.w %2, (%0)+\t\n\
+            "
+            : "+a" (out)
+            : "d" (res_x), "d" (res_y)
+        );
+    }
+}
+
+void load_transform_and_duplicate_verts(u16 num_vertexes, u16* indexes, vertex* map_vertexes, Vect2D_s16* out) {
+
+    s16* vert_component_pointer = (s16*)map_vertexes;
+
+    s16* last_index_ptr = indexes + num_vertexes;
+
+    s16 num_walls = (num_vertexes-1);
+    s16* last_out_ptr = out + (num_walls*2);
+
+    s16 index = *--last_index_ptr;
+    s16 component_index = index+index;
+    s16 cur_x = vert_component_pointer[component_index++];
+    s16 cur_y = vert_component_pointer[component_index];
+
+    s16 tlx = cur_x - playerXInt;
+    s16 tly = cur_y - playerYInt;
+    s32 rx = (tlx * angleSin16) - (tly * angleCos16); // 22.10 * 16 -> 22.10
+    s32 ry = (tlx * angleCos16) + (tly * angleSin16);
+    s16 cur_res_x = rx>>(FIX16_FRAC_BITS);
+    s16 cur_res_y = ry>>(FIX16_FRAC_BITS-TRANS_Z_FRAC_BITS); // 12.4
+
+
+    s16 prev_res_x = cur_res_x;
+    s16 prev_res_y = cur_res_y;
+
+    for(int i = 0; i < num_walls; i++) {
+        index = *--last_index_ptr;
+        component_index = index + index;
+        cur_x = vert_component_pointer[component_index++];
+        cur_y = vert_component_pointer[component_index];
+        tlx = cur_x - playerXInt;
+        tly = cur_y - playerYInt;
+        rx = (tlx * angleSin16) - (tly * angleCos16);
+        ry = (tlx * angleCos16) + (tly * angleSin16);
+        cur_res_x = rx >> (FIX16_FRAC_BITS);
+        cur_res_y = ry >> (FIX16_FRAC_BITS-TRANS_Z_FRAC_BITS);
+
+        __asm volatile(
+            "move.w %2, -(%0)\t\n\
+            move.w %1, -(%0)\t\n\
+            move.w %4, -(%0)\t\n\
+            move.w %3, -(%0)\t\n\
+            "
+            : "+a" (last_out_ptr)
+            : "d" (prev_res_x), "d" (prev_res_y), "d" (cur_res_x), "d" (cur_res_y)
+        );
+
+        prev_res_x = cur_res_x;
+        prev_res_y = cur_res_y;
+
+        /*
+        s16 index = *indexes++;
+        s16 component_index = index+index;
+        s16 x = vert_component_pointer[component_index++];
+        s16 y = vert_component_pointer[component_index++];
+
+        s16 tlx = x - playerXInt; // 16-bit integer
+        s16 tly = y - playerYInt; // 16-bit integer
+
+        s32 rx = (tlx * angleSin16) - (tly * angleCos16); // 22.10 * 16 -> 22.10
+        s32 ry = (tlx * angleCos16) + (tly * angleSin16);
+        s16 res_x = rx>>(FIX16_FRAC_BITS);
+        s16 res_y = ry>>(FIX16_FRAC_BITS-TRANS_Z_FRAC_BITS); // 12.4
+
+        __asm volatile(
+            "move.w %1, (%0)+\t\n\
+             move.w %2, (%0)+\t\n\
+            "
+            : "+a" (out)
+            : "d" (res_x), "d" (res_y)
+        );
+        */
+    }
+}
+
 
 void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint8_t depth) {
     if(depth >= MAX_DEPTH ) {
@@ -103,13 +207,14 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
 
     s8 light_level = get_sector_group_light_level(sect_group);
 
-    u16 init_v1_idx = map->walls[wall_offset];
-    vertex init_v1 = map->vertexes[init_v1_idx];
-    Vect2D_s16 prev_transformed_vert = transform_map_vert_16(init_v1.x, init_v1.y);
 
-    s16 last_frontfacing_wall = -1;
 
-    u16 prev_v2_idx = init_v1_idx;
+    Vect2D_s16 transformed_vert_buffer[62];
+    Vect2D_s16* transformed_vert_buffer_ptr = transformed_vert_buffer;
+    load_transform_and_duplicate_verts(num_walls+1, &map->walls[wall_offset], map->vertexes, transformed_vert_buffer);
+    //Vect2D_s16 prev_transformed_vert = *transformed_vert_buffer_ptr++;
+
+    //duplicate_and_clip_verts(num_walls);
 
 
     object_link objects_in_sect = objects_in_sector(sector);
@@ -145,6 +250,9 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
     cache_ceil_light_params(rel_ceil_height, ceil_color, light_level, &ceil_params);
     cache_floor_light_params(rel_floor_height, floor_color, light_level, &floor_params);
 
+
+
+
     for(s16 i = 0; i < num_walls; i++) {
 
 
@@ -159,35 +267,12 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
         int is_portal = portal_sector != -1;
 
 
-        u16 v2_idx = map->walls[wall_idx];
 
-        u16 old_prev_v2_idx = prev_v2_idx;
-        prev_v2_idx = v2_idx;
+        Vect2D_s16 trans_v1 = *transformed_vert_buffer_ptr++;
+        Vect2D_s16 trans_v2 = *transformed_vert_buffer_ptr++;
+        //Vect2D_s16 trans_v1 = prev_transformed_vert;
+        //prev_transformed_vert = trans_v2;
 
-
-        vertex v1 = map->vertexes[old_prev_v2_idx];
-        vertex v2 = map->vertexes[v2_idx];
-
-        volatile Vect2D_s16 trans_v1;
-
-        if(last_frontfacing_wall == i-1) {
-            trans_v1 = prev_transformed_vert;
-        } else {
-            if(0) { //if(debug) {
-                KLog("VERT 1");
-            }
-            trans_v1 = transform_map_vert_16(v1.x, v1.y);
-        }
-
-        prev_v2_idx = v2_idx;
-
-
-        last_frontfacing_wall = i;
-        if(0) { //if(debug) {
-            KLog("VERT 2");
-        }
-        volatile Vect2D_s16 trans_v2 = transform_map_vert_16(v2.x, v2.y);
-        prev_transformed_vert = trans_v2;
 
 
         u8 tex_idx = map->wall_colors[(portal_idx<<WALL_COLOR_NUM_PARAMS_SHIFT)+WALL_TEXTURE_IDX];
