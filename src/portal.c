@@ -71,36 +71,22 @@ int needs_to_move_right(z_buf_obj j1, z_buf_obj j2) {
     return 0;
 }
 
-void load_and_transform_verts(u16 num_vertexes, u16* indexes, vertex* map_vertexes, Vect2D_s16* out) {
-
-    s16* vert_component_pointer = (s16*)map_vertexes;
-
-    for(int i = 0; i < num_vertexes; i++) {
-        
-        s16 index = *indexes++;
-        s16 component_index = index+index;
-        s16 x = vert_component_pointer[component_index++];
-        s16 y = vert_component_pointer[component_index++];
-
-        s16 tlx = x - playerXInt; // 16-bit integer
-        s16 tly = y - playerYInt; // 16-bit integer
-
-        s32 rx = (tlx * angleSin16) - (tly * angleCos16); // 22.10 * 16 -> 22.10
-        s32 ry = (tlx * angleCos16) + (tly * angleSin16);
-        s16 res_x = rx>>(FIX16_FRAC_BITS);
-        s16 res_y = ry>>(FIX16_FRAC_BITS-TRANS_Z_FRAC_BITS); // 12.4
-
-        __asm volatile(
-            "move.w %1, (%0)+\t\n\
-             move.w %2, (%0)+\t\n\
-            "
-            : "+a" (out)
-            : "d" (res_x), "d" (res_y)
-        );
-    }
-}
 
 void load_transform_and_duplicate_verts(u16 num_vertexes, u16* indexes, vertex* map_vertexes, Vect2D_s16* out) {
+    /* 
+        this function will load and transform all vertexes in a sector
+        but in backwards order
+        this is so that by duplicated them per wall,
+
+        e.g. 
+        vertexes 0,1,2,3
+        into
+        wall vertexes: 0,1, 1,2, 2,3
+    
+        we don't overwrite any values we need later
+
+        other than that, it's just simple vertex transformations with the transform function manually inlined.
+    */
 
     s16* vert_component_pointer = (s16*)map_vertexes;
 
@@ -126,16 +112,23 @@ void load_transform_and_duplicate_verts(u16 num_vertexes, u16* indexes, vertex* 
     s16 prev_res_y = cur_res_y;
 
     for(int i = 0; i < num_walls; i++) {
+
         index = *--last_index_ptr;
         component_index = index + index;
-        cur_x = vert_component_pointer[component_index++];
-        cur_y = vert_component_pointer[component_index];
-        tlx = cur_x - playerXInt;
-        tly = cur_y - playerYInt;
-        rx = (tlx * angleSin16) - (tly * angleCos16);
-        ry = (tlx * angleCos16) + (tly * angleSin16);
-        cur_res_x = rx >> (FIX16_FRAC_BITS);
-        cur_res_y = ry >> (FIX16_FRAC_BITS-TRANS_Z_FRAC_BITS);
+        s16* ptr = vert_component_pointer+component_index;
+
+
+        cur_x = *ptr++;
+        cur_y = *ptr++;
+        cur_x = vert_component_pointer[component_index++];     
+        cur_y = vert_component_pointer[component_index];       
+
+        tlx = cur_x - playerXInt;                              
+        tly = cur_y - playerYInt;                              
+        rx = (tlx * angleSin16) - (tly * angleCos16);          
+        ry = (tlx * angleCos16) + (tly * angleSin16);          
+        cur_res_x = rx >> (FIX16_FRAC_BITS);                   
+        cur_res_y = ry >> (FIX16_FRAC_BITS-TRANS_Z_FRAC_BITS); 
 
         __asm volatile(
             "move.w %2, -(%0)\t\n\
@@ -150,14 +143,28 @@ void load_transform_and_duplicate_verts(u16 num_vertexes, u16* indexes, vertex* 
         prev_res_x = cur_res_x;
         prev_res_y = cur_res_y;
 
-        /*
-        s16 index = *indexes++;
-        s16 component_index = index+index;
-        s16 x = vert_component_pointer[component_index++];
-        s16 y = vert_component_pointer[component_index++];
+    }
+}
 
-        s16 tlx = x - playerXInt; // 16-bit integer
-        s16 tly = y - playerYInt; // 16-bit integer
+void load_and_transform_pvs_walls(u16 num_walls, u16* pvs_wall_indexes, 
+                                  u16* map_walls, vertex* map_vertexes, 
+                                  Vect2D_s16* out) {
+
+    s16* vert_component_pointer = (s16*)map_vertexes;
+
+    for(int i = 0; i < num_walls; i++) {
+        
+        s16 wall_idx = *pvs_wall_indexes++;
+        u16 v1_idx = map_walls[wall_idx++];
+        u16 v2_idx = map_walls[wall_idx];
+        v1_idx += v1_idx;
+        v2_idx += v2_idx;
+        
+        s16 v1x = vert_component_pointer[v1_idx++];
+        s16 v1y = vert_component_pointer[v1_idx];
+
+        s16 tlx = v1x - playerXInt; // 16-bit integer
+        s16 tly = v1y - playerYInt; // 16-bit integer
 
         s32 rx = (tlx * angleSin16) - (tly * angleCos16); // 22.10 * 16 -> 22.10
         s32 ry = (tlx * angleCos16) + (tly * angleSin16);
@@ -171,10 +178,26 @@ void load_transform_and_duplicate_verts(u16 num_vertexes, u16* indexes, vertex* 
             : "+a" (out)
             : "d" (res_x), "d" (res_y)
         );
-        */
+
+        s16 v2x = vert_component_pointer[v2_idx++];
+        s16 v2y = vert_component_pointer[v2_idx];
+        tlx = v2x - playerXInt;
+        tly = v2y - playerYInt;
+
+        rx = (tlx * angleSin16) - (tly * angleCos16); // 22.10 * 16 -> 22.10
+        ry = (tlx * angleCos16) + (tly * angleSin16);
+        res_x = rx>>(FIX16_FRAC_BITS);
+        res_y = ry>>(FIX16_FRAC_BITS-TRANS_Z_FRAC_BITS); // 12.4
+
+        __asm volatile(
+            "move.w %1, (%0)+\t\n\
+             move.w %2, (%0)+\t\n\
+            "
+            : "+a" (out)
+            : "d" (res_x), "d" (res_y)
+        );
     }
 }
-
 
 void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint8_t depth) {
     if(depth >= MAX_DEPTH ) {
@@ -770,6 +793,14 @@ void pvs_scan(u16 src_sector, s16 window_min, s16 window_max, u32 cur_frame) {
 
         u16 num_walls = map->raw_pvs[raw_pvs_offset++];
 
+        Vect2D_s16 transformed_vertex_buffer[62];
+        load_and_transform_pvs_walls(num_walls, 
+                                     &map->raw_pvs[raw_pvs_offset],
+                                     map->walls, map->vertexes, 
+                                     transformed_vertex_buffer);
+
+
+        Vect2D_s16* transformed_vertex_ptr = transformed_vertex_buffer;
         for(int j = 0; j < num_walls; j++) {
             //KLog_U1("wall ", k++);
             u16 wall_idx = map->raw_pvs[raw_pvs_offset++];
