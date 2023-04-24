@@ -8,8 +8,9 @@ IF "x%1" == "x" (
   %GDK_WIN%\bin\make -f %GDK_WIN%\makefile.gen asm
 ) ELSE IF "%1" == "debug" (
   %GDK_WIN%\bin\make -f %GDK_WIN%\makefile.gen debug
-  %GENS% %CD%\out\rom.bin -D
-  REM %GENS_KMOD% %CD%\out\rom.bin
+  REM %GENS% %CD%\out\rom.bin -D
+  %GENS_KMOD% %CD%\out\rom.bin
+  REM C:\Users\Erik\Desktop\blastem-win32-0.6.2\blastem-win32-0.6.2\blastem.exe %CD%\out\rom.bin -D
 ) ELSE IF "%1" == "cleanbuild" (
   
   %GDK_WIN%\bin\make -f %GDK_WIN%\makefile.gen clean
