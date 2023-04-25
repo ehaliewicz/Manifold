@@ -131,8 +131,9 @@ void draw_3d_view(u32 cur_frame) {
     clear_portal_cache();
 
     // recursively render portal graph
+    //KLog("START RENDER");
     portal_rend(cur_player_pos.cur_sector, cur_frame);
-
+    //KLog("END RENDER");
 
     // display fps
     showStats(1);
@@ -514,34 +515,34 @@ void cleanup_pause_menu() {
 u16* cur_palette = NULL;
 
 
-void init_sector_0_jump_position() {
-    sector_centers = malloc(sizeof(Vect2D_f32) * cur_portal_map->num_sectors,
-                            "sector center table");
-    
-    for(int i = 0; i < cur_portal_map->num_sectors; i++) {
+Vect2D_f32 get_sector_center(int i) {
+    Vect2D_f32 res;
+    int avg_sect_x = 0;
+    int avg_sect_y = 0;
+    int num_walls = sector_num_walls(i, (portal_map*)cur_portal_map);
+    int wall_offset = sector_wall_offset(i, (portal_map*)cur_portal_map);
 
-        int avg_sect_x = 0;
-        int avg_sect_y = 0;
-        int num_walls = sector_num_walls(i, (portal_map*)cur_portal_map);
-        int wall_offset = sector_wall_offset(i, (portal_map*)cur_portal_map);
-
-        for(int j = 0; j < num_walls; j++) {
-            int vidx = cur_portal_map->walls[wall_offset+j];
-            avg_sect_x += cur_portal_map->vertexes[vidx].x;
-            avg_sect_y += cur_portal_map->vertexes[vidx].y;
-        }
-        avg_sect_x /= num_walls;
-        avg_sect_y /= num_walls;
-        sector_centers[i].x = intToFix32(avg_sect_x);
-        sector_centers[i].y = intToFix32(avg_sect_y);
-        break; 
+    for(int j = 0; j < num_walls; j++) {
+        int vidx = cur_portal_map->walls[wall_offset+j];
+        avg_sect_x += cur_portal_map->vertexes[vidx].x;
+        avg_sect_y += cur_portal_map->vertexes[vidx].y;
     }
+    avg_sect_x /= num_walls;
+    avg_sect_y /= num_walls;
+    res.x = intToFix32(avg_sect_x);
+    res.y = intToFix32(avg_sect_y);
+    
+    return res;
 }
 
 
 void init_player_pos() {
-    cur_player_pos.x = sector_centers[0].x;
-    cur_player_pos.y = sector_centers[0].y;
+    const init_player_sector = 0;
+    
+    Vect2D_f32 sector_0_center = get_sector_center(0);
+
+    cur_player_pos.x = sector_0_center.x;
+    cur_player_pos.y = sector_0_center.y;
     cur_player_pos.cur_sector = 0;
 
     u16 sect_group = sector_group(cur_player_pos.cur_sector, cur_portal_map);
@@ -625,10 +626,6 @@ void init_game() {
     if(pause_game) {
         pause_game = 0;
     } else {
-        init_sector_0_jump_position();
-
-
-
     }
 
 
@@ -792,7 +789,6 @@ game_mode run_game() {
 
 void cleanup_game() { 
     bmp_end();
-    free(sector_centers, "sector center table");
     cleanup_portal_renderer();
     free_clip_buffer_list();
     release_2d_buffers();
