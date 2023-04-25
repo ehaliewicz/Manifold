@@ -1,6 +1,6 @@
 #include <genesis.h>
 
-
+#include "utils.h"
 
 #define SUB_16_16(a, b) do {    \
     __asm volatile(             \
@@ -25,7 +25,6 @@ u32 fastLength(s32 dx, s32 dy) {
     u32 ady = abs(dy);
     return (adx > ady) ? (adx + (ady >> 1)) : (ady + (adx >> 1));
 }
-
 
 
 void die(char* msg) {

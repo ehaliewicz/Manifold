@@ -47,8 +47,8 @@ inline s16 divs_32_by_16(s32 num, s16 denom) {
 }
 
 
-inline s32 muls_16_by_16(u16 a, u16 b) {
-    u32 a32 = a;
+inline s32 muls_16_by_16(s16 a, s16 b) {
+    s32 a32 = a;
      __asm volatile(
         "muls.w %1, %0"
         : "+d" (a32) // output
