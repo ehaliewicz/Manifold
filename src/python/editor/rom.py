@@ -514,7 +514,11 @@ def export_map_to_rom(cur_path, cur_state, set_launch_flags=False):
             write_u16(f, thing_def.speed)
             sz += 2
             write_u16(f, 0) # not player :^)
-            sz += 2
+            sz += 1
+            # type of object 
+            # let's go with OBJECT rather than DECORATION
+            write_u8(f, 0)
+            sz += 1
             assert len(thing_def.name) <= 32, "thing def name is too long!"
             for c in thing_def.name:
                 f.write(str.encode(c))

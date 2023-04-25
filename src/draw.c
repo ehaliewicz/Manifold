@@ -970,21 +970,13 @@ void draw_rle_sprite(s16 x1, s16 x2, s16 ytop, s16 ybot,
 
     u32* scaled_run_lengths_lut = &scaled_sprite_run_lengths[unclipped_dy<<6];
 
-    // something slightly 
-    //u32 cols_per_scaled_hpixel = ((obj->num_columns-1)<<16>>1)/(unclipped_dx);
-
     u16 num_cols_pre_scaled = (obj->num_columns-1)<<8>>1;
     u16 cols_per_scaled_hpixel_16 = divu_32_by_16(num_cols_pre_scaled, unclipped_dx); // 8.8
     u32 cols_per_scaled_hpixel = cols_per_scaled_hpixel_16 << 8; // 16.16
 
-    //u32 texels_per_scaled_vpixel = (64<<16)/unclipped_dy;
 
     u32 texels_per_scaled_vpixel = scaled_sprite_texel_per_pixel_lut[unclipped_dy];
 
-
-    //KLog_U1("unclipped dy: ", unclipped_dy);
-    //KLog_U1("cols_per_scaled_hpixel: ", cols_per_scaled_hpixel);
-    //KLog_U1("texels_per_scaled_vpixel: ", texels_per_scaled_vpixel);
 
     if(skip_x > 0) {
         // double this here because we have to skip 2 rle columns per screen-pixel
@@ -1002,22 +994,13 @@ void draw_rle_sprite(s16 x1, s16 x2, s16 ytop, s16 ybot,
 
     u16* offset_ptr = (&buf_column_offset_table[x]);
 
-    //u16* tex = raw_key_mid;
-    
-    //const u16* tex = raw_key_32_32_mid;
 
-    //s32 dv_per_y_f16 = (64<<16)/unclipped_dy;
-    
-
-    const u16 full_col_dx = (endx-beginx);
-    u16 col_dx = full_col_dx;
-    //KLog_U1("col_dx: ", col_dx);
-    //return;
-
-
+    u16 col_dx = (endx-beginx);
     u8 cur_x = beginx;
 
     u8 hit_center = 0;
+
+ 
 
     while(col_dx--) {
         u8 min_drawable_y = *yclip_ptr++;
@@ -1084,12 +1067,12 @@ void draw_rle_sprite(s16 x1, s16 x2, s16 ytop, s16 ybot,
         }
     }
 
-
     if(hit_center) {
         drawn_to_center_cols = type;
         sprite_on_center_col = obj_link;
     }
     flip();
+
     return; 
 }
 

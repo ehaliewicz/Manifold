@@ -25,8 +25,8 @@ typedef struct {
 // 46
 
 typedef enum {
-    DECORATION,
-    OBJECT
+    OBJECT = 0,
+    DECORATION = 1,
 } obj_type;
 
 typedef struct  __attribute__((__packed__)) {
@@ -36,9 +36,9 @@ typedef struct  __attribute__((__packed__)) {
     uint16_t height;
     uint8_t init_state;
     uint16_t speed; // 3 for claw guy?
-    u16 is_player;
+    u8 is_player;
+    u8 type;
     char name[32];
-    obj_type type;
 } object_template;
 
 extern const object_template object_types[];

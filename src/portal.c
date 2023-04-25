@@ -693,6 +693,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
                 obj_sort_buf[buf_idx].ytop = ytop;
                 obj_sort_buf[buf_idx].ybot = ybot;
                 obj_sort_buf[buf_idx].obj_link = cur_obj;
+                obj_sort_buf[buf_idx].obj_type = DECORATION;
 
                 z_sort_buf[buf_idx].buf_idx = buf_idx;
                 z_sort_buf[buf_idx].height = ybot-ytop;
