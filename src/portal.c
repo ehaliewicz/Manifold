@@ -214,6 +214,9 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
     if(sector_visited_cache[sector] >= 14) {
         return;
     }
+    // don't revisit the start sector
+    // i dont think we'll ever need to do this
+    if(sector == src_sector && depth != 0) { return; }
 
     sector_visited_cache[sector]++; // = cur_frame;
 
@@ -245,16 +248,15 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
     int needs_object_clip_buffer = (objects_in_sect != NULL_OBJ_LINK) || (decorations_in_sect != NULL_DEC_LINK);
 
 
-    clip_buf* obj_clip_buf;
+    clip_buf* obj_clip_buf = NULL;
     if(needs_object_clip_buffer) {
         // this breaks bottom clipped rendering somehow LOL
         //KLog_U1("allocating clip buffer in sector: ", sector);
         obj_clip_buf = alloc_clip_buffer();
         //KLog_U2("allocating object clip buffer in sector: ", sector, " id: ", obj_clip_buf->id);
-        if(obj_clip_buf == NULL) {
-            die("no more clip bufs");
+        if(obj_clip_buf != NULL) {
+            copy_2d_buffer(window_min, window_max, obj_clip_buf);
         }
-        copy_2d_buffer(window_min, window_max, obj_clip_buf);
     }
 
 
@@ -634,10 +636,12 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
     
 
 
-    if(objects_in_sect != NULL_OBJ_LINK || decorations_in_sect != NULL_DEC_LINK) {
+    if(obj_clip_buf != NULL) { //} objects_in_sect != NULL_OBJ_LINK || decorations_in_sect != NULL_DEC_LINK) {
         u8 buf_idx = 0;
         object_link cur_obj = objects_in_sect;
+        //KLog_U1("start draw objs in sector", sector);
         while(cur_obj != NULL_OBJ_LINK && buf_idx < OBJ_SORT_BUF_SZ) {
+            //KLog("drawing obj in sector");
             fix32 obj_x = OBJ_LINK_DEREF(cur_obj).x;
             fix32 obj_y = OBJ_LINK_DEREF(cur_obj).y;
             s16 obj_z = OBJ_LINK_DEREF(cur_obj).z;
@@ -667,7 +671,13 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
                 buf_idx++;
 
             }
-            cur_obj = OBJ_LINK_DEREF(cur_obj).next;
+            object_link nxt = OBJ_LINK_DEREF(cur_obj).next;
+            
+            //if(cur_dec == nxt) {
+            //    die("infinite loop!");
+            //}
+
+            cur_obj = nxt;
         }
 
         decoration_link cur_dec = decorations_in_sect;
@@ -693,7 +703,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
                 obj_sort_buf[buf_idx].ytop = ytop;
                 obj_sort_buf[buf_idx].ybot = ybot;
                 obj_sort_buf[buf_idx].obj_link = cur_obj;
-                obj_sort_buf[buf_idx].obj_type = DECORATION;
+                //KLog_U1("decoration slot", obj_type);
 
                 z_sort_buf[buf_idx].buf_idx = buf_idx;
                 z_sort_buf[buf_idx].height = ybot-ytop;
@@ -742,8 +752,8 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
             //s16 top_y = project_and_adjust_y_fix(pos.z+floor_draw_offset+height, z_recip);
             //s16 bot_y = project_and_adjust_y_fix(pos.z+floor_draw_offset, z_recip);
 
-
-            object_link obj_link = obj_sort_buf[obj_buf_idx].obj_link;
+            //KLog_U1("obj sprite pointer: ", type->sprite);
+            u8 obj_link = obj_sort_buf[obj_buf_idx].obj_link;
             draw_rle_sprite(left_x, right_x, top_y>>4, bot_y>>4, 
                             window_min, window_max, 
                             obj_clip_buf, type->sprite,

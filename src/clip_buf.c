@@ -25,6 +25,7 @@ void free_clip_buffer_list() {
 clip_buf* alloc_clip_buffer() {
     //KLog("allocating clip buffer");
     if(sp >= NUM_CLIP_BUFS) {
+        die("no more clip bufs");
         return NULL;
     }
     return &clip_buffers[sp++];
@@ -32,9 +33,9 @@ clip_buf* alloc_clip_buffer() {
 
 void free_clip_buffer(clip_buf* buf) {
     clip_buf* freed = &clip_buffers[--sp];
-
+    //KLog("free clip buffer");
     if(freed != buf) {
-        char sbuf[32];
+        char sbuf[64];
         sprintf(sbuf, "Freed clip buffer %i but expected %i", buf->id, freed->id);
         die(sbuf);
     }

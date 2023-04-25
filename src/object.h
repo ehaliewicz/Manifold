@@ -137,7 +137,7 @@ typedef struct {
     u8 obj_type;
     s16 ybot;
     s16 ytop;
-    object_link obj_link;
+    u8 obj_link;
 } buf_obj;
 
 // 6 bytes

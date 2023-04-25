@@ -10,7 +10,6 @@ typedef struct clip_buf clip_buf;
 // we could be really fancy and create just one big buffer, and allocate chunks out of that as needed
 // but i doubt we'll ever want to draw four of these on top of each other
 struct clip_buf {
-    // we should probably just 
     u8 y_clip_buffer[128];
     u8 id;
 };

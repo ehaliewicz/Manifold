@@ -60,6 +60,7 @@ decoration_link new_decoration_link() {
 void push_object_to_front(object_link new_head, object_link* lst) {
     object_link prev_head = *lst;
     OBJ_LINK_DEREF(new_head).next = prev_head;
+    //KLog_U2("attaching object: ", new_head, " to previous head link: ", prev_head);
     if(prev_head != NULL_OBJ_LINK) {
         OBJ_LINK_DEREF(prev_head).prev = new_head;
     }
