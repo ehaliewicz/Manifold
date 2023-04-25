@@ -190,6 +190,18 @@ const Vect2D_s16 gun_bobs[20] = {
     {1,0}
 };
 
+void apply_bob() {
+    fix32 run_bob_amt = bobs[run_bob_idx] * FIX32(1.5);
+    fix32 idle_bob_amt = bobs[idle_bob_idx] * FIX32(.2);
+    cur_player_pos.z += run_bob_amt + idle_bob_amt;
+}
+
+void unapply_bob() {
+    fix32 run_bob_amt = bobs[run_bob_idx] * FIX32(1.5);
+    fix32 idle_bob_amt = bobs[idle_bob_idx] * FIX32(.2);
+    cur_player_pos.z -= run_bob_amt + idle_bob_amt;
+}
+
 
 
 //Sprite* shotgun_spr;
@@ -270,7 +282,9 @@ int holding_down_move = 0;
 u8 render_mode;
 
 void handle_input() {
-    int strafe = joy_button_pressed(BUTTON_C);
+    int strafe_left = joy_button_pressed(BUTTON_X);
+    int strafe_right = joy_button_pressed(BUTTON_Z);
+    int jump_pressed = joy_button_pressed(BUTTON_Y);
 
     //int pressed_b = joy_button_pressed(BUTTON_B);
 
@@ -282,36 +296,36 @@ void handle_input() {
     u16 newang = cur_player_pos.ang;
 
     if (joy_button_pressed(BUTTON_LEFT)) {
-        if(strafe) {
-            moved = 1;
-            u16 leftAngle = (cur_player_pos.ang+ANGLE_90_DEGREES);
-            fix32 leftDy = sinFix32(leftAngle);
-            fix32 leftDx = cosFix32(leftAngle);
-            newy = cury + leftDy*move_speed;
-            newx = curx + leftDx*move_speed;
-        } else {
-            newang += rot_speed;
-            if(newang > 1023) {
-                newang -= 1024;
-            }
+
+        newang += rot_speed;
+        if(newang > 1023) {
+            newang -= 1024;
         }
     } else if (joy_button_pressed(BUTTON_RIGHT)) {
-        if(strafe) {
-            moved = 1;
-            u16 rightAngle = (cur_player_pos.ang-ANGLE_90_DEGREES);
-            fix32 rightDy = sinFix32(rightAngle);
-            fix32 rightDx = cosFix32(rightAngle);
-            newy = cury + rightDy*move_speed;
-            newx = curx + rightDx*move_speed;
+        if(newang < rot_speed) {
+            newang = 1024 - (rot_speed-newang);
         } else {
-            if(newang < rot_speed) {
-                newang = 1024 - (rot_speed-newang);
-            } else {
-                newang -= rot_speed;
-            }
+            newang -= rot_speed;
         }
-    }   
 
+    }   
+    if(strafe_left) {
+        moved = 1;
+        u16 leftAngle = (cur_player_pos.ang+ANGLE_90_DEGREES);
+        fix32 leftDy = sinFix32(leftAngle);
+        fix32 leftDx = cosFix32(leftAngle);
+        newy = cury + leftDy*move_speed;
+        newx = curx + leftDx*move_speed;
+    } 
+    
+    if(strafe_right) {
+        moved = 1;
+        u16 rightAngle = (cur_player_pos.ang-ANGLE_90_DEGREES);
+        fix32 rightDy = sinFix32(rightAngle);
+        fix32 rightDx = cosFix32(rightAngle);
+        newy = cury + rightDy*move_speed;
+        newx = curx + rightDx*move_speed;
+    }
 
     if(joy_button_pressed(BUTTON_DOWN)) {   
         newy = cury - angleSin32*move_speed;
@@ -324,6 +338,8 @@ void handle_input() {
     }
 
     cur_player_pos.ang = newang;
+
+    unapply_bob();
 
     u16 sect_group = sector_group(cur_player_pos.cur_sector, cur_portal_map);
     if(moved) {
@@ -358,14 +374,29 @@ void handle_input() {
         }
     }
 
+    static int jumping = 0;
+    static int pressing = 0;
+    static int shooting = 0;
+
+    
     s16 cur_sector_height = get_sector_group_floor_height(sect_group);
-    cur_player_pos.z = (cur_sector_height<<(FIX32_FRAC_BITS-4)) + FIX32(50);   
+    s32 rest_player_pos = (cur_sector_height<<(FIX32_FRAC_BITS-4)) + FIX32(50);
+    if(cur_player_pos.z > rest_player_pos) {
+        cur_player_pos.z -= FIX32(8);
+    } else if (cur_player_pos.z < rest_player_pos) {
+        cur_player_pos.z = rest_player_pos;
+    }
 
-    fix32 run_bob_amt = bobs[run_bob_idx] * FIX32(1.5);
-    fix32 idle_bob_amt = bobs[idle_bob_idx] * FIX32(.2);
+    //cur_player_pos.z = (cur_sector_height<<(FIX32_FRAC_BITS-4)) + FIX32(50);   
 
-    cur_player_pos.z += run_bob_amt;
-    cur_player_pos.z += idle_bob_amt;
+    apply_bob();
+
+    // this is done after physics resolution, so hopefully it only affects the visuals :)
+    // I mean I kinda know it wont only affect that
+    // hopefully not a problem! :)
+
+    //cur_player_pos.view_z = cur_player_pos.z + run_bob_amt;
+    //cur_player_pos.z += idle_bob_amt;
     
 
     u8 move_button = joy_button_pressed(BUTTON_UP) ? BUTTON_UP : (joy_button_pressed(BUTTON_DOWN) ? BUTTON_DOWN : 0);
@@ -378,7 +409,49 @@ void handle_input() {
         holding_down_move = 0;
         reset_gun_bob();
     }
+    static int l = 0;
+
+    if(!l) {
+    #include "sfx_res.h"
+        XGM_setPCM(64, sfx_shoot, sizeof(sfx_shoot)&~((u32)0xFF));
+        XGM_setPCM(65, sfx_select, sizeof(sfx_select)&~((u32)0xFF));
+        XGM_setPCM(66, sfx_jump, sizeof(sfx_jump)&~((u32)0xFF));
+        l = 1;
+    }
+
+    if(joy_button_pressed(BUTTON_A) && !shooting) {
+        play_sfx(64, 0);
+        shooting = 2;
+    }
+
+    if(joy_button_pressed(BUTTON_B) && !pressing) {
+        play_sfx(65, 0);
+        pressing = 2;
+    }
+
+    if(jump_pressed && !jumping) {
+        play_sfx(66, 0);
+        jumping = 10;
+    }
+
+    if(shooting) { 
+        shooting--;
+        //if(jumping == 0 && joy_button_pressed(BUTTON_A)) { shooting = 1;}
+    }
+    if(pressing) { 
+        pressing--;
+        if(pressing == 0 && joy_button_pressed(BUTTON_B)) { pressing = 1;}
+    }
+
+    if(jumping) {
+        if(jumping >= 6) { cur_player_pos.z += FIX32(16); }
+        jumping--;
+        if(jumping == 0 && joy_button_pressed(BUTTON_C)) { jumping = 1;}
+    }
+
+    update_sfx();
     
+
     return;
 
 
