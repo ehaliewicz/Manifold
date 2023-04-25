@@ -809,15 +809,17 @@ void pvs_scan(u16 src_sector, s16 window_min, s16 window_max, u32 cur_frame) {
 
             u8 is_portal = (portal_sector != -1);
 
-            u16 v1_idx = map->walls[wall_idx];
-            u16 v2_idx = map->walls[wall_idx+1];
+            //u16 v1_idx = map->walls[wall_idx];
+            //u16 v2_idx = map->walls[wall_idx+1];
 
-            vertex v1 = map->vertexes[v1_idx];
-            vertex v2 = map->vertexes[v2_idx];
+            //vertex v1 = map->vertexes[v1_idx];
+            //vertex v2 = map->vertexes[v2_idx];
 
-            Vect2D_s16 trans_v1 = transform_map_vert_16(v1.x, v1.y);
-            Vect2D_s16 trans_v2 = transform_map_vert_16(v2.x, v2.y);
+            //Vect2D_s16 trans_v1 = transform_map_vert_16(v1.x, v1.y);
+            //Vect2D_s16 trans_v2 = transform_map_vert_16(v2.x, v2.y);
 
+            Vect2D_s16 trans_v1 = *transformed_vertex_ptr++;
+            Vect2D_s16 trans_v2 = *transformed_vertex_ptr++;
             u8 tex_idx = map->wall_colors[(portal_idx<<WALL_COLOR_NUM_PARAMS_SHIFT)+WALL_TEXTURE_IDX];
             u8 is_solid_color = map->wall_colors[(portal_idx<<WALL_COLOR_NUM_PARAMS_SHIFT)+WALL_SOLID_COLOR_IDX];
             u8 wall_col = is_solid_color;
