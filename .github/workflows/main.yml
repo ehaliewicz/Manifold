@@ -22,6 +22,9 @@ jobs:
     - name: Copy config file
       run: sudo cp src/python/editor/build_conf.ini src/python/editor/dist/windows/conf.ini
 
+    - name: Copy readme
+      run: sudo cp src/python/editor/README src/python/editor/dist/windows/README
+
     - name: Copy engine binary
       run: sudo cp built_rom.bin src/python/editor/dist/windows/rom.bin
 
