@@ -20,7 +20,7 @@ jobs:
         path: src/python/editor
 
     - name: Copy config file
-      run: sudo cp src/python/editor/conf.ini src/python/editor/dist/windows/conf.ini
+      run: sudo cp src/python/editor/build_conf.ini src/python/editor/dist/windows/conf.ini
 
     - name: Copy engine binary
       run: sudo cp built_rom.bin src/python/editor/dist/windows/rom.bin

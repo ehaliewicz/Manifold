@@ -74,3 +74,4 @@ src/python/editor/textures/
 res/sprites/
 src/python/editor/editor.build/
 src/python/editor/editor.dist/
+src/python/editor/conf.ini
