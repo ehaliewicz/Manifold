@@ -157,8 +157,17 @@ u8 within_frustum(s16 x1, s16 y1, s16 x2, s16 y2) {
 
 
 s16 project_and_adjust_x(s16 x, s16 z_recip) {
+    
+    //z_recip >>= 1; // x is 16.0, z_recip is now 0.15
+    //x <<= 4; // x is 16.4
+    //s32 mult = z_recip * x; // 13.19
+    //mult<<=2;
+    //return (mult>>16) + 32;
+    
+   
+    // trying putting the shift after the mul and swap
     __asm volatile(
-            "lsl.w #5, %0\t\n\
+             "lsl.w #5, %0\t\n\
              muls.w %1, %0\t\n\
              swap %0\t\n\
              add.w #32, %0\t\n\
@@ -557,7 +566,7 @@ clip_result clip_map_vertex_16(Vect2D_s16* __restrict__ trans_v1, Vect2D_s16* __
             tmap->left_u = base_left_u_16;
             tmap->right_u = base_right_u_16;
         }
-        clip_status |= UNCLIPPED;
+        clip_status = UNCLIPPED;
         return clip_status;
     }
     
@@ -591,7 +600,6 @@ clip_result clip_map_vertex_16(Vect2D_s16* __restrict__ trans_v1, Vect2D_s16* __
             tmap->left_u = base_left_u_16 + (u_adjust_20>>4);
             tmap->right_u = base_right_u_16;
         }
-
         clip_status |= LEFT_Z_CLIPPED;
         clip_status &= (~LEFT_FRUSTUM_CLIPPED);
     } else {
@@ -610,7 +618,6 @@ clip_result clip_map_vertex_16(Vect2D_s16* __restrict__ trans_v1, Vect2D_s16* __
             tmap->left_u = base_left_u_16;
             tmap->right_u = base_right_u_16 + (u_adjust_20>>4);
         }
-
         clip_status |= RIGHT_Z_CLIPPED;
         clip_status &= (~RIGHT_FRUSTUM_CLIPPED);
     }
