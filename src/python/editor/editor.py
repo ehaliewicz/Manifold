@@ -30,7 +30,7 @@ import OpenGL.GL as gl
 from enum import Enum
 
 import tkinter as tk
-from tkinter import filedialog
+from tkinter import filedialog,messagebox
 
 import atexit
 import pickle
@@ -377,7 +377,6 @@ def reset_state():
     last_saved_map_file = None
     cur_state = State()
     
-reset_state()
 
 def add_new_wall(v1, v2):
     undo.push_state(cur_state)
@@ -894,9 +893,16 @@ def export_map_to_c():
 
 
 if __name__ == '__main__':
-    
+        
     root = tk.Tk()
     root.withdraw()
+    atexit.register(root.destroy)
+    try:
+        reset_state()
+    except Exception as e:
+        _ = tk.messagebox.showerror("Error!", e)
+        exit()
+
 
     imgui.create_context()
     io = imgui.get_io()
@@ -908,4 +914,3 @@ if __name__ == '__main__':
 
     main_sdl2()
 
-    atexit.register(root.destroy)
