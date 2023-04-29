@@ -1,15 +1,11 @@
 import imgui
 import undo
 from utils import input_int, draw_list
-
+import sector_group
 
 
 class Sector():
-    def __init__(self, index, walls=None, floor_height=0, ceil_height=100, floor_color=1, ceil_color=1):
-        self.floor_height = floor_height
-        self.ceil_height = ceil_height
-        self.floor_color = floor_color
-        self.ceil_color = ceil_color
+    def __init__(self, index, walls=None, sect_group_index=0):
         self.sector_group_idx = 0
 
         self.is_convex_memo = False
@@ -24,7 +20,7 @@ class Sector():
 
 
     def __str__(self):
-        return "F: {} C: {}".format(self.floor_height, self.ceil_height)
+        return "Group: {}".format(self.sector_group_idx) #"F: {} C: {}".format(self.floor_height, self.ceil_height)
 
     def get_vertexes(self):
         return [wall.v2 for wall in self.walls]
@@ -72,9 +68,9 @@ def add_new_sector(cur_state):
     undo.push_state(cur_state)
     num_sects = len(cur_state.map_data.sectors)
     new_sect = Sector(num_sects)
-    new_sect.ceil_color = cur_state.default_ceil_color
-    new_sect.floor_color = cur_state.default_floor_color
     cur_state.map_data.sectors.append(new_sect)
+    if len(cur_state.map_data.sector_groups) == 0:
+        sector_group.add_new_sector_group(cur_state)
     return new_sect
 
 def set_sector_attr(cur_state, cur_sect, attr, v):
@@ -92,16 +88,21 @@ def draw_sector_mode(cur_state):
         imgui.same_line()
         imgui.text("Sector {}".format(cur_sect.index))
 
-        set_floor_height = lambda v: set_sector_attr(cur_state, cur_sect, 'floor_height', v)
-        set_floor_color = lambda v: set_sector_attr(cur_state, cur_sect, 'floor_color', v)
-        set_ceil_height = lambda v: set_sector_attr(cur_state, cur_sect, 'ceil_height', v)
-        set_ceil_color = lambda v: set_sector_attr(cur_state, cur_sect, 'ceil_color', v)
+        sect_group_options = ["{}".format(idx) for idx in range(len(cur_state.map_data.sector_groups))]
+        group_changed, new_group_idx = imgui.core.combo("Sector group:  ", cur_sect.sector_group_idx, sect_group_options)
+        if group_changed:
+            cur_sect.sector_group_idx = new_group_idx
 
-        input_int("Floor height:   ", "##sector{}_floor_height".format(cur_sect.index), cur_sect.floor_height, set_floor_height) #lambda v: setattr(cur_sect, 'floor_height', v))
-        input_int("Floor color:    ", "##sector{}_floor_color".format(cur_sect.index), cur_sect.floor_color, set_floor_color) #lambda v: setattr(cur_sect, 'floor_color', v))
+        #set_floor_height = lambda v: set_sector_attr(cur_state, cur_sect, 'floor_height', v)
+        #set_floor_color = lambda v: set_sector_attr(cur_state, cur_sect, 'floor_color', v)
+        #set_ceil_height = lambda v: set_sector_attr(cur_state, cur_sect, 'ceil_height', v)
+        #set_ceil_color = lambda v: set_sector_attr(cur_state, cur_sect, 'ceil_color', v)
+
+        #input_int("Floor height:   ", "##sector{}_floor_height".format(cur_sect.index), cur_sect.floor_height, set_floor_height) #lambda v: setattr(cur_sect, 'floor_height', v))
+        #input_int("Floor color:    ", "##sector{}_floor_color".format(cur_sect.index), cur_sect.floor_color, set_floor_color) #lambda v: setattr(cur_sect, 'floor_color', v))
         
-        input_int("Ceiling height: ", "##sector{}_ceil".format(cur_sect.index), cur_sect.ceil_height, set_ceil_height)
-        input_int("Ceiling color:  ", "##sector{}_ceil_color".format(cur_sect.index), cur_sect.ceil_color, set_ceil_color)
+        #input_int("Ceiling height: ", "##sector{}_ceil".format(cur_sect.index), cur_sect.ceil_height, set_ceil_height)
+        #input_int("Ceiling color:  ", "##sector{}_ceil_color".format(cur_sect.index), cur_sect.ceil_color, set_ceil_color)
 
     def set_cur_sector(idx):
         cur_state.cur_sector = cur_state.map_data.sectors[idx]
@@ -130,6 +131,17 @@ def draw_sector_mode(cur_state):
                     elif wall.adj_sector_idx > deleted_idx:
                         # decrement references to sectors after the deleted sector
                         wall.adj_sector_idx = wall.adj_sector_idx - 1 
+            # patch all thing references?
+            # if things are in this sector, do we delete them?
+            # nah, if they are in this sector, just leave them at the same index
+            # if they are past this sector, reduce their index by 1
+            for obj in cur_state.map_data.things:
+                if obj.sector_num == deleted_idx:
+                    # do nothing
+                    pass
+                elif obj.sector_num > deleted_idx:
+                    obj.sector_num = obj.sector_num - 1
+
 
 
 

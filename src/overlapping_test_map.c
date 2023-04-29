@@ -1,13 +1,14 @@
 #include <genesis.h>
 #include "colors.h"
 #include "portal_map.h"
+#include "sector_group.h"
 #include "textures.h"
 #include "vertex.h"
 
 
 
 
-// wall offset, portal offset, number of walls, flag
+// wall offset, portal offset, number of walls, group
 static const s16 sectors[17*SECTOR_SIZE] = {
     0, 0, 6, 0, // floor normally 100 here
     7, 6, 5, 1,
@@ -32,7 +33,7 @@ static const s16 sectors[17*SECTOR_SIZE] = {
 };
 
 
-static const s16 sector_group_params[NUM_SECTOR_PARAMS*17] = {
+static const s16 sector_group_params[NUM_SECTOR_GROUP_PARAMS*17] = {
     // light, orig_height, ticks_left, state, floor_height, ceil_height, floor_color, ceil_color
     0, 0, 0, 0,  60<<4, 200<<4, DARK_BLUE_IDX, DARK_BLUE_IDX, // only LIGHT is relevant here
 

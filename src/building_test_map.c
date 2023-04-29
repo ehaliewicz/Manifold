@@ -1,6 +1,7 @@
 #include <genesis.h>
 #include "colors.h"
 #include "portal_map.h"
+#include "sector_group.h"
 #include "vertex.h"
 
 static const s16 sectors[29*SECTOR_SIZE] = {
@@ -35,7 +36,7 @@ static const s16 sectors[29*SECTOR_SIZE] = {
     159, 134, 4, 28,
 };
 
-static const s16 sector_group_params[29*NUM_SECTOR_PARAMS] = {
+static const s16 sector_group_params[29*NUM_SECTOR_GROUP_PARAMS] = {
 0,0,0,0,0<<4,150<<4,8,7,
 0,0,0,0,0<<4,150<<4,8,7,
 0,0,0,0,0<<4,150<<4,8,7,

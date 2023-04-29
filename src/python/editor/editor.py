@@ -43,6 +43,7 @@ import palette
 import rom
 import script
 import sector
+import sector_group
 import things
 import trigger
 import tree
@@ -56,6 +57,7 @@ import configparser
 
 class Mode(Enum):
     SECTOR = 'Sector'
+    SECTOR_GROUP = 'Sector Groups'
     LINE = 'Line'
     VERTEX = 'Vertex'
     SCRIPT = 'Script'
@@ -92,6 +94,7 @@ class Map():
         self.palette = palette.DEFAULT_PALETTE
         self.thing_defs = [things.ThingDef(default_sprite) for i in range(31)]
         self.things = []
+        self.sector_groups = []
 
     def generate_c_from_map(self):
         num_sectors = len(self.sectors)
@@ -244,7 +247,7 @@ def set_cur_state(cs):
 
 def main_sdl2():
     def pysdl2_init():
-        width, height = 1280, 800
+        width, height = 1600, 900
         window_name = "portal editor"
         if SDL_Init(SDL_INIT_EVERYTHING) < 0:
             print("Error: SDL could not initialize! SDL Error: " + SDL_GetError())
@@ -327,6 +330,7 @@ class State(object):
         self.cur_wall = None
         self.cur_vertex = None
         self.cur_thing = None
+        self.cur_sector_group = None
 
         self.camera_x = 0
         self.camera_y = 0
@@ -415,6 +419,7 @@ def add_new_thing(x, y):
 
 MODE_DRAW_FUNCS = {
     Mode.SECTOR: sector.draw_sector_mode,
+    Mode.SECTOR_GROUP: sector_group.draw_sector_group_mode,
     Mode.LINE: line.draw_line_mode,
     Mode.VERTEX: vertex.draw_vert_mode,
     Mode.SCRIPT: script.draw_script_mode,
@@ -828,8 +833,17 @@ def old_walls_to_new_walls(walls, default_texture):
 def old_sectors_to_new_sectors(sectors, default_texture):
     return [sector.Sector(
                 index=s.index, walls=old_walls_to_new_walls(s.walls, default_texture), 
-                floor_height=s.floor_height, ceil_height=s.ceil_height,
-                floor_color=s.floor_color, ceil_color=s.ceil_color) for s in sectors]
+                sect_group_index=s.sect_group_idx if hasattr(s, 'sect_group_idx') else idx ) for idx,s in enumerate(sectors)] 
+                
+def old_sectors_to_new_sector_groups(sectors):
+    return [sector_group.SectorGroup(
+        idx, 
+        type=0, 
+        light_level=0, orig_height=0, ticks_left=0, state=0, 
+        floor_height=sect.floor_height, ceil_height=sect.ceil_height, floor_color=sect.floor_color, ceil_color=sect.ceil_color,
+        triggers=[-1,0,0,0,0,0,0,0]) for idx,sect in enumerate(sectors)]
+                #floor_height=s.floor_height, ceil_height=s.ceil_height,
+                #floor_color=s.floor_color, ceil_color=s.ceil_color) for s in sectors]
         
         
 def load_map_from_file(f):
@@ -855,6 +869,11 @@ def load_map_from_file(f):
 
     if hasattr(old_map, "things"):
         new_map.things = old_map.things
+
+    if hasattr(old_map, "sector_groups"):
+        new_map.sector_groups = old_map.sector_groups
+    else:
+        new_map.sector_groups = old_sectors_to_new_sector_groups(old_map.sectors)
 
     cur_state.map_data = new_map
 
