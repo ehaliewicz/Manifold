@@ -4,7 +4,19 @@
 #include <genesis.h>
 #include "portal_map.h"
 
-#define NUM_SECTOR_TYPES 4
+#define NUM_SECTOR_GROUP_PARAMS 8
+#define NUM_SECTOR_GROUP_PARAMS_SHIFT 3
+
+
+// these params are actual sector group params
+#define SECTOR_GROUP_PARAM_LIGHT_IDX 0
+#define SECTOR_GROUP_PARAM_ORIG_HEIGHT_IDX 1
+#define SECTOR_GROUP_PARAM_STATE_IDX 2
+#define SECTOR_GROUP_PARAM_TICKS_LEFT_IDX 3
+#define SECTOR_GROUP_PARAM_FLOOR_HEIGHT_IDX 4
+#define SECTOR_GROUP_PARAM_CEIL_HEIGHT_IDX 5
+#define SECTOR_GROUP_PARAM_FLOOR_COLOR_IDX 6
+#define SECTOR_GROUP_PARAM_CEIL_COLOR_IDX 7
 
 #define NO_TYPE 0
 #define FLASHING 1
@@ -12,6 +24,7 @@
 #define LIFT 3
 #define STAIRS 4
 
+#define NUM_SECTOR_GROUP_TYPES 5
 
 
 typedef enum {

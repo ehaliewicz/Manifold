@@ -194,12 +194,13 @@ def export_map_to_rom(cur_path, cur_state, set_launch_flags=False):
 
         
         num_sectors = len(data.sectors)
+        num_sector_groups = len(data.sector_groups)
         num_vertexes = len(data.vertexes)
         num_walls = sum(len(sect.walls) for sect in data.sectors)
 
         f.seek(map_struct_offset)
         # write num_sector_groups, currently the same as num sectors (no groups supported in editor yet)
-        write_u16(f, num_sectors)
+        write_u16(f, num_sector_groups)
         # write num_sectors, num_walls, and num_verts
         write_u16(f, num_sectors)
         write_u16(f, num_walls)
@@ -238,7 +239,7 @@ def export_map_to_rom(cur_path, cur_state, set_launch_flags=False):
             f.write(struct.pack(
                 ">hhhh",
                 wall_offset, portal_offset,
-                sect_num_walls, sect.index
+                sect_num_walls, sect.sector_group_idx
             ))
             if len(sect.walls) == 0:
                 continue
@@ -248,28 +249,33 @@ def export_map_to_rom(cur_path, cur_state, set_launch_flags=False):
         patch_pointer_to_current_offset(
             f, sector_group_types_ptr_offset
         )
-        for sect in data.sectors:
-            f.write(b'\x00')
+
+        # write sector group types
+        for sect_group in data.sector_groups:
+            f.write(struct.pack('>B', sect_group.type))
         align(f)
 
         patch_pointer_to_current_offset(
             f, sector_group_params_ptr_offset
         )
 
-        for sect in data.sectors:
+        # write sector group params
+
+        for sect_group in data.sector_groups:
             f.write(struct.pack(
                 # light level, orig_height, ticks_left, state
                 # floor_height, ceil_height, floor_color, ceil_color
                 ">hhhhhhhh",
-                0, 0, 0, 0, 
-                sect.floor_height*16, sect.ceil_height*16,
-                sect.floor_color, sect.ceil_color
+                sect_group.light_level, sect_group.orig_height*16, sect_group.state, sect_group.ticks_left, 
+                sect_group.floor_height*16, sect_group.ceil_height*16,
+                sect_group.floor_color, sect_group.ceil_color
             ))
         
+        # write sector group triggers
         patch_pointer_to_current_offset(
             f, sector_group_triggers_ptr_offset
         )
-        for sect in data.sectors:
+        for sect_group in data.sector_groups:
             f.write(struct.pack(
                 ">hhhhhhhh", 0,0,0,0,0,0,0,0
             ))

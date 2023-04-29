@@ -2,6 +2,7 @@
 #include <genesis.h>
 #include "colors.h"
 #include "portal_map.h"
+#include "sector_group.h"
 #include "vertex.h"
 
 // 9-12 are slime sectors
@@ -266,7 +267,7 @@ static const vertex vertexes[30] = {
 //0,0,0,0,0,0,0,1,1,0,0,0,0,1,
 //};
 
-static const s16 sector_group_params[NUM_SECTOR_PARAMS*6] = {
+static const s16 sector_group_params[NUM_SECTOR_GROUP_PARAMS*6] = {
     // light, orig_height, ticks_left, state, floor_height, ceil_height, floor_color, ceil_color
 
     // group 0 params

@@ -8,8 +8,8 @@
 #include "texture.h"
 #include "vertex.h"
 
-//#define WALLS_DIST_LIGHTING 
-//#define FLATS_DIST_LIGHTING
+#define WALLS_DIST_LIGHTING 
+#define FLATS_DIST_LIGHTING
 
 
 typedef struct {

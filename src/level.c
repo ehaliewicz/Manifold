@@ -11,7 +11,7 @@ portal_map* cur_portal_map = NULL;
  void init_sector_parameters(portal_map* map) {
     
     u16 num_sector_groups = map->num_sector_groups;
-    u16 num_bytes = num_sector_groups * sizeof(s16) * NUM_SECTOR_PARAMS;
+    u16 num_bytes = num_sector_groups * sizeof(s16) * NUM_SECTOR_GROUP_PARAMS;
     live_sector_group_parameters = malloc(num_bytes, "live sector group params table");
     memcpy(live_sector_group_parameters, cur_portal_map->sector_group_params, num_bytes);
  }
