@@ -192,9 +192,22 @@ def export_map_to_rom(cur_path, cur_state, set_launch_flags=False):
         f.seek(map_pointer_offset)
         write_u32(f, map_struct_offset)
 
+        # gather live sectors and remap indexes
+        live_sector_group_map_tbl = {} # maps original sector group idx to current sector group idx
+        new_sector_group_idx = 0
+        live_sector_groups = []
+        for sector in data.sectors:
+            sect_group_idx = sector.sector_group_idx 
+            if sect_group_idx not in live_sector_group_map_tbl:
+                live_sector_group_map_tbl[sect_group_idx] = new_sector_group_idx
+                live_sector_groups.append(data.sector_groups[sect_group_idx])
+                new_sector_group_idx += 1
         
+
         num_sectors = len(data.sectors)
-        num_sector_groups = len(data.sector_groups)
+        #num_sector_groups = len(data.sector_groups)
+        num_sector_groups = len(live_sector_group_map_tbl)
+
         num_vertexes = len(data.vertexes)
         num_walls = sum(len(sect.walls) for sect in data.sectors)
 
@@ -239,7 +252,7 @@ def export_map_to_rom(cur_path, cur_state, set_launch_flags=False):
             f.write(struct.pack(
                 ">hhhh",
                 wall_offset, portal_offset,
-                sect_num_walls, sect.sector_group_idx
+                sect_num_walls, live_sector_group_map_tbl[sect.sector_group_idx]
             ))
             if len(sect.walls) == 0:
                 continue
@@ -250,18 +263,21 @@ def export_map_to_rom(cur_path, cur_state, set_launch_flags=False):
             f, sector_group_types_ptr_offset
         )
 
-        # write sector group types
-        for sect_group in data.sector_groups:
-            f.write(struct.pack('>B', sect_group.type))
+        # write sector group types for LIVE (aka used) sector groups only
+        for sect_group in live_sector_groups:
+            f.write(struct.pack('>B', sect_group.type))        
+        #for sect_group in data.sector_groups:
+        #    f.write(struct.pack('>B', sect_group.type))
+        
         align(f)
 
         patch_pointer_to_current_offset(
             f, sector_group_params_ptr_offset
         )
 
-        # write sector group params
+        # write sector group params for LIVE/used sector groups only
 
-        for sect_group in data.sector_groups:
+        for sect_group in live_sector_groups:
             f.write(struct.pack(
                 # light level, orig_height, ticks_left, state
                 # floor_height, ceil_height, floor_color, ceil_color
@@ -275,7 +291,7 @@ def export_map_to_rom(cur_path, cur_state, set_launch_flags=False):
         patch_pointer_to_current_offset(
             f, sector_group_triggers_ptr_offset
         )
-        for sect_group in data.sector_groups:
+        for sect_group in live_sector_groups: #data.sector_groups:
             f.write(struct.pack(
                 ">hhhhhhhh", 0,0,0,0,0,0,0,0
             ))

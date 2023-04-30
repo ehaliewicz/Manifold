@@ -20,7 +20,7 @@
 #define PORTAL_QUEUE_SIZE 32
 
 //static Vect2D_s32* cached_verts;
-static u32* sector_visited_cache; // i don't know if this helps much, but we might be able to use it
+u8* sector_rendered_cache; // i don't know if this helps much, but we might be able to use it
 
 // num_walls, sector_idx
 
@@ -30,16 +30,16 @@ static u32* sector_visited_cache; // i don't know if this helps much, but we mig
 
 void init_portal_renderer() {
     //vert_transform_cache = malloc(sizeof(u32) * cur_portal_map->num_verts, "vertex transform cache");
-    sector_visited_cache = malloc(sizeof(u32) * cur_portal_map->num_sectors, "sector visited cache");
+    sector_rendered_cache = malloc(sizeof(u8) * cur_portal_map->num_sectors, "sector visited cache");
 }
 
 
 void clear_portal_cache() {
-    memset(sector_visited_cache, 0, sizeof(u32) * cur_portal_map->num_sectors);
+    memset(sector_rendered_cache, 0, sizeof(u8) * cur_portal_map->num_sectors);
 }
 
 void cleanup_portal_renderer() {
-    free(sector_visited_cache, "sector visited cache");
+    free(sector_rendered_cache, "sector visited cache");
 }
 
 
@@ -215,18 +215,18 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
 
     // if this sector has been visited 32 times, or is already being currently rendered, skip it
 
-    if(sector_visited_cache[sector] & 0b1) { //} & 0b101) { //0x21) {
+    if(sector_rendered_cache[sector] & 0b1) { //} & 0b101) { //0x21) {
             return; // Odd = still rendering, 0x20 = give up
     }
     // if we've visited this sector 7 times in one frame (lol)
-    if(sector_visited_cache[sector] >= 14) {
+    if(sector_rendered_cache[sector] >= 14) {
         return;
     }
     // don't revisit the start sector
     // i dont think we'll ever need to do this
     if(sector == src_sector && depth != 0) { return; }
 
-    sector_visited_cache[sector]++; // = cur_frame;
+    sector_rendered_cache[sector]++; // = cur_frame;
 
     u16 window_min = x1; //cur_item.x1;
     u16 window_max = x2; //cur_item.x2;
@@ -819,7 +819,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
 
         free_clip_buffer(obj_clip_buf);
     }
-    sector_visited_cache[sector]++;
+    sector_rendered_cache[sector]++;
 }
 
 

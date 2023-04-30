@@ -69,7 +69,7 @@ void push_object_to_front(object_link new_head, object_link* lst) {
 
 void push_decoration_to_front(decoration_link new_head, decoration_link* lst) {
     decoration_link prev_head = *lst;
-    KLog_U2("attaching decoration: ", new_head, " to previous head link: ", prev_head);
+    //KLog_U2("attaching decoration: ", new_head, " to previous head link: ", prev_head);
     DEC_LINK_DEREF(new_head).next = prev_head;
     *lst = new_head;
 }
@@ -78,7 +78,7 @@ void push_decoration_to_front(decoration_link new_head, decoration_link* lst) {
 void init_object_lists(int num_sectors) {
 
     num_sector_lists = num_sectors;
-    KLog_U1("size of object: ", sizeof(object));
+    //KLog_U1("size of object: ", sizeof(object));
     objects = malloc(sizeof(object)*MAX_OBJECTS, "object list");
     sector_object_lists = malloc(sizeof(object_link)*num_sectors, "sector object lists");
     for(int i = 0; i < MAX_OBJECTS; i++) {
@@ -196,7 +196,7 @@ int is_closer(player_pos pos1, player_pos pos2, player_pos origin) {
 
 
 object_link alloc_object_in_sector(u8 activate_tick, int sector_num, fix32 x, fix32 y, s16 z, uint8_t object_type) {
-    KLog_U1("allocating object in sector: ", sector_num);
+    //KLog_U1("allocating object in sector: ", sector_num);
     object_link res = new_object_link();
     if(res == NULL_OBJ_LINK) {
         KLog("free list pop is null? wtf");
@@ -221,7 +221,7 @@ object_link alloc_object_in_sector(u8 activate_tick, int sector_num, fix32 x, fi
 } 
 
 decoration_link alloc_decoration_in_sector(int sector_num, s16 x, s16 y, s16 z, uint8_t object_type) {
-    KLog_U1("allocating decoration in sector: ", sector_num);
+    //KLog_U1("allocating decoration in sector: ", sector_num);
     decoration_link res = new_decoration_link();
     if(res == NULL_DEC_LINK) {
         KLog("free list pop is null? wtf");

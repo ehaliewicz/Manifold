@@ -689,18 +689,18 @@ void init_game() {
 
     for(int i = 0; i < cur_portal_map->num_things; i++) {
         map_object* thg = &cur_portal_map->things[i];
-        KLog_U1("thing type: ", thg->type);
+        //KLog_U1("thing type: ", thg->type);
         //KLog_U1("in sector: ", )
         u16 obj_sect_group = sector_group(thg->sector_num, cur_portal_map);
 
     //cur_player_pos.z = (cur_sector_height<<(FIX32_FRAC_BITS-4)) + FIX32(50);   
         volatile object_template* typ = &object_types[thg->type];
         if(thg->type == 0) { //typ->is_player) {
-            KLog("is player?");
+            //KLog("is player?");
             got_player_thing = 1;
             player_thing = thg;
         } else {
-            KLog_U1("type: ", thg->type);
+            //KLog_U1("type: ", thg->type);
             s16 cur_sector_height = get_sector_group_floor_height(obj_sect_group);
             if(typ->init_state == IDLE_STATE) {
                 alloc_decoration_in_sector(thg->sector_num, thg->x, thg->y, cur_sector_height, thg->type);
