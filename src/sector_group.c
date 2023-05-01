@@ -5,7 +5,7 @@
 #include "portal_map.h"
 #include "random.h"
 #include "sector_group.h"
-
+#include "sfx.h"
 
 
 s16* live_sector_group_parameters;
@@ -78,6 +78,7 @@ void run_door(s16* params) {
         case CLOSED: do {
                 u16 ticks_left = params[SECTOR_GROUP_PARAM_TICKS_LEFT_IDX];
                 if(ticks_left == 0) {
+                    play_sfx(SFX_OPEN_DOOR_ID, 1);
                     params[SECTOR_GROUP_PARAM_STATE_IDX] = GOING_UP;
                 } else {
                     params[SECTOR_GROUP_PARAM_TICKS_LEFT_IDX]--;
@@ -100,6 +101,7 @@ void run_door(s16* params) {
             u16 ticks_left = params[SECTOR_GROUP_PARAM_TICKS_LEFT_IDX];
 
             if(ticks_left == 0) {
+                play_sfx(SFX_CLOSE_DOOR_ID, 1);
                 params[SECTOR_GROUP_PARAM_STATE_IDX] = GOING_DOWN;
             } else {
                 params[SECTOR_GROUP_PARAM_TICKS_LEFT_IDX]--;
@@ -153,6 +155,7 @@ void run_lift(s16* params) {
         case OPEN: do {
             u16 ticks_left = params[SECTOR_GROUP_PARAM_TICKS_LEFT_IDX];
             if(ticks_left == 0) {
+                play_sfx(SFX_LIFT_GO_UP_ID, 1);
                 params[SECTOR_GROUP_PARAM_STATE_IDX] = GOING_UP;
             } else {
                 params[SECTOR_GROUP_PARAM_TICKS_LEFT_IDX]--;

@@ -21,6 +21,8 @@
 #include "portal.h"
 #include "portal_map.h"
 #include "sector_group.h"
+#include "sfx.h"
+#include "sfx_res.h"
 #include "sys.h"
 #include "utils.h"
 #include "vwf.h"
@@ -410,28 +412,20 @@ void handle_input() {
         holding_down_move = 0;
         reset_gun_bob();
     }
-    static int l = 0;
 
-    if(!l) {
-    #include "sfx_res.h"
-        XGM_setPCM(64, sfx_shoot, sizeof(sfx_shoot)&~((u32)0xFF));
-        XGM_setPCM(65, sfx_select, sizeof(sfx_select)&~((u32)0xFF));
-        XGM_setPCM(66, sfx_jump, sizeof(sfx_jump)&~((u32)0xFF));
-        l = 1;
-    }
 
     if(joy_button_pressed(BUTTON_A) && !shooting) {
-        play_sfx(64, 0);
+        play_sfx(SFX_PEASHOOTER_ID, 0);
         shooting = 2;
     }
 
     if(joy_button_pressed(BUTTON_B) && !pressing) {
-        play_sfx(65, 0);
+        play_sfx(SFX_SELECT_ID, 0);
         pressing = 2;
     }
 
     if(jump_pressed && !jumping) {
-        play_sfx(66, 0);
+        play_sfx(SFX_JUMP2_ID, 0);
         jumping = 10;
     }
 
@@ -668,6 +662,13 @@ void init_game() {
     //inventory_draw();
     
     VDP_waitVSync();
+
+    XGM_setPCM(SFX_PEASHOOTER_ID, sfx_shoot, sizeof(sfx_shoot));
+    XGM_setPCM(SFX_SELECT_ID, sfx_select, sizeof(sfx_select));
+    XGM_setPCM(SFX_JUMP2_ID, sfx_jump2, sizeof(sfx_jump2));
+    XGM_setPCM(SFX_LIFT_GO_UP_ID, sfx_lift_go_up, sizeof(sfx_lift_go_up));
+    XGM_setPCM(SFX_OPEN_DOOR_ID, sfx_door_open, sizeof(sfx_door_open));
+    XGM_setPCM(SFX_CLOSE_DOOR_ID, sfx_door_close, sizeof(sfx_door_close));
 
 
     init_sprite_draw_cache();

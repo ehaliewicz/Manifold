@@ -1,6 +1,6 @@
 #include "sfx.h"
 
-int sfx_on = FALSE; //TRUE;
+int sfx_on = TRUE;
 
 #define SFX_CHANNELS 3
 
