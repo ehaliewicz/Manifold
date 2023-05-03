@@ -15,6 +15,10 @@ IF "x%1" == "x" (
   
   %GDK_WIN%\bin\make -f %GDK_WIN%\makefile.gen clean
   %GDK_WIN%\bin\make -f %GDK_WIN%\makefile.gen release
+) ELSE IF "%1" == "medbuild" (
+  %GDK_WIN%\bin\make -f %GDK_WIN%\makefile.gen
+  %MEGALINK% %CD%\out\rom.bin
+  %MEGALINK% reset
 ) ELSE (
   %GDK_WIN%\bin\make -f %GDK_WIN%\makefile.gen %1
 ) 

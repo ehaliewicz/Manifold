@@ -3,6 +3,7 @@
 #include "game.h"
 #include "level.h"
 #include "portal_map.h"
+#include "portal.h"
 #include "random.h"
 #include "sector_group.h"
 #include "sfx.h"
@@ -67,7 +68,7 @@ u16 get_sector_group_ceil_color(u16 sect_group) {
     return live_sector_group_parameters[(sect_group<<NUM_SECTOR_GROUP_PARAMS_SHIFT) + SECTOR_GROUP_PARAM_CEIL_COLOR_IDX];
 }
 
-void run_door(s16* params) {
+void run_door(s16* params, u16 sect_group) {
     //return;
     door_lift_state state = params[SECTOR_GROUP_PARAM_STATE_IDX];
     s16 cur_height = params[SECTOR_GROUP_PARAM_CEIL_HEIGHT_IDX];
@@ -78,7 +79,8 @@ void run_door(s16* params) {
         case CLOSED: do {
                 u16 ticks_left = params[SECTOR_GROUP_PARAM_TICKS_LEFT_IDX];
                 if(ticks_left == 0) {
-                    play_sfx(SFX_OPEN_DOOR_ID, 1);
+                    propagate_sfx_from_sect_group(SFX_OPEN_DOOR_ID, 1, sect_group, sector_rendered_cache);
+                    //play_sfx(SFX_OPEN_DOOR_ID, 1);
                     params[SECTOR_GROUP_PARAM_STATE_IDX] = GOING_UP;
                 } else {
                     params[SECTOR_GROUP_PARAM_TICKS_LEFT_IDX]--;
@@ -87,7 +89,7 @@ void run_door(s16* params) {
             break;
 
         case GOING_UP: do {
-            cur_height += 128;
+            cur_height += 180; //160;
             params[SECTOR_GROUP_PARAM_CEIL_HEIGHT_IDX] = cur_height;
             if(cur_height >= orig_door_height) {
                 params[SECTOR_GROUP_PARAM_CEIL_HEIGHT_IDX] = orig_door_height;
@@ -101,7 +103,8 @@ void run_door(s16* params) {
             u16 ticks_left = params[SECTOR_GROUP_PARAM_TICKS_LEFT_IDX];
 
             if(ticks_left == 0) {
-                play_sfx(SFX_CLOSE_DOOR_ID, 1);
+                //play_sfx(SFX_CLOSE_DOOR_ID, 1);
+                propagate_sfx_from_sect_group(SFX_CLOSE_DOOR_ID, 1, sect_group, sector_rendered_cache);
                 params[SECTOR_GROUP_PARAM_STATE_IDX] = GOING_DOWN;
             } else {
                 params[SECTOR_GROUP_PARAM_TICKS_LEFT_IDX]--;
@@ -110,7 +113,7 @@ void run_door(s16* params) {
             break;
 
         case GOING_DOWN: do {
-            cur_height -= 128;
+            cur_height -= 180; //160;
             params[SECTOR_GROUP_PARAM_CEIL_HEIGHT_IDX] = cur_height;
             if(cur_height <= floor_height) {
                 params[SECTOR_GROUP_PARAM_CEIL_HEIGHT_IDX] = floor_height;
@@ -123,7 +126,7 @@ void run_door(s16* params) {
 }
 
 
-void run_lift(s16* params) {
+void run_lift(s16* params, u16 sect_group) {
     door_lift_state state = params[SECTOR_GROUP_PARAM_STATE_IDX];
 
     s16 cur_height = params[SECTOR_GROUP_PARAM_FLOOR_HEIGHT_IDX];
@@ -155,7 +158,7 @@ void run_lift(s16* params) {
         case OPEN: do {
             u16 ticks_left = params[SECTOR_GROUP_PARAM_TICKS_LEFT_IDX];
             if(ticks_left == 0) {
-                play_sfx(SFX_LIFT_GO_UP_ID, 1);
+                propagate_sfx_from_sect_group(SFX_LIFT_GO_UP_ID, 1, sect_group, sector_rendered_cache);
                 params[SECTOR_GROUP_PARAM_STATE_IDX] = GOING_UP;
             } else {
                 params[SECTOR_GROUP_PARAM_TICKS_LEFT_IDX]--;
@@ -177,7 +180,7 @@ void run_lift(s16* params) {
 }
 
 
-void run_stairs(s16* params) {
+void run_stairs(s16* params, u16 sect_group) {
     stair_state state = params[SECTOR_GROUP_PARAM_STATE_IDX];
 
     s16 cur_height = params[SECTOR_GROUP_PARAM_FLOOR_HEIGHT_IDX];
@@ -261,7 +264,7 @@ void run_sector_group_process(u16 sect_group) {
             break;
 
         case DOOR: do {
-            run_door(params);
+            run_door(params, sect_group);
         } while(0);
             break;
 
@@ -271,11 +274,11 @@ void run_sector_group_process(u16 sect_group) {
             break;
 
         case LIFT: do {
-            run_lift(params);
+            run_lift(params, sect_group);
         } while(0);
             break;
         case STAIRS: do {
-            run_stairs(params);
+            run_stairs(params, sect_group);
         } while(0);
         break;
     }

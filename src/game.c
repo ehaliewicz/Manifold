@@ -348,7 +348,7 @@ void handle_input() {
     if(moved) {
 
         //collision_result collision = check_for_collision(curx, cury, newx, newy, cur_player_pos.cur_sector);
-        collision_result collision = check_for_collision_radius(curx, cury, newx, newy, PLAYER_COLLISION_DISTANCE, cur_player_pos.cur_sector);
+        collision_result collision = check_for_collision_radius(curx, cury, newx, newy, PLAYER_COLLISION_DISTANCE_SQR, cur_player_pos.cur_sector);
         cur_player_pos.x = collision.pos.x;
         cur_player_pos.y = collision.pos.y;
         if(collision.new_sector != cur_player_pos.cur_sector) {
@@ -394,13 +394,6 @@ void handle_input() {
 
     apply_bob();
 
-    // this is done after physics resolution, so hopefully it only affects the visuals :)
-    // I mean I kinda know it wont only affect that
-    // hopefully not a problem! :)
-
-    //cur_player_pos.view_z = cur_player_pos.z + run_bob_amt;
-    //cur_player_pos.z += idle_bob_amt;
-    
 
     u8 move_button = joy_button_pressed(BUTTON_UP) ? BUTTON_UP : (joy_button_pressed(BUTTON_DOWN) ? BUTTON_DOWN : 0);
     
@@ -412,20 +405,22 @@ void handle_input() {
         holding_down_move = 0;
         reset_gun_bob();
     }
+    
+    
 
 
     if(joy_button_pressed(BUTTON_A) && !shooting) {
-        play_sfx(SFX_PEASHOOTER_ID, 0);
+        //play_sfx(SFX_PEASHOOTER_ID, 1);
         shooting = 2;
     }
 
     if(joy_button_pressed(BUTTON_B) && !pressing) {
-        play_sfx(SFX_SELECT_ID, 0);
+        //play_sfx(SFX_SELECT_ID, 1);
         pressing = 2;
     }
 
     if(jump_pressed && !jumping) {
-        play_sfx(SFX_JUMP2_ID, 0);
+        play_sfx(SFX_JUMP1_ID, 1);
         jumping = 10;
     }
 
@@ -441,11 +436,11 @@ void handle_input() {
     if(jumping) {
         if(jumping >= 6) { cur_player_pos.z += FIX32(16); }
         jumping--;
-        if(jumping == 0 && joy_button_pressed(BUTTON_C)) { jumping = 1;}
+        if(jumping == 0) {
+            play_sfx(SFX_JUMP2_ID, 1);
+        }
     }
 
-    update_sfx();
-    
 
     return;
 
@@ -665,6 +660,7 @@ void init_game() {
 
     XGM_setPCM(SFX_PEASHOOTER_ID, sfx_shoot, sizeof(sfx_shoot));
     XGM_setPCM(SFX_SELECT_ID, sfx_select, sizeof(sfx_select));
+    XGM_setPCM(SFX_JUMP1_ID, sfx_jump1, sizeof(sfx_jump1));
     XGM_setPCM(SFX_JUMP2_ID, sfx_jump2, sizeof(sfx_jump2));
     XGM_setPCM(SFX_LIFT_GO_UP_ID, sfx_lift_go_up, sizeof(sfx_lift_go_up));
     XGM_setPCM(SFX_OPEN_DOOR_ID, sfx_door_open, sizeof(sfx_door_open));
@@ -757,6 +753,7 @@ game_mode run_game() {
 
     console_tick();
     //inventory_draw();
+    update_sfx();
     run_sector_group_processes();
     calc_movement_speeds();
     handle_input();

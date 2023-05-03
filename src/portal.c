@@ -537,8 +537,15 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
             #ifdef DEBUG_PORTAL_CLIP
             KLog_S2("portal in sector: ", sector, " drawn with wall idx: ", i);
             #endif
-            // draw step down from ceiling
-            
+                
+            // draw floor first if necessary, so that lower steps cannot block it from drawing
+            // if they go below our current floor
+            if(neighbor_floor_height <= floor_height) {
+                draw_floor_update_clip(x1, x1_ybot, x2, x2_ybot,
+                                    min(z_recip_v1, z_recip_v2),
+                                    window_min, window_max, &floor_params);
+            }
+
             u16 nsect_group = sector_group(portal_sector, map);
             u8 neighbor_sector_group_type = cur_portal_map->sector_group_types[nsect_group];
             if(neighbor_ceil_height < ceil_height) {
@@ -577,11 +584,11 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
             } else {
                 u16 neighbor_ceil_color = neighbor_sect_group_param_pointer[SECTOR_GROUP_PARAM_CEIL_COLOR_IDX]; //get_sector_group_ceil_color(neighbor_sect_group);
                 u16 neighbor_light_level = neighbor_sect_group_param_pointer[SECTOR_GROUP_PARAM_LIGHT_IDX];
-                if(neighbor_ceil_color != ceil_color || neighbor_ceil_height != ceil_height || !recur || neighbor_light_level != light_level) {
+                //if(neighbor_ceil_color != ceil_color || neighbor_ceil_height != ceil_height || !recur || neighbor_light_level != light_level) {
                     draw_ceiling_update_clip(x1, x1_ytop, x2, x2_ytop,
                                             min(z_recip_v1, z_recip_v2),
                                             window_min, window_max, &ceil_params);
-                }
+                //}
             }
 
             // not sure if this logic is correct
@@ -615,13 +622,13 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
                                     window_min, window_max, lower_color, light_level, &floor_params);
                 }
             } else {            
-                u16 neighbor_floor_color = neighbor_sect_group_param_pointer[SECTOR_GROUP_PARAM_FLOOR_COLOR_IDX]; //get_sector_group_floor_color(neighbor_sect_group);
-                u16 neighbor_light_level = neighbor_sect_group_param_pointer[SECTOR_GROUP_PARAM_LIGHT_IDX];
-                if(neighbor_floor_color != floor_color || neighbor_floor_height != floor_height || !recur || neighbor_light_level != light_level) {
-                    draw_floor_update_clip(x1, x1_ybot, x2, x2_ybot,
-                                        min(z_recip_v1, z_recip_v2),
-                                        window_min, window_max, &floor_params);
-                }
+                //u16 neighbor_floor_color = neighbor_sect_group_param_pointer[SECTOR_GROUP_PARAM_FLOOR_COLOR_IDX]; //get_sector_group_floor_color(neighbor_sect_group);
+                //u16 neighbor_light_level = neighbor_sect_group_param_pointer[SECTOR_GROUP_PARAM_LIGHT_IDX];
+                //if(neighbor_floor_color != floor_color || neighbor_floor_height != floor_height || !recur || neighbor_light_level != light_level) {
+                    //draw_floor_update_clip(x1, x1_ybot, x2, x2_ybot,
+                    //                    min(z_recip_v1, z_recip_v2),
+                    //                    window_min, window_max, &floor_params);
+                //}
             }
 
 
@@ -959,7 +966,13 @@ void pvs_scan(u16 src_sector, s16 window_min, s16 window_max, u32 cur_frame) {
                 s16 neighbor_ceil_height = get_sector_group_ceil_height(neighbor_sector_group);
 
 
-                // draw step down from ceiling
+                // draw floor first if necessary, so that lower steps cannot block it from drawing
+                // if they go below our current floor
+                if(neighbor_floor_height <= floor_height) {
+                    draw_floor_update_clip(x1, x1_ybot, x2, x2_ybot,
+                                        min(z_recip_v1, z_recip_v2),
+                                        window_min, window_max, &floor_params);
+                }
 
                 if(neighbor_ceil_height < ceil_height) {
 
@@ -1019,9 +1032,9 @@ void pvs_scan(u16 src_sector, s16 window_min, s16 window_max, u32 cur_frame) {
                                         window_min, window_max, lower_color, light_level, &floor_params);
                     }
                 } else {
-                    draw_floor_update_clip(x1, x1_ybot, x2, x2_ybot,
-                                        min(z_recip_v1, z_recip_v2),
-                                        window_min, window_max, &floor_params);
+                    //draw_floor_update_clip(x1, x1_ybot, x2, x2_ybot,
+                    //                    min(z_recip_v1, z_recip_v2),
+                    //                    window_min, window_max, &floor_params);
                 }
 
 
