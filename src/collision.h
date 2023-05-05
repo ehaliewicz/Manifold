@@ -10,9 +10,10 @@ typedef struct {
 } collision_result;
 
 #define PLAYER_COLLISION_DISTANCE 30
+#define PLAYER_COLLISION_DISTANCE_SQR (PLAYER_COLLISION_DISTANCE*PLAYER_COLLISION_DISTANCE)
 
 collision_result check_for_collision(fix32 curx, fix32 cury, fix32 newx, fix32 newy, u16 cur_sector);
-collision_result check_for_collision_radius(fix32 curx, fix32 cury, fix32 newx, fix32 newy, u16 radius, u16 cur_sector);
+collision_result check_for_collision_radius(fix32 curx, fix32 cury, fix32 newx, fix32 newy, u32 radius_sqr, u16 cur_sector);
 u16 find_sector(player_pos cur_player_pos);
 
 #endif

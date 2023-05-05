@@ -18,6 +18,7 @@ IF "x%1" == "x" (
 ) ELSE IF "%1" == "medbuild" (
   %GDK_WIN%\bin\make -f %GDK_WIN%\makefile.gen
   %MEGALINK% %CD%\out\rom.bin
+  %MEGALINK% -memwr %CD%\out\rom.bin  0x0
   %MEGALINK% reset
 ) ELSE (
   %GDK_WIN%\bin\make -f %GDK_WIN%\makefile.gen %1

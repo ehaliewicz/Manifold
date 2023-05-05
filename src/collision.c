@@ -71,11 +71,15 @@ fix32 sq_shortest_dist_to_point(fix32 px, fix32 py, vertex a, vertex b) {
     return square_dist>>FIX32_FRAC_BITS;
 }
 
-int within_sector_radius(fix32 x, fix32 y, u16 radius, u16 sector) {
-    u16 wall_off = sector_wall_offset(sector, (portal_map*)cur_portal_map);
-    u16 portal_off = sector_portal_offset(sector, (portal_map*)cur_portal_map);
-    u16 num_walls = sector_num_walls(sector, (portal_map*)cur_portal_map);
-
+int within_sector_radius(fix32 x, fix32 y, u32 radius_sqr, u16 sector) {    
+    portal_map* map = (portal_map*)cur_portal_map;
+    u16 cur_sector_group = sector_group(sector, map);
+    s16 cur_ceil_height = get_sector_group_ceil_height(cur_sector_group);
+    s16 cur_floor_height = get_sector_group_floor_height(cur_sector_group);
+    s16 cur_player_z = (cur_player_pos.z - FIX32(50)) >> (FIX32_FRAC_BITS-4);
+    u16 wall_off = sector_wall_offset(sector, map);
+    u16 portal_off = sector_portal_offset(sector, map);
+    u16 num_walls = sector_num_walls(sector, map);
     int maybe_inside = within_sector(x, y, sector);
     if(!maybe_inside) { return 0; }
 
@@ -84,33 +88,6 @@ int within_sector_radius(fix32 x, fix32 y, u16 radius, u16 sector) {
     //s32 dmin;
     //int got_dist = 0;
 
-    s32 radius_sqr = radius*radius;
-
-// try disabling this for now
-    //s32 xInt = fix32ToInt(x);
-    //s32 yInt = fix32ToInt(y);
-
-    //const s16* portals = cur_portal_map->portals;
-
-    /*
-    for(int i = 0; i < num_walls-1; i++) {
-        u16 vert_idx = wall_off+i;
-        u16 v_idx = cur_portal_map->walls[vert_idx];
-        vertex v = cur_portal_map->vertexes[v_idx];
-        u16 left_portal_off = (i == 0) ? (num_walls-1) : (i-1);
-        u8 is_portal = (portals[portal_off+i] != -1) && (portals[portal_off+left_portal_off] != -1);
-        if(is_portal) { continue; }
-        s32 distsqr = ((v.x - xInt)*(v.x - xInt)) + ((v.y - yInt)*(v.y - yInt));
-        if(radius_sqr > distsqr) { return 0; }
-        //if(!got_dist) {
-        //    dmin = distsqr;
-        //    got_dist = 1;
-        //} else {
-        //    //dmax = max(distsqr, dmax);
-        //    dmin = min(distsqr, dmin);
-        //}
-    }
-    */
 
      
     //if(radius_sqr > dmin) { return 0; }
@@ -126,9 +103,22 @@ int within_sector_radius(fix32 x, fix32 y, u16 radius, u16 sector) {
     for(int i = 0; i < num_walls; i++) {
         u16 wall_idx = wall_off+i;
         u16 portal_idx = portal_off+i;
-        s16 portal_sect = cur_portal_map->portals[portal_idx];
-        if(portal_sect != -1) {
-            continue;
+        s16 portal_sect = cur_portal_map->portals[portal_idx];        
+        u8 is_portal = portal_sect != -1;
+        if(is_portal) {
+            u16 portal_sect_group = sector_group(portal_sect, map);
+            s16 neighbor_floor_height = get_sector_group_floor_height(portal_sect_group);
+            s16 neighbor_ceil_height = get_sector_group_ceil_height(portal_sect_group);
+            u8 closed_door = (neighbor_ceil_height - cur_floor_height) <= (60 << 4);
+            //u8 lift_too_high = (neighbor_floor_height - cur_floor_height) >= (40 << 4);
+            u8 lift_too_high = (neighbor_floor_height - cur_player_z) >= (40 << 4);
+            if(closed_door) {
+                //KLog("door is closed! 2");
+            } else if(lift_too_high) {
+                //KLog("lift is too high! 2");
+            } else {           
+                continue;
+            }
         }
         u16 v1_idx = cur_portal_map->walls[wall_idx];
         u16 v2_idx = cur_portal_map->walls[wall_idx+1];
@@ -206,16 +196,45 @@ collision_result check_for_collision(fix32 curx, fix32 cury, fix32 newx, fix32 n
 
 }
 
-collision_result check_for_collision_radius(fix32 curx, fix32 cury, fix32 newx, fix32 newy, u16 radius, u16 cur_sector) {
-    if(within_sector_radius(newx, cury, radius, cur_sector)) {
+collision_result check_for_collision_radius(fix32 curx, fix32 cury, fix32 newx, fix32 newy, u32 radius_sqr, u16 cur_sector) {
+    portal_map* map = (portal_map*)cur_portal_map;
+    u16 cur_sector_group = sector_group(cur_sector, map);
+    s16 cur_ceil_height = get_sector_group_ceil_height(cur_sector_group);
+    s16 cur_floor_height = get_sector_group_floor_height(cur_sector_group);
+    s16 cur_player_z = (cur_player_pos.z - FIX32(50)) >> (FIX32_FRAC_BITS-4);
+
+    aabb* cur_sector_aabb = sector_aabb(cur_sector, map);
+    
+    //s16 new_x_int = newx>>FIX32_FRAC_BITS;
+    //s16 new_y_int = newy>>FIX32_FRAC_BITS;
+
+    f32 aabb_left_x = cur_sector_aabb->left_x<<FIX32_FRAC_BITS;
+    f32 aabb_right_x = cur_sector_aabb->right_x<<FIX32_FRAC_BITS;
+    f32 aabb_top_y = cur_sector_aabb->top_y<<FIX32_FRAC_BITS;
+    f32 aabb_bot_y = cur_sector_aabb->bot_y<<FIX32_FRAC_BITS;
+    u8 within_x_bounds = (newx > aabb_left_x && newx < aabb_right_x);
+    u8 within_y_bounds = (newy < aabb_top_y && newy > aabb_bot_y);
+    if(within_x_bounds && within_y_bounds) {
+        
+        collision_result res;
+        res.new_sector = cur_sector;
+        res.pos.x = newx;
+        res.pos.y = newy;
+        return res;
+    }
+
+    u16 portal_off = sector_portal_offset(cur_sector, map);
+    u16 num_walls = sector_num_walls(cur_sector, map);
+    if(//(newx > aabb_left_x && newx < aabb_right_x) || 
+    within_sector_radius(newx, cury, radius_sqr, cur_sector)) {
         // no x collision, just move x 
         //KLog("no x collision");
         curx = newx;
     } else {
+            
+    
         //KLog("x collision");
-        // check if traversed to new sector
-        u16 portal_off = sector_portal_offset(cur_sector, (portal_map*)cur_portal_map);
-        u16 num_walls = sector_num_walls(cur_sector, (portal_map*)cur_portal_map);
+        // check if traversed to new sector        
         for(int i = 0; i < num_walls; i++) {
             u16 portal_idx = portal_off+i;
             s16 portal_sect = cur_portal_map->portals[portal_idx];
@@ -224,10 +243,23 @@ collision_result check_for_collision_radius(fix32 curx, fix32 cury, fix32 newx, 
             }
             //KLog_U1("found new sector: ", portal_sect);
             if(within_sector(newx, cury, portal_sect)) {
-            //if(within_sector_radius(newx, cury, radius, portal_sect)) {
-                //KLog("within new sector");
-                cur_sector = portal_sect;
-                curx = newx;
+                //KLog("withing new sector ");
+                u16 portal_sect_group = sector_group(portal_sect, map);
+                s16 neighbor_floor_height = get_sector_group_floor_height(portal_sect_group);
+                s16 neighbor_ceil_height = get_sector_group_ceil_height(portal_sect_group);
+                u8 closed_door = (neighbor_ceil_height - cur_floor_height) <= (80 << 4);
+                //u8 lift_too_high = (neighbor_floor_height - cur_floor_height) >= (40 << 4);
+                u8 lift_too_high = (neighbor_floor_height - cur_player_z) >= (40 << 4);
+
+                //KLog_S2("neighbor ceil height, ", neighbor_ceil_height, " cur floor height: ", cur_floor_height);
+                if(closed_door) {
+                    //KLog("door is closed!");
+                } else if(lift_too_high) {
+                    //KLog("lift is too high!");
+                } else {                
+                    cur_sector = portal_sect;
+                    curx = newx;
+                }
                 break;
             } else {
                 //KLog("not within sector");
@@ -237,14 +269,13 @@ collision_result check_for_collision_radius(fix32 curx, fix32 cury, fix32 newx, 
 
     }
 
-    if(within_sector_radius(curx, newy, radius, cur_sector)) {
+    if(//(newy < aabb_top_y && newy > aabb_bot_y) || 
+    within_sector_radius(curx, newy, radius_sqr, cur_sector)) {
         //KLog("no y collision");
         cury = newy;
     } else {
         //KLog("y collision");
         // check if traversed to new sector
-        u16 portal_off = sector_portal_offset(cur_sector, (portal_map*)cur_portal_map);
-        u16 num_walls = sector_num_walls(cur_sector, (portal_map*)cur_portal_map);
         for(int i = 0; i < num_walls; i++) {
             u16 portal_idx = portal_off+i;
             s16 portal_sect = cur_portal_map->portals[portal_idx];
@@ -254,11 +285,22 @@ collision_result check_for_collision_radius(fix32 curx, fix32 cury, fix32 newx, 
             //KLog_U1("found new sector: ", portal_sect);
 
             if(within_sector(curx, newy, portal_sect)) {
-            //if(within_sector_radius(curx, newy, radius, portal_sect)) {
-                //KLog("within new sector");
-                cur_sector = portal_sect;
-                cury = newy;
-                break;
+                //KLog("withing new sector ");
+                u16 portal_sect_group = sector_group(portal_sect, map);
+                s16 neighbor_floor_height = get_sector_group_floor_height(portal_sect_group);
+                s16 neighbor_ceil_height = get_sector_group_ceil_height(portal_sect_group);
+                u8 closed_door = (neighbor_ceil_height - cur_floor_height) <= (60 << 4);
+                //u8 lift_too_high = (neighbor_floor_height - cur_floor_height) >= (40 << 4);
+                u8 lift_too_high = (neighbor_floor_height - cur_player_z) >= (40 << 4);
+                //KLog_S2("neighbor ceil height, ", neighbor_ceil_height, " cur floor height: ", cur_floor_height);
+                if(closed_door) {
+                    //KLog("door is closed! 3");
+                } else if(lift_too_high) {
+                    //KLog("lift is too high! 3");
+                } else {                           
+                    cur_sector = portal_sect;
+                    cury = newy;
+                }
             } else {
                 //KLog("not within sector");
             }
