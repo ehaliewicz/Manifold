@@ -221,7 +221,6 @@ def export_map_to_rom(cur_path, cur_state, set_launch_flags=False):
         write_u16(f, num_vertexes)
         
         sectors_ptr_offset = pointer_placeholder(f)
-        sectors_aabbs_ptr_offset = pointer_placeholder(f)
         sector_group_types_ptr_offset = pointer_placeholder(f)
         sector_group_params_ptr_offset = pointer_placeholder(f)
         sector_group_triggers_ptr_offset = pointer_placeholder(f)
@@ -261,20 +260,6 @@ def export_map_to_rom(cur_path, cur_state, set_launch_flags=False):
                 continue
             wall_offset += sect_num_walls+1
             portal_offset += sect_num_walls
-
-
-        patch_pointer_to_current_offset(
-            f, sectors_aabbs_ptr_offset
-        )
-
-        # write sector aabbs
-        for sect in data.sectors:
-            (left_x, right_x, top_y, bot_y) = sect.calc_aabb()
-            f.write(struct.pack(
-                ">hhhh", left_x, right_x, top_y, bot_y
-            ))
-
-
 
         patch_pointer_to_current_offset(
             f, sector_group_types_ptr_offset
