@@ -76,7 +76,8 @@ class Map():
     default_sprite,
     name="placeholder name", 
     sectors=None, 
-    vertexes=None,):
+    vertexes=None,
+    music_path=""):
         self.bsp = False
         if not sectors:
             self.sectors = []
@@ -90,7 +91,7 @@ class Map():
             self.vertexes = vertexes
 
         self.name = name
-        self.music_path = ""
+        self.music_path = music_path
         self.palette = palette.DEFAULT_PALETTE
         self.thing_defs = [things.ThingDef(default_sprite) for i in range(31)]
         self.things = []
@@ -465,8 +466,7 @@ thing_highlight = (0.7,1,0,1)
 portal_default = (1,0,0,0.3)
 portal_highlight = (1,1,0,0.3)
 wall_default = (1,0,0,1)
-wall_highlight = (1,0,1,1)
-wall_selected = (1,1,0,1)
+wall_highlight = (1,0,1,0.5)
 
 concave_wall = (1,0,0,1)
 concave_portal = (1,0,0,.3)
@@ -474,13 +474,15 @@ convex_wall = (0,0,1,1)
 convex_portal = (0,0,1,.3)
 
 def draw_map_vert(draw_list, vert, highlight=False):
-    if highlight:
-        color = vert_highlight
-    else:
-        color = vert_default
+    #if highlight:
+    #    color = vert_highlight
+    #else:
+    color = vert_default
 
     cam_x = cur_state.camera_x
     cam_y = cur_state.camera_y
+    if highlight:
+        draw_list.add_circle_filled(vert.x-cam_x, vert.y-cam_y, 4, imgui.get_color_u32_rgba(*vert_highlight), num_segments=12)
     draw_list.add_circle_filled(vert.x-cam_x, vert.y-cam_y, 2, imgui.get_color_u32_rgba(*color), num_segments=12)
 
 def draw_thing(draw_list, thing, highlight=False):
@@ -495,7 +497,7 @@ def draw_thing(draw_list, thing, highlight=False):
 
 
     
-def draw_map_wall(draw_list, wall, highlight=False, tree_mode=False, concave_sector=False):
+def draw_map_wall(draw_list, wall, sect_group_color, highlight=False, tree_mode=False, concave_sector=False):
     is_portal = wall.adj_sector_idx != -1
     tbl = [
         # not highlighted
@@ -506,8 +508,11 @@ def draw_map_wall(draw_list, wall, highlight=False, tree_mode=False, concave_sec
         portal_highlight,
     ]
            
-    
-    color = tbl[(highlight<<1 | is_portal)]
+    color = sect_group_color
+    (r,g,b,_) = color 
+    if is_portal:
+        color = (r,g,b,.25)
+    #color = tbl[(highlight<<1 | is_portal)]
 
         
     v1 = wall.v1
@@ -519,25 +524,31 @@ def draw_map_wall(draw_list, wall, highlight=False, tree_mode=False, concave_sec
     cam_y = cur_state.camera_y
      
 
-    if tree_mode:
-        color = None
-        if concave_sector:
-            color = concave_portal if is_portal else concave_wall
-        else:
-            color = convex_portal if is_portal else convex_wall 
-            
-        draw_list.add_line(v1.x-cam_x, v1.y-cam_y, v2.x-cam_x, v2.y-cam_y, imgui.get_color_u32_rgba(*color), 1.0)
-        draw_list.add_line(n1x-cam_x, n1y-cam_y, n2x-cam_x, n2y-cam_y, imgui.get_color_u32_rgba(*color), 1.0)
-    else:
-        draw_list.add_line(v1.x-cam_x, v1.y-cam_y, v2.x-cam_x, v2.y-cam_y, imgui.get_color_u32_rgba(*color), 1.0)
-        draw_list.add_line(n1x-cam_x, n1y-cam_y, n2x-cam_x, n2y-cam_y, imgui.get_color_u32_rgba(*color), 1.0)
+    #if tree_mode:
+    #    color = None
+    #    if concave_sector:
+    #        color = concave_portal if is_portal else concave_wall
+    #    else:
+    #        color = convex_portal if is_portal else convex_wall 
+    #        
+    #    draw_list.add_line(v1.x-cam_x, v1.y-cam_y, v2.x-cam_x, v2.y-cam_y, imgui.get_color_u32_rgba(*color), 1.0)
+    #    draw_list.add_line(n1x-cam_x, n1y-cam_y, n2x-cam_x, n2y-cam_y, imgui.get_color_u32_rgba(*color), 1.0)
+    #else:
+    if highlight:
+        draw_list.add_line(v1.x-cam_x, v1.y-cam_y, v2.x-cam_x, v2.y-cam_y, imgui.get_color_u32_rgba(*wall_highlight), 4.0)
+        draw_list.add_line(n1x-cam_x, n1y-cam_y, n2x-cam_x, n2y-cam_y, imgui.get_color_u32_rgba(*wall_highlight), 4.0)
+
+    draw_list.add_line(v1.x-cam_x, v1.y-cam_y, v2.x-cam_x, v2.y-cam_y, imgui.get_color_u32_rgba(*color), 1.0)
+    draw_list.add_line(n1x-cam_x, n1y-cam_y, n2x-cam_x, n2y-cam_y, imgui.get_color_u32_rgba(*color), 1.0)
+    
 
     
 
-def draw_sector(draw_list, sector, highlight=False):
+def draw_sector(draw_list, sector, sect_group, highlight=False):
     tree_mode = cur_state.mode == Mode.TREE
 
     concave_sector = False
+    
     if tree_mode:
         concave_sector = not sector.is_convex()  
         
@@ -545,17 +556,14 @@ def draw_sector(draw_list, sector, highlight=False):
         wall_selected = cur_state.mode == Mode.LINE and cur_state.cur_wall == wall
         wall_hovered = cur_state.hovered_item == wall
         
-        draw_map_wall(draw_list, wall, (highlight or wall_selected or wall_hovered), tree_mode, concave_sector)
+        draw_map_wall(draw_list, wall, sect_group.color, (highlight or wall_selected or wall_hovered), tree_mode, concave_sector)
 
         
 # returns true if hovered
 def draw_map():
     draw_list = imgui.get_window_draw_list()
 
-    for vertex in cur_state.map_data.vertexes:
-        
-        draw_map_vert(draw_list, vertex, highlight = ((cur_state.mode == Mode.VERTEX and vertex == cur_state.cur_vertex) or vertex == cur_state.hovered_item))
-        
+
     for thing in cur_state.map_data.things:
         draw_thing(
             draw_list, thing, 
@@ -567,14 +575,26 @@ def draw_map():
     #    draw_map_wall(draw_list, wall, highlight = ((cur_state.mode == Mode.LINE and wall==cur_state.cur_wall) or wall == cur_state.hovered_item))
     
     for sect in cur_state.map_data.sectors:
-        is_selected = cur_state.mode == Mode.SECTOR and sect == cur_state.cur_sector
-        is_hovered = cur_state.hovered_item == sect
-        draw_sector(draw_list, sect, highlight = is_selected or is_hovered)
+        sect_group = cur_state.map_data.sector_groups[sect.sector_group_idx]
+        is_group_selected = (cur_state.mode == Mode.SECTOR_GROUP and sect_group == cur_state.cur_sector_group)
+        is_selected = (cur_state.mode == Mode.SECTOR and sect == cur_state.cur_sector) or is_group_selected
+        
+        is_group_hovered = isinstance(cur_state.hovered_item, sector_group.SectorGroup) and sect.sector_group_idx == cur_state.hovered_item.index
+        is_hovered = (cur_state.hovered_item == sect or is_group_hovered)
 
-    if (cur_state.mode == Mode.SECTOR and cur_state.cur_sector is not None):
-        draw_sector(draw_list, cur_state.cur_sector, highlight=True)
-    if cur_state.hovered_item and isinstance(cur_state.hovered_item, sector.Sector):
-        draw_sector(draw_list, cur_state.hovered_item, highlight=True)
+        draw_sector(draw_list, sect, sect_group, highlight = is_selected or is_hovered)
+    
+    for vertex in cur_state.map_data.vertexes:
+        
+        draw_map_vert(draw_list, vertex, highlight = ((cur_state.mode == Mode.VERTEX and vertex == cur_state.cur_vertex) or vertex == cur_state.hovered_item))
+        
+    # draw current sector
+    #if (cur_state.mode == Mode.SECTOR and cur_state.cur_sector is not None):
+    #    sect_group = cur_state.sector
+    #    draw_sector(draw_list, cur_state.cur_sector, highlight=True)
+
+    #if cur_state.hovered_item and isinstance(cur_state.hovered_item, sector.Sector):
+    #    draw_sector(draw_list, cur_state.hovered_item, highlight=True)
 
 LEFT_BUTTON = 0
 RIGHT_BUTTON = 1
@@ -610,6 +630,7 @@ def interpret_click(x,y,button):
                     cur_state.mode = Mode.LINE
                     # find sector
                     cur_state.cur_sector = cur_state.map_data.sectors[cur_state.cur_wall.sector_idx]
+                    cur_state.cur_sector_group = cur_state.map_data.sector_groups[cur_state.cur_sector.sector_group_idx]
                     REQUEST_URI_TOO_LONG
 
         for thing in cur_state.map_data.things:
@@ -859,7 +880,8 @@ def load_map_from_file(f):
     new_map = Map(default_sprite=default_sprite,
                   name=old_map.name,
                   sectors=old_sectors_to_new_sectors(old_map.sectors, default_tex),
-                  vertexes=old_vertexes_to_new_vertexes(old_map.vertexes))                      
+                  vertexes=old_vertexes_to_new_vertexes(old_map.vertexes),
+                  music_path=old_map.music_path)                      
 
     if hasattr(old_map, 'palette'):
         new_map.palette = old_map.palette
@@ -872,6 +894,9 @@ def load_map_from_file(f):
 
     if hasattr(old_map, "sector_groups"):
         new_map.sector_groups = old_map.sector_groups
+        if len(new_map.sector_groups) > 0 and (not hasattr(new_map.sector_groups[0], 'color')):
+            for sctg in new_map.sector_groups:
+                sctg.color = sector_group.random_bright_color()
     else:
         new_map.sector_groups = old_sectors_to_new_sector_groups(old_map.sectors)
 
@@ -881,6 +906,7 @@ def load_map_from_file(f):
     cur_state.cur_vertex = None
     cur_state.cur_wall = None
     cur_state.cur_thing = None
+
         
 last_saved_map_file = None
 

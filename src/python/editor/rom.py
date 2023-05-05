@@ -7,6 +7,7 @@ import time
 import palette
 import sprite_utils
 import texture_utils
+import utils
 
 def _read_longword_(f, signed):
     return int.from_bytes(f.read(4), "big", signed)
@@ -220,6 +221,7 @@ def export_map_to_rom(cur_path, cur_state, set_launch_flags=False):
         write_u16(f, num_vertexes)
         
         sectors_ptr_offset = pointer_placeholder(f)
+        sectors_aabbs_ptr_offset = pointer_placeholder(f)
         sector_group_types_ptr_offset = pointer_placeholder(f)
         sector_group_params_ptr_offset = pointer_placeholder(f)
         sector_group_triggers_ptr_offset = pointer_placeholder(f)
@@ -245,6 +247,7 @@ def export_map_to_rom(cur_path, cur_state, set_launch_flags=False):
         )
 
         
+        # write sectors, wall offsets, portal offsets, num walls, and group indexes
         wall_offset = 0
         portal_offset = 0
         for sect in data.sectors:
@@ -258,6 +261,20 @@ def export_map_to_rom(cur_path, cur_state, set_launch_flags=False):
                 continue
             wall_offset += sect_num_walls+1
             portal_offset += sect_num_walls
+
+
+        patch_pointer_to_current_offset(
+            f, sectors_aabbs_ptr_offset
+        )
+
+        # write sector aabbs
+        for sect in data.sectors:
+            (left_x, right_x, top_y, bot_y) = sect.calc_aabb()
+            f.write(struct.pack(
+                ">hhhh", left_x, right_x, top_y, bot_y
+            ))
+
+
 
         patch_pointer_to_current_offset(
             f, sector_group_types_ptr_offset
@@ -357,8 +374,8 @@ def export_map_to_rom(cur_path, cur_state, set_launch_flags=False):
             f, vertexes_ptr_offset
         )
         for vert in data.vertexes:
-            write_s16(f, int(vert.x*1.3))
-            write_s16(f, int((-vert.y)*1.3))
+            write_s16(f, int(vert.x * utils.ENGINE_X_SCALE))
+            write_s16(f, int(vert.y * utils.ENGINE_Y_SCALE))
 
 
         patch_pointer_to_current_offset(

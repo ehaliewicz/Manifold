@@ -1,12 +1,12 @@
 import imgui
 import undo
-from utils import input_int, draw_list
+from utils import draw_list, ENGINE_X_SCALE, ENGINE_Y_SCALE
 import sector_group
 
 
 class Sector():
     def __init__(self, index, walls=None, sect_group_index=0):
-        self.sector_group_idx = 0
+        self.sector_group_idx = sect_group_index
 
         self.is_convex_memo = False
         self.convex_calculated = None
@@ -35,6 +35,37 @@ class Sector():
             self.convex_calculated = True
             
         return self.is_convex_memo
+    
+    def calc_aabb(self):
+        # this is going to scaled and inverted, and ready to go for the engine
+
+        verts = []
+        for wall in self.walls:
+            verts.append(wall.v1)
+            verts.append(wall.v2)
+        leftmost_vert = verts[0]
+        rightmost_vert = verts[0]
+        topmost_vert = verts[0]
+        botmost_vert = verts[0]
+        for v in verts:
+            if v.x < leftmost_vert.x:
+                leftmost_vert = v
+            if v.x > rightmost_vert.x:
+                rightmost_vert = v
+            if v.y < topmost_vert.y:
+                topmost_vert = v 
+            if v.y > botmost_vert.y:
+                botmost_vert = v 
+        
+        # next would be shrink inwards by player radius (30)
+
+        left_x = int(leftmost_vert.x * ENGINE_X_SCALE) + 30
+        right_x = int(rightmost_vert.x * ENGINE_X_SCALE) - 30
+        top_y = int(topmost_vert.y * ENGINE_Y_SCALE) - 30 # subtract here instead of add, because y coordinates are inverted for the engine
+        bot_y = int(botmost_vert.y * ENGINE_Y_SCALE) + 30
+
+        return (left_x, right_x, top_y, bot_y)
+
 
     
     def is_convex_inner(self):

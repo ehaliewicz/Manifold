@@ -5,6 +5,9 @@ import os
 
 
 
+ENGINE_X_SCALE = 1.3
+ENGINE_Y_SCALE = -1.3
+
 def dist(x1,y1, x2,y2):
     dx = x2-x1
     dy = y2-y1
