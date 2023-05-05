@@ -2304,8 +2304,6 @@ void draw_upper_step(s16 x1, s16 x1_ytop, s16 nx1_ytop, s16 x2, s16 x2_ytop, s16
                 break;
         }
         while(light_cnt--) {
-            top_y_int = top_y_fix >> 16;
-            ntop_y_int = ntop_y_fix >> 16;
             u8 min_drawable_y = *yclip_ptr;
             u8 max_drawable_y = *(yclip_ptr+1);
 
@@ -2315,6 +2313,8 @@ void draw_upper_step(s16 x1, s16 x1_ytop, s16 nx1_ytop, s16 x2, s16 x2_ytop, s16
             u8 col_drawn = is_column_drawn(min_drawable_y, max_drawable_y);
 
             if(!col_drawn) {
+                top_y_int = top_y_fix >> 16;
+                ntop_y_int = ntop_y_fix >> 16;
                 u8 top_draw_y = clamp(top_y_int, min_drawable_y, max_drawable_y);
                 u8 bot_draw_y = clamp(ntop_y_int, min_drawable_y, max_drawable_y);
                 //u8 clip_top = max(top_draw_y, bot_draw_y);
@@ -2412,8 +2412,6 @@ void draw_top_pegged_textured_upper_step(s16 x1, s16 x1_ytop, s16 nx1_ytop, s16 
     u16* tex_col_ptr = tex_col_buffer;
 
     while(cnt--) {
-        top_y_int = top_y_fix >> 16;
-        ntop_y_int = ntop_y_fix >> 16;
         u8 min_drawable_y = *yclip_ptr;
         u8 max_drawable_y = *(yclip_ptr+1);
 
@@ -2425,6 +2423,8 @@ void draw_top_pegged_textured_upper_step(s16 x1, s16 x1_ytop, s16 nx1_ytop, s16 
         u16 one_over_z_16 = *tex_col_ptr++;
         u16 tex_idx = *tex_col_ptr++;
         if(!col_drawn) {
+            top_y_int = top_y_fix >> 16;
+            ntop_y_int = ntop_y_fix >> 16;
             u8 top_draw_y = clamp(top_y_int, min_drawable_y, max_drawable_y);
             u8 bot_draw_y = clamp(ntop_y_int, min_drawable_y, max_drawable_y);
             if(top_draw_y < bot_draw_y) {
@@ -2535,8 +2535,6 @@ void draw_bottom_pegged_textured_lower_step(
     u16* tex_col_ptr = tex_col_buffer;
 
     while(cnt--) {
-        bot_y_int = bot_y_fix >> 16;
-        nbot_y_int = nbot_y_fix >> 16;
         u8 min_drawable_y = *yclip_ptr;
         u8 max_drawable_y = *(yclip_ptr+1);
 
@@ -2547,6 +2545,8 @@ void draw_bottom_pegged_textured_lower_step(
         u16 one_over_z_16 = *tex_col_ptr++;
         u16 tex_idx = *tex_col_ptr++;
         if(!col_drawn) {
+            bot_y_int = bot_y_fix >> 16;
+            nbot_y_int = nbot_y_fix >> 16;
             u8 bot_draw_y = clamp(bot_y_int, min_drawable_y, max_drawable_y);
             u8 top_draw_y = clamp(nbot_y_int, min_drawable_y, max_drawable_y);
             if(top_draw_y < bot_draw_y) {
@@ -2679,8 +2679,6 @@ void draw_lower_step(s16 x1, s16 x1_ybot, s16 nx1_ybot, s16 x2, s16 x2_ybot, s16
                 break;
         }
         while(light_cnt--) {
-            bot_y_int = bot_y_fix >> 16;
-            nbot_y_int = nbot_y_fix >> 16;
             u8 min_drawable_y = *yclip_ptr;
             u8 max_drawable_y = *(yclip_ptr+1);
 
@@ -2689,6 +2687,8 @@ void draw_lower_step(s16 x1, s16 x1_ybot, s16 nx1_ybot, s16 x2, s16 x2_ybot, s16
             u8* col_ptr = GET_COLUMN_PTR(offset_ptr, bmp_buffer_write);
             u8 col_drawn = is_column_drawn(min_drawable_y, max_drawable_y);
             if(!col_drawn) {
+                bot_y_int = bot_y_fix >> 16;
+                nbot_y_int = nbot_y_fix >> 16;
                 u8 bot_draw_y = clamp(bot_y_int, min_drawable_y, max_drawable_y);
                 u8 top_draw_y = clamp(nbot_y_int, min_drawable_y, max_drawable_y);
                 if(max_drawable_y > bot_draw_y) {
@@ -2758,19 +2758,21 @@ void draw_ceiling_update_clip(s16 x1, s16 x1_ytop, s16 x2, s16 x2_ytop,
     u16* offset_ptr = (&buf_column_offset_table[x]);
 
     while(cnt--) {
-        top_y_int = top_y_fix >> 16;
         u8 min_drawable_y = *yclip_ptr;
         u8 max_drawable_y = *(yclip_ptr+1);
-        u8 top_draw_y = clamp(top_y_int, min_drawable_y, max_drawable_y);
 
         //u8* col_ptr = *offset_ptr++;
         u8* col_ptr = GET_COLUMN_PTR(offset_ptr, bmp_buffer_write);
 
         u8 col_drawn = is_column_drawn(min_drawable_y, max_drawable_y);
 
-        if(min_drawable_y < top_draw_y && !col_drawn) {
-            ceil_func(min_drawable_y, top_draw_y, col_ptr, params);
-            *yclip_ptr = top_draw_y;
+        if(!col_drawn) {
+            top_y_int = top_y_fix >> 16;
+            u8 top_draw_y = clamp(top_y_int, min_drawable_y, max_drawable_y);
+            if (min_drawable_y < top_draw_y) {
+                ceil_func(min_drawable_y, top_draw_y, col_ptr, params);
+                *yclip_ptr = top_draw_y;
+            }
         } else {
             //yclip_ptr += 2;
         }
@@ -2824,22 +2826,22 @@ void draw_floor_update_clip(s16 x1, s16 x1_ybot, s16 x2, s16 x2_ybot,
     u16* offset_ptr = (&buf_column_offset_table[x]);
 
     for(;x < endx; x++) {
-        bot_y_int = bot_y_fix >> 16;
         u8 min_drawable_y = *yclip_ptr;
         u8 max_drawable_y = *(yclip_ptr+1);
         //if(min_drawable_y >= max_drawable_y) { continue; }
         
-        u8 bot_draw_y = clamp(bot_y_int, min_drawable_y, max_drawable_y);
 
         //u8* col_ptr = *offset_ptr++;
         u8* col_ptr = GET_COLUMN_PTR(offset_ptr, bmp_buffer_write);
         u8 col_drawn = is_column_drawn(min_drawable_y, max_drawable_y);
         
-
-        if(max_drawable_y > bot_draw_y && !col_drawn) {
-            floor_func(bot_draw_y, max_drawable_y, col_ptr, params);
-            *(yclip_ptr+1) = bot_draw_y;
-
+        if(!col_drawn) {
+            bot_y_int = bot_y_fix >> 16;
+            u8 bot_draw_y = clamp(bot_y_int, min_drawable_y, max_drawable_y);
+            if(max_drawable_y > bot_draw_y) {
+                floor_func(bot_draw_y, max_drawable_y, col_ptr, params);
+                *(yclip_ptr+1) = bot_draw_y;
+            }
         }
         yclip_ptr += 2;
 
@@ -2957,8 +2959,6 @@ void draw_solid_color_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
                 break;
         }
         while(light_cnt--) {
-            top_y_int = top_y_fix >> 16;
-            bot_y_int = bot_y_fix >> 16;
 
             //if(min_drawable_y >= max_drawable_y) { continue; }
 
@@ -2970,6 +2970,8 @@ void draw_solid_color_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
 
             u8 col_drawn = is_column_drawn(min_drawable_y, max_drawable_y);
             if(!col_drawn) {
+                top_y_int = top_y_fix >> 16;
+                bot_y_int = bot_y_fix >> 16;
                 u8 top_draw_y = clamp(top_y_int, min_drawable_y, max_drawable_y);
                 u8 bot_draw_y = clamp(bot_y_int, min_drawable_y, max_drawable_y);
                 if(min_drawable_y < top_draw_y) {
@@ -3098,8 +3100,6 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
     const u16* base_tex = light_tex;
     if(light_floor_ceil) {
         while(cnt--) {
-            top_y_int = top_y_fix >> 16;
-            bot_y_int = bot_y_fix >> 16;
             
             //u8* col_ptr = *offset_ptr++;
             u8* col_ptr = GET_COLUMN_PTR(offset_ptr, bmp_buffer_write);
@@ -3117,6 +3117,8 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
                 if(min_drawable_y >= max_drawable_y) {
                     __builtin_unreachable();
                 }
+                top_y_int = top_y_fix >> 16;
+                bot_y_int = bot_y_fix >> 16;
                 set_column_drawn(yclip_ptr);
                 s16 ctop = min_drawable_y;
                 s16 cbot = top_y_int;
@@ -3174,8 +3176,6 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
     } else {
         
         while(cnt--) {
-            top_y_int = top_y_fix >> 16;
-            bot_y_int = bot_y_fix >> 16;
 
 
             //u8* col_ptr = *offset_ptr++;
@@ -3192,6 +3192,8 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
             u16 tex_idx = *tex_col_ptr++;
 
             if(!col_drawn) {
+                top_y_int = top_y_fix >> 16;
+                bot_y_int = bot_y_fix >> 16;
                 set_column_drawn(yclip_ptr);
                 s16 ctop = min_drawable_y;
                 s16 cbot = top_y_int;
@@ -3336,8 +3338,6 @@ void draw_top_pegged_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
     u16* tex_col_ptr = tex_col_buffer;
 
     while(cnt--) {
-        top_y_int = top_y_fix >> 16;
-        bot_y_int = bot_y_fix >> 16;
 
         u8 min_drawable_y = *yclip_ptr++;
         u8 max_drawable_y = *yclip_ptr++;
@@ -3351,6 +3351,8 @@ void draw_top_pegged_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
         u16 tex_idx = *tex_col_ptr++;
 
         if(!col_drawn) {
+            top_y_int = top_y_fix >> 16;
+            bot_y_int = bot_y_fix >> 16;
             u8 top_draw_y = clamp(top_y_int, min_drawable_y, max_drawable_y);
             u8 bot_draw_y = clamp(bot_y_int, min_drawable_y, max_drawable_y);
             if(min_drawable_y < top_draw_y) {
@@ -3472,8 +3474,6 @@ void draw_bot_pegged_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
     u16* tex_col_ptr = tex_col_buffer;
 
     while(cnt--) {
-        top_y_int = top_y_fix >> 16;
-        bot_y_int = bot_y_fix >> 16;
 
         u8 min_drawable_y = *yclip_ptr++;
         u8 max_drawable_y = *yclip_ptr++;
@@ -3487,6 +3487,8 @@ void draw_bot_pegged_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
         u16 one_over_z_16 = *tex_col_ptr++;
         u16 tex_idx = *tex_col_ptr++;
         if(!col_drawn) {
+            top_y_int = top_y_fix >> 16;
+            bot_y_int = bot_y_fix >> 16;
             u8 top_draw_y = clamp(top_y_int, min_drawable_y, max_drawable_y);
             u8 bot_draw_y = clamp(bot_y_int, min_drawable_y, max_drawable_y);
             if(min_drawable_y < top_draw_y) {
