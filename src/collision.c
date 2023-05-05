@@ -202,31 +202,14 @@ collision_result check_for_collision_radius(fix32 curx, fix32 cury, fix32 newx, 
     s16 cur_ceil_height = get_sector_group_ceil_height(cur_sector_group);
     s16 cur_floor_height = get_sector_group_floor_height(cur_sector_group);
     s16 cur_player_z = (cur_player_pos.z - FIX32(50)) >> (FIX32_FRAC_BITS-4);
-
-    aabb* cur_sector_aabb = sector_aabb(cur_sector, map);
     
     //s16 new_x_int = newx>>FIX32_FRAC_BITS;
     //s16 new_y_int = newy>>FIX32_FRAC_BITS;
 
-    f32 aabb_left_x = cur_sector_aabb->left_x<<FIX32_FRAC_BITS;
-    f32 aabb_right_x = cur_sector_aabb->right_x<<FIX32_FRAC_BITS;
-    f32 aabb_top_y = cur_sector_aabb->top_y<<FIX32_FRAC_BITS;
-    f32 aabb_bot_y = cur_sector_aabb->bot_y<<FIX32_FRAC_BITS;
-    u8 within_x_bounds = (newx > aabb_left_x && newx < aabb_right_x);
-    u8 within_y_bounds = (newy < aabb_top_y && newy > aabb_bot_y);
-    if(within_x_bounds && within_y_bounds) {
-        
-        collision_result res;
-        res.new_sector = cur_sector;
-        res.pos.x = newx;
-        res.pos.y = newy;
-        return res;
-    }
 
     u16 portal_off = sector_portal_offset(cur_sector, map);
     u16 num_walls = sector_num_walls(cur_sector, map);
-    if(//(newx > aabb_left_x && newx < aabb_right_x) || 
-    within_sector_radius(newx, cury, radius_sqr, cur_sector)) {
+    if(within_sector_radius(newx, cury, radius_sqr, cur_sector)) {
         // no x collision, just move x 
         //KLog("no x collision");
         curx = newx;
@@ -269,8 +252,7 @@ collision_result check_for_collision_radius(fix32 curx, fix32 cury, fix32 newx, 
 
     }
 
-    if(//(newy < aabb_top_y && newy > aabb_bot_y) || 
-    within_sector_radius(curx, newy, radius_sqr, cur_sector)) {
+    if(within_sector_radius(curx, newy, radius_sqr, cur_sector)) {
         //KLog("no y collision");
         cury = newy;
     } else {
