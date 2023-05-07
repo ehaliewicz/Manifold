@@ -26,7 +26,7 @@ def vdp_color_to_rgb(vdpcolor):
     return [r,g,b]
 
 DEFAULT_PALETTE = [hex_color_to_rgb(rgb) for rgb in [
-    0x000000,
+    0xE31C79, #0x000000,
     0x9b5d5d,
     0xd99b7c,
     0xf8ba9b,
