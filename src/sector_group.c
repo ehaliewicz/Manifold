@@ -191,7 +191,7 @@ void run_stairs(s16* params, u16 sect_group) {
         } while(0);
             break;
 
-        case STAIRS_RAISING: do {
+        case STAIRS_MOVING: do {
                 cur_height += 32;
                 //ticks++;
                 //params[SECTOR_PARAM_TICKS_LEFT_IDX] = ticks;
@@ -211,11 +211,43 @@ void run_stairs(s16* params, u16 sect_group) {
         case STAIRS_RAISED: do {
         } while(0);
         break;
-
-
-
     }
 }
+
+void run_lowering_stairs(s16* params, u16 sect_group) {
+    stair_state state = params[SECTOR_GROUP_PARAM_STATE_IDX];
+
+    s16 cur_height = params[SECTOR_GROUP_PARAM_FLOOR_HEIGHT_IDX];
+    s16 orig_stairs_height = params[SECTOR_GROUP_PARAM_ORIG_HEIGHT_IDX];
+    //s16 ticks = params[SECTOR_PARAM_TICKS_LEFT_IDX]++; // ticks no longer necessary, just increase until we're at the right height.
+    switch(state) {
+        case STAIRS_LOWERED: do {
+        } while(0);
+            break;
+
+        case STAIRS_MOVING: do {
+                cur_height -= 32;
+                //ticks++;
+                //params[SECTOR_PARAM_TICKS_LEFT_IDX] = ticks;
+                
+                // TODO: floor color hack!
+                params[SECTOR_GROUP_PARAM_FLOOR_COLOR_IDX] = 12;
+                
+                params[SECTOR_GROUP_PARAM_FLOOR_HEIGHT_IDX] = cur_height;
+                if(cur_height <= orig_stairs_height) {
+                    params[SECTOR_GROUP_PARAM_FLOOR_HEIGHT_IDX] = orig_stairs_height;
+                    params[SECTOR_GROUP_PARAM_STATE_IDX] = STAIRS_LOWERED;
+                }
+            } while(0);
+            break;
+        
+
+        case STAIRS_RAISED: do {
+        } while(0);
+        break;
+    }
+}
+
 
 
 void run_flash(s16* params) {
@@ -277,10 +309,17 @@ void run_sector_group_process(u16 sect_group) {
             run_lift(params, sect_group);
         } while(0);
             break;
+
         case STAIRS: do {
             run_stairs(params, sect_group);
         } while(0);
-        break;
+            break;
+
+        case LOWERING_STAIRS: do {
+            run_lowering_stairs(params, sect_group);
+        } while(0);
+            break;
+            
     }
 }
 
@@ -301,7 +340,7 @@ s16 get_sector_group_trigger_target(u16 sector_group, u8 tgt_idx) {
     return cur_portal_map->sector_group_triggers[(sector_group<<SECTOR_TRIGGER_SHIFT)+1+tgt_idx];
 }
 
-void activate_sector_group_enter_trigger(u16 sector_group) {
+trigger_type activate_sector_group_enter_trigger(u16 sector_group) {
     s16 type = get_sector_group_trigger_type(sector_group);
     switch(type) {
         case NO_TRIGGER:
@@ -327,10 +366,16 @@ void activate_sector_group_enter_trigger(u16 sector_group) {
             for(int i = 0; i < NUM_SECTOR_TRIGGER_TARGETS; i++) {
                 s16 tgt_sector_group = get_sector_group_trigger_target(sector_group, i);
                 if(tgt_sector_group == -1) { break; }
-                set_sector_group_state(tgt_sector_group, STAIRS_RAISING);
+                set_sector_group_state(tgt_sector_group, STAIRS_MOVING);
             }
             break;
+
+        case LEVEL_END: do {
+        } while(0);
+            break;
     }
+
+    return type;
     
     //char buf[50];
     //int len = sprintf(buf, "trap for sector #%i triggered", sector_group);

@@ -23,8 +23,9 @@
 #define DOOR 2
 #define LIFT 3
 #define STAIRS 4
+#define LOWERING_STAIRS 5
 
-#define NUM_SECTOR_GROUP_TYPES 5
+#define NUM_SECTOR_GROUP_TYPES 6
 
 
 typedef enum {
@@ -36,7 +37,7 @@ typedef enum {
 
 typedef enum {
     STAIRS_LOWERED = 0,
-    STAIRS_RAISING = 1,
+    STAIRS_MOVING = 1,
     STAIRS_RAISED = 2
 } stair_state;
 
@@ -66,11 +67,13 @@ typedef enum {
     SET_SECTOR_DARK=1,
     SET_SECTOR_LIGHT=2,
     START_STAIRS=3,
+    LEVEL_END=4,
 } trigger_type;
 
 u16 get_sector_group_trigger_type(u16 sect_group);
 s16 get_sector_group_trigger_target(u16 sect_group, u8 tgt_idx);
 
-void activate_sector_group_enter_trigger(u16 sect_group);
+
+trigger_type activate_sector_group_enter_trigger(u16 sect_group);
 
 #endif

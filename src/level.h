@@ -10,6 +10,6 @@ extern u16 *wall_tex_repetitions;
 
 
 void load_portal_map(portal_map* l);
-void clean_sector_parameters();
+void clean_portal_map();
 
 #endif

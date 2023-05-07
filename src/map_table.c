@@ -8,13 +8,13 @@
 
 
 
-const uint32_t map_table[NUM_MAPS+3] = {
+const uint32_t map_table[MAX_MAPS+2] = {
     0xDEADBEEF,
     3, // number of maps
     &overlapping_map,
     &editor_test_map, 
     &building_test_map, 
-    0
+    0, 0
     //&empty_map_1, //&empty_map_2, &empty_map_3,
 };
 

@@ -34,7 +34,7 @@ static const s16 sectors[17*SECTOR_SIZE] = {
 
 
 static const s16 sector_group_params[NUM_SECTOR_GROUP_PARAMS*17] = {
-    // light, orig_height, ticks_left, state, floor_height, ceil_height, floor_color, ceil_color
+    // light, orig_height, state, ticks_left, floor_height, ceil_height, floor_color, ceil_color
     0, 0, 0, 0,  60<<4, 200<<4, DARK_BLUE_IDX, DARK_BLUE_IDX, // only LIGHT is relevant here
 
     -1, 200<<4, CLOSED, 30, 60<<4, 60<<4,  DARK_BLUE_IDX, DARK_BLUE_IDX, 

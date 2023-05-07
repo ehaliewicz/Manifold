@@ -10,7 +10,7 @@ LIFT = 3
 STAIRS = 4
 
 
-SECTOR_GROUP_EFFECT_TYPES = ["No effect", "Flashing", "Door", "Lift", "Stairs"] 
+SECTOR_GROUP_EFFECT_TYPES = ["No effect", "Flashing", "Door", "Lift", "Stairs", "Lowering stairs"] 
 
 
 
@@ -20,7 +20,7 @@ SET_SECTOR_DARK = 1
 SET_SECTOR_LIGHT = 2
 START_STAIRS = 3
 
-SECTOR_GROUP_TRIGGER_TYPES = ["No trigger", "Set dark", "Set light", "Start stairs"]
+SECTOR_GROUP_TRIGGER_TYPES = ["No trigger", "Set dark", "Set light", "Start stairs", "End level"]
 SECTOR_GROUP_NUM_TRIGGERS = 7 # four pairs of (target_sector_group, target_sector_group_action)
 
 CLOSED=0
@@ -31,9 +31,9 @@ GOING_DOWN=3
 DOOR_LIFT_STATES = ["Closed","Going up", "Open", "Going down"]
 
 STAIRS_LOWERED = 0
-STAIRS_RAISING = 1
+STAIRS_MOVING = 1
 STAIRS_RAISED = 2
-STAIR_STATES = ["Stairs lowered", "Stairs raising", "Stairs raised"]
+STAIR_STATES = ["Stairs lowered", "Stairs moving", "Stairs raised"]
 
 def random_bright_color():
     return (
@@ -165,9 +165,9 @@ def draw_sector_group_mode(cur_state):
             if imgui.button("New trigger"):
                 cur_sect_group.add_trigger_target(-1)
         
+        sect_group_options = ["-1"] + ["{}".format(sg.index) for sg in cur_state.map_data.sector_groups]
         for idx,tgt in enumerate(cur_sect_group.triggers[1:]):
-            sect_group_options = ["-1"] + ["{}".format(sg.index) for sg in cur_state.map_data.sector_groups]
-            tgt_changed, new_tgt_idx = imgui.core.combo("Tgt:  ", tgt+1, sect_group_options)
+            tgt_changed, new_tgt_idx = imgui.core.combo("Tgt {}:  ".format(idx), tgt+1, sect_group_options)
             if tgt_changed:
                 cur_sect_group.triggers[idx+1] = new_tgt_idx-1 
 

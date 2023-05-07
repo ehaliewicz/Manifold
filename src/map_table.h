@@ -3,7 +3,8 @@
 
 #include "portal_map.h"
 
-#define NUM_MAPS 4
-const uint32_t map_table[NUM_MAPS+3];
+#define NUM_MAPS 3
+#define MAX_MAPS 5
+const uint32_t map_table[MAX_MAPS+2];
 
 #endif

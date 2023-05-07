@@ -6,7 +6,8 @@
 
 void print_invalid_mode();
 
-mode modes[6] = {
+mode modes[7] = {
+    {.name = "invalid mode", .start_up = &print_invalid_mode},
     {.name = "invalid mode", .start_up = &print_invalid_mode},
     {.name = "INTRO", .start_up = &init_fire, .clean_up = &cleanup_fire, .run = &run_fire},
     {.name = "MAIN_MENU", .start_up = &init_main_menu, .clean_up = &cleanup_main_menu, .run = &run_main_menu},
@@ -27,8 +28,12 @@ void print_invalid_mode() {
 
 
 void set_game_mode(game_mode md) {
-    cur_game_mode = md;
-    modes[md].start_up();
+    if(md != RESET_MODE) {
+        cur_game_mode = md;
+    }
+    KLog("going to game mode: ");
+    KLog(modes[cur_game_mode].name);
+    modes[cur_game_mode].start_up();
 }
 
 void run_game_mode() {

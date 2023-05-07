@@ -4,11 +4,12 @@
 
 typedef enum {
     SAME_MODE=0,
-    INTRO=1,
-    MAIN_MENU=2,
-    IN_GAME=3,
-    PAUSE_MENU=4,
-    CREDITS=5
+    RESET_MODE=1,
+    INTRO=2,
+    MAIN_MENU=3,
+    IN_GAME=4,
+    PAUSE_MENU=5,
+    CREDITS=6
 } game_mode;
 
 

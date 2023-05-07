@@ -77,6 +77,7 @@ void push_decoration_to_front(decoration_link new_head, decoration_link* lst) {
 // setup objects
 void init_object_lists(int num_sectors) {
 
+
     num_sector_lists = num_sectors;
     //KLog_U1("size of object: ", sizeof(object));
     objects = malloc(sizeof(object)*MAX_OBJECTS, "object list");
@@ -87,7 +88,7 @@ void init_object_lists(int num_sectors) {
     }
     object_free_list = 0; // start object link
 
-    decorations = malloc(sizeof(decoration_object)*MAX_DECORATIONS, "static object list");
+    decorations = malloc(sizeof(decoration_object)*MAX_DECORATIONS, "decoration list");
     sector_decoration_lists = malloc(sizeof(decoration_link)*num_sectors, "sector decoration lists");
     for(int i = 0; i < MAX_DECORATIONS; i++) {
         decorations[i].next = (i == (MAX_DECORATIONS-1) ? NULL_DEC_LINK : i+1);
@@ -104,10 +105,13 @@ void init_object_lists(int num_sectors) {
 } 
 
 
-void clear_object_lists() {
+void clean_object_lists() {
     free(objects, "object list");
+    free(decorations, "decoration list");
     free(sector_object_lists, "sector object lists");
     free(sector_decoration_lists, "sector decoration lists");
+    free(z_sort_buf, "object z sort buffer");
+    free(obj_sort_buf, "object sort buffer");
 }
 
 

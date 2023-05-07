@@ -101,7 +101,7 @@ struct decoration_object {
 
 void init_object_lists(int num_sectors);
 
-void clear_object_lists();
+void clean_object_lists();
 
 typedef struct  __attribute__((__packed__)) {
     u16 sector_num;

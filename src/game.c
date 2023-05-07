@@ -91,26 +91,6 @@ void showStats(u16 float_display)
     // display FPS
     VDP_drawTextBG(BG_B, str, 1, y++);
 
-    //sprintf(str, "%i ", vints);
-    //vints = 0;
-    //VDP_drawTextBG(BG_B, str, 1, 6); 
-
-    //sprintf(str, "s: %i ", cur_player_pos.cur_sector);
-    //VDP_drawTextBG(BG_B, str, 1, y++);
-    
-    //KLog_U1("sector: ", cur_player_pos.cur_sector);
-    //KLog_S3("px: ", cur_player_pos.x, " py: ", cur_player_pos.y, " pz: ", cur_player_pos.z);
-    //KLog_U1("ang: ", cur_player_pos.ang);
-    
-    //sprintf(str, "sll: %i ", get_sector_group_light_level(sector_group(cur_player_pos.cur_sector, cur_portal_map)));
-    //VDP_drawTextBG(BG_B, str, 1, 8);
-    //sprintf(str, "sg: %i", sector_group(cur_player_pos.cur_sector, cur_portal_map));
-    //VDP_drawTextBG(BG_B, str, 1, y++);
-
-
-
-
-
 }
 
 
@@ -284,7 +264,7 @@ int holding_down_move = 0;
 
 u8 render_mode;
 
-void handle_input() {
+int handle_input() {
     int strafe_left = joy_button_pressed(BUTTON_X);
     int strafe_right = joy_button_pressed(BUTTON_Z);
     int jump_pressed = joy_button_pressed(BUTTON_Y);
@@ -356,7 +336,9 @@ void handle_input() {
             cur_player_pos.cur_sector = collision.new_sector;
             sect_group = sector_group(collision.new_sector, cur_portal_map);
             if(sect_group != old_sect_group) {
-                activate_sector_group_enter_trigger(sect_group);
+                if(activate_sector_group_enter_trigger(sect_group) == LEVEL_END) {
+                    return LEVEL_END;
+                }
             }
         }
      
@@ -445,7 +427,7 @@ void handle_input() {
     }
 
 
-    return;
+    return 0;
 
 
     pause_game = joy_button_pressed(BUTTON_START);
@@ -507,43 +489,7 @@ void cleanup_pause_menu() {
 u16* cur_palette = NULL;
 
 
-Vect2D_f32 get_sector_center(int i) {
-    Vect2D_f32 res;
-    int avg_sect_x = 0;
-    int avg_sect_y = 0;
-    int num_walls = sector_num_walls(i, (portal_map*)cur_portal_map);
-    int wall_offset = sector_wall_offset(i, (portal_map*)cur_portal_map);
 
-    for(int j = 0; j < num_walls; j++) {
-        int vidx = cur_portal_map->walls[wall_offset+j];
-        avg_sect_x += cur_portal_map->vertexes[vidx].x;
-        avg_sect_y += cur_portal_map->vertexes[vidx].y;
-    }
-    avg_sect_x /= num_walls;
-    avg_sect_y /= num_walls;
-    res.x = intToFix32(avg_sect_x);
-    res.y = intToFix32(avg_sect_y);
-    
-    return res;
-}
-
-
-void init_player_pos() {
-    const init_player_sector = 0;
-    
-    Vect2D_f32 sector_0_center = get_sector_center(0);
-
-    cur_player_pos.x = sector_0_center.x;
-    cur_player_pos.y = sector_0_center.y;
-    cur_player_pos.cur_sector = 0;
-
-    u16 sect_group = sector_group(cur_player_pos.cur_sector, cur_portal_map);
-
-    cur_player_pos.z = (get_sector_group_floor_height(sect_group)<<(FIX32_FRAC_BITS-4)) + FIX32(50);
-
-
-    cur_player_pos.ang = 0;
-}
 
 
 void do_vint_flip();
@@ -585,33 +531,6 @@ void init_game() {
     volatile u32* vp_start_in_game_arr = start_in_game_arr;
     KLog_U1("free bytes of RAM before init: ", MEM_getFree());
 
-    if(vp_start_in_game_arr[1]) {
-        volatile u32* vp_init_load_level_arr = instant_load_level_array;
-        volatile int init_level = vp_init_load_level_arr[1];
-        load_portal_map((portal_map*)map_table[2+init_level]);
-    } else {
-        load_portal_map((portal_map*)map_table[2+init_load_level]);
-    }
-
-    //load_portal_map((portal_map*)map_table[3]);
-    /*
-    KLog_U1("map table address: ", map_table);
-    KLog_U1("portal map pointer: ", map_table[3]);
-    portal_map* map = (portal_map*)map_table[3];
-    KLog_U1("num_sectors address: ", &map->num_sectors);
-    KLog_U1("num_walls address: ", &map->num_walls);
-    KLog_U1("num_verts address: ", &map->num_verts);
-    KLog_U1("sectors address: ", &map->sectors);
-    KLog_U1("sector_types address: ", &map->sector_types);
-    KLog_U1("sector_params address: ", &map->sector_params);
-    KLog_U1("walls address: ", &map->walls);
-    KLog_U1("portals address: ", &map->portals);
-    KLog_U1("wall_colors address: ", &map->wall_colors);
-    KLog_U1("vertexes address: ", &map->vertexes);
-    KLog_U1("wall_norm_quadrants address: ", &map->wall_norm_quadrants);
-    //while(1) {}
-    */
-
 
 
     quit_game = 0;
@@ -630,23 +549,29 @@ void init_game() {
 
     // palette 1 is 3d palette
     //PAL_setPalette(PAL1, cur_palette);
-    if(cur_portal_map->palette != NULL) {
-        PAL_setPalette(PAL1, cur_portal_map->palette);
-    } else {
-        PAL_setPalette(PAL1, sprite_pal.data);
-    }
 
     // palette 2 is HUD palette, set in inventory_init
     // palette 3 is sprite palette
     PAL_setPalette(PAL3, sprite_pal.data);
+    KLog("loading shit");
+    //PAL_setPalette(PAL1, sprite_pal.data);
     VDP_setTextPalette(PAL3);
+    
+    static int loaded_into_game = 0;
+    if(vp_start_in_game_arr[1] && !loaded_into_game) {
+        volatile u32* vp_init_load_level_arr = instant_load_level_array;
+        volatile int init_level = vp_init_load_level_arr[1];
+        init_load_level = init_level;
+        loaded_into_game = 1;
+    }
+
+    load_portal_map((portal_map*)map_table[2+init_load_level]);
+
     
     clear_menu();
 
     // skybox is PAL3
     bmp_init_vertical(1, BG_A, PAL1, 0);
-
-    VDP_waitVSync();
 
     //u16 skybox_gradient_basetile = TILE_ATTR_FULL(PAL3, 0, 0, 0, free_tile_loc);
 	//VDP_drawImageEx(BG_B, &skybox_gradient, skybox_gradient_basetile, 4, 4, 0, 0);
@@ -675,50 +600,10 @@ void init_game() {
 
     init_portal_renderer();
 
-    KLog_U1("num sectors: ", cur_portal_map->num_sectors);
-    init_object_lists(cur_portal_map->num_sectors);
 
     free_tile_loc = init_shotgun(free_tile_loc);
 
     //KLog("allocating object?");
-
-    int got_player_thing = 0;
-    map_object* player_thing = NULL;
-
-    KLog_U1("allocating objects: ", cur_portal_map->num_things);
-
-    for(int i = 0; i < cur_portal_map->num_things; i++) {
-        map_object* thg = &cur_portal_map->things[i];
-        //KLog_U1("thing type: ", thg->type);
-        //KLog_U1("in sector: ", )
-        u16 obj_sect_group = sector_group(thg->sector_num, cur_portal_map);
-
-    //cur_player_pos.z = (cur_sector_height<<(FIX32_FRAC_BITS-4)) + FIX32(50);   
-        volatile object_template* typ = &object_types[thg->type];
-        if(thg->type == 0) { //typ->is_player) {
-            //KLog("is player?");
-            got_player_thing = 1;
-            player_thing = thg;
-        } else {
-            //KLog_U1("type: ", thg->type);
-            s16 cur_sector_height = get_sector_group_floor_height(obj_sect_group);
-            if(typ->init_state == IDLE_STATE) {
-                alloc_decoration_in_sector(thg->sector_num, thg->x, thg->y, cur_sector_height, thg->type);
-            } else {
-                alloc_object_in_sector(
-                    i&1, // either 0 or 1, to spread the load
-                    thg->sector_num,
-                    thg->x<<FIX32_FRAC_BITS, 
-                    thg->y<<FIX32_FRAC_BITS, 
-                    cur_sector_height, //(cur_sector_height<<(FIX32_FRAC_BITS-4)), // + FIX32(50);   
-                    //thg->z<<FIX32_FRAC_BITS, 
-                    thg->type
-                );
-            }
-        }
-    }
-
-    init_player_pos();
 
     vwf_init();
     free_tile_loc = console_init(free_tile_loc);
@@ -735,18 +620,22 @@ void init_game() {
     KLog_U1("free bytes of RAM after init: ", free_bytes);
     MEM_dump();
 
-    if(cur_portal_map->xgm_track != NULL) {
-        XGM_startPlay(cur_portal_map->xgm_track);
-    } 
 
 }
 
 void maybe_set_palette(u16* new_palette) {
     if(cur_palette != new_palette) {
+        KLog("setting palette");
         PAL_setPalette(PAL1, new_palette);
         cur_palette = new_palette;
     }
 }
+
+void cleanup_level() {
+    clean_object_lists();
+    clean_portal_map();
+}
+
 
 game_mode run_game() {
 
@@ -759,7 +648,15 @@ game_mode run_game() {
     update_sfx();
     run_sector_group_processes();
     calc_movement_speeds();
-    handle_input();
+    if(handle_input() == LEVEL_END) {
+        const int num_maps = map_table[1];
+        init_load_level+= 1;
+        if(init_load_level >= num_maps) {
+            init_load_level = 0;
+        }
+        KLog_U1("going to level: ", init_load_level);
+        return RESET_MODE;
+    }
 
     angleCos32 = cosFix32(cur_player_pos.ang);
     angleSin32 = sinFix32(cur_player_pos.ang); 
@@ -787,16 +684,16 @@ game_mode run_game() {
     return SAME_MODE;
 }
 
-
 void cleanup_game() { 
     bmp_end();
     cleanup_portal_renderer();
     free_clip_buffer_list();
     release_2d_buffers();
-    clear_object_lists();
-    clean_sector_parameters();
 
-    //console_cleanup();
+    clean_object_lists();
+    clean_portal_map();
+
+    console_cleanup();
     vwf_cleanup();
 
     MEM_pack();

@@ -1,5 +1,8 @@
 #include <genesis.h>
+#include "game.h"
+#include "map_table.h"
 #include "math3d.h"
+#include "object.h"
 #include "portal_map.h"
 #include "sector_group.h"
 #include "utils.h"
@@ -20,13 +23,13 @@ u16 *wall_tex_repetitions;
 
  void clean_sector_parameters() {
     free(live_sector_group_parameters, "live sector group params table");
-    free(wall_tex_repetitions, "texture repeat table");
     live_sector_group_parameters = NULL;
  }
 
-
-
-
+void clean_wall_tex_repetitions() {
+    free(wall_tex_repetitions, "texture repeat table");
+    wall_tex_repetitions = NULL;
+}
 void init_wall_tex_repetitions(portal_map* map) {
     u16 num_walls = map->num_walls;
     wall_tex_repetitions = malloc(sizeof(u16)*num_walls, "texture repeat table");
@@ -56,11 +59,112 @@ void init_wall_tex_repetitions(portal_map* map) {
 }
 
 
+Vect2D_f32 get_sector_center(int i) {
+    Vect2D_f32 res;
+    int avg_sect_x = 0;
+    int avg_sect_y = 0;
+    int num_walls = sector_num_walls(i, (portal_map*)cur_portal_map);
+    int wall_offset = sector_wall_offset(i, (portal_map*)cur_portal_map);
+
+    for(int j = 0; j < num_walls; j++) {
+        int vidx = cur_portal_map->walls[wall_offset+j];
+        avg_sect_x += cur_portal_map->vertexes[vidx].x;
+        avg_sect_y += cur_portal_map->vertexes[vidx].y;
+    }
+    avg_sect_x /= num_walls;
+    avg_sect_y /= num_walls;
+    res.x = intToFix32(avg_sect_x);
+    res.y = intToFix32(avg_sect_y);
+    
+    return res;
+}
+
+void init_player_pos() {
+    const init_player_sector = 0;
+    
+    Vect2D_f32 sector_0_center = get_sector_center(0);
+
+    cur_player_pos.x = sector_0_center.x;
+    cur_player_pos.y = sector_0_center.y;
+    cur_player_pos.cur_sector = 0;
+
+    u16 sect_group = sector_group(cur_player_pos.cur_sector, cur_portal_map);
+
+    cur_player_pos.z = (get_sector_group_floor_height(sect_group)<<(FIX32_FRAC_BITS-4)) + FIX32(50);
+
+
+    cur_player_pos.ang = 0;
+}
+
+
+void init_objects() {
+    int got_player_thing = 0;
+    map_object* player_thing = NULL;
+
+    KLog_U1("allocating objects: ", cur_portal_map->num_things);
+
+    for(int i = 0; i < cur_portal_map->num_things; i++) {
+        map_object* thg = &cur_portal_map->things[i];
+        //KLog_U1("thing type: ", thg->type);
+        //KLog_U1("in sector: ", )
+        u16 obj_sect_group = sector_group(thg->sector_num, cur_portal_map);
+
+    //cur_player_pos.z = (cur_sector_height<<(FIX32_FRAC_BITS-4)) + FIX32(50);   
+        volatile object_template* typ = &object_types[thg->type];
+        if(thg->type == 0) { //typ->is_player) {
+            //KLog("is player?");
+            got_player_thing = 1;
+            player_thing = thg;
+        } else {
+            //KLog_U1("type: ", thg->type);
+            s16 cur_sector_height = get_sector_group_floor_height(obj_sect_group);
+            if(typ->init_state == IDLE_STATE) {
+                alloc_decoration_in_sector(thg->sector_num, thg->x, thg->y, cur_sector_height, thg->type);
+            } else {
+                alloc_object_in_sector(
+                    i&1, // either 0 or 1, to spread the load
+                    thg->sector_num,
+                    thg->x<<FIX32_FRAC_BITS, 
+                    thg->y<<FIX32_FRAC_BITS, 
+                    cur_sector_height, //(cur_sector_height<<(FIX32_FRAC_BITS-4)), // + FIX32(50);   
+                    //thg->z<<FIX32_FRAC_BITS, 
+                    thg->type
+                );
+            }
+        }
+    }
+}
+
+
+
+void clean_portal_map() {
+    clean_sector_parameters();
+    clean_wall_tex_repetitions();
+}
+
+
+
+
 void load_portal_map(portal_map* l) {
     cur_portal_map = l;
+
     init_sector_parameters(l);
 
     init_wall_tex_repetitions(l);
 
-}
+    init_player_pos();    
+    
+   
+    if(cur_portal_map->palette != NULL) {
+        KLog("LOADING MAP PALETTE");
+        PAL_setPalette(PAL1, cur_portal_map->palette);
+    }
+    
+    init_object_lists(cur_portal_map->num_sectors);
 
+    init_objects();
+
+    if(cur_portal_map->xgm_track != NULL) {
+        XGM_startPlay(cur_portal_map->xgm_track);
+    } 
+}
