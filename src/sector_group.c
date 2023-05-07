@@ -79,7 +79,7 @@ void run_door(s16* params, u16 sect_group) {
         case CLOSED: do {
                 u16 ticks_left = params[SECTOR_GROUP_PARAM_TICKS_LEFT_IDX];
                 if(ticks_left == 0) {
-                    propagate_sfx_from_sect_group(SFX_OPEN_DOOR_ID, 1, sect_group, sector_rendered_cache);
+                    propagate_sfx_from_sect_group(SFX_OPEN_DOOR_ID, 15, sect_group, sector_rendered_cache);
                     //play_sfx(SFX_OPEN_DOOR_ID, 1);
                     params[SECTOR_GROUP_PARAM_STATE_IDX] = GOING_UP;
                 } else {
