@@ -10,16 +10,18 @@ LIFT = 3
 STAIRS = 4
 
 
-SECTOR_GROUP_TYPES = ["No effect", "Flashing", "Door", "Lift", "Stairs"] 
-SECTOR_GROUP_NUM_PARAMS = 8 # up to 8 triggers
+SECTOR_GROUP_EFFECT_TYPES = ["No effect", "Flashing", "Door", "Lift", "Stairs"] 
+
+
+
 
 NO_TRIGGER = 0
 SET_SECTOR_DARK = 1
 SET_SECTOR_LIGHT = 2
 START_STAIRS = 3
 
-SECTOR_TRIGGER_TYPES = ["No trigger", "Set dark", "Set light", "Start stairs"]
-SECTOR_GROUP_NUM_TRIGGERS = 4 # four pairs of (target_sector_group, target_sector_group_action)
+SECTOR_GROUP_TRIGGER_TYPES = ["No trigger", "Set dark", "Set light", "Start stairs"]
+SECTOR_GROUP_NUM_TRIGGERS = 7 # four pairs of (target_sector_group, target_sector_group_action)
 
 CLOSED=0
 GOING_UP=1
@@ -43,14 +45,23 @@ def random_bright_color():
      
 
 class SectorGroup():
-    def __init__(self, index, type, light_level=0, orig_height=0, ticks_left=0, state=0, floor_height=0, ceil_height=100, floor_color=1, ceil_color=1, triggers=None):
+    def add_trigger_target(self, tgt):
+        if len(self.triggers) == SECTOR_GROUP_NUM_TRIGGERS+1:
+            return 
+        
+        self.triggers.append(tgt)
+    
+    def __init__(self, index, type, light_level=0, orig_height=0, ticks_left=0, state=0, 
+                 floor_height=0, ceil_height=100, floor_color=1, ceil_color=1, triggers=None):
         # type is the sector group type, flashing, moving, secret etc
         # params is the parameters to the code which runs the sector effect
         # trigger is up to 8 sectors that can trigger this effect?
         self.color = random_bright_color()
         if triggers is None:
-            triggers = [-1]
+            triggers = [0,-1]
         
+        
+            
 
         self.index = index
 
@@ -87,6 +98,7 @@ def draw_sector_group_mode(cur_state):
     if cur_state.cur_sector_group is not None:
         cur_sect_group = cur_state.cur_sector_group
         
+        imgui.text("Sector Group: {}".format(cur_sect_group.index))
 
         set_orig_height = lambda v: set_sector_group_attr(cur_state, cur_sect_group, 'orig_height', v)
         set_ticks_left = lambda v: set_sector_group_attr(cur_state, cur_sect_group, 'ticks_left', v)
@@ -96,7 +108,7 @@ def draw_sector_group_mode(cur_state):
         set_ceil_height = lambda v: set_sector_group_attr(cur_state, cur_sect_group, 'ceil_height', v)
         set_ceil_color = lambda v: set_sector_group_attr(cur_state, cur_sect_group, 'ceil_color', v)
 
-        type_changed, new_type_idx = imgui.core.combo("Type:   ", cur_sect_group.type, SECTOR_GROUP_TYPES)
+        type_changed, new_type_idx = imgui.core.combo("Type:   ", cur_sect_group.type, SECTOR_GROUP_EFFECT_TYPES)
         if type_changed:
             cur_sect_group.type = new_type_idx
 
@@ -143,6 +155,23 @@ def draw_sector_group_mode(cur_state):
         input_int("Ceiling height: ", "##sector{}_ceil".format(cur_sect_group.index), cur_sect_group.ceil_height, set_ceil_height)
         input_int("Ceiling color:  ", "##sector{}_ceil_color".format(cur_sect_group.index), cur_sect_group.ceil_color, set_ceil_color)
 
+
+        trigger_type_changed, new_trigger_type_index = imgui.core.combo("Trigger type:  ", cur_sect_group.triggers[0], SECTOR_GROUP_TRIGGER_TYPES)
+        if trigger_type_changed:
+            cur_sect_group.triggers[0] = new_trigger_type_index
+
+        if len(cur_sect_group.triggers) < SECTOR_GROUP_NUM_TRIGGERS+1:
+            
+            if imgui.button("New trigger"):
+                cur_sect_group.add_trigger_target(-1)
+        
+        for idx,tgt in enumerate(cur_sect_group.triggers[1:]):
+            sect_group_options = ["-1"] + ["{}".format(sg.index) for sg in cur_state.map_data.sector_groups]
+            tgt_changed, new_tgt_idx = imgui.core.combo("Tgt:  ", tgt+1, sect_group_options)
+            if tgt_changed:
+                cur_sect_group.triggers[idx+1] = new_tgt_idx-1 
+
+            
 
     delete_sector_group = lambda : None
     def set_cur_sector_group(idx):

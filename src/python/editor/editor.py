@@ -862,7 +862,7 @@ def old_sectors_to_new_sector_groups(sectors):
         type=0, 
         light_level=0, orig_height=0, ticks_left=0, state=0, 
         floor_height=sect.floor_height, ceil_height=sect.ceil_height, floor_color=sect.floor_color, ceil_color=sect.ceil_color,
-        triggers=[-1,0,0,0,0,0,0,0]) for idx,sect in enumerate(sectors)]
+        triggers=None) for idx,sect in enumerate(sectors)]
                 #floor_height=s.floor_height, ceil_height=s.ceil_height,
                 #floor_color=s.floor_color, ceil_color=s.ceil_color) for s in sectors]
         

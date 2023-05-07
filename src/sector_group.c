@@ -305,22 +305,21 @@ void activate_sector_group_enter_trigger(u16 sector_group) {
     s16 type = get_sector_group_trigger_type(sector_group);
     switch(type) {
         case NO_TRIGGER:
-            return;
+            break;
         case SET_SECTOR_DARK:
-            return;
+            //return;
             for(int i = 0; i < NUM_SECTOR_TRIGGER_TARGETS; i++) {
                 s16 tgt_sector_group = get_sector_group_trigger_target(sector_group, i);
                 if(tgt_sector_group == -1) { break; }
-                set_sector_group_light_level(tgt_sector_group, -1);
+                set_sector_group_light_level(tgt_sector_group, -2);
                 
             }
             break;
         case SET_SECTOR_LIGHT:
-            return;
             for(int i = 0; i < NUM_SECTOR_TRIGGER_TARGETS; i++) {
                 s16 tgt_sector_group = get_sector_group_trigger_target(sector_group, i);
                 if(tgt_sector_group == -1) { break; }
-                set_sector_group_light_level(tgt_sector_group, 0);
+                set_sector_group_light_level(tgt_sector_group, 1);
                 
             }
             break;
@@ -331,7 +330,6 @@ void activate_sector_group_enter_trigger(u16 sector_group) {
                 set_sector_group_state(tgt_sector_group, STAIRS_RAISING);
             }
             break;
-
     }
     
     //char buf[50];

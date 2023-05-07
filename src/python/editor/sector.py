@@ -18,6 +18,19 @@ class Sector():
         
         self.index = index
 
+    def calc_sorted_pvs(self):
+        verts = self.get_vertexes()
+        min_x = min(v.x for v in verts)
+        min_y = min(v.y for v in verts)
+        max_x = max(v.x for v in verts)
+        max_y = max(v.y for v in verts)
+
+
+        for i in range(min_x, max_x+1):
+            for ang in range(0,1024):
+                
+
+                pass
 
     def __str__(self):
         return "Group: {}".format(self.sector_group_idx) #"F: {} C: {}".format(self.floor_height, self.ceil_height)

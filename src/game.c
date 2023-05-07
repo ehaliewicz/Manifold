@@ -352,9 +352,12 @@ void handle_input() {
         cur_player_pos.x = collision.pos.x;
         cur_player_pos.y = collision.pos.y;
         if(collision.new_sector != cur_player_pos.cur_sector) {
+            u16 old_sect_group = sector_group(cur_player_pos.cur_sector, cur_portal_map);
             cur_player_pos.cur_sector = collision.new_sector;
             sect_group = sector_group(collision.new_sector, cur_portal_map);
-            activate_sector_group_enter_trigger(sect_group);
+            if(sect_group != old_sect_group) {
+                activate_sector_group_enter_trigger(sect_group);
+            }
         }
      
         idle_bob_idx = 27;

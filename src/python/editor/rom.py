@@ -273,6 +273,11 @@ def export_map_to_rom(cur_path, cur_state, set_launch_flags=False):
         
         align(f)
 
+        #print("calculating pvs")
+        #for sect in data.sectors:
+        #    sect.calc_sorted_pvs()
+        #print("calculated.")
+
         patch_pointer_to_current_offset(
             f, sector_group_params_ptr_offset
         )
@@ -294,9 +299,16 @@ def export_map_to_rom(cur_path, cur_state, set_launch_flags=False):
             f, sector_group_triggers_ptr_offset
         )
         for sect_group in live_sector_groups: #data.sector_groups:
-            f.write(struct.pack(
-                ">hhhhhhhh", 0,0,0,0,0,0,0,0
-            ))
+            cnt = 0
+            #f.write(struct.pack(">hhhhhhhh", *[0,0,0,0,0,0,0,0]))
+            
+            for i in range(len(sect_group.triggers)):
+                write_s16(f, sect_group.triggers[i])
+                cnt += 1
+            while cnt < 8:
+                write_s16(f, -1)
+                cnt += 1
+            
 
         patch_pointer_to_current_offset(
             f, walls_ptr_offset
