@@ -14,6 +14,7 @@
 static tile* tile_buf;
 
 static uint16_t start_vram_addr;
+static uint16_t clear_vram_addr;
 
 static int rendered_tiles_are_dirty = 0;
 
@@ -162,7 +163,7 @@ void console_render() {
 
     // clear unused tiles
     int clear_tiles = NUM_TILES-tiles_to_draw;
-    const u16 clear_base_tile = TILE_ATTR_FULL(3, 0, 0, 0, 0x390); //0x39E);
+    const u16 clear_base_tile = TILE_ATTR_FULL(3, 0, 0, 0, 0x0); //0x39E);
     VDP_fillTileMapRect(BG_B, clear_base_tile, CONSOLE_BASE_X+tiles_to_draw, CONSOLE_BASE_Y, clear_tiles, 1);
     #endif
     
@@ -241,7 +242,7 @@ void console_tick() {
             //VDP_releaseSprites(rendered_sprites_idx, 1);
 
             #else
-            const u16 clear_base_tile = TILE_ATTR_FULL(3, 0, 0, 0, 0x390);
+            const u16 clear_base_tile = TILE_ATTR_FULL(3, 0, 0, 0, 0x0);
             VDP_fillTileMapRect(BG_B, clear_base_tile, CONSOLE_BASE_X, CONSOLE_BASE_Y, tiles_to_draw, 1);
             
             #endif
