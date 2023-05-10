@@ -69,26 +69,19 @@ u16 get_sector_group_ceil_color(u16 sect_group) {
 }
 
 void run_door(s16* params, u16 sect_group) {
-    //return;
     door_lift_state state = params[SECTOR_GROUP_PARAM_STATE_IDX];
     s16 cur_height = params[SECTOR_GROUP_PARAM_CEIL_HEIGHT_IDX];
     s16 floor_height = params[SECTOR_GROUP_PARAM_FLOOR_HEIGHT_IDX];
     s16 orig_door_height = params[SECTOR_GROUP_PARAM_ORIG_HEIGHT_IDX];
 
     switch(state) {
-        case CLOSED: do {
-                u16 ticks_left = params[SECTOR_GROUP_PARAM_TICKS_LEFT_IDX];
-                if(ticks_left == 0) {
-                    propagate_sfx_from_sect_group(SFX_OPEN_DOOR_ID, 15, sect_group, sector_rendered_cache);
-                    //play_sfx(SFX_OPEN_DOOR_ID, 1);
-                    params[SECTOR_GROUP_PARAM_STATE_IDX] = GOING_UP;
-                } else {
-                    params[SECTOR_GROUP_PARAM_TICKS_LEFT_IDX]--;
-                }
-            } while(0);
+        case CLOSED: 
             break;
 
         case GOING_UP: do {
+            if(cur_height == floor_height) {
+                play_sfx(SFX_OPEN_DOOR_ID, 1);
+            }
             cur_height += 180; //160;
             params[SECTOR_GROUP_PARAM_CEIL_HEIGHT_IDX] = cur_height;
             if(cur_height >= orig_door_height) {
@@ -133,18 +126,14 @@ void run_lift(s16* params, u16 sect_group) {
     s16 ceil_height = params[SECTOR_GROUP_PARAM_CEIL_HEIGHT_IDX];
     s16 orig_lift_height = params[SECTOR_GROUP_PARAM_ORIG_HEIGHT_IDX];
     switch(state) {
-        case CLOSED: do {
-            u16 ticks_left = params[SECTOR_GROUP_PARAM_TICKS_LEFT_IDX];
-            if(ticks_left == 0) {
-                params[SECTOR_GROUP_PARAM_STATE_IDX] = GOING_DOWN;
-            } else {
-                params[SECTOR_GROUP_PARAM_TICKS_LEFT_IDX]--;
-            }
-        } while(0);
-        break;
+        case CLOSED: 
+            break;
 
         case GOING_DOWN: do {
-
+                if(cur_height == ceil_height) {
+                    
+                    propagate_sfx_from_sect_group(SFX_OPEN_DOOR_ID, 1, sect_group, sector_rendered_cache);
+                }
                 cur_height -= 128;
                 params[SECTOR_GROUP_PARAM_FLOOR_HEIGHT_IDX] = cur_height;
                 if(cur_height <= orig_lift_height) {
@@ -155,7 +144,8 @@ void run_lift(s16* params, u16 sect_group) {
             } while(0);
             break;
 
-        case OPEN: do {
+        case OPEN: 
+        do {
             u16 ticks_left = params[SECTOR_GROUP_PARAM_TICKS_LEFT_IDX];
             if(ticks_left == 0) {
                 propagate_sfx_from_sect_group(SFX_LIFT_GO_UP_ID, 1, sect_group, sector_rendered_cache);
