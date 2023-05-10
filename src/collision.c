@@ -48,7 +48,7 @@ int within_sector(fix32 x, fix32 y, u16 sector) {
 }
 
 
-fix32 sq_shortest_dist_to_point(fix32 px, fix32 py, vertex a, vertex b) {
+s32 sq_shortest_dist_to_point(fix32 px, fix32 py, vertex a, vertex b) {
     s16 dx = b.x - a.x;
     s16 dy = b.y - a.y;
     s32 dr2 = (dx * dx + dy * dy); // 32.0
