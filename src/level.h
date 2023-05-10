@@ -11,5 +11,7 @@ extern u16 *wall_tex_repetitions;
 
 void load_portal_map(portal_map* l);
 void clean_portal_map();
+// returns 1 if a switch or door was triggered, else 0
+int check_trigger_switch(player_pos* pos);
 
 #endif

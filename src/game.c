@@ -394,14 +394,18 @@ int handle_input() {
     
 
 
-    if(joy_button_pressed(BUTTON_A) && !shooting) {
-        //play_sfx(SFX_PEASHOOTER_ID, 1);
-        shooting = 2;
-    }
+    //if(joy_button_pressed(BUTTON_A) && !shooting) {
+    //    //play_sfx(SFX_PEASHOOTER_ID, 1);
+    //    shooting = 2;
+    //}
 
     if(joy_button_pressed(BUTTON_B) && !pressing) {
         //play_sfx(SFX_SELECT_ID, 1);
         pressing = 2;
+        if(!check_trigger_switch(&cur_player_pos)) {        
+            play_sfx(SFX_JUMP1_ID, 1);
+        }
+
     }
 
     if(jump_pressed && !jumping) {
@@ -498,6 +502,13 @@ void do_vint_flip();
 u16 free_tile_loc = 0x390;
 
 
+void maybe_set_palette(u16* new_palette) {
+    if(cur_palette != new_palette) {
+        PAL_setPalette(PAL1, new_palette);
+        cur_palette = new_palette;
+    }
+}
+
 
 
 void init_game() {
@@ -542,20 +553,10 @@ void init_game() {
 
     init_clip_buffer_list();
 
-    cur_palette = two_light_levels_pal.data;
 
     // palette 0 is weapon palette
     PAL_setPalette(PAL0, shotgun.palette->data);
 
-    // palette 1 is 3d palette
-    //PAL_setPalette(PAL1, cur_palette);
-
-    // palette 2 is HUD palette, set in inventory_init
-    // palette 3 is sprite palette
-    PAL_setPalette(PAL3, sprite_pal.data);
-    KLog("loading shit");
-    //PAL_setPalette(PAL1, sprite_pal.data);
-    VDP_setTextPalette(PAL3);
     
     static int loaded_into_game = 0;
     if(vp_start_in_game_arr[1] && !loaded_into_game) {
@@ -567,6 +568,22 @@ void init_game() {
 
     load_portal_map((portal_map*)map_table[2+init_load_level]);
 
+    // palette 1 is 3d palette
+    //PAL_setPalette(PAL1, cur_palette);
+    static int init = 0;
+    if(!init) {
+        if(cur_portal_map->palette != NULL) {
+            maybe_set_palette(cur_portal_map->palette);
+        } else {
+            maybe_set_palette(sprite_pal.data);
+        }
+        init = 1;
+    }
+
+    // palette 2 is HUD palette, set in inventory_init
+    // palette 3 is sprite palette
+    PAL_setPalette(PAL3, sprite_pal.data);
+    VDP_setTextPalette(PAL3);
     
     clear_menu();
 
@@ -623,14 +640,6 @@ void init_game() {
 
 }
 
-void maybe_set_palette(u16* new_palette) {
-    if(cur_palette != new_palette) {
-        KLog("setting palette");
-        PAL_setPalette(PAL1, new_palette);
-        cur_palette = new_palette;
-    }
-}
-
 void cleanup_level() {
     clean_object_lists();
     clean_portal_map();
@@ -667,9 +676,11 @@ game_mode run_game() {
     playerXInt = cur_player_pos.x>>FIX32_FRAC_BITS;
     playerYInt = cur_player_pos.y>>FIX32_FRAC_BITS;
 
-
-    maybe_set_palette(two_light_levels_pal.data);
-
+    //if(cur_portal_map->palette != NULL) {
+    //    maybe_set_palette(cur_portal_map->palette);
+    //} else {       
+    //    maybe_set_palette(sprite_pal.data); //two_light_levels_pal.data);
+    //}
     // hack for door in overlapping room test map
     //if(init_load_level == OVERLAPPING_ROOMS) {
     //    update_wall_vertex();

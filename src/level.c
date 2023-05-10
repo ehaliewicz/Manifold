@@ -1,4 +1,5 @@
 #include <genesis.h>
+#include "collision.h"
 #include "game.h"
 #include "map_table.h"
 #include "math3d.h"
@@ -142,7 +143,63 @@ void clean_portal_map() {
     clean_wall_tex_repetitions();
 }
 
+#define MIN_ACTIVATE_DIST 40
+#define MIN_ACTIVATE_DIST_SQ (MIN_ACTIVATE_DIST*MIN_ACTIVATE_DIST)
 
+
+
+int check_trigger_switch(player_pos* pos) {
+    KLog("checking switch");
+    portal_map* map = cur_portal_map;
+    u16 sector = pos->cur_sector;
+    s16 wall_offset = sector_wall_offset(sector, map);
+    s16 portal_offset = sector_portal_offset(sector, map);
+    s16 num_walls = sector_num_walls(sector, map);
+    s32 px = pos->x;
+    s32 py = pos->y;
+
+    int got_door = 0;
+    s32 closest_dist = MAX_S32;
+
+    u16 tgt_sect_group = 0;
+    u8 tgt_sect_group_type = 0;
+
+    for(int i = 0; i < num_walls; i++) {
+        s16 portal = map->portals[portal_offset+i];
+        if(portal == -1) {
+            continue;
+        }
+        // check if this is a portal to a door or lift sector
+        u16 next_sect_group = sector_group(portal, map);
+        u8 next_sect_group_type = map->sector_group_types[next_sect_group];
+        if(next_sect_group_type != DOOR && next_sect_group_type != LIFT) {
+            continue;
+        }
+
+
+        u16 v1_idx = map->walls[wall_offset+i];
+        u16 v2_idx = map->walls[wall_offset+i+1];
+        vertex v1 = map->vertexes[v1_idx];
+        vertex v2 = map->vertexes[v2_idx];
+
+        s32 dist_sqr = sq_shortest_dist_to_point(px, py, v1, v2);
+        if(dist_sqr < closest_dist && dist_sqr < MIN_ACTIVATE_DIST_SQ) {
+            got_door = 1;
+            closest_dist = dist_sqr;
+            tgt_sect_group = next_sect_group;
+            tgt_sect_group_type = next_sect_group_type;
+        }
+    }
+
+    if(got_door) {
+        if(tgt_sect_group_type == DOOR) {
+            set_sector_group_state(tgt_sect_group, GOING_UP);
+        } else if (tgt_sect_group_type == LIFT) {
+            set_sector_group_state(tgt_sect_group, GOING_DOWN);
+        }
+    }
+    return got_door;
+}
 
 
 void load_portal_map(portal_map* l) {
@@ -155,10 +212,10 @@ void load_portal_map(portal_map* l) {
     init_player_pos();    
     
    
-    if(cur_portal_map->palette != NULL) {
-        KLog("LOADING MAP PALETTE");
-        PAL_setPalette(PAL1, cur_portal_map->palette);
-    }
+    //if(cur_portal_map->palette != NULL) {
+    //    KLog("LOADING MAP PALETTE");
+    //    PAL_setPalette(PAL1, cur_portal_map->palette);
+    //}
     
     init_object_lists(cur_portal_map->num_sectors);
 
