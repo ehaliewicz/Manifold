@@ -8,6 +8,47 @@
 
 */
 
+/*
+
+    Implements framebuffers 
+
+    There is a horizontal row framebuffer, which is nearly exactly the same as the one in SGDK, with the one addition of being able to start copying at any line, rather than the top.
+    This framebuffer has to be copied via cpu, with some transformation, to VRAM, so it is limited to 20fps at best
+
+    The second framebuffer type is a vertical column based framebuffer, designed for doom style rendering by columns (aside from floors).  This framebuffer is copied to VRAM via DMA over the course of two frames.
+    We interleave the copied portions, so that double buffering only requires 1.5x the VRAM of a single framebuffer.
+
+    Below is an explanation of how this works
+
+    RAM:
+    buffer1_left buffer1_right buffer2_left buffer3_right
+
+
+    VRAM:
+    vbuffer_half_1 vbuffer_half_2 vbuffer_half_3
+
+
+
+    cpu draws to buffer1_left and buffer1_right
+
+    Frame0:
+    copy buffer1_left to vbuffer_half_1
+    Frame1:
+    copy buffer1_right to vbuffer_half_2
+    set background to display vbuffer_half_1 vbuffer_half_2
+
+    cpu draws to buffer1_left and buffer1_right
+
+    Frame2:
+    copy buffer2_right to vbuffer_half_3
+    Frame3:
+    copy buffer2_left to vbuffer_half_2
+    set background to display vbuffer_half_2 vbuffer_half_3
+
+
+
+*/
+
 VDPPlane bmp_plane;
 u8 bmp_pal;
 u8 bmp_prio;
@@ -882,7 +923,7 @@ void copy_quarter_words(u8* src, u32 dst) {
         QUARTER_WORDS, 4);
 }
 
-u16 vints = 0;
+volatile u16 vints = 0;
 void do_vint_flip() {
     phase = 0;
     vints++;
