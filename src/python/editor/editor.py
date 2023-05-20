@@ -40,6 +40,7 @@ import defaults
 import line
 import music
 import palette
+import pvs
 import rom
 import script
 import sector
@@ -64,6 +65,7 @@ class Mode(Enum):
     TRIGGER = 'Trigger'
     TEXTURE = 'Texture'
     TREE = 'Tree'
+    PVS = 'PVS'
     MUSIC = 'Music'
     PALETTE = 'Palette'
     DEFAULTS = 'Defaults'
@@ -311,6 +313,7 @@ def main_sdl2():
             renderer.process_event(event)
         renderer.process_inputs()
         imgui.new_frame()
+        #utils.set_root_window_draw_list(imgui.get_window_draw_list())
         on_frame()
         gl.glClearColor(1., 1., 1., 1)
         gl.glClear(gl.GL_COLOR_BUFFER_BIT)
@@ -332,6 +335,7 @@ class State(object):
         self.cur_vertex = None
         self.cur_thing = None
         self.cur_sector_group = None
+        self.cur_sector_pvs = None
 
         self.camera_x = 0
         self.camera_y = 0
@@ -411,7 +415,8 @@ def add_new_vertex(x,y):
 def add_new_thing(x, y):
     undo.push_state(cur_state)
     num_things = len(cur_state.map_data.things)
-    new_thing = things.Thing(cur_state.default_thing_type, cur_state.cur_sector.index, x, y, cur_state.cur_sector.floor_height, index=num_things)
+    
+    new_thing = things.Thing(cur_state.default_thing_type, cur_state.cur_sector.index, x, y, cur_state.cur_sector_group.floor_height, index=num_things)
     cur_state.map_data.things.append(new_thing)
 
     return new_thing
@@ -426,6 +431,7 @@ MODE_DRAW_FUNCS = {
     Mode.SCRIPT: script.draw_script_mode,
     Mode.TRIGGER: trigger.draw_trigger_mode,
     Mode.TREE: tree.draw_tree_mode,
+    Mode.PVS: pvs.draw_pvs_mode,
     Mode.MUSIC: music.draw_music_mode,
     Mode.PALETTE: palette.draw_palette_mode,
     Mode.DEFAULTS: defaults.draw_defaults_mode,
@@ -466,7 +472,7 @@ thing_highlight = (0.7,1,0,1)
 portal_default = (1,0,0,0.3)
 portal_highlight = (1,1,0,0.3)
 wall_default = (1,0,0,1)
-wall_highlight = (1,0,1,0.5)
+wall_highlight = (1,1,1,0.5)
 
 concave_wall = (1,0,0,1)
 concave_portal = (1,0,0,.3)
@@ -497,7 +503,7 @@ def draw_thing(draw_list, thing, highlight=False):
 
 
     
-def draw_map_wall(draw_list, wall, sect_group_color, highlight=False, tree_mode=False, concave_sector=False):
+def draw_map_wall(draw_list, wall, sect_group_color, highlight=False, tree_mode=False, concave_sector=False, ):
     is_portal = wall.adj_sector_idx != -1
     tbl = [
         # not highlighted
@@ -534,17 +540,18 @@ def draw_map_wall(draw_list, wall, sect_group_color, highlight=False, tree_mode=
     #    draw_list.add_line(v1.x-cam_x, v1.y-cam_y, v2.x-cam_x, v2.y-cam_y, imgui.get_color_u32_rgba(*color), 1.0)
     #    draw_list.add_line(n1x-cam_x, n1y-cam_y, n2x-cam_x, n2y-cam_y, imgui.get_color_u32_rgba(*color), 1.0)
     #else:
-    if highlight:
-        draw_list.add_line(v1.x-cam_x, v1.y-cam_y, v2.x-cam_x, v2.y-cam_y, imgui.get_color_u32_rgba(*wall_highlight), 4.0)
-        draw_list.add_line(n1x-cam_x, n1y-cam_y, n2x-cam_x, n2y-cam_y, imgui.get_color_u32_rgba(*wall_highlight), 4.0)
 
     draw_list.add_line(v1.x-cam_x, v1.y-cam_y, v2.x-cam_x, v2.y-cam_y, imgui.get_color_u32_rgba(*color), 1.0)
     draw_list.add_line(n1x-cam_x, n1y-cam_y, n2x-cam_x, n2y-cam_y, imgui.get_color_u32_rgba(*color), 1.0)
     
+    if highlight:
+        draw_list.add_line(v1.x-cam_x, v1.y-cam_y, v2.x-cam_x, v2.y-cam_y, imgui.get_color_u32_rgba(*wall_highlight), 4.0)
+        draw_list.add_line(n1x-cam_x, n1y-cam_y, n2x-cam_x, n2y-cam_y, imgui.get_color_u32_rgba(*wall_highlight), 4.0)
+
 
     
 
-def draw_sector(draw_list, sector, sect_group, highlight=False):
+def draw_sector(draw_list, sector, sect_group, highlight=False, cur_sector_pvs=None):
     tree_mode = cur_state.mode == Mode.TREE
 
     concave_sector = False
@@ -555,8 +562,10 @@ def draw_sector(draw_list, sector, sect_group, highlight=False):
     for wall in sector.walls:
         wall_selected = cur_state.mode == Mode.LINE and cur_state.cur_wall == wall
         wall_hovered = cur_state.hovered_item == wall
+
+        wall_in_pvs = cur_state.mode == Mode.PVS and cur_sector_pvs is not None and (wall in (cur_sector_pvs[wall.sector_idx] if wall.sector_idx in cur_sector_pvs else set()))
         
-        draw_map_wall(draw_list, wall, sect_group.color, (highlight or wall_selected or wall_hovered), tree_mode, concave_sector)
+        draw_map_wall(draw_list, wall, sect_group.color, (highlight or wall_selected or wall_hovered or wall_in_pvs), tree_mode, concave_sector)
 
         
 # returns true if hovered
@@ -582,7 +591,7 @@ def draw_map():
         is_group_hovered = isinstance(cur_state.hovered_item, sector_group.SectorGroup) and sect.sector_group_idx == cur_state.hovered_item.index
         is_hovered = (cur_state.hovered_item == sect or is_group_hovered)
 
-        draw_sector(draw_list, sect, sect_group, highlight = is_selected or is_hovered)
+        draw_sector(draw_list, sect, sect_group, highlight = is_selected or is_hovered, cur_sector_pvs=cur_state.cur_sector_pvs)
     
     for vertex in cur_state.map_data.vertexes:
         
@@ -680,6 +689,7 @@ def on_frame():
     imgui.begin("Map",
                 flags=imgui.WINDOW_NO_TITLE_BAR|imgui.WINDOW_NO_RESIZE|imgui.WINDOW_NO_COLLAPSE|imgui.WINDOW_NO_BRING_TO_FRONT_ON_FOCUS)
 
+    utils.set_root_window_draw_list(imgui.get_window_draw_list())
     map_hovered = imgui.is_window_hovered()
         
     draw_map()
@@ -854,7 +864,7 @@ def old_walls_to_new_walls(walls, default_texture):
 def old_sectors_to_new_sectors(sectors, default_texture):
     return [sector.Sector(
                 index=s.index, walls=old_walls_to_new_walls(s.walls, default_texture), 
-                sect_group_index=s.sect_group_idx if hasattr(s, 'sect_group_idx') else idx ) for idx,s in enumerate(sectors)] 
+                sect_group_index=s.sector_group_idx if hasattr(s, 'sector_group_idx') else idx ) for idx,s in enumerate(sectors)] 
                 
 def old_sectors_to_new_sector_groups(sectors):
     return [sector_group.SectorGroup(
@@ -896,7 +906,7 @@ def load_map_from_file(f):
         new_map.sector_groups = old_map.sector_groups
         if len(new_map.sector_groups) > 0 and (not hasattr(new_map.sector_groups[0], 'color')):
             for sctg in new_map.sector_groups:
-                sctg.color = sector_group.random_bright_color()
+                sctg.color = utils.random_bright_color()
     else:
         new_map.sector_groups = old_sectors_to_new_sector_groups(old_map.sectors)
 

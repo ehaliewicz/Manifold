@@ -33,7 +33,7 @@ class Sector():
                 pass
 
     def __str__(self):
-        return "Group: {}".format(self.sector_group_idx) #"F: {} C: {}".format(self.floor_height, self.ceil_height)
+        return "Sector {}: Group: {}".format(self.index, self.sector_group_idx) #"F: {} C: {}".format(self.floor_height, self.ceil_height)
 
     def get_vertexes(self):
         return [wall.v2 for wall in self.walls]

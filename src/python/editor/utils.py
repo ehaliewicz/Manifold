@@ -1,6 +1,7 @@
 import imgui
 import math
 import os
+import random
 
 
 
@@ -151,3 +152,22 @@ def get_sprite_files(cur_state):
     sprite_files = [f for f in get_files_in_folder(cur_state.sprites_path) if ".png" in f]
     assert len(sprite_files) > 0, "No sprite files provided!"
     return sprite_files
+
+def random_bright_color():
+    return (
+        random.random(),
+        random.random(),
+        random.random(),
+        1
+    )
+     
+     
+root_window_draw_list = None 
+
+def set_root_window_draw_list(rw):
+    global root_window_draw_list
+    root_window_draw_list = rw
+
+def get_root_window_draw_list():
+    global root_window_draw_list
+    return root_window_draw_list

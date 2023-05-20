@@ -3,6 +3,7 @@ import draw
 
 colors = []
 
+
 def rand_color():
     #while True:
     while len(colors) < 16:

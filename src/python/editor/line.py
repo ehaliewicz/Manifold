@@ -17,6 +17,8 @@ class Wall():
         self.up_color = 0
         self.low_color = 0
         self.mid_color = 0
+
+        self.output_idx = -1
         
     def __str__(self):
         return "v1: {} v2: {}".format(self.v1.index, self.v2.index)
@@ -40,6 +42,17 @@ class Wall():
         
         scale = 10/mag
         return int(-dy*scale),int(dx*scale)
+    
+    def portal_out_normal(self):
+        v1 = self.v1
+        v2 = self.v2
+        dx = v2.x - v1.x
+        dy = v2.y - v1.y
+        mag = math.sqrt((dx*dx)+(dy*dy))
+        
+        
+        scale = 10/mag
+        return int(dy*scale),int(-dx*scale)
 
     def normal_quadrant_int(self):
         quad = self.normal_quadrant()

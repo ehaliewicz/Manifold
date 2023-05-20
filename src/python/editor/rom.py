@@ -5,6 +5,7 @@ import subprocess
 import time
 
 import palette
+import pvs
 import sprite_utils
 import texture_utils
 import utils
@@ -228,12 +229,18 @@ def export_map_to_rom(cur_path, cur_state, set_launch_flags=False):
         portals_ptr_offset = pointer_placeholder(f)
         wall_colors_ptr_offset = pointer_placeholder(f)
         vertexes_ptr_offset = pointer_placeholder(f)
+
         wall_norm_quads_ptr_offset = pointer_placeholder(f)
         # write has_pvs (HARDCODED to false right now)
         write_u16(f, 0)
         # write pvs pointers(HARDCODED to NULL)
         pvs_ptr_offset = write_u32(f, 0)
         raw_pvs_ptr_offset = write_u32(f, 0) 
+        
+        pvs_sector_offsets_ptr_offset = write_u32(f, 0)
+        pvs_sector_list_offsets_ptr_offset = write_u32(f, 0)
+        wall_pvs_ptr_offset = write_u32(f, 0)
+
         name_ptr_offset = pointer_placeholder(f)
         music_ptr_offset = pointer_placeholder(f, 0) # define to NULL
         palette_ptr_offset = pointer_placeholder(f, 0) # default to NULL
@@ -313,6 +320,8 @@ def export_map_to_rom(cur_path, cur_state, set_launch_flags=False):
         patch_pointer_to_current_offset(
             f, walls_ptr_offset
         )
+
+        wall_idx = 0
         for sect in data.sectors:
             prev_v2 = None
             if len(sect.walls) == 0:
@@ -327,8 +336,11 @@ def export_map_to_rom(cur_path, cur_state, set_launch_flags=False):
                         )
                     
                 write_u16(f, wall.v1.index)
+                wall.output_idx = wall_idx
+                wall_idx += 1
                 prev_v2 = wall.v2 
             write_u16(f, first_v1.index)
+            wall_idx += 1
 
         patch_pointer_to_current_offset(
             f, portals_ptr_offset
@@ -382,6 +394,64 @@ def export_map_to_rom(cur_path, cur_state, set_launch_flags=False):
             for wall in sect.walls:
                 write_u8(f, wall.normal_quadrant_int())
         align(f)
+
+
+
+        # disable PVS output for now
+        """
+        pvs_offset_for_sectors = {}
+        pvs_for_sectors = {}
+
+        patch_pointer_to_current_offset(
+            f, wall_pvs_ptr_offset
+        )
+        cur_pvs_idx = 0
+        for sector in data.sectors:
+            #
+            # generate a table for sector's pvs
+            sect_pvs = pvs.recursive_pvs(sector, cur_state, data)
+            pvs_for_sectors[sector] = sect_pvs
+            for sector2 in data.sectors:
+                if sector2.index not in sect_pvs:
+                    pvs_offset_for_sectors[(sector, sector2)] = -1
+                    continue
+
+                # mark this offset down
+                # write a list of walls
+                pvs_offset_for_sectors[(sector, sector2)] = cur_pvs_idx
+                walls = sect_pvs[sector2.index]
+
+                # write num_walls
+                write_u16(f, len(walls))
+                cur_pvs_idx += 1
+                # write walls out
+                for wall in walls:
+                    write_u16(f, wall.output_idx)
+                    cur_pvs_idx += 1
+
+
+        patch_pointer_to_current_offset(
+            f, pvs_sector_list_offsets_ptr_offset
+        )
+        cur_pvs_idx = 0
+        for sector in data.sectors:
+            pvs_offset_for_sectors[sector] = cur_pvs_idx
+            sect_pvs = pvs_for_sectors[sector]
+            for sector2 in data.sectors:
+                write_s16(f, pvs_offset_for_sectors[(sector, sector2)])
+                cur_pvs_idx += 1
+
+
+
+        patch_pointer_to_current_offset(
+            f, pvs_sector_offsets_ptr_offset
+        )
+
+        for sector in data.sectors:
+            write_u16(f, pvs_offset_for_sectors[sector])
+        """
+
+
 
         patch_pointer_to_current_offset(
             f, name_ptr_offset

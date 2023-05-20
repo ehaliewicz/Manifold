@@ -1,7 +1,7 @@
 import imgui
 import undo
+import utils
 from utils import input_int, draw_list
-import random
 
 NO_TYPE = 0
 FLASHING = 1
@@ -35,14 +35,7 @@ STAIRS_MOVING = 1
 STAIRS_RAISED = 2
 STAIR_STATES = ["Stairs lowered", "Stairs moving", "Stairs raised"]
 
-def random_bright_color():
-    return (
-        random.random(),
-        random.random(),
-        random.random(),
-        1
-    )
-     
+
 
 class SectorGroup():
     def add_trigger_target(self, tgt):
@@ -56,7 +49,7 @@ class SectorGroup():
         # type is the sector group type, flashing, moving, secret etc
         # params is the parameters to the code which runs the sector effect
         # trigger is up to 8 sectors that can trigger this effect?
-        self.color = random_bright_color()
+        self.color = utils.random_bright_color()
         if triggers is None:
             triggers = [0,-1]
         
