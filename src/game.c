@@ -70,27 +70,66 @@ void calc_movement_speeds() {
 
 int cur_frame;
 
+u16 smiley_addr;
+u16 frown_addr;
 
+
+
+u16 last_vints_arr[4] = { 0, 0, 0, 0 };
+u8 last_vints_idx = 0;
+
+u16 vints_avg = 0;
+
+u16 last_vints = 0;
 void showStats(u16 float_display)
 {
     char str[32];
     u16 y = 5;
 
-    if (float_display)
-    {
-        fix32 fps = SYS_getFPSAsFloat();
-        fix32ToStr(fps, str, 1);
-        VDP_clearTextBG(BG_B, 1, y, 4);
-    }
-    else
-    {
-        uintToStr(SYS_getFPS(), str, 1);
-        VDP_clearTextBG(BG_B, 1, y, 2);
-    }
+    u8 fps_good = 0;
+    u16 cur_vints = vints;
+    u16 delta_vtimer = cur_vints - last_vints;
 
-    // display FPS
+    
+    
+    vints_avg += delta_vtimer;
+    vints_avg -= last_vints_arr[last_vints_idx];
+    last_vints_arr[last_vints_idx++] = delta_vtimer;
+    if(last_vints_idx >= 4) { last_vints_idx = 0; }
+    u16 frames = vints_avg >> 2;
+    last_vints = vints;
+    fps_good = frames < 5; 
+    
+    //last_vtimer = cur_vtimer;
+    uintToStr(frames, str, 2);
+    VDP_clearTextBG(BG_B, 1, y, 4);
     VDP_drawTextBG(BG_B, str, 1, y++);
 
+
+    // display FPS
+
+    u16 base_tile_addr = fps_good ? smiley_addr : frown_addr;
+    for(int ty = y; ty < y+4; ty++) {
+        for(int tx = 1; tx < 5; tx++) {
+
+            VDP_setTileMapXY(BG_B, TILE_ATTR_FULL(PAL0, 1, 0, 0, base_tile_addr), tx, ty);
+            base_tile_addr++;
+        }
+    }
+    /*
+    if(fps_good) {
+        
+        VDP_setTileMapXY(BG_B, TILE_ATTR_FULL(PAL0, 1, 0, 0, smiley_addr), 1, y);
+        VDP_setTileMapXY(BG_B, TILE_ATTR_FULL(PAL0, 1, 0, 0, smiley_addr+1), 2, y);
+        VDP_setTileMapXY(BG_B, TILE_ATTR_FULL(PAL0, 1, 0, 0, smiley_addr+2), 1, y+1);
+        VDP_setTileMapXY(BG_B, TILE_ATTR_FULL(PAL0, 1, 0, 0, smiley_addr+3), 2, y+1);
+    } else {
+        VDP_setTileMapXY(BG_B, TILE_ATTR_FULL(PAL0, 1, 0, 0, frown_addr), 1, y);
+        VDP_setTileMapXY(BG_B, TILE_ATTR_FULL(PAL0, 1, 0, 0, frown_addr+1), 2, y);
+        VDP_setTileMapXY(BG_B, TILE_ATTR_FULL(PAL0, 1, 0, 0, frown_addr+2), 1, y+1);
+        VDP_setTileMapXY(BG_B, TILE_ATTR_FULL(PAL0, 1, 0, 0, frown_addr+3), 2, y+1);
+    }
+    */
 }
 
 
@@ -118,7 +157,7 @@ void draw_3d_view(u32 cur_frame) {
     //KLog("END RENDER");
 
     // display fps
-    showStats(1);
+    showStats(0);
 
     // request a flip when vsync process is idle (almost always, as the software renderer is much slower than the framebuffer DMA process)
     request_flip();
@@ -619,6 +658,12 @@ void init_game() {
 
 
     free_tile_loc = init_shotgun(free_tile_loc);
+
+    KLog_U1("smiley num tiles: ", smile.numTile);
+    VDP_loadTileData(smile.tiles, free_tile_loc, 16, DMA);
+    smiley_addr = free_tile_loc; free_tile_loc += 16;
+    VDP_loadTileData(frown.tiles, free_tile_loc, 16, DMA);
+    frown_addr = free_tile_loc; free_tile_loc += 16;
 
     //KLog("allocating object?");
 
