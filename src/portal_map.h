@@ -49,6 +49,7 @@ typedef struct {
 #define NUM_PVS_PARAMS 2
 #define PVS_SHIFT 1
 
+
 typedef struct __attribute__((__packed__)){
     const u16 num_sector_groups;
     const u16 num_sectors;
@@ -66,6 +67,10 @@ typedef struct __attribute__((__packed__)){
     const u16 has_pvs;
     const u16* pvs;
     const u16* raw_pvs;
+
+    const u16* pvs_offsets;
+    const s16* sector_list_offsets;
+    const u16* wall_pvs; // each index from above points to a list consisting of N:num_sectors, N 32-bit bitmaps
     char* name;
     void* xgm_track;
     u16* palette;

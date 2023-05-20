@@ -576,4 +576,7 @@ const portal_map building_test_map  = {
     .has_pvs = 0,
     .name = "building test",
     .num_things = 0,
+
+    .pvs_offsets = NULL,
+    .wall_pvs = NULL,
 };
