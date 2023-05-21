@@ -1,12 +1,9 @@
 #import skgeom
 #from skgeom import Point2, Ray2, Segment2
 import math
-import types
-import typing
-import shapely.geometry
+#import shapely.geometry
 from typing import List, NewType, Optional, Set, Tuple
 import utils
-import numpy
 import imgui
 
 
@@ -27,7 +24,7 @@ import imgui
 #                                                Optional[FrustumRightLine],
 #                                                Optional[FrustumPolygon]])
 
-
+"""
 def length(vec):
     (x,y) = vec
     return math.sqrt(x*x + y*y)
@@ -244,7 +241,7 @@ def recursive_pvs(cur_sector, cur_state, map_data):
     return pvs
 
 
-
+"""
 
 def draw_pvs_mode(cur_state):
     global draw_frustums
@@ -256,7 +253,7 @@ def draw_pvs_mode(cur_state):
         draw_frustums = not draw_frustums
 
     if cur_state.cur_sector is not None:
-        cur_state.cur_sector_pvs = recursive_pvs(cur_state.cur_sector, cur_state, cur_state.map_data)
+        #cur_state.cur_sector_pvs = recursive_pvs(cur_state.cur_sector, cur_state, cur_state.map_data)
 
         imgui.text("Sector {}".format(cur_state.cur_sector.index))
     

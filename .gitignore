@@ -23,7 +23,6 @@
 *.lo
 
 # Shared objects (inc. Windows DLLs)
-*.dll
 *.so
 *.so.*
 *.dylib
@@ -80,3 +79,4 @@ res/music/*.wav
 res/sprites/*.png
 res/images/*.png
 res/textures/*.png
+src/python/editor/SDL2.dll

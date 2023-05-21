@@ -14,6 +14,9 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
+    - name: Add path
+      run: export PATH=src/python/editor/DLLs:$PATH  
+
     - name: Package Application
       uses: JackMcKew/pyinstaller-action-windows@main
       with:
