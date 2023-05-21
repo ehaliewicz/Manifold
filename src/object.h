@@ -114,7 +114,9 @@ typedef struct  __attribute__((__packed__)) {
 object_link alloc_object_in_sector(u8 activate_tick, int sector_num, fix32 x, fix32 y, s16 z, uint8_t object_type);
 decoration_link alloc_decoration_in_sector(int sector_num, s16 x, s16 y, s16 z, uint8_t object_type);
 
-void free_object(object_link obj);
+void free_object(object_link obj, u16 object_sector);
+void free_decoration(decoration_link dec, u16 deco_sector);
+void print_object_list(object_link lst);
 
 object_link objects_in_sector(int sector_num);
 

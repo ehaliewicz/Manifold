@@ -256,7 +256,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
     object_link objects_in_sect = objects_in_sector(sector);
     decoration_link decorations_in_sect = decorations_in_sector(sector);
     int needs_object_clip_buffer = (objects_in_sect != NULL_OBJ_LINK) || (decorations_in_sect != NULL_DEC_LINK);
-
+    
 
     clip_buf* obj_clip_buf = NULL;
     if(needs_object_clip_buffer) {
@@ -708,11 +708,12 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
         //KLog_U1("start draw objs in sector", sector);
         while(cur_obj != NULL_OBJ_LINK && buf_idx < OBJ_SORT_BUF_SZ) {
             //KLog("drawing obj in sector");
-            fix32 obj_x = OBJ_LINK_DEREF(cur_obj).x;
-            fix32 obj_y = OBJ_LINK_DEREF(cur_obj).y;
+            s16 obj_x = OBJ_LINK_DEREF(cur_obj).x;
+            s16 obj_y = OBJ_LINK_DEREF(cur_obj).y;
             s16 obj_z = OBJ_LINK_DEREF(cur_obj).z;
+            Vect2D_s16 trans_pos = transform_map_vert_16(obj_x, obj_y);
 
-            Vect2D_s16 trans_pos = transform_map_vert_16(fix32ToInt(obj_x), fix32ToInt(obj_y));
+            //Vect2D_s16 trans_pos = transform_map_vert_16(fix32ToInt(obj_x), fix32ToInt(obj_y));
             if(trans_pos.y > 0) {
                 u16 z_recip = z_recip_table_16[trans_pos.y>>TRANS_Z_FRAC_BITS];
                 //z_buf[buf_idx] = &obj_buf[buf_idx];
@@ -729,7 +730,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
                 obj_sort_buf[buf_idx].ytop = ytop;
                 obj_sort_buf[buf_idx].ybot = ybot;
                 obj_sort_buf[buf_idx].obj_link = cur_obj;
-                obj_sort_buf[buf_idx].obj_type = OBJECT;
+                //obj_sort_buf[buf_idx].obj_type = OBJECT;
 
                 z_sort_buf[buf_idx].buf_idx = buf_idx;
                 z_sort_buf[buf_idx].height = ybot-ytop;
@@ -768,7 +769,8 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
                 obj_sort_buf[buf_idx].x = trans_pos.x;
                 obj_sort_buf[buf_idx].ytop = ytop;
                 obj_sort_buf[buf_idx].ybot = ybot;
-                obj_sort_buf[buf_idx].obj_link = cur_obj;
+                obj_sort_buf[buf_idx].obj_link = cur_dec;
+                //obj_sort_buf[buf_idx].obj_type = DECORATION;
                 //KLog_U1("decoration slot", obj_type);
 
                 z_sort_buf[buf_idx].buf_idx = buf_idx;
@@ -823,7 +825,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
             draw_rle_sprite(left_x, right_x, top_y>>4, bot_y>>4, 
                             window_min, window_max, 
                             obj_clip_buf, type->sprite,
-                            obj_link, type->type);
+                            obj_link, type->type, sector);
         }
 
         free_clip_buffer(obj_clip_buf);
@@ -1735,7 +1737,7 @@ void visit_graph_with_pvs(s16* pvs_table, u16 src_sector, u16 sector, u16 x1, u1
             draw_rle_sprite(left_x, right_x, top_y>>4, bot_y>>4, 
                             window_min, window_max, 
                             obj_clip_buf, type->sprite,
-                            obj_link, type->type);
+                            obj_link, type->type, sector);
         }
 
         free_clip_buffer(obj_clip_buf);

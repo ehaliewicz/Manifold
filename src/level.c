@@ -125,8 +125,8 @@ void init_objects() {
                 alloc_object_in_sector(
                     i&1, // either 0 or 1, to spread the load
                     thg->sector_num,
-                    thg->x<<FIX32_FRAC_BITS, 
-                    thg->y<<FIX32_FRAC_BITS, 
+                    thg->x,//<<FIX32_FRAC_BITS, 
+                    thg->y,//<<FIX32_FRAC_BITS, 
                     cur_sector_height, //(cur_sector_height<<(FIX32_FRAC_BITS-4)), // + FIX32(50);   
                     //thg->z<<FIX32_FRAC_BITS, 
                     thg->type
@@ -223,5 +223,6 @@ void load_portal_map(portal_map* l) {
 
     if(cur_portal_map->xgm_track != NULL) {
         XGM_startPlay(cur_portal_map->xgm_track);
+        XGM_setLoopNumber(-1);
     } 
 }

@@ -132,6 +132,7 @@ void init_sprite_draw_cache();
 
 extern obj_type drawn_to_center_cols;
 extern object_link sprite_on_center_col;
+extern u16 center_object_sector;
 
 // reset whether a sprite was drawn to the center of the screen
 void reset_sprite_hit_info(); 
@@ -140,7 +141,7 @@ void draw_rle_sprite(s16 x1, s16 x2, s16 ytop, s16 ybot,
                  u16 window_min, u16 window_max,
                  clip_buf* clipping_buffer,
                  const rle_sprite* obj, 
-                 object_link obj_link, obj_type obj_type);
+                 object_link obj_link, obj_type obj_type, u16 sector);
 
 void draw_forcefield(s16 x1, s16 x2,
                      u16 window_min, u16 window_max,

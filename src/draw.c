@@ -925,10 +925,12 @@ void draw_col(s16 ytop, s16 min_drawable_y, s16 max_drawable_y,
 
 obj_type drawn_to_center_cols;
 object_link sprite_on_center_col;
+u16 center_object_sector;
 
 void reset_sprite_hit_info() {
     sprite_on_center_col = NULL_OBJ_LINK;
     drawn_to_center_cols = OBJECT;
+    center_object_sector = 0;
 }
 
 /* for drawing moving objects */
@@ -936,7 +938,7 @@ void draw_rle_sprite(s16 x1, s16 x2, s16 ytop, s16 ybot,
                  u16 window_min, u16 window_max,
                  clip_buf* clipping_buffer,
                  const rle_sprite* obj, 
-                 object_link obj_link, obj_type type) {
+                 object_link obj_link, obj_type type, u16 sector) {
 
     s16 unclipped_dy = ybot-ytop;
     if(unclipped_dy > MAX_CACHE_INSTRUCTIONS) { return; }
@@ -1001,6 +1003,8 @@ void draw_rle_sprite(s16 x1, s16 x2, s16 ytop, s16 ybot,
     u8 hit_center = 0;
 
  
+    const u8 within_low = (RENDER_WIDTH/2)-2;
+    const u8 within_high = (RENDER_WIDTH/2)+2;
 
     while(col_dx--) {
         u8 min_drawable_y = *yclip_ptr++;
@@ -1029,8 +1033,6 @@ void draw_rle_sprite(s16 x1, s16 x2, s16 ytop, s16 ybot,
                 continue;
             }
 
-            u8 within_low = 0;
-            u8 within_high = 0;
             if(cur_x >= within_low && cur_x <= within_high) {
                 hit_center = 1;
             }
@@ -1068,8 +1070,11 @@ void draw_rle_sprite(s16 x1, s16 x2, s16 ytop, s16 ybot,
     }
 
     if(hit_center) {
+        KLog_U2("draw to center of screen: ", type, " idx: ", obj_link);
+
         drawn_to_center_cols = type;
         sprite_on_center_col = obj_link;
+        center_object_sector = sector;
     }
     flip();
 

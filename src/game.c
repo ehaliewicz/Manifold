@@ -431,12 +431,37 @@ int handle_input() {
     }
     
     
+    if(shooting) { 
+        shooting--;
+        if(shooting == 0 && joy_button_pressed(BUTTON_A)) { shooting = 1;}
+    }
+    if(pressing) { 
+        pressing--;
+        if(pressing == 0 && joy_button_pressed(BUTTON_B)) { pressing = 1;}
+    }
+
+    if(jumping) {
+        if(jumping >= 6) { cur_player_pos.z += FIX32(16); }
+        jumping--;
+        if(jumping == 0) {
+            play_sfx(SFX_JUMP2_ID, 1);
+        }
+    }
 
 
-    //if(joy_button_pressed(BUTTON_A) && !shooting) {
-    //    //play_sfx(SFX_PEASHOOTER_ID, 1);
-    //    shooting = 2;
-    //}
+    if(joy_button_pressed(BUTTON_A) && !shooting) {  
+        //play_sfx(SFX_PEASHOOTER_ID, 1);
+        reset_gun_bob();
+        play_sfx(SFX_SHOTGUN_ID, 1);
+        shooting = 12;
+        KLog_U2("drawn to center: ", drawn_to_center_cols, " sprite idX: ", sprite_on_center_col);
+        if(drawn_to_center_cols == OBJECT && sprite_on_center_col != NULL_OBJ_LINK) {
+            KLog("object rendered to center of screen");
+            // destroy the object
+            free_object(sprite_on_center_col, center_object_sector);
+
+        }
+    }
 
     if(joy_button_pressed(BUTTON_B) && !pressing) {
         //play_sfx(SFX_SELECT_ID, 1);
@@ -452,22 +477,6 @@ int handle_input() {
         jumping = 10;
     }
 
-    if(shooting) { 
-        shooting--;
-        //if(jumping == 0 && joy_button_pressed(BUTTON_A)) { shooting = 1;}
-    }
-    if(pressing) { 
-        pressing--;
-        if(pressing == 0 && joy_button_pressed(BUTTON_B)) { pressing = 1;}
-    }
-
-    if(jumping) {
-        if(jumping >= 6) { cur_player_pos.z += FIX32(16); }
-        jumping--;
-        if(jumping == 0) {
-            play_sfx(SFX_JUMP2_ID, 1);
-        }
-    }
 
 
     return 0;
@@ -642,7 +651,7 @@ void init_game() {
     
     VDP_waitVSync();
 
-    XGM_setPCM(SFX_PEASHOOTER_ID, sfx_shoot, sizeof(sfx_shoot));
+    XGM_setPCM(SFX_SHOTGUN_ID, sfx_shotgun, sizeof(sfx_shotgun));
     XGM_setPCM(SFX_SELECT_ID, sfx_select, sizeof(sfx_select));
     XGM_setPCM(SFX_JUMP1_ID, sfx_jump1, sizeof(sfx_jump1));
     XGM_setPCM(SFX_JUMP2_ID, sfx_jump2, sizeof(sfx_jump2));

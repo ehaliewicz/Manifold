@@ -2,7 +2,7 @@
 #define _RES_SFX_RES_H_
 
 extern const u8 sfx_select[1792];
-extern const u8 sfx_shoot[2560];
+extern const u8 sfx_shotgun[20480];
 extern const u8 sfx_jump1[4352];
 extern const u8 sfx_jump2[3072];
 extern const u8 sfx_lift_go_up[18176];

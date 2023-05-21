@@ -200,7 +200,7 @@ int is_closer(player_pos pos1, player_pos pos2, player_pos origin) {
 
 
 object_link alloc_object_in_sector(u8 activate_tick, int sector_num, fix32 x, fix32 y, s16 z, uint8_t object_type) {
-    //KLog_U1("allocating object in sector: ", sector_num);
+    KLog_U1("allocating object in sector: ", sector_num);
     object_link res = new_object_link();
     if(res == NULL_OBJ_LINK) {
         KLog("free list pop is null? wtf");
@@ -246,8 +246,9 @@ decoration_link alloc_decoration_in_sector(int sector_num, s16 x, s16 y, s16 z, 
     return res;
 } 
 
-void free_object(object_link link) {
+void free_object(object_link link, u16 object_sector) {
     if(link == NULL_OBJ_LINK) {
+        KLog("its null?");
         return;
     }
     object_link next = OBJ_LINK_DEREF(link).next;
@@ -259,6 +260,9 @@ void free_object(object_link link) {
     // patch prev object if exists
     if(prev != NULL_OBJ_LINK) {
         OBJ_LINK_DEREF(prev).next = next;
+    } else {
+
+        sector_object_lists[object_sector] = next;
     }
     // clear prev link
     OBJ_LINK_DEREF(link).prev = NULL_OBJ_LINK;
@@ -268,9 +272,12 @@ void free_object(object_link link) {
 }
 
 
-void free_decoration(decoration_link link) {
+void free_decoration(decoration_link link, u16 deco_sector) {
     if(link == NULL_DEC_LINK) {
         return;
+    }
+    if (sector_decoration_lists[deco_sector] == link) {
+        sector_decoration_lists[deco_sector] = DEC_LINK_DEREF(link).next;
     }
     // attach to head of free list
     DEC_LINK_DEREF(link).next = decoration_free_list;
@@ -339,6 +346,7 @@ object_link objects_in_sector(int sector_num) {
     //return NULL; 
     return sector_object_lists[sector_num];
 }
+
 decoration_link decorations_in_sector(int sector_num) {
     //return NULL; 
     return sector_decoration_lists[sector_num];
@@ -346,6 +354,15 @@ decoration_link decorations_in_sector(int sector_num) {
 
 int idle(object_link cur_obj, uint16_t cur_sector) {
     return 1; // stays alive
+}
+
+void print_object_list(object_link lst) {
+    KLog("printing object list");
+    while(lst != NULL_OBJ_LINK) {
+        KLog_U1("link: ", lst);
+        lst = OBJ_LINK_DEREF(lst).next;
+    }
+    KLog_U1("terminated with: ", lst);
 }
 
 int look_for_player(object_link cur_obj, uint16_t cur_sector) {
@@ -487,10 +504,10 @@ void process_all_objects(uint32_t cur_frame) {
 
                     // free object needs to remove the object and patch next and prev links if necessary
                     // and place it on the free list
-                    if(sector_object_lists[sect] == cur_object) {
-                        sector_object_lists[sect] = OBJ_LINK_DEREF(cur_object).next;
-                    }
-                    free_object(cur_object); 
+                    //if(sector_object_lists[sect] == cur_object) {
+                    //    sector_object_lists[sect] = OBJ_LINK_DEREF(cur_object).next;
+                    //}
+                    free_object(cur_object, sect); 
 
                 } else {
                     if(object_state_machines[state_idx].action == &idle) {
