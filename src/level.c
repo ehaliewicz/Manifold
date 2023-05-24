@@ -1,6 +1,8 @@
 #include <genesis.h>
 #include "collision.h"
+#include "console.h"
 #include "game.h"
+#include "inventory.h"
 #include "map_table.h"
 #include "math3d.h"
 #include "object.h"
@@ -125,8 +127,8 @@ void init_objects() {
                 alloc_object_in_sector(
                     i&1, // either 0 or 1, to spread the load
                     thg->sector_num,
-                    thg->x,//<<FIX32_FRAC_BITS, 
-                    thg->y,//<<FIX32_FRAC_BITS, 
+                    thg->x<<FIX32_FRAC_BITS, 
+                    thg->y<<FIX32_FRAC_BITS, 
                     cur_sector_height, //(cur_sector_height<<(FIX32_FRAC_BITS-4)), // + FIX32(50);   
                     //thg->z<<FIX32_FRAC_BITS, 
                     thg->type
@@ -222,7 +224,8 @@ void load_portal_map(portal_map* l) {
     init_objects();
 
     if(cur_portal_map->xgm_track != NULL) {
+        XGM_setLoopNumber(255);
         XGM_startPlay(cur_portal_map->xgm_track);
-        XGM_setLoopNumber(-1);
+        XGM_setLoopNumber(255);
     } 
 }

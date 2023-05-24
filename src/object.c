@@ -366,6 +366,7 @@ void print_object_list(object_link lst) {
 }
 
 int look_for_player(object_link cur_obj, uint16_t cur_sector) {
+    return 1;
     if(cur_player_pos.cur_sector == cur_sector) {
         //cur_obj->object_type = 1;
         OBJ_LINK_DEREF(cur_obj).current_state++;
@@ -405,6 +406,7 @@ int maybe_get_picked_up(object_link cur_obj, uint16_t cur_sector) {
 }
 
 int follow_player(object_link cur_obj, uint16_t cur_sector) {
+    return 1;
     fix32 obj_x = OBJ_LINK_DEREF(cur_obj).x;
     fix32 obj_y = OBJ_LINK_DEREF(cur_obj).y;
     // follow player
@@ -478,7 +480,7 @@ int follow_player(object_link cur_obj, uint16_t cur_sector) {
 
 
 void process_all_objects(uint32_t cur_frame) {
-    return;
+    //return;
     /*
     for(int sect = 0; sect < num_sector_lists; sect++) {
         object* cur_object = sector_lists[sect];

@@ -646,8 +646,9 @@ void init_game() {
     
     // palette 2 is HUD palette
     
-    //free_tile_loc = inventory_init(free_tile_loc);
+    free_tile_loc = inventory_init(free_tile_loc);
     //inventory_draw();
+    //inventory_reset();
     
     VDP_waitVSync();
 
@@ -707,7 +708,7 @@ game_mode run_game() {
     process_all_objects(cur_frame);
 
     console_tick();
-    //inventory_draw();
+    inventory_draw();
     update_sfx();
     run_sector_group_processes();
     calc_movement_speeds();

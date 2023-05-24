@@ -11,7 +11,7 @@ static int dirty;
 
 static u16 hud_tile_loc;
 
-static u16 *inventory;
+static u8 *inventory;
 
 static u16 *item_vram_addresses; //[NUM_ITEM_TYPES]; 
 
@@ -26,8 +26,16 @@ int inventory_add_item(item_type item) {
         return 0;
     }
     inventory[num_items++] = item;
+    KLog_U1("added item to index: ", num_items-1);
     dirty = 1;
     return 1;
+}
+
+int inventory_has_item(item_type item) {
+    for(int i = 0; i < num_items; i++) {
+        if(inventory[i] == item) { return 1; }
+    }
+    return 0;
 }
 
 void inventory_draw() {
@@ -58,13 +66,12 @@ void inventory_draw() {
 
 
 void inventory_reset() {
-    //num_items = 0;
-    num_items = 5;
-    inventory[0] = HEALTH_RECHARGE;
-    inventory[1] = ARMOR_CHARGE;
-    inventory[2] = ARMOR_CHARGE;
-    inventory[3] = SHIELD_CHARGE;
-    inventory[4] = BULLET_CHARGE;
+    num_items = 0;
+    //inventory[0] = HEALTH_RECHARGE;
+    //inventory[1] = ARMOR_CHARGE;
+    //inventory[2] = ARMOR_CHARGE;
+    //inventory[3] = SHIELD_CHARGE;
+    //inventory[4] = BULLET_CHARGE;
     dirty = 1;
 }
 
@@ -94,7 +101,8 @@ u32 load_inventory_items_to_vram(u32 tile_loc) {
 }
 
 u32 inventory_init(u32 free_tile_loc) {
-    inventory = malloc(sizeof(item_type) * MAX_ITEMS, "inventory table");
+    inventory = malloc(sizeof(u8) * MAX_ITEMS, "inventory table");
+    
     item_vram_addresses = malloc(sizeof(u16) * NUM_ITEM_TYPES, "inventory item vram addr table");
     u32 new_free_tile_loc = load_inventory_items_to_vram(free_tile_loc);
 

@@ -1070,7 +1070,6 @@ void draw_rle_sprite(s16 x1, s16 x2, s16 ytop, s16 ybot,
     }
 
     if(hit_center) {
-        KLog_U2("draw to center of screen: ", type, " idx: ", obj_link);
 
         drawn_to_center_cols = type;
         sprite_on_center_col = obj_link;
@@ -2337,7 +2336,6 @@ void draw_upper_step(s16 x1, s16 x1_ytop, s16 nx1_ytop, s16 x2, s16 x2_ytop, s16
             top_y_fix += top_dy_per_dx;
             ntop_y_fix += ntop_dy_per_dx;
         }
-
     }
     
     flip();
