@@ -83,17 +83,17 @@ Vect2D_f32 get_sector_center(int i) {
 }
 
 void init_player_pos() {
-    const init_player_sector = 0;
+    const int init_player_sector = 0;
     
-    Vect2D_f32 sector_0_center = get_sector_center(0);
+    Vect2D_f32 sector_0_center = get_sector_center(init_player_sector); // get_sector_center(0);
 
     cur_player_pos.x = sector_0_center.x;
     cur_player_pos.y = sector_0_center.y;
-    cur_player_pos.cur_sector = 0;
+    cur_player_pos.cur_sector = init_player_sector;
 
     u16 sect_group = sector_group(cur_player_pos.cur_sector, cur_portal_map);
 
-    cur_player_pos.z = (get_sector_group_floor_height(sect_group)<<(FIX32_FRAC_BITS-4)) + FIX32(50);
+    cur_player_pos.z = (get_sector_group_floor_height(sect_group)<<(FIX32_FRAC_BITS-4));// + FIX32(50);
 
 
     cur_player_pos.ang = 0;
@@ -210,9 +210,7 @@ void load_portal_map(portal_map* l) {
     init_sector_parameters(l);
 
     init_wall_tex_repetitions(l);
-
     init_player_pos();    
-    
    
     //if(cur_portal_map->palette != NULL) {
     //    KLog("LOADING MAP PALETTE");

@@ -15,7 +15,10 @@ int main() {
 
 	KLog_U1("free bytes of ram at startup: ", MEM_getFree());
 	volatile u32* vp_start_in_game_arr = start_in_game_arr;
-	if(vp_start_in_game_arr[1]) {
+	u16 startup_joy = JOY_readJoypad(JOY_1);
+	u8 bypass_autoload = (startup_joy & BUTTON_START);
+
+	if(vp_start_in_game_arr[1] && !bypass_autoload) {
 		// i don't know why this is required, I guess some VRAM remapping or something
 		// without it, fps display doesn't work in-game
 		// such a dumb hack

@@ -40,7 +40,7 @@ s16 playerXInt, playerYInt;
 fix32 angleCos32, angleSin32;
 fix16 angleCos16, angleSin16;
 fix16 angleSinFrac12, angleCosFrac12;
-s16 playerZ12Frac4;
+s16 playerZCam12Frac4;
 
 
 static int pause_game = 0;
@@ -86,6 +86,8 @@ void showStats(u16 float_display)
     char str[32];
     u16 y = 5;
 
+    
+    /*
     u8 fps_good = 0;
     u16 cur_vints = vints;
     u16 delta_vtimer = cur_vints - last_vints;
@@ -99,23 +101,40 @@ void showStats(u16 float_display)
     u16 frames = vints_avg >> 2;
     last_vints = vints;
     fps_good = frames < 5; 
-    
-    //last_vtimer = cur_vtimer;
-    uintToStr(frames, str, 2);
-    VDP_clearTextBG(BG_B, 1, y, 4);
-    VDP_drawTextBG(BG_B, str, 1, y++);
+    */
 
+    s32 frames = SYS_getFPSAsFloat();
+    //last_vtimer = cur_vtimer;
+    //KLog_U1("FRAMES: ", frames);
+
+    //uintToStr(frames, str, 2);
+    fix32ToStr(frames, str, 1);
+    //return;
 
     // display FPS
 
-    u16 base_tile_addr = fps_good ? smiley_addr : frown_addr;
-    for(int ty = y; ty < y+4; ty++) {
-        for(int tx = 1; tx < 5; tx++) {
 
-            VDP_setTileMapXY(BG_B, TILE_ATTR_FULL(PAL0, 1, 0, 0, base_tile_addr), tx, ty);
-            base_tile_addr++;
-        }
+    //u16 base_tile_addr = 0x05A0;//fps_good ? smiley_addr : frown_addr;
+    //for(int ty = y; ty < y+4; ty++) {
+    //    for(int tx = 1; tx < 5; tx++) {
+    //        VDP_setTileMapXY(BG_B, TILE_ATTR_FULL(PAL0, 1, 0, 0, base_tile_addr), tx, ty);
+    //        base_tile_addr++;
+    //    }
+    //}
+    
+    char* sptr = str;
+    u16 base = 0x05A0;
+    u8 x = 2;
+    while(*sptr) {
+        VDP_setTileMapXY(BG_B, 
+            TILE_ATTR_FULL(PAL3, 1, 0, 0,
+                        base+(*sptr++)-32),
+            x++,
+            y);
     }
+    //VDP_setTextPalette(1);
+    //VDP_clearTextBG(BG_B, 1, y, 4);
+    //VDP_drawTextBG(BG_B, "blah", 1, y++);
     /*
     if(fps_good) {
         
@@ -366,8 +385,9 @@ int handle_input() {
     u16 sect_group = sector_group(cur_player_pos.cur_sector, cur_portal_map);
     if(moved) {
 
-        //collision_result collision = check_for_collision(curx, cury, newx, newy, cur_player_pos.cur_sector);
-        collision_result collision = check_for_collision_radius(curx, cury, newx, newy, PLAYER_COLLISION_DISTANCE_SQR, cur_player_pos.cur_sector);
+        
+        s16 cur_player_z = cur_player_pos.z >> (FIX32_FRAC_BITS-4);
+        collision_result collision = check_for_collision_radius(curx, cury, cur_player_z, newx, newy, PLAYER_COLLISION_DISTANCE_SQR, cur_player_pos.cur_sector);
         cur_player_pos.x = collision.pos.x;
         cur_player_pos.y = collision.pos.y;
         if(collision.new_sector != cur_player_pos.cur_sector) {
@@ -380,7 +400,7 @@ int handle_input() {
                 }
             }
         }
-     
+        
         idle_bob_idx = 27;
         wait_idle_bob_idx = 16;
 
@@ -407,7 +427,7 @@ int handle_input() {
 
     
     s16 cur_sector_height = get_sector_group_floor_height(sect_group);
-    s32 rest_player_pos = (cur_sector_height<<(FIX32_FRAC_BITS-4)) + FIX32(50);
+    s32 rest_player_pos = (cur_sector_height<<(FIX32_FRAC_BITS-4));// + FIX32(50);
     if(cur_player_pos.z > rest_player_pos) {
         cur_player_pos.z -= FIX32(8);
     } else if (cur_player_pos.z < rest_player_pos) {
@@ -452,7 +472,9 @@ int handle_input() {
     if(joy_button_pressed(BUTTON_A) && !shooting) {  
         //play_sfx(SFX_PEASHOOTER_ID, 1);
         reset_gun_bob();
-        play_sfx(SFX_SHOTGUN_ID, 1);
+        play_sfx(SFX_SHOTGUN_ID, 16);
+        run_in_phs(cur_player_pos.cur_sector, wake_enemies_in_sector, cur_portal_map);
+
         shooting = 12;
         KLog_U2("drawn to center: ", drawn_to_center_cols, " sprite idX: ", sprite_on_center_col);
         if(drawn_to_center_cols == OBJECT && sprite_on_center_col != NULL_OBJ_LINK) {
@@ -547,19 +569,26 @@ u16* cur_palette = NULL;
 void do_vint_flip();
 
 
-u16 free_tile_loc = 0x390;
-
+void set_palette(u16* new_palette) {
+    PAL_setPalette(PAL1, new_palette);
+    cur_palette = new_palette;
+}
 
 void maybe_set_palette(u16* new_palette) {
-    if(cur_palette != new_palette) {
-        PAL_setPalette(PAL1, new_palette);
-        cur_palette = new_palette;
+    if(cur_palette == new_palette) {
+        return;
     }
+    PAL_setPalette(PAL1, new_palette);
+    cur_palette = new_palette;
 }
 
 
+u16 free_tile_loc;
+
 
 void init_game() {
+    free_tile_loc = 0x390;
+    cur_palette = NULL;
     render_mode = RENDER_SOLID;
 
     
@@ -618,21 +647,22 @@ void init_game() {
 
     // palette 1 is 3d palette
     //PAL_setPalette(PAL1, cur_palette);
-    static int init = 0;
-    if(!init) {
+    //static int init = 0;
+    //if(!init) {
         if(cur_portal_map->palette != NULL) {
-            maybe_set_palette(cur_portal_map->palette);
+            set_palette(cur_portal_map->palette);
         } else {
-            maybe_set_palette(sprite_pal.data);
+            set_palette(sprite_pal.data);
         }
-        init = 1;
-    }
+        //init = 1;
+    //}
 
     // palette 2 is HUD palette, set in inventory_init
     // palette 3 is sprite palette
     PAL_setPalette(PAL3, sprite_pal.data);
     VDP_setTextPalette(PAL3);
-    
+    init_color_table();
+
     clear_menu();
 
     // skybox is PAL3
@@ -659,7 +689,7 @@ void init_game() {
     XGM_setPCM(SFX_LIFT_GO_UP_ID, sfx_lift_go_up, sizeof(sfx_lift_go_up));
     XGM_setPCM(SFX_OPEN_DOOR_ID, sfx_door_open, sizeof(sfx_door_open));
     XGM_setPCM(SFX_CLOSE_DOOR_ID, sfx_door_close, sizeof(sfx_door_close));
-
+    XGM_setPCM(SFX_ENEMY_A_WAKE_ID, sfx_enemy_a_wake, sizeof(sfx_enemy_a_wake));
 
     init_sprite_draw_cache();
     init_2d_buffers();
@@ -669,7 +699,6 @@ void init_game() {
 
     free_tile_loc = init_shotgun(free_tile_loc);
 
-    KLog_U1("smiley num tiles: ", smile.numTile);
     VDP_loadTileData(smile.tiles, free_tile_loc, 16, DMA);
     smiley_addr = free_tile_loc; free_tile_loc += 16;
     VDP_loadTileData(frown.tiles, free_tile_loc, 16, DMA);
@@ -704,9 +733,7 @@ void cleanup_level() {
 game_mode run_game() {
 
     u32 start_ticks = getTick();
-    
     process_all_objects(cur_frame);
-
     console_tick();
     inventory_draw();
     update_sfx();
@@ -727,7 +754,8 @@ game_mode run_game() {
     angleCos16 = cosFix16(cur_player_pos.ang);
     angleSin16 = sinFix16(cur_player_pos.ang); 
 
-    playerZ12Frac4 = cur_player_pos.z >> (FIX32_FRAC_BITS-4);
+    // add 50 here 
+    playerZCam12Frac4 = (cur_player_pos.z + FIX32(50)) >> (FIX32_FRAC_BITS-4);
     playerXInt = cur_player_pos.x>>FIX32_FRAC_BITS;
     playerYInt = cur_player_pos.y>>FIX32_FRAC_BITS;
 
