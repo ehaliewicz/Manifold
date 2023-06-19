@@ -38,6 +38,9 @@ STAIR_STATES = ["Stairs lowered", "Stairs moving", "Stairs raised"]
 
 
 class SectorGroup():
+    def regen_color(self):
+        self.color = utils.random_bright_color()
+
     def add_trigger_target(self, tgt):
         if len(self.triggers) == SECTOR_GROUP_NUM_TRIGGERS+1:
             return 
@@ -46,10 +49,7 @@ class SectorGroup():
     
     def __init__(self, index, type, light_level=0, orig_height=0, ticks_left=0, state=0, 
                  floor_height=0, ceil_height=100, floor_color=1, ceil_color=1, triggers=None):
-        # type is the sector group type, flashing, moving, secret etc
-        # params is the parameters to the code which runs the sector effect
-        # trigger is up to 8 sectors that can trigger this effect?
-        self.color = utils.random_bright_color()
+        self.regen_color()
         if triggers is None:
             triggers = [0,-1]
         

@@ -30,6 +30,33 @@
 
 
 const u32 color_calc_table[16*5*2] = {
+// far table
+  // -2 light level
+0, PIX(10), PIX(8), PIX(8), PIX(8), PIX(6), PIX(15), PIX(6), PIX(6), PIX(10), PIX(15), PIX(10), PIX(8), PIX(8), PIX(8), PIX(10), 
+  // -1 light level
+0, PIX(10), PIX(8), PIX(8), PIX(8), PIX(6), PIX(15), PIX(6), PIX(6), PIX(10), PIX(15), PIX(10), PIX(8), PIX(8), PIX(8), PIX(10), 
+  // 0 light level
+0, PIX(8), PIX(1), PIX(1), PIX(5), PIX(8), PIX(6), PIX(7), PIX(6), PIX(11), PIX(10), PIX(10), PIX(5), PIX(5), PIX(7), PIX(10), 
+  // 1 light level
+    0, PIX(1), PIX(2), PIX(3), PIX(4), PIX(5), PIX(6), PIX(7), PIX(8), PIX(9), PIX(10), PIX(11), PIX(12), PIX(13), PIX(14), PIX(15), 
+  // 2 light level
+0, PIX(3), PIX(3), PIX(3), PIX(3), PIX(4), PIX(8), PIX(14), PIX(1), PIX(14), PIX(10), PIX(11), PIX(4), PIX(3), PIX(14), PIX(10), 
+// near table
+  // -2 light level
+0, PIX(10), PIX(8), PIX(8), PIX(8), PIX(6), PIX(15), PIX(6), PIX(6), PIX(10), PIX(15), PIX(10), PIX(8), PIX(8), PIX(8), PIX(10), 
+  // -1 light level
+0, PIX(8), PIX(1), PIX(1), PIX(5), PIX(8), PIX(6), PIX(7), PIX(6), PIX(11), PIX(10), PIX(10), PIX(5), PIX(5), PIX(7), PIX(10), 
+  // 0 light level
+0, PIX(1), PIX(2), PIX(3), PIX(4), PIX(5), PIX(6), PIX(7), PIX(8), PIX(9), PIX(10), PIX(11), PIX(12), PIX(13), PIX(14), PIX(15), 
+  // 1 light level
+0, PIX(2), PIX(3), PIX(3), PIX(4), PIX(12), PIX(6), PIX(7), PIX(5), PIX(9), PIX(10), PIX(11), PIX(4), PIX(13), PIX(14), PIX(10), 
+  // 2 light level
+0, PIX(3), PIX(3), PIX(3), PIX(3), PIX(4), PIX(8), PIX(14), PIX(1), PIX(14), PIX(10), PIX(11), PIX(4), PIX(3), PIX(14), PIX(10), 
+};
+
+/*
+
+const u32 color_calc_table[16*5*2] = {
    // far dist lut [16*3] = {
       // -2 light level
       0, PIX(DARK_YELLOW_IDX), PIX(DARK_BLUE_IDX), PIX(GREEN_IDX), PIX(RED_IDX), PIX(PURPLE_IDX), PIX(STEEL_IDX),
@@ -78,6 +105,7 @@ const u32 color_calc_table[16*5*2] = {
 
    //}
 };
+*/
 
 /*
 const u32 color_calc_table[16*5*3] = {
