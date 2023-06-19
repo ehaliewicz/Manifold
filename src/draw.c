@@ -720,7 +720,7 @@ void flip() {
     return;
   //u8* dst_buf = (bmp_buffer_write == bmp_buffer_0) ? bmp_buffer_1 : bmp_buffer_0;
   //return;
-  if(JOY_readJoypad(JOY_1) & BUTTON_A) {
+  if(JOY_readJoypad(JOY_1) & BUTTON_C) {
     if(!last_pressed_a) {
         if(!debug_draw_cleared) { return; }
         bmp_vertical_clear();
