@@ -200,7 +200,13 @@ void load_and_transform_pvs_walls(u16 num_walls, u16* pvs_wall_indexes,
     }
 }
 
-//#define DEBUG_PORTAL_CLIP 1
+
+
+//u8 is_portal[62];
+//s32 u_buffer[62];
+//u8 tex_idx_buffer[62];
+//s16 proj_y_buffer[62];
+//s16 proj_x_buffer[62];
 
 
 void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint8_t depth) {
@@ -244,8 +250,8 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
     s8 light_level = get_sector_group_light_level(sect_group);
 
 
-
     Vect2D_s16 transformed_vert_buffer[62];
+
     Vect2D_s16* transformed_vert_buffer_ptr = transformed_vert_buffer;
     load_transform_and_duplicate_verts(num_walls+1, &map->walls[wall_offset], map->vertexes, transformed_vert_buffer);
     //Vect2D_s16 prev_transformed_vert = *transformed_vert_buffer_ptr++;
@@ -305,7 +311,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
         Vect2D_s16 trans_v1 = *transformed_vert_buffer_ptr++;
         Vect2D_s16 trans_v2 = *transformed_vert_buffer_ptr++;
         #ifdef DEBUG_PORTAL_CLIP
-        KLog_U3("wall idx: ", i, " x1: ", trans_v1.x, " x2: ", trans_v2.x);
+        KLog_S3("wall idx: ", i, " x1: ", trans_v1.x, " x2: ", trans_v2.x);
         #endif 
         
         //Vect2D_s16 trans_v1 = prev_transformed_vert;
@@ -329,7 +335,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
         }
         clip_result clipped = clip_map_vertex_16((Vect2D_s16*)&trans_v1, (Vect2D_s16*)&trans_v2, &tmap_info);
         #ifdef DEBUG_PORTAL_CLIP
-        KLog_U3("post clip, wall idx: ", i, " x1: ", trans_v1.x, " x2: ", trans_v2.x);
+        KLog_S3("post clip, wall idx: ", i, " x1: ", trans_v1.x, " x2: ", trans_v2.x);
         #endif 
 
 
@@ -346,15 +352,32 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
                 #ifdef DEBUG_PORTAL_CLIP
                 if(is_portal) {
                     portals_frustum_culled++;
-                    KLog_S2("portal fully near clipped: ", portal_idx, " to sect ", portal_sector);
+                    KLog_S2("portal fully clipped: ", portal_idx, " to sect ", portal_sector);
                     KLog_S2("z1: ", trans_v1.y, " z2: ", trans_v2.y);
                 }
                 #endif
-                if(trans_v1.y < NEAR_Z_FIX) { trans_v1.y = (1<<2)<<TRANS_Z_FRAC_BITS; z_recip_v1 = 65535; }
-                if(trans_v2.y < NEAR_Z_FIX) { trans_v2.y = (1<<2)<<TRANS_Z_FRAC_BITS; z_recip_v2 = 65535; }
+                
+                if(trans_v1.y < 0 && trans_v2.y < 0) {  
+                #ifdef DEBUG_PORTAL_CLIP
+                    KLog("both verts are near clipped skipping this");
+                #endif
+                    continue;
+                }
+                if(trans_v1.y < NEAR_Z_FIX) { 
+                #ifdef DEBUG_PORTAL_CLIP
+                    KLog("left vert is near z clipped, setting it to near z plane");
+                #endif
+                    trans_v1.y = (1<<2)<<TRANS_Z_FRAC_BITS; z_recip_v1 = 65535;
+                }
+                if(trans_v2.y < NEAR_Z_FIX) { 
+                #ifdef DEBUG_PORTAL_CLIP
+                    KLog("right vert is near z clipped, setting it to near z plane");
+                #endif
+                    trans_v2.y = (1<<2)<<TRANS_Z_FRAC_BITS; z_recip_v2 = 65535;
+                 }
                 //if(trans_v1.y < NEAR_Z_FIX) { trans_v1.y =  NEAR_Z_FIX; z_recip_v1 = 65535; }
                 //if(trans_v2.y < NEAR_Z_FIX) { trans_v2.y = NEAR_Z_FIX; z_recip_v2 = 65535; }
-                if(trans_v1.y < 0 && trans_v2.y < 0) {  continue; }
+                
                 //s16 x1 = (clipped & LEFT_FRUSTUM_CLIPPED) ? 0 : project_and_adjust_x(trans_v1.x, z_recip_v1);
                 //s16 x2 = (clipped & RIGHT_FRUSTUM_CLIPPED) ? RENDER_WIDTH : project_and_adjust_x(trans_v2.x, z_recip_v2);
                 s16 x1 = project_and_adjust_x(trans_v1.x, z_recip_v1);
@@ -385,12 +408,12 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
                     continue;
                     }
                 }
-                if(x1 >= x2) {
+                if(x1 >= x2) { 
                     #ifdef DEBUG_PORTAL_CLIP
                     post_project_backfacing_walls++;
                     KLog_S2("portal backface culled after near clip?: ", portal_idx, " to sect ", portal_sector);
                     #endif
-                    //continue;
+                    continue;
                 }
                 u16 portal_sect_group = sector_group(portal_sector, map);
                 neighbor_floor_height = get_sector_group_floor_height(portal_sect_group);
@@ -627,9 +650,9 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
                 //u16 neighbor_floor_color = neighbor_sect_group_param_pointer[SECTOR_GROUP_PARAM_FLOOR_COLOR_IDX]; //get_sector_group_floor_color(neighbor_sect_group);
                 //u16 neighbor_light_level = neighbor_sect_group_param_pointer[SECTOR_GROUP_PARAM_LIGHT_IDX];
                 //if(neighbor_floor_color != floor_color || neighbor_floor_height != floor_height || !recur || neighbor_light_level != light_level) {
-                    //draw_floor_update_clip(x1, x1_ybot, x2, x2_ybot,
-                    //                    min(z_recip_v1, z_recip_v2),
-                    //                    window_min, window_max, &floor_params);
+                    draw_floor_update_clip(x1, x1_ybot, x2, x2_ybot,
+                                        min(z_recip_v1, z_recip_v2),
+                                        window_min, window_max, &floor_params);
                 //}
             }
 
@@ -701,7 +724,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
 
     
 
-
+    
     if(obj_clip_buf != NULL) { //} objects_in_sect != NULL_OBJ_LINK || decorations_in_sect != NULL_DEC_LINK) {
         u8 buf_idx = 0;
         object_link cur_obj = objects_in_sect;
@@ -827,12 +850,12 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
                             obj_clip_buf, type->sprite,
                             obj_link, type->type, sector);
         }
-
+        
         free_clip_buffer(obj_clip_buf);
     }
+    
     sector_rendered_cache[sector]++;
 }
-
 
 
 void pvs_scan(u16 src_sector, s16 window_min, s16 window_max, u32 cur_frame) {
@@ -1086,6 +1109,7 @@ void pvs_scan(u16 src_sector, s16 window_min, s16 window_max, u32 cur_frame) {
 }
 
 
+
 void portal_rend(u16 src_sector, u32 cur_frame) {
     #ifdef DEBUG_PORTAL_CLIP
     pre_transform_backfacing_walls = 0;
@@ -1111,7 +1135,10 @@ void portal_rend(u16 src_sector, u32 cur_frame) {
         //KLog_U1("pvs offsets: ", cur_portal_map->pvs_offsets);
         //if(cur_portal_map->pvs_offsets == NULL) {
             //KLog("not using pvs");
+
             visit_graph(src_sector, src_sector, 0, RENDER_WIDTH, cur_frame, 0);
+
+
         //} else {
         //    u16 pvs_offset = cur_portal_map->pvs_offsets[src_sector];
         //    s16* pvs = &cur_portal_map->sector_list_offsets[pvs_offset];
@@ -1124,6 +1151,9 @@ void portal_rend(u16 src_sector, u32 cur_frame) {
     #endif
     //sectors_scanned = 0;
     //portal_scan(src_sector, 0, RENDER_WIDTH, cur_frame);
+    #ifdef DEBUG_PORTAL_CLIP
+    KLog("Rendered.");
+    #endif
     return;
     #ifdef DEBUG_PORTAL_CLIP
     KLog_S1("walls pre-transform backface culled ", pre_transform_backfacing_walls);

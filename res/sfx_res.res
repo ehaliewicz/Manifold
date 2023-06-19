@@ -5,3 +5,4 @@ WAV sfx_jump2 "sfx/jump2.wav" XGM
 WAV sfx_lift_go_up "sfx/liftgoup.wav" XGM
 WAV sfx_door_open "sfx/opendoor.wav" XGM 
 WAV sfx_door_close "sfx/closedoor.wav" XGM
+WAV sfx_enemy_a_wake "sfx/enemya_wake.wav" XGM
