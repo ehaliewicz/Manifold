@@ -62,11 +62,100 @@ Vect2D_s16 transform_map_vert_16(s16 x, s16 y) {
 }
 
 
-s8 point_sign_int_vert(fix32 x, fix32 y, s16 v1_x, s16 v1_y, s16 v2_x, s16 v2_y) {
-    fix32 left = (v2_x-v1_x)*(y-intToFix32(v1_y));
-    fix32 right = (v2_y-v1_y)*(x-intToFix32(v1_x));
+
+// returns -1 if on right side, -1 if on left side
+
+s8 point_sign_int_vert(f32 x, f32 y, s16 v1_x, s16 v1_y, s16 v2_x, s16 v2_y) {
+    //s32 left = muls_16_by_16(
+    //    (v2_x-v1_x),
+    //    (y-v1_y));
+    //s32 right = muls_16_by_16(
+    //    (v2_y-v1_y),
+    //    (x-v1_x));
+    //s32 res = left-right;
+    //return (res > 0 ? 1 : (res < 0 ? -1 : 0));
+
+    
+    //__asm volatile(
+    //    "sub.w v1_x, v2_x"
+    //    : "+d" (ret) // output
+    //    : // input
+    //    );
+
+    s16 ndx = v2_x-v1_x;
+    if(ndx == 0) {
+        s16 ndy = v2_y-v1_y;
+        f32 fv1_x = intToFix32(v1_x);
+        if(x <= fv1_x) {
+            return ndy > 0;
+        }
+        return ndy < 0;
+    }
+
+    s16 ndy = v2_y-v1_y;
+    if(ndy == 0) {
+        f32 fv1_y = intToFix32(v1_y);
+        if(y <= fv1_y) {
+            return ndx < 0;
+        }
+        return ndx > 0;
+    }
+
+    f32 dx = (x - intToFix32(v1_x));
+    f32 dy = (y - intToFix32(v1_y));
+    f32 fndx = intToFix32(ndx);
+    f32 fndy = intToFix32(ndy);
+    if ( (fndy ^ fndx ^ dx ^ dy)&0x80000000 ) {
+        if  ( (ndy ^ dx) & 0x80000000 ) {
+            // (left is negative)
+            return 1;
+        }
+        return 0;
+    }
+    
+
+    f32 left = ndy*dx;
+    f32 right = dy*ndx;
+
+    if(right < left) {
+        return 0;
+    }
+
+    return 1; // back side
+
+    /*
+        WORKING CODE
+
+    s16 dx = v2_x-v1_x;
+    if(dx == 0) {
+
+        s16 dy = v2_y-v1_y;
+        // if right is > 0, it's larger than left
+        // if it's less than 0, it's less than left
+        // if it's equal to 0, it's equal to left
+        if(dy == 0) {
+            return 0;
+        }
+        fix32 right = dy*(x-intToFix32(v1_x));
+        return (right > 0 ? -1 : (right < 0 ? 1 : 0));
+    }
+
+    s16 dy = v2_y-v1_y;
+    if(dy == 0) {
+        // if left > 0, it's larger than right
+        // if left < 0, it's smaller than left
+        // if left == 0, it's equal to left
+        fix32 left = dx*(y-intToFix32(v1_y));
+        return (left > 0 ? 1 : (left < 0 ? -1 : 0));
+    }
+    fix32 left = dx*(y-intToFix32(v1_y));
+    fix32 right = dy*(x-intToFix32(v1_x));
     fix32 res = left - right;
+    // if left > right return 1
+    // if left < right return -1
+    // else return 0
     return (res > 0 ? 1 : (res < 0 ? -1 : 0));
+    */
 }
 
 
@@ -222,7 +311,7 @@ s16 project_and_adjust_y_fix_c(Vect2D_f32 trans_map_vert, s16 y) {
 */
 
 s16 project_and_adjust_y_fix(s16 y, s16 z_recip) {  
-    s16 yMinusPosZ = y - playerZ12Frac4;      // 12.4
+    s16 yMinusPosZ = y - playerZCam12Frac4;      // 12.4
     s32 const4Ry = yMinusPosZ; //CONST4 * yMinusPosZ;
 
     //s32 const4RyMulRecipZ = const4Ry * z_recip_table[z];
@@ -333,6 +422,26 @@ u16 get_texture_repetitions(s16 v1x, s16 v1y, s16 v2x, s16 v2y) {
     return repetitions;
 }
 
+clip_result frustum_cull_vertex_16(Vect2D_s16* __restrict__ trans_v1, Vect2D_s16* __restrict__ trans_v2) {
+    
+    s16 rx1 = trans_v1->x;
+    s16 rz1_12_4 = trans_v1->y; // 12.4
+    s16 rx2 = trans_v2->x;
+    s16 rz2_12_4 = trans_v2->y; // 12.4
+
+    const u8 left_vert_outside_left_frustum = (-rx1 > (rz1_12_4>>4));
+    const u8 right_vert_outside_left_frustum = (-rx2 > (rz2_12_4>>4));
+    const u8 left_vert_outside_right_frustum = (rx1 > (rz1_12_4>>4));
+    const u8 right_vert_outside_right_frustum = (rx2 > (rz2_12_4>>4));
+    if(left_vert_outside_left_frustum && right_vert_outside_left_frustum) {
+        return OFFSCREEN;
+    }
+    if(left_vert_outside_right_frustum && right_vert_outside_right_frustum) {
+        return OFFSCREEN;
+    }
+    return UNCLIPPED;
+}
+
 clip_result clip_map_vertex_16(Vect2D_s16* __restrict__ trans_v1, Vect2D_s16* __restrict__ trans_v2, texmap_params* __restrict__ tmap) {
     // TODO: adjust texture coordinates here as well
     
@@ -347,8 +456,19 @@ clip_result clip_map_vertex_16(Vect2D_s16* __restrict__ trans_v1, Vect2D_s16* __
     clip_result clip_status = UNCLIPPED;
 
     if(rz1_12_4 < NEAR_Z_FIX && rz2_12_4 < NEAR_Z_FIX) {  
-        clip_status = OFFSCREEN;
-        return clip_status;  
+        return OFFSCREEN;  
+    }
+
+    
+    const u8 left_vert_outside_left_frustum = (-rx1 > (rz1_12_4>>4));
+    const u8 right_vert_outside_left_frustum = (-rx2 > (rz2_12_4>>4));
+    const u8 left_vert_outside_right_frustum = (rx1 > (rz1_12_4>>4));
+    const u8 right_vert_outside_right_frustum = (rx2 > (rz2_12_4>>4));
+    if(left_vert_outside_left_frustum && right_vert_outside_left_frustum) {
+        return OFFSCREEN;
+    }
+    if(left_vert_outside_right_frustum && right_vert_outside_right_frustum) {
+        return OFFSCREEN;
     }
 
     s16 dz_12_4 = rz2_12_4 - rz1_12_4;
@@ -366,20 +486,6 @@ clip_result clip_map_vertex_16(Vect2D_s16* __restrict__ trans_v1, Vect2D_s16* __
             tmap->left_u = base_left_u_16;
             tmap->right_u = base_right_u_16;
         }
-    }
-
-    
-    const u8 left_vert_outside_left_frustum = (-rx1 > (rz1_12_4>>4));
-    const u8 right_vert_outside_left_frustum = (-rx2 > (rz2_12_4>>4));
-    const u8 left_vert_outside_right_frustum = (rx1 > (rz1_12_4>>4));
-    const u8 right_vert_outside_right_frustum = (rx2 > (rz2_12_4>>4));
-    if(left_vert_outside_left_frustum && right_vert_outside_left_frustum) {
-        clip_status = OFFSCREEN;
-        return clip_status;
-    }
-    if(left_vert_outside_right_frustum && right_vert_outside_right_frustum) {
-        clip_status = OFFSCREEN;
-        return clip_status;
     }
 
     // this frustum code seems to cause some issues with portal clipping

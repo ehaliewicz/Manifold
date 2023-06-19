@@ -51,6 +51,7 @@ Vect2D_s16 transform_map_vert_16(s16 x, s16 y);
 
 u16 get_texture_repetitions(s16 v1x, s16 v1y, s16 v2x, s16 v2y);
 
+clip_result frustum_cull_vertex_16(Vect2D_s16* __restrict__ trans_v1, Vect2D_s16* __restrict__ trans_v2);
 // clip pair of map vertexes against near z plane, modifies input pointers if necessary
 //clip_result clip_map_vertex(Vect2D_f32* trans_v1, Vect2D_f32* trans_v2);
 clip_result clip_map_vertex_16(Vect2D_s16* trans_v1, Vect2D_s16* trans_v2, texmap_params* tmap);
@@ -70,7 +71,7 @@ s16 project_and_adjust_y_fix(s16 y, s16 z_recip);
 
 s16 project_and_adjust_y_fix_c(s16 y, s16 z);
 
-s8 point_sign_int_vert(fix32 x, fix32 y, s16 v1_x, s16 v1_y, s16 v2_x, s16 v2_y);
+s8 point_sign_int_vert(f32 x, f32 y, s16 v1_x, s16 v1_y, s16 v2_x, s16 v2_y);
 u8 within_frustum(s16 x1, s16 y1, s16 x2, s16 y2);
 
 #endif
