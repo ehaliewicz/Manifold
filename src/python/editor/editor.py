@@ -608,7 +608,11 @@ LEFT_BUTTON = 0
 RIGHT_BUTTON = 1
 
 
-
+def vert_hovered(x,y):
+    for vert in cur_state.map_data.vertexes:
+        if vert.point_collides(x, y):
+            return vert
+    return None
 
 def interpret_click(x,y,button):
     #global cur_vertex, cur_wall, cur_mode
@@ -618,16 +622,16 @@ def interpret_click(x,y,button):
     
     prev_cur = cur_state.cur_vertex
     clicked_vertex = None
-    for vert in cur_state.map_data.vertexes:
-        if vert.point_collides(x, y):
-            cur_state.cur_vertex = vert
+    hovered_vert = vert_hovered(x,y)
+    if hovered_vert is not None:
+        cur_state.cur_vertex = hovered_vert
+        
+        if button == LEFT_BUTTON:
+            cur_state.mode = Mode.VERTEX
+            return
+        elif button == RIGHT_BUTTON:
+            clicked_vertex = hovered_vert
             
-            if button == LEFT_BUTTON:
-                cur_state.mode = Mode.VERTEX
-                return
-            elif button == RIGHT_BUTTON:
-                clicked_vertex = vert
-                break
             
     # then walls
     if button == LEFT_BUTTON:
@@ -673,12 +677,12 @@ def interpret_click(x,y,button):
 last_frame_x = None
 last_frame_y = None
 got_hold_last_frame = False
-
+got_drag_vert_last_frame = False
 
 
 def on_frame():
     global cur_state, last_frame_x, last_frame_y, got_hold_last_frame
-
+    global got_drag_vert_last_frame
     global last_saved_map_file
 
     imgui.set_next_window_position(0, 0)
@@ -688,8 +692,10 @@ def on_frame():
                 flags=imgui.WINDOW_NO_TITLE_BAR|imgui.WINDOW_NO_RESIZE|imgui.WINDOW_NO_COLLAPSE|imgui.WINDOW_NO_BRING_TO_FRONT_ON_FOCUS)
 
     utils.set_root_window_draw_list(imgui.get_window_draw_list())
-    map_hovered = imgui.is_window_hovered()
+
         
+    window_hovered = imgui.is_window_hovered()
+
     draw_map()
     imgui.end()
     
@@ -799,26 +805,34 @@ def on_frame():
     #    start_down_x = None
     #    start_down_y = None
         
+    cur_x,cur_y = imgui.get_mouse_pos()
     if got_hold_last_frame:
-        cur_x,cur_y = imgui.get_mouse_pos()
         moved_cam_x = last_frame_x - cur_x
         moved_cam_y = last_frame_y - cur_y
         cur_state.camera_x += moved_cam_x
         cur_state.camera_y += moved_cam_y
+    elif got_drag_vert_last_frame:
+        cur_state.cur_vertex.x = cur_x+cur_state.camera_x
+        cur_state.cur_vertex.y = cur_y+cur_state.camera_y
 
 
-    
-    if map_hovered and not tools_hovered and mouse_button_clicked:
-        x,y = imgui.get_mouse_pos()
-        #print("interpreting click at {},{}".format(x,y))
-        interpret_click(x+cur_state.camera_x,y+cur_state.camera_y, LEFT_BUTTON if left_button_clicked else RIGHT_BUTTON)
-    elif map_hovered and left_button_down:
+
+    hover_vert = vert_hovered(cur_x+cur_state.camera_x, cur_y+cur_state.camera_y)
+    #print(window_hovered, tools_hovered, mouse_button_clicked)
+    if window_hovered and not tools_hovered and mouse_button_clicked:
+        interpret_click(cur_x+cur_state.camera_x, cur_y+cur_state.camera_y, LEFT_BUTTON if left_button_clicked else RIGHT_BUTTON)
+    elif (hover_vert is not None) and left_button_down:
+        if not got_drag_vert_last_frame:
+            undo.push_state(cur_state)
+            got_drag_vert_last_frame = True
+            cur_state.cur_vertex = hover_vert
+    elif window_hovered and left_button_down:
         got_hold_last_frame = True
         last_frame_x, last_frame_y = imgui.get_mouse_pos()
     elif not left_button_down:
         got_hold_last_frame = False
+        got_drag_vert_last_frame = False
 
-        
     
     imgui.end()
 
