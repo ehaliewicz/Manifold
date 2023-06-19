@@ -80,3 +80,4 @@ res/sprites/*.png
 res/images/*.png
 res/textures/*.png
 src/python/editor/SDL2.dll
+src/python/editor/editor.onefile-build/

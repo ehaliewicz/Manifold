@@ -2,7 +2,6 @@ import math
 from PIL import Image
 
 avail_colors = [
-    #(226,28,121),
     (154,93,93),
     (216,154,124),
     (247,185,154),
@@ -83,21 +82,22 @@ tables = [
         ]
 ]
 
-img = Image.new(mode="RGB",size=(10,15))
-pixels = img.load()
+#img = Image.new(mode="RGB",size=(10,15))
+#pixels = img.load()
 
-for y,base_col in enumerate(avail_colors):
-    for dist_idx in range(2):
-        base_x = dist_idx*5
-        light_levels = tables[1-dist_idx]
-        for idx,light_level in enumerate(light_levels):
-            x = base_x + idx
-            pixels[x,y] = avail_colors[light_level(base_col)-1]
+#for y,base_col in enumerate(avail_colors):
+#    for dist_idx in range(2):
+#        base_x = dist_idx*5
+#        light_levels = tables[1-dist_idx]
+#        for idx,light_level in enumerate(light_levels):
+#            x = base_x + idx
+#            pixels[x,y] = avail_colors[light_level(base_col)-1]
 
-with open("C:\\Users\\Erik\\code\\genesis\\DOOM\\src\\python\\editor\\light_remapping_table_autogen.png", "wb") as fp:
-    img.save(fp)
+#with open("C:\\Users\\Erik\\code\\genesis\\DOOM\\src\\python\\editor\\light_remapping_table_autogen.png", "wb") as fp:
+#    img.save(fp)
 
-"""
+
+with NEAR_FILE
 for idx in range(2):
     light_levels = tables[idx]
     print("// {} table".format(["far", "near"][idx]))
@@ -108,5 +108,5 @@ for idx in range(2):
         for base_col in avail_colors:
             print("PIX({}), ".format(light_level(base_col)), end='')
         print()
-"""
+
     
