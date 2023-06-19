@@ -14,21 +14,7 @@
 #define FADE_DIST 400
 #define FIX_0_16_INV_FADE_DIST (65536/FADE_DIST)
 
-/*
-#define WHITE       RGB24_TO_VDPCOLOR(0xFFFFFF)
-#define BLACK       RGB24_TO_VDPCOLOR(0x000000)
-#define LIGHT_RED   RGB24_TO_VDPCOLOR(0xFF0000)
-#define RED     RGB24_TO_VDPCOLOR(0x990000)
-#define DARK_RED    RGB24_TO_VDPCOLOR(0x440000)
-#define LIGHT_GREEN RGB24_TO_VDPCOLOR(0x00FF00)
-#define GREEN   RGB24_TO_VDPCOLOR(0x009900)
-#define DARK_GREEN  RGB24_TO_VDPCOLOR(0x004400)
-#define LIGHT_BLUE  RGB24_TO_VDPCOLOR(0x0000FF)
-#define BLUE    RGB24_TO_VDPCOLOR(0x000099)
-#define DARK_BLUE   RGB24_TO_VDPCOLOR(0x000044)
-#define BROWN   RGB24_TO_VDPCOLOR(0xA0522D)
-#define DARK_BROWN   RGB24_TO_VDPCOLOR(0x654321)
-*/
+extern u8 dither_enabled;
 
 #define TRANSPARENT_IDX  0x0
 #define LIGHT_YELLOW_IDX 0x1
@@ -53,12 +39,14 @@
 //u32 get_light_color(u8 col_idx, s8 light_level);
 
 //extern const u32 color_calc_table[16*3*2];
-extern const u32 color_calc_table[16*5*2];
+//extern const u32 *color_calc_table; //[16*5*2];
 
 extern const u32 long_color_table[16];
 
 u32 get_dark_color(u8 col_idx, s8 light_level);
 u32 get_light_color(u8 col_idx, s8 light_level);
 
+void init_color_table();
+void toggle_dither_mode();
 
 #endif

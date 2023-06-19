@@ -1,4 +1,5 @@
 #include <genesis.h>
+#include "colors.h"
 #include "game.h"
 #include "game_mode.h"
 #include "init.h"
@@ -75,12 +76,17 @@ char* draw_music_state(int menu_idx) {
     return (music_on ? "ON " : "OFF");
 }
 
+char* draw_dither_mode_state(int menu_idx) {
+    return (dither_enabled ? "ON " : "OFF");
+}
+
 const menu options_menu = {
     .header_text = "Options",
-    .num_items = 2,
+    .num_items = 3,
     .items = {
         {.text = "Sound Effects: ", .submenu = NULL, .select = &toggle_sfx, .render = &draw_sfx_state, .selectable=1},
-        {.text = "Music: ", .submenu = NULL, .select = &toggle_music, .render = &draw_music_state, .selectable=1}
+        {.text = "Music: ", .submenu = NULL, .select = &toggle_music, .render = &draw_music_state, .selectable=1},
+        {.text = "Dithering Mode: ", .submenu = NULL, .select = &toggle_dither_mode, .render = &draw_dither_mode_state, .selectable=1}
     }
 };
 

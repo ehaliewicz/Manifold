@@ -28,158 +28,80 @@
 // mid dist is -1 brightness
 // -2 is negative 2, etc
 
-
-const u32 color_calc_table[16*5*2] = {
-// far table
-  // -2 light level
-0, PIX(10), PIX(8), PIX(8), PIX(8), PIX(6), PIX(15), PIX(6), PIX(6), PIX(10), PIX(15), PIX(10), PIX(8), PIX(8), PIX(8), PIX(10), 
-  // -1 light level
-0, PIX(10), PIX(8), PIX(8), PIX(8), PIX(6), PIX(15), PIX(6), PIX(6), PIX(10), PIX(15), PIX(10), PIX(8), PIX(8), PIX(8), PIX(10), 
-  // 0 light level
-0, PIX(8), PIX(1), PIX(1), PIX(5), PIX(8), PIX(6), PIX(7), PIX(6), PIX(11), PIX(10), PIX(10), PIX(5), PIX(5), PIX(7), PIX(10), 
-  // 1 light level
-    0, PIX(1), PIX(2), PIX(3), PIX(4), PIX(5), PIX(6), PIX(7), PIX(8), PIX(9), PIX(10), PIX(11), PIX(12), PIX(13), PIX(14), PIX(15), 
-  // 2 light level
-0, PIX(3), PIX(3), PIX(3), PIX(3), PIX(4), PIX(8), PIX(14), PIX(1), PIX(14), PIX(10), PIX(11), PIX(4), PIX(3), PIX(14), PIX(10), 
-// near table
-  // -2 light level
-0, PIX(10), PIX(8), PIX(8), PIX(8), PIX(6), PIX(15), PIX(6), PIX(6), PIX(10), PIX(15), PIX(10), PIX(8), PIX(8), PIX(8), PIX(10), 
-  // -1 light level
-0, PIX(8), PIX(1), PIX(1), PIX(5), PIX(8), PIX(6), PIX(7), PIX(6), PIX(11), PIX(10), PIX(10), PIX(5), PIX(5), PIX(7), PIX(10), 
-  // 0 light level
-0, PIX(1), PIX(2), PIX(3), PIX(4), PIX(5), PIX(6), PIX(7), PIX(8), PIX(9), PIX(10), PIX(11), PIX(12), PIX(13), PIX(14), PIX(15), 
-  // 1 light level
-0, PIX(2), PIX(3), PIX(3), PIX(4), PIX(12), PIX(6), PIX(7), PIX(5), PIX(9), PIX(10), PIX(11), PIX(4), PIX(13), PIX(14), PIX(10), 
-  // 2 light level
-0, PIX(3), PIX(3), PIX(3), PIX(3), PIX(4), PIX(8), PIX(14), PIX(1), PIX(14), PIX(10), PIX(11), PIX(4), PIX(3), PIX(14), PIX(10), 
+ //split byte colors 
+const u32 dither_color_calc_table[16*5*2] = {
+   // far table
+   // -2 light level
+   0, DPIX(10,10), DPIX(9,9), DPIX(9,9), DPIX(6,6), DPIX(6,6), DPIX(6,6), DPIX(6,6), DPIX(6,6), DPIX(10,10), DPIX(10,10), DPIX(10,10), DPIX(6,6), DPIX(6,6), DPIX(11,11), DPIX(15,15),
+   // -1 light level
+   0, DPIX(9,10), DPIX(1,9), DPIX(2,9), DPIX(7,6), DPIX(5,6), DPIX(6,6), DPIX(7,6), DPIX(8,6), DPIX(11,10), DPIX(10,10), DPIX(11,10), DPIX(13,6), DPIX(13,6), DPIX(9,11), DPIX(15,15),
+   // 0 light level
+   0, DPIX(9,9), DPIX(1,1), DPIX(2,2), DPIX(7,7), DPIX(5,6), DPIX(6,6), DPIX(7,6), DPIX(8,6), DPIX(11,11), DPIX(10,10), DPIX(11,10), DPIX(13,13), DPIX(13,6), DPIX(9,9), DPIX(15,15),
+   // 1 light level
+   0, DPIX(1,1), DPIX(2,2), DPIX(3,3), DPIX(4,4), DPIX(5,5), DPIX(6,6), DPIX(7,7), DPIX(8,8), DPIX(9,9), DPIX(10,10), DPIX(11,11), DPIX(12,12), DPIX(13,13), DPIX(14,14), DPIX(15,15),
+   // 2 light level
+   0, DPIX(3,3), DPIX(3,3), DPIX(3,3), DPIX(4,4), DPIX(13,13), DPIX(13,13), DPIX(4,4), DPIX(13,13), DPIX(3,3), DPIX(9,9), DPIX(9,9), DPIX(4,4), DPIX(4,4), DPIX(14,14), DPIX(15,15),
+   // near table
+   // -2 light level
+   0, DPIX(10,10), DPIX(9,9), DPIX(9,9), DPIX(6,6), DPIX(6,6), DPIX(6,6), DPIX(6,6), DPIX(6,6), DPIX(10,10), DPIX(10,10), DPIX(10,10), DPIX(6,6), DPIX(6,6), DPIX(11,11), DPIX(15,15),
+   // -1 light level
+   0, DPIX(9,9), DPIX(1,1), DPIX(2,2), DPIX(7,7), DPIX(5,6), DPIX(6,6), DPIX(7,6), DPIX(8,6), DPIX(11,11), DPIX(10,10), DPIX(11,10), DPIX(13,13), DPIX(6,6), DPIX(9,9), DPIX(15,15),
+   // 0 light level
+   0, DPIX(1,1), DPIX(2,2), DPIX(3,3), DPIX(4,4), DPIX(5,5), DPIX(6,6), DPIX(7,7), DPIX(8,8), DPIX(9,9), DPIX(10,10), DPIX(11,11), DPIX(12,12), DPIX(13,13), DPIX(14,14), DPIX(15,15),
+   // 1 light level
+   0, DPIX(2,2), DPIX(3,2), DPIX(3,2), DPIX(4,4), DPIX(13,5), DPIX(5,5), DPIX(4,7), DPIX(5,5), DPIX(2,2), DPIX(11,11), DPIX(9,11), DPIX(4,12), DPIX(12,12), DPIX(14,14), DPIX(15,15),
+   // 2 light level
+   0, DPIX(3,3), DPIX(3,3), DPIX(3,3), DPIX(4,4), DPIX(13,13), DPIX(13,13), DPIX(4,4), DPIX(13,13), DPIX(3,3), DPIX(9,9), DPIX(9,9), DPIX(4,4), DPIX(4,4), DPIX(14,14), DPIX(15,15),
 };
 
-/*
 
-const u32 color_calc_table[16*5*2] = {
-   // far dist lut [16*3] = {
-      // -2 light level
-      0, PIX(DARK_YELLOW_IDX), PIX(DARK_BLUE_IDX), PIX(GREEN_IDX), PIX(RED_IDX), PIX(PURPLE_IDX), PIX(STEEL_IDX),
-         PIX(DARK_YELLOW_IDX), PIX(DARK_BLUE_IDX), PIX(GREEN_IDX), PIX(RED_IDX), PIX(PURPLE_IDX), PIX(STEEL_IDX),
-         PIX(DARK_YELLOW_IDX), PIX(DARK_BLUE_IDX), PIX(BLACK_IDX),
-      // -1 light level 
-      0, PIX(YELLOW_IDX), PIX(BLUE_IDX), PIX(GREEN_IDX), PIX(RED_IDX), PIX(PURPLE_IDX), PIX(STEEL_IDX),
-         PIX(YELLOW_IDX), PIX(BLUE_IDX), PIX(GREEN_IDX), PIX(RED_IDX), PIX(PURPLE_IDX), PIX(STEEL_IDX),
-         PIX(DARK_YELLOW_IDX), PIX(DARK_BLUE_IDX), PIX(BLACK_IDX),
-      // 0 light level 
-      0, PIX(YELLOW_IDX), PIX(BLUE_IDX), PIX(GREEN_IDX), PIX(RED_IDX), PIX(PURPLE_IDX), PIX(STEEL_IDX),
-         PIX(YELLOW_IDX), PIX(BLUE_IDX), PIX(GREEN_IDX), PIX(RED_IDX), PIX(PURPLE_IDX), PIX(STEEL_IDX),
-         PIX(DARK_YELLOW_IDX), PIX(DARK_BLUE_IDX), PIX(BLACK_IDX),
-      // 1 light level
-      0, PIX(LIGHT_YELLOW_IDX), PIX(LIGHT_BLUE_IDX), PIX(LIGHT_GREEN_IDX), PIX(LIGHT_RED_IDX), PIX(LIGHT_PURPLE_IDX), PIX(LIGHT_STEEL_IDX),
-         PIX(LIGHT_YELLOW_IDX), PIX(LIGHT_BLUE_IDX), PIX(LIGHT_GREEN_IDX), PIX(LIGHT_RED_IDX), PIX(LIGHT_PURPLE_IDX), PIX(LIGHT_STEEL_IDX),
-         PIX(YELLOW_IDX), PIX(BLUE_IDX), PIX(BLACK_IDX),
-      // 2 light level
-      0, PIX(LIGHT_YELLOW_IDX), PIX(LIGHT_BLUE_IDX), PIX(LIGHT_GREEN_IDX), PIX(LIGHT_RED_IDX), PIX(LIGHT_PURPLE_IDX), PIX(LIGHT_STEEL_IDX),
-         PIX(LIGHT_YELLOW_IDX), PIX(LIGHT_BLUE_IDX), PIX(LIGHT_GREEN_IDX), PIX(LIGHT_RED_IDX), PIX(LIGHT_PURPLE_IDX), PIX(LIGHT_STEEL_IDX),
-         PIX(LIGHT_YELLOW_IDX), PIX(LIGHT_BLUE_IDX), PIX(BLACK_IDX),
-
-   //}
-
-   // near dist lut [16*3] = {
-      // -2 light level
-      0, PIX(DARK_YELLOW_IDX), PIX(DARK_BLUE_IDX), PIX(GREEN_IDX), PIX(RED_IDX), PIX(PURPLE_IDX), PIX(STEEL_IDX),
-         PIX(DARK_YELLOW_IDX), PIX(DARK_BLUE_IDX), PIX(GREEN_IDX), PIX(RED_IDX), PIX(PURPLE_IDX), PIX(STEEL_IDX),
-         PIX(DARK_YELLOW_IDX), PIX(DARK_BLUE_IDX), PIX(BLACK_IDX),
-      // -1 light level
-      0, PIX(YELLOW_IDX), PIX(BLUE_IDX), PIX(GREEN_IDX), PIX(RED_IDX), PIX(PURPLE_IDX), PIX(STEEL_IDX),
-         PIX(YELLOW_IDX), PIX(BLUE_IDX), PIX(GREEN_IDX), PIX(RED_IDX), PIX(PURPLE_IDX), PIX(STEEL_IDX),
-         PIX(DARK_YELLOW_IDX), PIX(DARK_BLUE_IDX), PIX(BLACK_IDX),
-      // 0 light level 
-      0, PIX(LIGHT_YELLOW_IDX), PIX(LIGHT_BLUE_IDX), PIX(LIGHT_GREEN_IDX), PIX(LIGHT_RED_IDX), PIX(LIGHT_PURPLE_IDX), PIX(LIGHT_STEEL_IDX),
-         PIX(YELLOW_IDX), PIX(BLUE_IDX), PIX(GREEN_IDX), PIX(RED_IDX), PIX(PURPLE_IDX), PIX(STEEL_IDX),
-         PIX(DARK_YELLOW_IDX), PIX(DARK_BLUE_IDX), PIX(BLACK_IDX),
-      // 1 light level
-      0, PIX(LIGHT_YELLOW_IDX), PIX(LIGHT_BLUE_IDX), PIX(LIGHT_GREEN_IDX), PIX(LIGHT_RED_IDX), PIX(LIGHT_PURPLE_IDX), PIX(LIGHT_STEEL_IDX),
-         PIX(LIGHT_YELLOW_IDX), PIX(LIGHT_BLUE_IDX), PIX(LIGHT_GREEN_IDX), PIX(LIGHT_RED_IDX), PIX(LIGHT_PURPLE_IDX), PIX(LIGHT_STEEL_IDX),
-         PIX(YELLOW_IDX), PIX(BLUE_IDX), PIX(BLACK_IDX),
-      // 2 light level
-      0, PIX(LIGHT_YELLOW_IDX), PIX(LIGHT_BLUE_IDX), PIX(LIGHT_GREEN_IDX), PIX(LIGHT_RED_IDX), PIX(LIGHT_PURPLE_IDX), PIX(LIGHT_STEEL_IDX),
-         PIX(LIGHT_YELLOW_IDX), PIX(LIGHT_BLUE_IDX), PIX(LIGHT_GREEN_IDX), PIX(LIGHT_RED_IDX), PIX(LIGHT_PURPLE_IDX), PIX(LIGHT_STEEL_IDX),
-         PIX(LIGHT_YELLOW_IDX), PIX(LIGHT_BLUE_IDX), PIX(BLACK_IDX),
-
-   //}
+const u32 no_dither_color_calc_table[16*5*2] = {
+   // far table
+   // -2 light level
+   0, DPIX(10,10), DPIX(9,9), DPIX(9,9), DPIX(6,6), DPIX(6,6), DPIX(6,6), DPIX(6,6), DPIX(6,6), DPIX(10,10), DPIX(10,10), DPIX(10,10), DPIX(6,6), DPIX(6,6), DPIX(11,11), DPIX(15,15),
+   // -1 light level
+   0, DPIX(10,10), DPIX(9,9), DPIX(9,9), DPIX(6,6), DPIX(6,6), DPIX(6,6), DPIX(6,6), DPIX(6,6), DPIX(10,10), DPIX(10,10), DPIX(10,10), DPIX(6,6), DPIX(6,6), DPIX(11,11), DPIX(15,15),
+   // 0 light level
+   0, DPIX(9,9), DPIX(1,1), DPIX(2,2), DPIX(7,7), DPIX(6,6), DPIX(6,6), DPIX(6,6), DPIX(6,6), DPIX(11,11), DPIX(10,10), DPIX(10,10), DPIX(13,13), DPIX(6,6), DPIX(9,9), DPIX(15,15),
+   // 1 light level
+   0, DPIX(1,1), DPIX(2,2), DPIX(3,3), DPIX(4,4), DPIX(5,5), DPIX(6,6), DPIX(7,7), DPIX(8,8), DPIX(9,9), DPIX(10,10), DPIX(11,11), DPIX(12,12), DPIX(13,13), DPIX(14,14), DPIX(15,15),
+   // 2 light level
+   0, DPIX(3,3), DPIX(3,3), DPIX(3,3), DPIX(4,4), DPIX(13,13), DPIX(13,13), DPIX(4,4), DPIX(13,13), DPIX(3,3), DPIX(9,9), DPIX(9,9), DPIX(4,4), DPIX(4,4), DPIX(14,14), DPIX(15,15),
+   // near table
+   // -2 light level
+   0, DPIX(10,10), DPIX(9,9), DPIX(9,9), DPIX(6,6), DPIX(6,6), DPIX(6,6), DPIX(6,6), DPIX(6,6), DPIX(10,10), DPIX(10,10), DPIX(10,10), DPIX(6,6), DPIX(6,6), DPIX(11,11), DPIX(15,15),
+   // -1 light level
+   0, DPIX(9,9), DPIX(1,1), DPIX(2,2), DPIX(7,7), DPIX(6,6), DPIX(6,6), DPIX(6,6), DPIX(6,6), DPIX(11,11), DPIX(10,10), DPIX(10,10), DPIX(13,13), DPIX(6,6), DPIX(9,9), DPIX(15,15),
+   // 0 light level
+   0, DPIX(1,1), DPIX(2,2), DPIX(3,3), DPIX(4,4), DPIX(5,5), DPIX(6,6), DPIX(7,7), DPIX(8,8), DPIX(9,9), DPIX(10,10), DPIX(11,11), DPIX(12,12), DPIX(13,13), DPIX(14,14), DPIX(15,15),
+   // 1 light level
+   0, DPIX(2,2), DPIX(3,3), DPIX(3,3), DPIX(4,4), DPIX(13,13), DPIX(5,5), DPIX(4,4), DPIX(5,5), DPIX(2,2), DPIX(11,11), DPIX(9,9), DPIX(12,12), DPIX(12,12), DPIX(14,14), DPIX(15,15),
+   // 2 light level
+   0, DPIX(3,3), DPIX(3,3), DPIX(3,3), DPIX(4,4), DPIX(13,13), DPIX(13,13), DPIX(4,4), DPIX(13,13), DPIX(3,3), DPIX(9,9), DPIX(9,9), DPIX(4,4), DPIX(4,4), DPIX(14,14), DPIX(15,15),
 };
-*/
 
-/*
-const u32 color_calc_table[16*5*3] = {
-//const u8 color_calc_table[16*5*3] = {
 
-//const u8 dark_dist_lut[16*5] = {
-  // -2
-  0, PIX(DARK_YELLOW_IDX),               PIX(DARK_BLUE_IDX),             PIX(DARK_STEEL_IDX),              PIX(DARK_PURPLE_IDX),                PIX(DARK_RED_IDX),
-     PIX(DARK_YELLOW_IDX),               PIX(DARK_BLUE_IDX),             PIX(DARK_STEEL_IDX),              PIX(DARK_PURPLE_IDX),                PIX(DARK_RED_IDX),
-     PIX(DARK_YELLOW_IDX),               PIX(DARK_BLUE_IDX),             PIX(DARK_STEEL_IDX),              PIX(DARK_PURPLE_IDX),                PIX(DARK_RED_IDX),
-  // -1
-  0, PIX(DARK_YELLOW_IDX),               PIX(DARK_BLUE_IDX),             PIX(DARK_STEEL_IDX),              PIX(DARK_PURPLE_IDX),                PIX(DARK_RED_IDX),
-     PIX(DARK_YELLOW_IDX),               PIX(DARK_BLUE_IDX),             PIX(DARK_STEEL_IDX),              PIX(DARK_PURPLE_IDX),                PIX(DARK_RED_IDX),
-     PIX(DARK_YELLOW_IDX),               PIX(DARK_BLUE_IDX),             PIX(DARK_STEEL_IDX),              PIX(DARK_PURPLE_IDX),                PIX(DARK_RED_IDX),
-  // 0
-  0, PIX(DARK_YELLOW_IDX),               PIX(DARK_BLUE_IDX),             PIX(DARK_STEEL_IDX),              PIX(DARK_PURPLE_IDX),                PIX(DARK_RED_IDX),
-     PIX(DARK_YELLOW_IDX),               PIX(DARK_BLUE_IDX),             PIX(DARK_STEEL_IDX),              PIX(DARK_PURPLE_IDX),                PIX(DARK_RED_IDX),
-     PIX(DARK_YELLOW_IDX),               PIX(DARK_BLUE_IDX),             PIX(DARK_STEEL_IDX),              PIX(DARK_PURPLE_IDX),                PIX(DARK_RED_IDX),
-  // 1
-  0, PIX(YELLOW_IDX),                    PIX(BLUE_IDX),                  PIX(GREEN_IDX),                   PIX(PURPLE_IDX),                     PIX(RED_IDX),
-     PIX(DARK_YELLOW_IDX),               PIX(DARK_BLUE_IDX),             PIX(DARK_STEEL_IDX),              PIX(DARK_PURPLE_IDX),                PIX(DARK_RED_IDX),
-     PIX(DARK_YELLOW_IDX),               PIX(DARK_BLUE_IDX),             PIX(DARK_STEEL_IDX),              PIX(DARK_PURPLE_IDX),                PIX(DARK_RED_IDX),
-  // 2
-  0, PIX(LIGHT_YELLOW_IDX),              PIX(LIGHT_BLUE_IDX),            PIX(LIGHT_GREEN_IDX),             PIX(LIGHT_PURPLE_IDX),               PIX(LIGHT_RED_IDX),
-     PIX(YELLOW_IDX),                    PIX(BLUE_IDX),                  PIX(GREEN_IDX),                   PIX(PURPLE_IDX),                     PIX(RED_IDX),
-     PIX(DARK_YELLOW_IDX),               PIX(DARK_BLUE_IDX),             PIX(DARK_STEEL_IDX),              PIX(DARK_PURPLE_IDX),                PIX(DARK_RED_IDX),
-//};
+u8 dither_enabled = 0;
+u32* color_calc_table = (u32*)no_dither_color_calc_table;
 
-//const u8 mid_dist_lut[16*5] = {
-  // -2
-  0, PIX(DARK_YELLOW_IDX),               PIX(DARK_BLUE_IDX),             PIX(DARK_STEEL_IDX),              PIX(DARK_PURPLE_IDX),                PIX(DARK_RED_IDX),
-     PIX(DARK_YELLOW_IDX),               PIX(DARK_BLUE_IDX),             PIX(DARK_STEEL_IDX),              PIX(DARK_PURPLE_IDX),                PIX(DARK_RED_IDX),
-     PIX(DARK_YELLOW_IDX),               PIX(DARK_BLUE_IDX),             PIX(DARK_STEEL_IDX),              PIX(DARK_PURPLE_IDX),                PIX(DARK_RED_IDX),
-  // -1
-  0, DPIX(YELLOW_IDX,DARK_YELLOW_IDX),   DPIX(BLUE_IDX,DARK_BLUE_IDX),   DPIX(GREEN_IDX, DARK_STEEL_IDX),  DPIX(PURPLE_IDX, DARK_PURPLE_IDX),   DPIX(RED_IDX, DARK_RED_IDX),
-     PIX(DARK_YELLOW_IDX),               PIX(DARK_BLUE_IDX),             PIX(DARK_STEEL_IDX),              PIX(DARK_PURPLE_IDX),                PIX(DARK_RED_IDX),
-     PIX(DARK_YELLOW_IDX),               PIX(DARK_BLUE_IDX),             PIX(DARK_STEEL_IDX),              PIX(DARK_PURPLE_IDX),                PIX(DARK_RED_IDX),
-  // 0
-  0, DPIX(LIGHT_YELLOW_IDX, YELLOW_IDX), DPIX(LIGHT_BLUE_IDX, BLUE_IDX), DPIX(LIGHT_GREEN_IDX, GREEN_IDX), DPIX(LIGHT_PURPLE_IDX, PURPLE_IDX),  DPIX(LIGHT_RED_IDX, RED_IDX),
-     DPIX(YELLOW_IDX,DARK_YELLOW_IDX),   DPIX(BLUE_IDX,DARK_BLUE_IDX),   DPIX(GREEN_IDX, DARK_STEEL_IDX),  DPIX(PURPLE_IDX, DARK_PURPLE_IDX),   DPIX(RED_IDX, DARK_RED_IDX),
-     PIX(DARK_YELLOW_IDX),               PIX(DARK_BLUE_IDX),             PIX(DARK_STEEL_IDX),              PIX(DARK_PURPLE_IDX),                PIX(DARK_RED_IDX),
-  // 1
-  0, DPIX(LIGHT_YELLOW_IDX, YELLOW_IDX), DPIX(LIGHT_BLUE_IDX, BLUE_IDX), DPIX(LIGHT_GREEN_IDX, GREEN_IDX),  DPIX(LIGHT_PURPLE_IDX, PURPLE_IDX), DPIX(LIGHT_RED_IDX, RED_IDX),
-     DPIX(LIGHT_YELLOW_IDX, YELLOW_IDX), DPIX(LIGHT_BLUE_IDX, BLUE_IDX), DPIX(LIGHT_GREEN_IDX, GREEN_IDX),  DPIX(LIGHT_PURPLE_IDX, PURPLE_IDX), DPIX(LIGHT_RED_IDX, RED_IDX),
-     DPIX(YELLOW_IDX,DARK_YELLOW_IDX),   DPIX(BLUE_IDX,DARK_BLUE_IDX),   DPIX(GREEN_IDX, DARK_STEEL_IDX),   DPIX(PURPLE_IDX, DARK_PURPLE_IDX),  DPIX(RED_IDX, DARK_RED_IDX),
-  // 2
-  0, DPIX(LIGHT_YELLOW_IDX, YELLOW_IDX), DPIX(LIGHT_BLUE_IDX, BLUE_IDX), DPIX(LIGHT_GREEN_IDX, GREEN_IDX),  DPIX(LIGHT_PURPLE_IDX, PURPLE_IDX), DPIX(LIGHT_RED_IDX, RED_IDX),
-     DPIX(LIGHT_YELLOW_IDX, YELLOW_IDX), DPIX(LIGHT_BLUE_IDX, BLUE_IDX), DPIX(LIGHT_GREEN_IDX, GREEN_IDX),  DPIX(LIGHT_PURPLE_IDX, PURPLE_IDX), DPIX(LIGHT_RED_IDX, RED_IDX),
-     DPIX(LIGHT_YELLOW_IDX, YELLOW_IDX), DPIX(LIGHT_BLUE_IDX, BLUE_IDX), DPIX(LIGHT_GREEN_IDX, GREEN_IDX),  DPIX(LIGHT_PURPLE_IDX, PURPLE_IDX), DPIX(LIGHT_RED_IDX, RED_IDX),
-//};
+void toggle_dither_mode() {
+   if(dither_enabled) {
+      dither_enabled = 0;
+      color_calc_table = (u32*)no_dither_color_calc_table;
+   } else {
+      dither_enabled = 1;
+      color_calc_table = (u32*)dither_color_calc_table;
+   }
+}
 
-//const u8 near_dist[16*5] = {
-  // -2
-  0, PIX(DARK_YELLOW_IDX),               PIX(DARK_BLUE_IDX),             PIX(DARK_STEEL_IDX),               PIX(DARK_PURPLE_IDX),               PIX(DARK_RED_IDX),
-     PIX(DARK_YELLOW_IDX),               PIX(DARK_BLUE_IDX),             PIX(DARK_STEEL_IDX),               PIX(DARK_PURPLE_IDX),               PIX(DARK_RED_IDX),
-     PIX(DARK_YELLOW_IDX),               PIX(DARK_BLUE_IDX),             PIX(DARK_STEEL_IDX),               PIX(DARK_PURPLE_IDX),               PIX(DARK_RED_IDX),
-  // -1
-  0, PIX(YELLOW_IDX),                    PIX(BLUE_IDX),                  PIX(GREEN_IDX),                    PIX(PURPLE_IDX),                    PIX(RED_IDX),
-     PIX(DARK_YELLOW_IDX),               PIX(DARK_BLUE_IDX),             PIX(DARK_STEEL_IDX),               PIX(DARK_PURPLE_IDX),               PIX(DARK_RED_IDX),
-     PIX(DARK_YELLOW_IDX),               PIX(DARK_BLUE_IDX),             PIX(DARK_STEEL_IDX),               PIX(DARK_PURPLE_IDX),               PIX(DARK_RED_IDX),
-  // 0
-  0, PIX(DARK_YELLOW_IDX),               PIX(LIGHT_BLUE_IDX),            PIX(LIGHT_GREEN_IDX),              PIX(LIGHT_PURPLE_IDX),              PIX(LIGHT_RED_IDX),
-     PIX(YELLOW_IDX),                    PIX(BLUE_IDX),                  PIX(GREEN_IDX),                    PIX(PURPLE_IDX),                    PIX(RED_IDX),
-     PIX(DARK_YELLOW_IDX),               PIX(DARK_BLUE_IDX),             PIX(DARK_STEEL_IDX),               PIX(DARK_PURPLE_IDX),               PIX(DARK_RED_IDX),
-  // 1
-  0, PIX(YELLOW_IDX),                    PIX(LIGHT_BLUE_IDX),            PIX(LIGHT_GREEN_IDX),              PIX(LIGHT_PURPLE_IDX),              PIX(LIGHT_RED_IDX),
-     PIX(YELLOW_IDX),                    PIX(LIGHT_BLUE_IDX),            PIX(LIGHT_GREEN_IDX),              PIX(LIGHT_PURPLE_IDX),              PIX(LIGHT_RED_IDX),
-     PIX(DARK_YELLOW_IDX),               PIX(DARK_BLUE_IDX),             PIX(DARK_STEEL_IDX),               PIX(DARK_PURPLE_IDX),               PIX(DARK_RED_IDX),
-  // 2
-  0, PIX(DARK_YELLOW_IDX),               PIX(LIGHT_BLUE_IDX),            PIX(LIGHT_GREEN_IDX),              PIX(LIGHT_PURPLE_IDX),              PIX(LIGHT_RED_IDX),
-     PIX(DARK_YELLOW_IDX),               PIX(LIGHT_BLUE_IDX),            PIX(LIGHT_GREEN_IDX),              PIX(LIGHT_PURPLE_IDX),              PIX(LIGHT_RED_IDX),
-     PIX(DARK_YELLOW_IDX),               PIX(LIGHT_BLUE_IDX),            PIX(LIGHT_GREEN_IDX),              PIX(LIGHT_PURPLE_IDX),              PIX(LIGHT_RED_IDX),
-};
-*/
+
+void init_color_table() {
+   if(dither_enabled) {
+      color_calc_table = dither_color_calc_table;
+   } else {
+      color_calc_table = no_dither_color_calc_table;
+   }
+}
 
 // 960 bytes
 
