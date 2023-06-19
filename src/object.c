@@ -7,6 +7,7 @@
 #include "level.h"
 #include "object.h"
 #include "portal_map.h"
+#include "sfx.h"
 #include "utils.h"
 
 static u8 next_object_fingerprint = 0; 
@@ -60,7 +61,7 @@ decoration_link new_decoration_link() {
 void push_object_to_front(object_link new_head, object_link* lst) {
     object_link prev_head = *lst;
     OBJ_LINK_DEREF(new_head).next = prev_head;
-    //KLog_U2("attaching object: ", new_head, " to previous head link: ", prev_head);
+    KLog_U2("attaching object: ", new_head, " to previous head link: ", prev_head);
     if(prev_head != NULL_OBJ_LINK) {
         OBJ_LINK_DEREF(prev_head).prev = new_head;
     }
@@ -77,7 +78,7 @@ void push_decoration_to_front(decoration_link new_head, decoration_link* lst) {
 // setup objects
 void init_object_lists(int num_sectors) {
 
-
+    KLog_U1("initializing object lists for n sectors: ", num_sectors);
     num_sector_lists = num_sectors;
     //KLog_U1("size of object: ", sizeof(object));
     objects = malloc(sizeof(object)*MAX_OBJECTS, "object list");
@@ -287,30 +288,36 @@ void free_decoration(decoration_link link, u16 deco_sector) {
 
 void move_object_to_sector(object_link obj, u16 old_sector, u16 next_sector) {
 
-
+    //KLog_U3("object ", obj, " in sector: ", old_sector, " moving to new sector: ", next_sector);
     object_link next = OBJ_LINK_DEREF(obj).next;
     object_link prev = OBJ_LINK_DEREF(obj).prev;
+    //KLog_U2("prev obj is : ", prev, " next obj is : ", next);
     OBJ_LINK_DEREF(obj).prev = NULL_OBJ_LINK;
     OBJ_LINK_DEREF(obj).next = NULL_OBJ_LINK;
     //OBJ_LINK_DEREF(obj).pos.cur_sector = next_sector;
     
     if(next != NULL_OBJ_LINK) {
+        //KLog("patching next's prev link");
         OBJ_LINK_DEREF(next).prev = prev;
     }
     if(prev != NULL_OBJ_LINK) {
+        //KLog("patching prev's next link");
         OBJ_LINK_DEREF(prev).next = next;
     }
 
     if(prev == NULL_OBJ_LINK) {
+        //KLog("prev is null, patching object list");
         sector_object_lists[old_sector] = next;
     }
 
-    OBJ_LINK_DEREF(obj).next = sector_object_lists[next_sector];
-    object_link nxt = OBJ_LINK_DEREF(obj).next;
-    if(nxt != NULL_OBJ_LINK) {
-        OBJ_LINK_DEREF(nxt).prev = obj;
-    }
-    sector_object_lists[next_sector] = obj;
+    push_object_to_front(obj, &sector_object_lists[next_sector]);
+
+    //OBJ_LINK_DEREF(obj).next = sector_object_lists[next_sector];
+    //object_link nxt = OBJ_LINK_DEREF(obj).next;
+    //if(nxt != NULL_OBJ_LINK) {
+    //    OBJ_LINK_DEREF(nxt).prev = obj;
+    //}
+    //sector_object_lists[next_sector] = obj;
 
     //char buf[32];
     //sprintf(buf, "move obj to sect %i ", next_sector);
@@ -360,25 +367,30 @@ void print_object_list(object_link lst) {
     KLog("printing object list");
     while(lst != NULL_OBJ_LINK) {
         KLog_U1("link: ", lst);
+        KLog_U1("prev link: ", OBJ_LINK_DEREF(lst).prev);
         lst = OBJ_LINK_DEREF(lst).next;
     }
     KLog_U1("terminated with: ", lst);
 }
 
 int look_for_player(object_link cur_obj, uint16_t cur_sector) {
-    return 1;
-    if(cur_player_pos.cur_sector == cur_sector) {
+    //return 1;
+
+    //if(sector_in_pvs(cur_sector, cur_player_pos.cur_sector, cur_portal_map)) {
+    //    KLog("in sector!!!!!!");
+    //if(cur_player_pos.cur_sector == cur_sector) {
         //cur_obj->object_type = 1;
         OBJ_LINK_DEREF(cur_obj).current_state++;
 
+        play_sfx(SFX_ENEMY_A_WAKE_ID, 8);
         //cur_obj->tgt.sector = cur_sector;
         //cur_obj->tgt.x = cur_player_pos.x;
         //cur_obj->tgt.y = cur_player_pos.y;
         //cur_obj->tgt.z = cur_player_pos.z;
 
-    } else {
+    //} else {
         //KLog("player not found");
-    }
+    //}
     return 1;
 }
 
@@ -406,14 +418,17 @@ int maybe_get_picked_up(object_link cur_obj, uint16_t cur_sector) {
 }
 
 int follow_player(object_link cur_obj, uint16_t cur_sector) {
-    return 1;
+    //return 1;
     fix32 obj_x = OBJ_LINK_DEREF(cur_obj).x;
     fix32 obj_y = OBJ_LINK_DEREF(cur_obj).y;
+    fix32 obj_z = OBJ_LINK_DEREF(cur_obj).z;
     // follow player
     //KLog("following player");
 
-    int dx = fix32ToInt(cur_player_pos.x - obj_x);
-    int dy = fix32ToInt(cur_player_pos.y - obj_y);
+    fix32 dx = cur_player_pos.x - obj_x;
+    fix32 dy = cur_player_pos.y - obj_y;
+    //int dx = fix32ToInt(cur_player_pos.x - obj_x);
+    //int dy = fix32ToInt(cur_player_pos.y - obj_y);
 
 
     //u32 dist = getApproximatedDistance(dx, dy);
@@ -427,7 +442,7 @@ int follow_player(object_link cur_obj, uint16_t cur_sector) {
 
     volatile object_template* obj_type = &object_types[OBJ_LINK_DEREF(cur_obj).object_type];
 
-    s16 speed = obj_type->speed;
+    fix32 speed = FIX32(4.125); //obj_type->speed);
     if(dx > 0) {
         dx = min(speed, dx);
     } else if (dx < 0) {
@@ -452,30 +467,91 @@ int follow_player(object_link cur_obj, uint16_t cur_sector) {
     }
     */
 
-    fix32 dx32 = intToFix32(dx);
-    fix32 dy32 = intToFix32(dy);
+    //fix32 dx32 = intToFix32(dx);
+    //fix32 dy32 = intToFix32(dy);
 
-    //collision_result move_res = check_for_collision_radius(pos.x, pos.y, pos.x+dx32, pos.y+dy32, 8, cur_sector); // radius of 8 originally
+    u16 cur_sector_group = sector_group(cur_sector, cur_portal_map);
+
+    s16 cur_sector_height = get_sector_group_floor_height(cur_sector_group);
+    s32 cur_obj_z = (cur_sector_height<<(FIX32_FRAC_BITS-4));
+    collision_result move_res = check_for_collision_radius(obj_x, obj_y, cur_obj_z, obj_x+dx, obj_y+dy, 8, cur_sector); // radius of 8 originally
     
     
-    OBJ_LINK_DEREF(cur_obj).x = obj_x+dx32;//move_res.pos.x;
-    OBJ_LINK_DEREF(cur_obj).y = obj_y+dy32;//move_res.pos.y;
+    OBJ_LINK_DEREF(cur_obj).x = move_res.pos.x;
+    OBJ_LINK_DEREF(cur_obj).y = move_res.pos.y;
 
     
-    /*
+    
 
+    u16 new_sect_group;
     if(move_res.new_sector != cur_sector) {
         move_object_to_sector(cur_obj, cur_sector, move_res.new_sector);
-        u16 sect = cur_obj->pos.cur_sector;
-        u16 sect_group = sector_group(sect, cur_portal_map);
-        cur_obj->pos.z = get_sector_group_floor_height(sect_group);
+        u16 sect = move_res.new_sector;
+        new_sect_group = sector_group(sect, cur_portal_map);
+    } else {
+        new_sect_group = sector_group(cur_sector, cur_portal_map);
     }
-    //u16 sect = cur_obj->pos.cur_sector;
-    //u16 sect_group = sector_group(sect, cur_portal_map);
-    //cur_obj->pos.z = get_sector_group_floor_height(sect_group);
-    */
+    
+    OBJ_LINK_DEREF(cur_obj).z = get_sector_group_floor_height(new_sect_group);
     return 1;
 }
+
+
+void wake_enemies_in_sector(u16 sector) {
+    object_link cur_object = sector_object_lists[sector];
+
+    while(cur_object != NULL_OBJ_LINK) {
+        object_link next_obj = OBJ_LINK_DEREF(cur_object).next; // load this now in case the object moves!
+        uint16_t state_idx = OBJ_LINK_DEREF(cur_object).current_state;
+        int (*action)(object_link, uint16_t) = object_state_machines[state_idx].action;
+
+        if(action == &look_for_player) {
+            action(cur_object, sector);
+        }
+        cur_object = next_obj;
+    }
+}
+
+
+void process_objects_in_sector(u16 sector) {
+    object_link cur_object = sector_object_lists[sector];
+
+
+    while(cur_object != NULL_OBJ_LINK) {
+        object_link next_obj = OBJ_LINK_DEREF(cur_object).next; // load this now in case the object moves!
+        if(OBJ_LINK_DEREF(cur_object).activate_tick != 0) {
+            OBJ_LINK_DEREF(cur_object).activate_tick--;
+        
+        } else {
+            //KLog("processing object");
+            uint16_t state_idx = OBJ_LINK_DEREF(cur_object).current_state;
+            int live = object_state_machines[state_idx].action(cur_object, sector);
+            if(!live) { 
+                // TODO: make work with more than one object
+                // this will only work with a single object
+
+                // free object needs to remove the object and patch next and prev links if necessary
+                // and place it on the free list
+                //if(sector_object_lists[sect] == cur_object) {
+                //    sector_object_lists[sect] = OBJ_LINK_DEREF(cur_object).next;
+                //}
+                free_object(cur_object, sector); 
+
+            } else {
+                if(object_state_machines[state_idx].action == &idle) {
+                    OBJ_LINK_DEREF(cur_object).activate_tick = 128;
+                } else {
+                    OBJ_LINK_DEREF(cur_object).activate_tick = 0;
+                }
+            }
+        }
+        cur_object = next_obj; //OBJ_LINK_DEREF(cur_object).next;
+    
+        //break;
+    }
+
+}
+
 
 
 
@@ -490,38 +566,5 @@ void process_all_objects(uint32_t cur_frame) {
         }
     }
     */
-    for(int sect = 0; sect < num_sector_lists; sect++) {
-        object_link cur_object = sector_object_lists[sect];
-        while(cur_object != NULL_OBJ_LINK) {
-            if(OBJ_LINK_DEREF(cur_object).activate_tick != 0) {
-                OBJ_LINK_DEREF(cur_object).activate_tick--;
-            
-            } else {
-                //KLog("processing object");
-                uint16_t state_idx = OBJ_LINK_DEREF(cur_object).current_state;
-                int live = object_state_machines[state_idx].action(cur_object, sect);
-                if(!live) { 
-                    // TODO: make work with more than one object
-                    // this will only work with a single object
-
-                    // free object needs to remove the object and patch next and prev links if necessary
-                    // and place it on the free list
-                    //if(sector_object_lists[sect] == cur_object) {
-                    //    sector_object_lists[sect] = OBJ_LINK_DEREF(cur_object).next;
-                    //}
-                    free_object(cur_object, sect); 
-
-                } else {
-                    if(object_state_machines[state_idx].action == &idle) {
-                        OBJ_LINK_DEREF(cur_object).activate_tick = 128;
-                    } else {
-                        OBJ_LINK_DEREF(cur_object).activate_tick = 1;
-                    }
-                }
-            }
-            cur_object = OBJ_LINK_DEREF(cur_object).next;
-            //break;
-        }
-    }
-    //KLog("done processing objects");
+    run_in_pvs(cur_player_pos.cur_sector, process_objects_in_sector, cur_portal_map);
 }

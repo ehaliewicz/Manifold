@@ -1,4 +1,3 @@
-from http.client import REQUEST_URI_TOO_LONG
 import os 
 import sys
 
@@ -640,7 +639,6 @@ def interpret_click(x,y,button):
                     # find sector
                     cur_state.cur_sector = cur_state.map_data.sectors[cur_state.cur_wall.sector_idx]
                     cur_state.cur_sector_group = cur_state.map_data.sector_groups[cur_state.cur_sector.sector_group_idx]
-                    REQUEST_URI_TOO_LONG
 
         for thing in cur_state.map_data.things:
             if thing.point_collides(x, y):
@@ -880,7 +878,11 @@ def old_sectors_to_new_sector_groups(sectors):
 def load_map_from_file(f):
     global cur_state
     reset_state()
-    old_state = pickle.load(f)
+    try:
+        old_state = pickle.load(f)
+    except Exception as e:
+       _ = tk.messagebox.showerror("Error!", e)
+       return 
     old_map = old_state.map_data
 
 

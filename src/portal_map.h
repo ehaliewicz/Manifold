@@ -17,6 +17,7 @@
 #define MAX_VERTEXES     1024  // 8kB max
 #define MAX_PORTALS       512  // 1kB max
 #define MAX_TEXTURES       32  // 64 bytes, pointers into shared texture list
+
 typedef enum {
     QUADRANT_0=0,
     QUADRANT_1=1,
@@ -60,6 +61,11 @@ typedef struct __attribute__((__packed__)){
     const s16* sector_group_params;
     const s16* sector_group_triggers;
     const u16* walls;
+    
+    //const s16* wall_dxs;
+    //const s16* wall_dys;
+    //const s16* wall_collision_hull;
+    
     const s16* portals;
     const u8* wall_colors;
     const vertex* vertexes;
@@ -71,6 +77,11 @@ typedef struct __attribute__((__packed__)){
     const u16* pvs_offsets;
     const s16* sector_list_offsets;
     const u16* wall_pvs; // each index from above points to a list consisting of N:num_sectors, N 32-bit bitmaps
+    
+    const u32* sector_pvs_offsets; // offsets rle-encoded sector pvs
+    const s8* sector_pvs_entries; 
+    const u32* sector_phs_offsets;
+    const s8* sector_phs_entries;
     char* name;
     void* xgm_track;
     u16* palette;
@@ -87,5 +98,13 @@ s16 sector_portal_offset(s16 sector_idx, portal_map* mp);
 s16 sector_num_walls(s16 sector_idx, portal_map* mp);
 
 u16 sector_group(s16 sector_idx, portal_map* mp);
+
+u8 sector_in_pvs(u16 src_sector, u16 check_sector, portal_map* mp);
+
+u8 sector_in_phs(u16 src_sector, u16 check_sector, portal_map* mp);
+
+void run_in_pvs(u16 src_sector, void (*sect_func)(u16), portal_map* mp);
+
+void run_in_phs(u16 src_sector, void (*sect_func)(u16), portal_map* mp);
 
 #endif

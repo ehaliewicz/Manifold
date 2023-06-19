@@ -34,33 +34,25 @@ void play_sfx(u8 id, u8 priority) {
     KLog_U1("dropped sfx :( %i", id);
 }
 
-u8 sound_hearable(u8 src_sector_group, u8* rendered_sectors) {
+u8 sound_hearable(u16 sound_src_sector_group, u16 dst_sector) {
     portal_map* map = (portal_map*)cur_portal_map;
+
+
     // if src_sector is reachable from the set of rendered sectors via up to one max sector between, play it
     for(int sect = 0; sect < cur_portal_map->num_sectors; sect++) {
-        if(rendered_sectors[sect] != 0) {
-            // grab sector info
-            
-            s16 wall_offset = sector_wall_offset(sect, map);
-            s16 portal_offset = sector_portal_offset(sect, map);
-            s16 num_walls = sector_num_walls(sect, map);
-            // FIXME: optimize with a lookup table of which sectors are directly reachable from a sector
-            for(int i = 0; i < num_walls; i++) {
-                
-                u16 portal_idx = portal_offset+i;
-                s16 portal_sector = map->portals[portal_idx];
-                if(portal_sector != -1 && sector_group(portal_sector, map) == src_sector_group) {
-                    return 1;
-                }
-
-            }
+        if(sector_group(sect, map) != sound_src_sector_group) {
+            continue;
         }
+        if(!sector_in_phs(dst_sector, sect, map)) {
+            continue;
+        }
+        return 1;
     }
     return 0;
 }
 
-void propagate_sfx_from_sect_group(u8 id, u8 priority, u8 src_sector_group, u8* rendered_sectors) {
-    if(sound_hearable(src_sector_group, rendered_sectors)) {
+void propagate_sfx_from_sect_group(u8 id, u8 priority, u16 src_sector_group, u16 dst_sector) {
+    if(sound_hearable(src_sector_group, dst_sector)) {
         play_sfx(id, priority);
     }
 }

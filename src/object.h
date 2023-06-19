@@ -77,16 +77,14 @@ struct object {
     s16 z;
     u8 ang;
 
-    //object_pos pos; // 13 bytes
-    object_link tgt; // top bit is fingerprint
-    object_link prev; // top bit is fingerprint
-    object_link next; // top bit is fingerprint
+    object_link tgt;
+    object_link prev;
+    object_link next;
 
     uint8_t health;
     uint8_t current_state;
-    uint8_t object_type;   // top 2 bits are fingerprint
-    uint8_t activate_tick; // top 2 bits are fingerprint
-    u8 fingerprint;
+    uint8_t object_type; 
+    uint8_t activate_tick;
 };
 
 typedef struct decoration_object decoration_object;
@@ -96,7 +94,6 @@ struct decoration_object {
     uint8_t object_type;
     s16 x; s16 y; s16 z;
     decoration_link next;
-    u8 fingerprint;
 }; 
 
 void init_object_lists(int num_sectors);
@@ -124,7 +121,7 @@ decoration_link decorations_in_sector(int sector_num);
 
 
 void process_all_objects(uint32_t cur_tick);
-
+void wake_enemies_in_sector(u16 sector);
 
 typedef struct {
     uint16_t next_state;

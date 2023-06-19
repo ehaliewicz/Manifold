@@ -7,7 +7,7 @@ extern int sfx_on;
 void toggle_sfx();
 void update_sfx();
 void play_sfx(u8 id, u8 priority);
-void propagate_sfx_from_sect_group(u8 id, u8 priority, u8 src_sector_group, u8* rendered_sectors);
+void propagate_sfx_from_sect_group(u8 id, u8 priority, u16 src_sector_group, u16 dst_sector);
 
 #define SFX_OPEN_DOOR_ID 1
 #define SFX_CLOSE_DOOR_ID 2
@@ -16,6 +16,7 @@ void propagate_sfx_from_sect_group(u8 id, u8 priority, u8 src_sector_group, u8* 
 #define SFX_JUMP2_ID 5
 #define SFX_SHOTGUN_ID 6
 #define SFX_SELECT_ID 7
+#define SFX_ENEMY_A_WAKE_ID 8
 
 
 #endif
