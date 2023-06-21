@@ -474,7 +474,7 @@ int follow_player(object_link cur_obj, uint16_t cur_sector) {
 
     s16 cur_sector_height = get_sector_group_floor_height(cur_sector_group);
     s32 cur_obj_z = (cur_sector_height<<(FIX32_FRAC_BITS-4));
-    collision_result move_res = check_for_collision_radius(obj_x, obj_y, cur_obj_z, obj_x+dx, obj_y+dy, 8, cur_sector); // radius of 8 originally
+    collision_result move_res = check_for_collision_radius(obj_x, obj_y, cur_obj_z, obj_x+dx, obj_y+dy, FIX32(8), cur_sector); // radius of 8 originally
     
     
     OBJ_LINK_DEREF(cur_obj).x = move_res.pos.x;

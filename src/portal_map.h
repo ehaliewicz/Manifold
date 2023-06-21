@@ -61,14 +61,17 @@ typedef struct __attribute__((__packed__)){
     const s16* sector_group_params;
     const s16* sector_group_triggers;
     const u16* walls;
+
+    //const u16* collision_hull_walls; // 
     
     //const s16* wall_dxs;
     //const s16* wall_dys;
     //const s16* wall_collision_hull;
-    
+
     const s16* portals;
     const u8* wall_colors;
     const vertex* vertexes;
+    const vertex* collision_vertexes;
     const u8* wall_norm_quadrants;
     const u16 has_pvs;
     const u16* pvs;

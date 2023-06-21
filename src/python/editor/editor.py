@@ -502,7 +502,7 @@ def draw_thing(draw_list, thing, highlight=False):
 
 
     
-def draw_map_wall(draw_list, wall, sect_group_color, highlight=False, tree_mode=False, concave_sector=False, ):
+def draw_map_wall(draw_list, wall: line.Wall, sect_group_color, highlight=False, tree_mode=False, concave_sector=False, ):
     is_portal = wall.adj_sector_idx != -1
     tbl = [
         # not highlighted
@@ -542,6 +542,10 @@ def draw_map_wall(draw_list, wall, sect_group_color, highlight=False, tree_mode=
 
     draw_list.add_line(v1.x-cam_x, v1.y-cam_y, v2.x-cam_x, v2.y-cam_y, imgui.get_color_u32_rgba(*color), 1.0)
     draw_list.add_line(n1x-cam_x, n1y-cam_y, n2x-cam_x, n2y-cam_y, imgui.get_color_u32_rgba(*color), 1.0)
+
+    (cv1x,cv1y),(cv2x,cv2y) = wall.get_collision_hull_verts(20)
+    draw_list.add_line(cv1x-cam_x, cv1y-cam_y, cv2x-cam_x, cv2y-cam_y, imgui.get_color_u32_rgba(*color), 1.0)
+
     
     if highlight:
         draw_list.add_line(v1.x-cam_x, v1.y-cam_y, v2.x-cam_x, v2.y-cam_y, imgui.get_color_u32_rgba(*wall_highlight), 4.0)

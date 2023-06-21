@@ -387,7 +387,7 @@ int handle_input() {
 
         
         s16 cur_player_z = cur_player_pos.z >> (FIX32_FRAC_BITS-4);
-        collision_result collision = check_for_collision_radius(curx, cury, cur_player_z, newx, newy, PLAYER_COLLISION_DISTANCE_SQR, cur_player_pos.cur_sector);
+        collision_result collision = check_for_collision_radius(curx, cury, cur_player_z, newx, newy, FIX32(PLAYER_COLLISION_DISTANCE_SQR), cur_player_pos.cur_sector);
         cur_player_pos.x = collision.pos.x;
         cur_player_pos.y = collision.pos.y;
         if(collision.new_sector != cur_player_pos.cur_sector) {
@@ -733,7 +733,7 @@ void cleanup_level() {
 game_mode run_game() {
 
     u32 start_ticks = getTick();
-    process_all_objects(cur_frame);
+    //process_all_objects(cur_frame);
     console_tick();
     inventory_draw();
     update_sfx();

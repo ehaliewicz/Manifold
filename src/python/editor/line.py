@@ -97,6 +97,23 @@ class Wall():
         (mx,my) = self.rough_mid_point()
         (nx,ny) = self.normal()
         return (mx,my), (mx+nx, my+ny)
+    
+    def get_collision_hull_verts(self, world_unit_size):
+        (norm_x,norm_y) = self.normal()
+        len = math.sqrt((norm_x*norm_x)+(norm_y*norm_y))
+        
+        nnx = norm_x/len
+        nny = norm_y/len
+        scaled_nnx = nnx * world_unit_size
+        scaled_nny = nny * world_unit_size
+        cv1x = self.v1.x + scaled_nnx
+        cv1y = self.v1.y + scaled_nny
+        cv2x = self.v2.x + scaled_nnx 
+        cv2y = self.v2.y + scaled_nny
+
+        return ((cv1x, cv1y), (cv2x, cv2y))
+
+
         
     def point_collides(self, cx, cy, collide_with_normal=False):
         radius = 10

@@ -231,6 +231,7 @@ def export_map_to_rom(cur_path, cur_state, set_launch_flags=False):
             portals_ptr_offset = pointer_placeholder(f)
             wall_colors_ptr_offset = pointer_placeholder(f)
             vertexes_ptr_offset = pointer_placeholder(f)
+            collision_vertexes_ptr_offset = pointer_placeholder(f)
 
             wall_norm_quads_ptr_offset = pointer_placeholder(f)
             # write has_pvs (HARDCODED to false right now)
@@ -417,6 +418,19 @@ def export_map_to_rom(cur_path, cur_state, set_launch_flags=False):
             for vert in data.vertexes:
                 write_s16(f, int(vert.x * utils.ENGINE_X_SCALE))
                 write_s16(f, int(vert.y * utils.ENGINE_Y_SCALE))
+
+
+            patch_pointer_to_current_offset(
+                f, collision_vertexes_ptr_offset
+            )
+            for sect in data.sectors:
+                for wall in sect.walls:
+                    ((cv1x,cv1y),(cv2x,cv2y)) = wall.get_collision_hull_verts(20)
+                    write_s16(f, int(cv1x * utils.ENGINE_X_SCALE))
+                    write_s16(f, int(cv1y * utils.ENGINE_Y_SCALE))
+                    write_s16(f, int(cv2x * utils.ENGINE_X_SCALE))
+                    write_s16(f, int(cv2y * utils.ENGINE_Y_SCALE))
+
 
 
             patch_pointer_to_current_offset(
