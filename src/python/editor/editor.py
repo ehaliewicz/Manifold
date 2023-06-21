@@ -815,7 +815,7 @@ def on_frame():
         moved_cam_y = last_frame_y - cur_y
         cur_state.camera_x += moved_cam_x
         cur_state.camera_y += moved_cam_y
-    elif got_drag_vert_frames >= 20:
+    elif got_drag_vert_frames >= 30:
         cur_state.cur_vertex.x = cur_x+cur_state.camera_x
         cur_state.cur_vertex.y = cur_y+cur_state.camera_y
 
@@ -827,9 +827,11 @@ def on_frame():
         interpret_click(cur_x+cur_state.camera_x, cur_y+cur_state.camera_y, LEFT_BUTTON if left_button_clicked else RIGHT_BUTTON)
     elif (hover_vert is not None) and left_button_down:
         if not got_drag_vert_frames:
-            undo.push_state(cur_state)
             cur_state.cur_vertex = hover_vert
         got_drag_vert_frames += 1
+        if got_drag_vert_frames == 30:
+            undo.push_state(cur_state)
+
     elif window_hovered and left_button_down:
         got_hold_last_frame = True
         last_frame_x, last_frame_y = imgui.get_mouse_pos()
