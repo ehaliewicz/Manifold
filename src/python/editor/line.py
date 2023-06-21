@@ -2,11 +2,11 @@ import imgui
 import utils 
 import math
 import undo
-
+import vertex
 
 
 class Wall():
-    def __init__(self, v1, v2, sector_idx, adj_sector_idx, default_tex): #, index):
+    def __init__(self, v1: vertex.Vertex, v2: vertex.Vertex, sector_idx, adj_sector_idx, default_tex): #, index):
         self.v1 = v1
         self.v2 = v2
         self.sector_idx = sector_idx
@@ -40,7 +40,7 @@ class Wall():
         mag = math.sqrt((dx*dx)+(dy*dy))
         
         
-        scale = 10/mag
+        scale = 10/mag if mag != 0 else 0
         return int(-dy*scale),int(dx*scale)
     
     def portal_out_normal(self):

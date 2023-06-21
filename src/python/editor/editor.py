@@ -271,15 +271,15 @@ def main_sdl2():
                                 width, height,
                                 SDL_WINDOW_OPENGL|SDL_WINDOW_RESIZABLE)
         if window is None:
-            print("Error: Window could not be created! SDL Error: " + SDL_GetError())
+            print("Error: Window could not be created! SDL Error: " + str(SDL_GetError()))
             sys.exit(1)
         gl_context = SDL_GL_CreateContext(window)
         if gl_context is None:
-            print("Error: Cannot create OpenGL Context! SDL Error: " + SDL_GetError())
+            print("Error: Cannot create OpenGL Context! SDL Error: " + str(SDL_GetError()))
             sys.exit(1)
         SDL_GL_MakeCurrent(window, gl_context)
         if SDL_GL_SetSwapInterval(1) < 0:
-            print("Warning: Unable to set VSync! SDL Error: " + SDL_GetError())
+            print("Warning: Unable to set VSync! SDL Error: " + str(SDL_GetError()))
             sys.exit(1)
         return window, gl_context
     window, gl_context = pysdl2_init()
@@ -677,12 +677,12 @@ def interpret_click(x,y,button):
 last_frame_x = None
 last_frame_y = None
 got_hold_last_frame = False
-got_drag_vert_last_frame = False
+got_drag_vert_frames = 0
 
 
 def on_frame():
     global cur_state, last_frame_x, last_frame_y, got_hold_last_frame
-    global got_drag_vert_last_frame
+    global got_drag_vert_frames
     global last_saved_map_file
 
     imgui.set_next_window_position(0, 0)
@@ -811,7 +811,7 @@ def on_frame():
         moved_cam_y = last_frame_y - cur_y
         cur_state.camera_x += moved_cam_x
         cur_state.camera_y += moved_cam_y
-    elif got_drag_vert_last_frame:
+    elif got_drag_vert_frames >= 20:
         cur_state.cur_vertex.x = cur_x+cur_state.camera_x
         cur_state.cur_vertex.y = cur_y+cur_state.camera_y
 
@@ -822,16 +822,16 @@ def on_frame():
     if window_hovered and not tools_hovered and mouse_button_clicked:
         interpret_click(cur_x+cur_state.camera_x, cur_y+cur_state.camera_y, LEFT_BUTTON if left_button_clicked else RIGHT_BUTTON)
     elif (hover_vert is not None) and left_button_down:
-        if not got_drag_vert_last_frame:
+        if not got_drag_vert_frames:
             undo.push_state(cur_state)
-            got_drag_vert_last_frame = True
             cur_state.cur_vertex = hover_vert
+        got_drag_vert_frames += 1
     elif window_hovered and left_button_down:
         got_hold_last_frame = True
         last_frame_x, last_frame_y = imgui.get_mouse_pos()
     elif not left_button_down:
         got_hold_last_frame = False
-        got_drag_vert_last_frame = False
+        got_drag_vert_frames = 0
 
     
     imgui.end()
