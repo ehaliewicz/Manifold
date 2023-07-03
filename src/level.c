@@ -146,12 +146,11 @@ void clean_portal_map() {
 }
 
 #define MIN_ACTIVATE_DIST 40
-#define MIN_ACTIVATE_DIST_SQ (MIN_ACTIVATE_DIST*MIN_ACTIVATE_DIST)
+#define MIN_ACTIVATE_DIST_SQ FIX32((MIN_ACTIVATE_DIST*MIN_ACTIVATE_DIST))
 
 
 
 int check_trigger_switch(player_pos* pos) {
-    KLog("checking switch");
     portal_map* map = cur_portal_map;
     u16 sector = pos->cur_sector;
     s16 wall_offset = sector_wall_offset(sector, map);
@@ -184,7 +183,8 @@ int check_trigger_switch(player_pos* pos) {
         vertex v1 = map->vertexes[v1_idx];
         vertex v2 = map->vertexes[v2_idx];
 
-        s32 dist_sqr = sq_shortest_dist_to_point(px, py, v1, v2);
+        f32 dist_sqr = sq_shortest_dist_to_point(px, py, v1, v2);
+        //KLog("dist sqr: ", dist_sqr);
         if(dist_sqr < closest_dist && dist_sqr < MIN_ACTIVATE_DIST_SQ) {
             got_door = 1;
             closest_dist = dist_sqr;
