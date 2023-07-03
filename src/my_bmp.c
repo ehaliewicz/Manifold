@@ -446,15 +446,17 @@ static void do_flip()
     }
 }
 
+
 void bmp_do_hblank_process_vertical() {
+    const u16 scrh = screenHeight;
+    
     // vborder low
     if (phase == 0)
     {
         const u16 vcnt = GET_VCOUNTER;
-        const u16 scrh = screenHeight;
 		
 		
-		const u16 vborder = (scrh - 177) >> 1; 
+		const u16 vborder = (scrh - 177) >> 1; // was 177?
         //const u16 vborder = (scrh - BMP_HEIGHT) >> 1; //BMP_HEIGHT) >> 1;
 
 		//KLog_U1("vborder: ", vborder);
@@ -464,7 +466,8 @@ void bmp_do_hblank_process_vertical() {
         // prepare hint to disable VDP and doing blit process
 		//u8 hint_counter = VDP_getHIntCounter();
 		//KLog_U1("next target to disabled: ", (scrh - vborder) - (hint_counter + vcnt + 3));
-        VDP_setHIntCounter((scrh - vborder) - (VDP_getHIntCounter() + vcnt + 3));
+        
+        VDP_setHIntCounter((scrh - vborder) - (VDP_getHIntCounter() + vcnt - 12)); // 6
         // update phase
         phase = 1;
     }
@@ -482,8 +485,13 @@ void bmp_do_hblank_process_vertical() {
 		//KLog_U1("enabled vdp, next target: ", ((screenHeight-144)>>1) - 1);
 		//KLog_U1("enabled vdp, old next target: ", ((screenHeight-BMP_HEIGHT)>>1) - 1);
         //VDP_setHIntCounter(((screenHeight - 180) >> 1) - 1);
-        VDP_setHIntCounter(((screenHeight - BMP_HEIGHT) >> 1) - 1);
-        //VDP_setHIntCounter(((screenHeight - BMP_VERTICAL_HEIGHT) >> 1) - 1);
+        
+        //VDP_setHIntCounter(((screenHeight - BMP_HEIGHT) >> 1) - 1);
+
+        //KLog_U1("new hint counter: ", (((scrh-BMP_VERTICAL_HEIGHT)>>1)-8) );
+
+        VDP_setHIntCounter(((scrh - BMP_VERTICAL_HEIGHT) >> 1) - 8);
+        
         // update phase
         phase = 3;
 
@@ -934,7 +942,6 @@ void do_vint_flip() {
 
         // second half for framebuffer 0
         // first half for framebuffer 1
-
         
         if(in_use_vram_copy_src == bmp_buffer_0) {
             // draw second quarter of framebuffer to third quarter of VRAM framebuffer

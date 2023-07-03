@@ -607,7 +607,7 @@ void init_game() {
     #else 
     VDP_setScreenWidth320();
     #endif
-    //VDP_setScreenHeight240();
+    VDP_setScreenHeight240();
 
 
 
@@ -709,6 +709,8 @@ void init_game() {
     vwf_init();
     free_tile_loc = console_init(free_tile_loc);
 
+
+    // this stuff is entirely disabled
     //obj_sprite_init(free_tile_loc);
 
     //const char* init_str = "game initialized!";
@@ -733,11 +735,14 @@ void cleanup_level() {
 game_mode run_game() {
 
     u32 start_ticks = getTick();
-    //process_all_objects(cur_frame);
+    process_all_objects(cur_frame);
+    
+    // temp disable stuff for debugging tearing
     console_tick();
     inventory_draw();
     update_sfx();
     run_sector_group_processes();
+    
     calc_movement_speeds();
     if(handle_input() == LEVEL_END) {
         const int num_maps = map_table[1];
