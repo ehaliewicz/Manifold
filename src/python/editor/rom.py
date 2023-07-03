@@ -85,7 +85,7 @@ def launch_emulator(emu_path, rom_path):
     global launched_emu_process
     if emu_path == "":
         return
-    if rom_path == "":
+    if rom_path == "" or rom_path is None:
         return
     if launched_emu_process is not None:
         if launched_emu_process.poll() is None:
@@ -96,6 +96,27 @@ def launch_emulator(emu_path, rom_path):
     except Exception as e:
         print("error launching {}".format(e))
         return
+    
+launched_megalink_process = None
+def launch_hardware(megalink_path, rom_path):
+    global launched_megalink_process
+    if megalink_path == "":
+        return
+    if rom_path == "" or rom_path is None:
+        return 
+    
+    if launched_megalink_process is not None:
+        if launched_megalink_process.poll() is None:
+            launched_megalink_process.kill()
+        launched_megalink_process = None
+    try:
+        launched_megalink_process = subprocess.Popen([megalink_path, rom_path])
+    except Exception as e:
+        print("error launching {}".format(e))
+        return
+    
+
+
 
 
 
@@ -112,8 +133,7 @@ def err(msg):
     )
     return
 
-
-def export_map_to_rom(cur_path, cur_state, set_launch_flags=False):
+def export_map_to_rom(cur_path, cur_state, set_launch_flags=False, texture_indexes=None, music_indexes=None):
     global last_exported_rom_file
     if last_exported_rom_file is None:
         f = filedialog.asksaveasfile(mode="r")
@@ -127,15 +147,16 @@ def export_map_to_rom(cur_path, cur_state, set_launch_flags=False):
 
     f.close()
 
+
     try:
         with open(last_exported_rom_file, "rb+") as f:
             s = f.read()
-            map_table_base = s.find(b'\xDE\xAD\xBE\xEF') 
+            map_table_base = s.find(b'\xDE\xAD\xBE\xEF')
             #s.find(b'mapt') 
             num_maps_offset = map_table_base + 4
             map_pointer_offset =  map_table_base + 20
             if map_table_base == -1:
-                return err("Couldn't find map table, is this a correct ROM file?")
+                return err("Couldn't find map table, is this a valid ROM file?")
             map_data_base = s.find(b'WAD?')
             if map_data_base == -1:
                 return err("Couldn't find map data table, is this a correct ROM file?")
@@ -284,7 +305,8 @@ def export_map_to_rom(cur_path, cur_state, set_launch_flags=False):
             # write sector group types for LIVE (aka used) sector groups only
             print("Checking sector group params...")
             for sect_group in live_sector_groups:
-                f.write(struct.pack('>B', sect_group.type))    
+                sect_group_key = sect_group.key if hasattr(sect_group, 'key') else 0
+                f.write(struct.pack('>B', sect_group.type | (sect_group_key<<5)))    
                 if (sect_group.type != sector_group.DOOR and
                     # check neighbor sectors
                     sect_group.type != sector_group.LIFT):
@@ -425,7 +447,7 @@ def export_map_to_rom(cur_path, cur_state, set_launch_flags=False):
             )
             for sect in data.sectors:
                 for wall in sect.walls:
-                    ((cv1x,cv1y),(cv2x,cv2y)) = wall.get_collision_hull_verts(20)
+                    ((cv1x,cv1y),(cv2x,cv2y)) = wall.get_collision_hull_verts(utils.PLAYER_COLLISION_SIZE)
                     write_s16(f, int(cv1x * utils.ENGINE_X_SCALE))
                     write_s16(f, int(cv1y * utils.ENGINE_Y_SCALE))
                     write_s16(f, int(cv2x * utils.ENGINE_X_SCALE))
@@ -440,62 +462,6 @@ def export_map_to_rom(cur_path, cur_state, set_launch_flags=False):
                 for wall in sect.walls:
                     write_u8(f, wall.normal_quadrant_int())
             align(f)
-
-
-
-            # disable PVS output for now
-            """
-            pvs_offset_for_sectors = {}
-            pvs_for_sectors = {}
-
-            patch_pointer_to_current_offset(
-                f, wall_pvs_ptr_offset
-            )
-            cur_pvs_idx = 0
-            for sector in data.sectors:
-                #
-                # generate a table for sector's pvs
-                sect_pvs = pvs.recursive_pvs(sector, cur_state, data)
-                pvs_for_sectors[sector] = sect_pvs
-                for sector2 in data.sectors:
-                    if sector2.index not in sect_pvs:
-                        pvs_offset_for_sectors[(sector, sector2)] = -1
-                        continue
-
-                    # mark this offset down
-                    # write a list of walls
-                    pvs_offset_for_sectors[(sector, sector2)] = cur_pvs_idx
-                    walls = sect_pvs[sector2.index]
-
-                    # write num_walls
-                    write_u16(f, len(walls))
-                    cur_pvs_idx += 1
-                    # write walls out
-                    for wall in walls:
-                        write_u16(f, wall.output_idx)
-                        cur_pvs_idx += 1
-
-
-            patch_pointer_to_current_offset(
-                f, pvs_sector_list_offsets_ptr_offset
-            )
-            cur_pvs_idx = 0
-            for sector in data.sectors:
-                pvs_offset_for_sectors[sector] = cur_pvs_idx
-                sect_pvs = pvs_for_sectors[sector]
-                for sector2 in data.sectors:
-                    write_s16(f, pvs_offset_for_sectors[(sector, sector2)])
-                    cur_pvs_idx += 1
-
-
-
-            patch_pointer_to_current_offset(
-                f, pvs_sector_offsets_ptr_offset
-            )
-
-            for sector in data.sectors:
-                write_u16(f, pvs_offset_for_sectors[sector])
-            """
 
 
             sector_pvs_map = {}
@@ -809,5 +775,20 @@ def export_and_launch_as(cur_path, cur_state, set_launch_flags):
     try:
         reset_last_exported_rom_file()
         export_and_launch(cur_path, cur_state, set_launch_flags)
+    except:
+        pass
+
+def export_and_launch_on_hardware(cur_path, cur_state, set_launch_flags):
+    try:
+        rom_name = export_map_to_rom(cur_path, cur_state, set_launch_flags=set_launch_flags)
+        launch_hardware(cur_state.megalink_path, rom_name)
+    except:
+        pass
+
+
+def export_and_launch_as_on_hardware(cur_path, cur_state, set_launch_flags):
+    try:
+        reset_last_exported_rom_file()
+        export_and_launch_on_hardware(cur_path, cur_state, set_launch_flags)
     except:
         pass

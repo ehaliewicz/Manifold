@@ -1,5 +1,7 @@
+import math
 import os 
 import sys
+import time
 
 print(os.getcwd())
 print(sys.executable)
@@ -36,6 +38,7 @@ import pickle
 
 
 import defaults
+import levels
 import line
 import music
 import palette
@@ -280,7 +283,8 @@ def main_sdl2():
         SDL_GL_MakeCurrent(window, gl_context)
         if SDL_GL_SetSwapInterval(1) < 0:
             print("Warning: Unable to set VSync! SDL Error: " + str(SDL_GetError()))
-            sys.exit(1)
+            #sys.exit(1)  no vsync is ok :)
+        print("GL VERSION: {}".format(gl.glGetString(gl.GL_VERSION)))
         return window, gl_context
     window, gl_context = pysdl2_init()
     renderer = SDL2Renderer(window)
@@ -298,6 +302,9 @@ def main_sdl2():
         SDLK_r: lambda: rom.export_and_launch(cur_path, cur_state, True),
         SDLK_q: lambda: sys.exit(1)
     }
+
+    io = imgui.get_io()
+    io.delta_time = (1/60)
     while running:
         while SDL_PollEvent(ctypes.byref(event)) != 0:
             if event.type == SDL_QUIT:
@@ -319,6 +326,10 @@ def main_sdl2():
         imgui.render()
         renderer.render(imgui.get_draw_data())
         SDL_GL_SwapWindow(window)
+
+        time_delay = 1/60 - io.delta_time
+        if time_delay > 0:
+            SDL_Delay(int(time_delay*1000))
     renderer.shutdown()
     SDL_GL_DeleteContext(gl_context)
     SDL_DestroyWindow(window)
@@ -377,6 +388,7 @@ class State(object):
         self.textures_path = config.get("Default Settings", "textures-path")
         self.sprites_path = config.get("Default Settings", "sprites-path")
         self.music_tracks_path = config.get("Default Settings", "music-tracks-path")
+        self.megalink_path = config.get("Default Settings", "megalink-path")
 
 def reset_state():
     global cur_state, last_saved_map_file
@@ -478,6 +490,31 @@ concave_portal = (1,0,0,.3)
 convex_wall = (0,0,1,1)
 convex_portal = (0,0,1,.3)
 
+grid_line = (.82,.82,.82,.1)
+
+def draw_grid():
+    draw_list = imgui.get_window_draw_list()
+    cam_x = cur_state.camera_x
+    cam_y = cur_state.camera_y
+
+    first_grid_x = math.floor(cam_x / utils.PLAYER_COLLISION_SIZE) * utils.PLAYER_COLLISION_SIZE
+    first_grid_y = math.floor(cam_y / utils.PLAYER_COLLISION_SIZE) * utils.PLAYER_COLLISION_SIZE
+
+    (w,h) = imgui.core.get_content_region_max()
+    
+    grid_lines_x = math.floor(w/utils.PLAYER_COLLISION_SIZE)+1
+    grid_lines_y = math.floor(h/utils.PLAYER_COLLISION_SIZE)+1
+
+    for gy in range(grid_lines_y):
+        grid_y = first_grid_y + (gy*utils.PLAYER_COLLISION_SIZE)
+        draw_list.add_line(0, grid_y-cam_y, w, grid_y-cam_y, imgui.get_color_u32_rgba(*grid_line), 1.0)
+
+    for gx in range(grid_lines_x):
+        grid_x = first_grid_x + (gx*utils.PLAYER_COLLISION_SIZE)
+        draw_list.add_line(grid_x-cam_x, 0, grid_x-cam_x, h, imgui.get_color_u32_rgba(*grid_line), 1.0)
+
+
+
 def draw_map_vert(draw_list, vert, highlight=False):
     #if highlight:
     #    color = vert_highlight
@@ -543,8 +580,8 @@ def draw_map_wall(draw_list, wall: line.Wall, sect_group_color, highlight=False,
     draw_list.add_line(v1.x-cam_x, v1.y-cam_y, v2.x-cam_x, v2.y-cam_y, imgui.get_color_u32_rgba(*color), 1.0)
     draw_list.add_line(n1x-cam_x, n1y-cam_y, n2x-cam_x, n2y-cam_y, imgui.get_color_u32_rgba(*color), 1.0)
 
-    (cv1x,cv1y),(cv2x,cv2y) = wall.get_collision_hull_verts(20)
-    draw_list.add_line(cv1x-cam_x, cv1y-cam_y, cv2x-cam_x, cv2y-cam_y, imgui.get_color_u32_rgba(*color), 1.0)
+    #(cv1x,cv1y),(cv2x,cv2y) = wall.get_collision_hull_verts(20)
+    #draw_list.add_line(cv1x-cam_x, cv1y-cam_y, cv2x-cam_x, cv2y-cam_y, imgui.get_color_u32_rgba(*color), 1.0)
 
     
     if highlight:
@@ -665,8 +702,27 @@ def interpret_click(x,y,button):
     
 
     if clicked_vertex is None:
-        ix -= ix%10
-        iy -= iy%10
+        mx = ix%utils.PLAYER_COLLISION_SIZE
+        my = iy%utils.PLAYER_COLLISION_SIZE
+
+        mrx = (1+math.floor(ix/utils.PLAYER_COLLISION_SIZE))*utils.PLAYER_COLLISION_SIZE
+        mlx = (math.floor(ix/utils.PLAYER_COLLISION_SIZE))*utils.PLAYER_COLLISION_SIZE
+
+        if (mrx-ix) > (ix-mlx):
+            ix = mlx
+        else:
+            ix = mrx
+
+        mdy = (1+math.floor(iy/utils.PLAYER_COLLISION_SIZE))*utils.PLAYER_COLLISION_SIZE
+        muy = (math.floor(iy/utils.PLAYER_COLLISION_SIZE))*utils.PLAYER_COLLISION_SIZE
+
+        if (mdy-iy) > (iy-muy):
+            iy = muy
+        else:
+            iy = mdy
+
+        #ix -= ix%utils.PLAYER_COLLISION_SIZE
+        #iy -= iy%utils.PLAYER_COLLISION_SIZE
         if cur_state.mode == Mode.THINGS:
             cur_state.cur_thing = add_new_thing(ix, iy)
         else:
@@ -700,6 +756,7 @@ def on_frame():
         
     window_hovered = imgui.is_window_hovered()
 
+    draw_grid()
     draw_map()
     imgui.end()
     
@@ -762,6 +819,19 @@ def on_frame():
             if selected_export_launch_as:
                 rom.export_and_launch_as(cur_path, cur_state, set_launch_flags=True)
 
+            _, selected_export_and_launch_on_hardware = imgui.menu_item(
+                "Export to ROM and launch on hardware", "", False, True
+            )
+            if selected_export_and_launch_on_hardware:
+                rom.export_and_launch_on_hardware(cur_path, cur_state, set_launch_flags=True)
+
+            _, selected_export_and_launch_as_on_hardware = imgui.menu_item(
+                "Export to ROM and launch as on hardware", "", False, True
+            )
+            if selected_export_and_launch_as_on_hardware:
+                rom.export_and_launch_as_on_hardware(cur_path, cur_state, set_launch_flags=True)
+
+
             _, selected_reset = imgui.menu_item(
                 "Reset", "", False, True
             )
@@ -781,6 +851,12 @@ def on_frame():
             )     
             if selected_redo:
                 undo.redo(cur_state, set_cur_state)   
+
+            _, selected_load_maplist = imgui.menu_item(
+                "Export map list", "", False, True
+            )
+            if selected_load_maplist:
+                textures = levels.export_maps_to_rom(load_map_from_file)
 
 
 
@@ -815,7 +891,7 @@ def on_frame():
         moved_cam_y = last_frame_y - cur_y
         cur_state.camera_x += moved_cam_x
         cur_state.camera_y += moved_cam_y
-    elif got_drag_vert_frames >= 30:
+    elif got_drag_vert_frames >= 40:
         cur_state.cur_vertex.x = cur_x+cur_state.camera_x
         cur_state.cur_vertex.y = cur_y+cur_state.camera_y
 
@@ -938,6 +1014,7 @@ def load_map_from_file(f):
     cur_state.cur_vertex = None
     cur_state.cur_wall = None
     cur_state.cur_thing = None
+    return cur_state.map_data
 
         
 last_saved_map_file = None

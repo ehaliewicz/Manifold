@@ -98,6 +98,7 @@ class Wall():
         (nx,ny) = self.normal()
         return (mx,my), (mx+nx, my+ny)
     
+    
     def get_collision_hull_verts(self, world_unit_size):
         (norm_x,norm_y) = self.normal()
         len = math.sqrt((norm_x*norm_x)+(norm_y*norm_y))
@@ -212,7 +213,6 @@ def draw_line_mode(cur_state):
         mid_col_changed, new_mid_col = imgui.core.combo("middle color", cur_wall.mid_color, color_opts)
         low_col_changed, new_low_col = imgui.core.combo("lower color", cur_wall.low_color, color_opts)
 
-            
 
         tex_files = utils.get_texture_files(cur_state)
 
@@ -243,6 +243,7 @@ def draw_line_mode(cur_state):
         if low_col_changed:
             undo.push_state(cur_state)
             cur_wall.low_color = new_low_col
+
         
     def set_cur_wall(idx):
         cur_state.cur_wall = cur_state.cur_sector.walls[idx]

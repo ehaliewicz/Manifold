@@ -59,6 +59,7 @@ class SectorGroup():
         self.index = index
 
         self.type = type
+        self.key = 0
 
         self.light_level = light_level
         self.orig_height = orig_height 
@@ -103,7 +104,15 @@ def draw_sector_group_mode(cur_state):
 
         type_changed, new_type_idx = imgui.core.combo("Type:   ", cur_sect_group.type, SECTOR_GROUP_EFFECT_TYPES)
         if type_changed:
-            cur_sect_group.type = new_type_idx
+            cur_sect_group.type = new_type_idx        
+            
+        keycard_opts = ["No key", "Blue key", "Green key", "Red key"]
+
+        key_changed, new_key = imgui.core.combo("Key", cur_sect_group.key if hasattr(cur_sect_group, 'key') else 0, keycard_opts)
+            
+        if key_changed:
+            undo.push_state(cur_state)
+            cur_sect_group.key = new_key
 
 
         light_level_options = ["-2","-1","0","1","2"]

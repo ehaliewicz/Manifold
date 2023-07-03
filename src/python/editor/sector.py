@@ -48,7 +48,7 @@ class Sector():
             self.convex_calculated = True
             
         return self.is_convex_memo
-
+        
     
     def is_convex_inner(self):
         verts = self.get_vertexes()

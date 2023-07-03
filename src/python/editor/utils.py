@@ -9,6 +9,8 @@ import random
 ENGINE_X_SCALE = 1.3
 ENGINE_Y_SCALE = -1.3
 
+PLAYER_COLLISION_SIZE = 20
+
 def dist(x1,y1, x2,y2):
     dx = x2-x1
     dy = y2-y1
@@ -100,7 +102,6 @@ def draw_list(cur_state, id_str, label, items, select_item, delete_callback = No
             imgui.same_line()
             if imgui.button(del_btn_id):
                 delete_callback(item)
-                print("delete!!")
         
         
         imgui.end_group()
@@ -154,12 +155,22 @@ def get_sprite_files(cur_state):
     return sprite_files
 
 def random_bright_color():
-    return (
-        random.random(),
-        random.random(),
-        random.random(),
-        1
-    )
+    rand_r = random.random()
+    rand_g = random.random()
+    rand_b = random.random()
+
+    if (rand_r + rand_g + rand_b)/3 < 0.5:
+        rand_r *= 1.25
+        rand_g *= 1.25
+        rand_b *= 1.25 
+        rand_r = min(1.0, rand_r)
+        rand_g = min(1.0, rand_g)
+        rand_b = min(1.0, rand_b)
+
+    return (rand_r, rand_g, rand_b, 1.0)
+    
+
+
      
      
 root_window_draw_list = None 
