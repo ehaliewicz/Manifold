@@ -235,10 +235,14 @@ collision_result check_for_collision_radius(fix32 curx, fix32 cury, fix32 cur_z,
     if(curx != newx) { //} || within_sector_radius(newx, cury, cur_z, radius_sqr, cur_sector)) {
         // check if traversed to new sector  
         u8 crossed_line_x = 0;
+        s16 curxInt = fix32ToInt(curx);
+        s16 curyInt = fix32ToInt(cury);
+        s16 newxInt = fix32ToInt(newx);  
 
         //vertex* vptr = &cur_portal_map->collision_vertexes[portal_off<<1];
         //s16* vcoords_ptr = (s16*)vptr;
         for(int i = 0; i < num_walls; i++) {
+            //KLog_U1("x test i: ", i);
 
             u16 portal_idx = portal_off+i;
             u16 cv_idx = portal_idx<<1;
@@ -246,21 +250,24 @@ collision_result check_for_collision_radius(fix32 curx, fix32 cury, fix32 cur_z,
             vertex v2 = cur_portal_map->collision_vertexes[cv_idx];
             int over_line = point_sign_int_vert(newx, cury, v1.x, v1.y, v2.x, v2.y);
 
-            // check if we've gone over the collision hull line
-            //s16 v1x = *vcoords_ptr++;
-            //s16 v1y = *vcoords_ptr++;
-            //s16 v2x = *vcoords_ptr++;
-            //s16 v2y = *vcoords_ptr++;
-            //int over_line = point_sign_int_vert(curx, newy, v1x, v1y, v2x, v2y);
-            //KLog_U2("x test, wall idx: ", i, " over line: ", over_line);
-            if(!over_line) {
+
+            if(!over_line) { 
+                //KLog("x test not over line");
                 continue;
             }
 
+            // check if both points of this wall are on the same side of the player's movement vector
+            // if the are on the same side, no intersection occurs
+            int wall_cross_one = point_sign_int_vert_s16(v1.x, v1.y, curxInt, curyInt, newxInt, curyInt);
+            int wall_cross_two = point_sign_int_vert_s16(v2.x, v2.y, curxInt, curyInt, newxInt, curyInt);
+            if(wall_cross_one == wall_cross_two) { 
+                //KLog("x test no line intersection");
+                continue;
+            }
 
             s16 portal_sect = cur_portal_map->portals[portal_idx];
             if(portal_sect != -1) {
-                KLog("X test got portal");
+                //KLog("x test got portal");
                 u16 portal_sect_group = sector_group(portal_sect, map);
                 s16 neighbor_floor_height = get_sector_group_floor_height(portal_sect_group);
                 s16 neighbor_ceil_height = get_sector_group_ceil_height(portal_sect_group);
@@ -270,21 +277,25 @@ collision_result check_for_collision_radius(fix32 curx, fix32 cury, fix32 cur_z,
                 u8 floor_too_low = 0;//(cur_z - neighbor_floor_height) >= (40 << 4);
 
                 if(closed_door || floor_too_high || floor_too_low) {
-                    KLog("x test blocked");
+                    //KLog("x test blocked");
                     crossed_line_x = 1;
+                    continue;
                 } else if (within_sector(newx, cury, portal_sect)) {
-                    KLog("x test within sector");
+                    //KLog("x test within sector");
                     cur_sector = portal_sect;
                     curx = newx;
                     break;
                 } else {
-                    KLog("x moved over line but not blocked or in sector, stay in current sector");
+                    //KLog("x moved over line but not blocked or in sector, stay in current sector");
                     continue;
                 }
             }
 
+            //KLog("x test no portal");
             crossed_line_x = 1;
+
         }
+
         if(!crossed_line_x) {
             //KLog("update x");
             curx = newx;
@@ -297,30 +308,43 @@ collision_result check_for_collision_radius(fix32 curx, fix32 cury, fix32 cur_z,
 
         //vertex* vptr = &cur_portal_map->collision_vertexes[portal_off<<1];
         //s16* vcoords_ptr = (s16*)vptr;
+        s16 curxInt = fix32ToInt(curx);
+        s16 curyInt = fix32ToInt(cury);
+        s16 newyInt = fix32ToInt(newy);   
         for(int i = 0; i < num_walls; i++) {
             // check if we've gone over the collision hull line
-
+            //KLog_U1("y test i: ", i);
             u16 portal_idx = portal_off+i;
             u16 cv_idx = portal_idx<<1;
             vertex v1 = cur_portal_map->collision_vertexes[cv_idx++];
             vertex v2 = cur_portal_map->collision_vertexes[cv_idx];
             int over_line = point_sign_int_vert(curx, newy, v1.x, v1.y, v2.x, v2.y);
             
-            //KLog_U2("y test, wall idx: ", i, " over line: ", over_line);
+            //KLog_U2("y test, wall idx: ", i, " over line: ", over_line);     
+                
             //s16 v1x = *vcoords_ptr++;
             //s16 v1y = *vcoords_ptr++;
             //s16 v2x = *vcoords_ptr++;
             //s16 v2y = *vcoords_ptr++;
             //int over_line = point_sign_int_vert(curx, newy, v1x, v1y, v2x, v2y);
             if(!over_line) {
+                //KLog("y test not over line");
                 continue;
             }
-            
+
+            // check if both points of this wall are on the same side of the player's movement vector
+            // if the are on the same side, no intersection occurs
+            int wall_cross_one = point_sign_int_vert_s16(v1.x, v1.y, curxInt, curyInt, curxInt, newyInt);
+            int wall_cross_two = point_sign_int_vert_s16(v2.x, v2.y, curxInt, curyInt, curxInt, newyInt);  
+            if(wall_cross_one == wall_cross_two) { 
+                //KLog("y test no line intersection");
+                continue;
+            }
 
 
             s16 portal_sect = cur_portal_map->portals[portal_idx];
             if(portal_sect != -1) {   
-                KLog("y test got portal");
+                //KLog("y test got portal");
                 u16 portal_sect_group = sector_group(portal_sect, map);
                 s16 neighbor_floor_height = get_sector_group_floor_height(portal_sect_group);
                 s16 neighbor_ceil_height = get_sector_group_ceil_height(portal_sect_group);
@@ -329,18 +353,20 @@ collision_result check_for_collision_radius(fix32 curx, fix32 cury, fix32 cur_z,
                 u8 floor_too_low = 0;//(cur_z - neighbor_floor_height) >= (40 << 4);
 
                 if(closed_door || floor_too_high || floor_too_low) {
-                    KLog("y test blocked");
+                    //KLog("y test blocked");
                     crossed_line_y = 1;
+                    continue;
                 } else if(within_sector(curx, newy, portal_sect)) {    
-                    KLog("y test within sector");
+                    //KLog("y test within sector");
                     cur_sector = portal_sect;
                     cury = newy;
                     break;
                 } else {
-                    KLog("y moved over line but not blocked or in sector, stay in current sector");
+                    //KLog("y moved over line but not blocked or in sector, stay in current sector");
                     continue;
                 }
             }
+            //KLog("y test no portal");
             
             crossed_line_y = 1;
             
@@ -350,7 +376,7 @@ collision_result check_for_collision_radius(fix32 curx, fix32 cury, fix32 cur_z,
             cury = newy;
         }
     }
-    KLog("------");
+    //KLog("------");
     collision_result res;
     res.new_sector = cur_sector;
     res.pos.x = curx;

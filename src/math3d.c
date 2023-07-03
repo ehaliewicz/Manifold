@@ -158,6 +158,46 @@ s8 point_sign_int_vert(f32 x, f32 y, s16 v1_x, s16 v1_y, s16 v2_x, s16 v2_y) {
     */
 }
 
+s8 point_sign_int_vert_s16(s16 x, s16 y, s16 v1_x, s16 v1_y, s16 v2_x, s16 v2_y) {
+
+    s16 ndx = v2_x-v1_x;
+    if(ndx == 0) {
+        s16 ndy = v2_y-v1_y;
+        if(x <= v1_x) {
+            return ndy > 0;
+        }
+        return ndy < 0;
+    }
+
+    s16 ndy = v2_y-v1_y;
+    if(ndy == 0) {
+        if(y <= v1_y) {
+            return ndx < 0;
+        }
+        return ndx > 0;
+    }
+
+    s16 dx = (x - v1_x);
+    s16 dy = (y - v1_y);
+    if ( (ndy ^ ndx ^ dx ^ dy)&0x8000) {
+        if  ( (ndy ^ dx) & 0x8000) {
+            // (left is negative)
+            return 1;
+        }
+        return 0;
+    }
+    
+
+    s32 left = ndy*dx;
+    s32 right = dy*ndx;
+
+    if(right < left) {
+        return 0;
+    }
+
+    return 1; // back side
+
+}
 
 s8 sign(s16 ax, s16 ay, s16 bx, s16 by, s16 cx, s16 cy) {
     s32 val = ((bx - ax)*(cy - ay) - (by - ay)*(cx - ax));
