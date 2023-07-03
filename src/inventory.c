@@ -15,7 +15,7 @@ static u8 *inventory;
 
 static u16 *item_vram_addresses; //[NUM_ITEM_TYPES]; 
 
-#define HUD_BASE_Y 20
+#define HUD_BASE_Y 21
 
 int inventory_full() {
     return (num_items == MAX_ITEMS);
@@ -37,6 +37,8 @@ int inventory_has_item(item_type item) {
     }
     return 0;
 }
+
+
 
 void inventory_draw() {
     if(!dirty) {
