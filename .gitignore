@@ -81,3 +81,5 @@ res/images/*.png
 res/textures/*.png
 src/python/editor/SDL2.dll
 src/python/editor/editor.onefile-build/
+src/python/editor/editor.dist.7z
+src/python/editor/DLLs/

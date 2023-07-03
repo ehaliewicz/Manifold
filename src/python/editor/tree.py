@@ -1,5 +1,4 @@
 import imgui
-import numpy as np
 import sector
 
 def split_concave_sector(sect, cur_state):
