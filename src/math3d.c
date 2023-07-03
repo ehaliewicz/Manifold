@@ -518,7 +518,7 @@ clip_result clip_map_vertex_16(Vect2D_s16* __restrict__ trans_v1, Vect2D_s16* __
     s32 fix_du_16 = (base_right_u_16-base_left_u_16);
 
     s32 du_over_dz_16;
-    if(1) { //tmap->needs_texture) {
+    if(tmap->needs_texture) {
         if(dz_12_4 != 0) {
             du_over_dz_16 = divs_32_by_16(fix_du_16<<TRANS_Z_FRAC_BITS, dz_12_4);      
             tmap->du_over_dz = du_over_dz_16;  
