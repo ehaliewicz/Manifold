@@ -68,7 +68,7 @@ void clear_2d_buffers() {
 
     // 0:8 screen_height:8 0:8 screen_height:8
     u32 u32val = (SCREEN_HEIGHT << 16) | SCREEN_HEIGHT;
-
+   
     // 128 bytes need to be moved
     
 
@@ -2269,7 +2269,7 @@ void draw_upper_step(s16 x1, s16 x1_ytop, s16 nx1_ytop, s16 x2, s16 x2_ytop, s16
     if(skip_x > 0) {
         top_y_fix += (skip_x * top_dy_per_dx);
         ntop_y_fix += (skip_x * ntop_dy_per_dx);
-        cur_fix_inv_z += (skip_x * fix_inv_dz_per_dx);
+        cur_fix_inv_z += muls_16_by_16(skip_x, fix_inv_dz_per_dx); //(skip_x * fix_inv_dz_per_dx);
     }
 
 
@@ -2506,7 +2506,7 @@ void draw_bottom_pegged_textured_lower_step(
     s16 endx = min(window_max, x2);
 
     s16 inv_dz = inv_z2 - inv_z1;
-    s16 fix_inv_dz_per_dx = (inv_dz) / dx; //(inv_dz << 16) / dx;
+    s16 fix_inv_dz_per_dx = divs_32_by_16(inv_dz, dx); //(inv_dz) / dx; //(inv_dz << 16) / dx;
 
     s16 cur_fix_inv_z = inv_z1; //inv_z1<<16;
     
@@ -2517,7 +2517,7 @@ void draw_bottom_pegged_textured_lower_step(
         bot_y_fix += (skip_x * bot_dy_per_dx);
         nbot_y_fix += (skip_x * nbot_dy_per_dx);
         pegged_bot_y_fix += (skip_x * pegged_bot_dy_per_dx);
-        cur_fix_inv_z += (skip_x * fix_inv_dz_per_dx);
+        cur_fix_inv_z += muls_16_by_16(skip_x, fix_inv_dz_per_dx); //(skip_x * fix_inv_dz_per_dx);
     }
 
     calculate_tex_coords_for_wall(beginx, endx, skip_x, dx,
@@ -2627,7 +2627,9 @@ void draw_lower_step(s16 x1, s16 x1_ybot, s16 nx1_ybot, s16 x2, s16 x2_ybot, s16
     s16 beginx = max(x1, window_min);
 
     s16 inv_dz = inv_z2 - inv_z1;
-    s16 fix_inv_dz_per_dx = (inv_dz) / dx; //(inv_dz << 16) / dx;
+    
+    s16 fix_inv_dz_per_dx = divs_32_by_16(inv_dz, dx); 
+    //s16 fix_inv_dz_per_dx = inv_dz / dx;
 
     s16 cur_fix_inv_z = inv_z1; //inv_z1<<16;
 
@@ -2640,7 +2642,7 @@ void draw_lower_step(s16 x1, s16 x1_ybot, s16 nx1_ybot, s16 x2, s16 x2_ybot, s16
         bot_y_fix += (skip_x * bot_dy_per_dx);
         nbot_y_fix += (skip_x * nbot_dy_per_dx);
         if(light_level > -2 && light_level < 2) {
-            cur_fix_inv_z += (skip_x * fix_inv_dz_per_dx);
+            cur_fix_inv_z += muls_16_by_16(skip_x, fix_inv_dz_per_dx); //  (skip_x * fix_inv_dz_per_dx);
         }
     }
     
@@ -2703,8 +2705,8 @@ void draw_lower_step(s16 x1, s16 x1_ybot, s16 nx1_ybot, s16 x2, s16 x2_ybot, s16
 
                     //draw_native_vertical_line_unrolled(top_draw_y, bot_draw_y, lower_color, col_ptr);
                     
+                    *(yclip_ptr+1) = top_draw_y;
                 }
-                *(yclip_ptr+1) = min(top_draw_y, bot_draw_y);
             }
             yclip_ptr += 2;
 
