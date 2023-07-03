@@ -7,7 +7,7 @@
 #define CONSOLE_NUM_MESSAGES 4
 #define CONSOLE_NUM_MESSAGES_MASK 0b111
 
-#define NUM_TILES 15
+#define NUM_TILES 16
 
 //#define CONSOLE_SPRITES 
 
