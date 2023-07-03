@@ -27,6 +27,18 @@
 
 #define NUM_SECTOR_GROUP_TYPES 6
 
+#define   NO_KEYCARD  0b00000000
+#define BLUE_KEYCARD  0b00100000
+#define GREEN_KEYCARD 0b01000000
+#define RED_KEYCARD   0b01100000
+
+// use the top three bits for keycard mask
+// we can have up to 32 sector types?
+#define SECTOR_GROUP_KEYCARD_MASK 0b11100000  
+#define SECTOR_GROUP_TYPE_MASK 0b00011111
+
+#define GET_SECTOR_GROUP_TYPE(typ_byte) ((typ_byte) & SECTOR_GROUP_TYPE_MASK)
+#define GET_SECTOR_GROUP_KEYCARD(typ_byte) ((typ_byte) & SECTOR_GROUP_KEYCARD_MASK)
 
 typedef enum {
     CLOSED,
@@ -51,6 +63,7 @@ s16 get_sector_group_orig_height(u16 sect_idx);
 s8 get_sector_group_light_level(u16 sect_idx);
 u16 get_sector_group_ticks_left(u16 sect_idx);
 u16 get_sector_group_state(u16 sect_idx);
+void set_sector_group_state(u16 sect_group, u16 state);
 
 s16 get_sector_group_floor_height(u16 sect_idx);
 void set_sector_group_floor_height(u16 sector_idx, s16 height);

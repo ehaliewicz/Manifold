@@ -172,8 +172,12 @@ int check_trigger_switch(player_pos* pos) {
         }
         // check if this is a portal to a door or lift sector
         u16 next_sect_group = sector_group(portal, map);
+
         u8 next_sect_group_type = map->sector_group_types[next_sect_group];
-        if(next_sect_group_type != DOOR && next_sect_group_type != LIFT) {
+
+        u8 next_sect_group_type_low_bits = GET_SECTOR_GROUP_TYPE(next_sect_group_type);
+
+        if(next_sect_group_type_low_bits != DOOR && next_sect_group_type_low_bits != LIFT) {
             continue;
         }
 
@@ -194,9 +198,34 @@ int check_trigger_switch(player_pos* pos) {
     }
 
     if(got_door) {
-        if(tgt_sect_group_type == DOOR) {
+
+        u8 tgt_sect_group_type_low_bits = GET_SECTOR_GROUP_TYPE(tgt_sect_group_type);
+        switch (GET_SECTOR_GROUP_KEYCARD(tgt_sect_group_type)) {
+            case BLUE_KEYCARD:
+                if (!inventory_has_item(BLUE_KEY)) {
+                    console_push_message("You need the blue key!", 22, 20);
+                    return 0;
+                }
+                break;
+            case RED_KEYCARD:
+                if(!inventory_has_item(RED_KEY)) {
+                    console_push_message("You need the red key!", 21, 20);
+                    return 0;
+                }
+                break;
+            case GREEN_KEYCARD:
+                if(!inventory_has_item(GREEN_KEY)) {
+                    console_push_message("You need the green key!", 23, 20);
+                    return 0;
+                }
+                break;
+            default:
+                break;
+        }
+
+        if(tgt_sect_group_type_low_bits == DOOR) {
             set_sector_group_state(tgt_sect_group, GOING_UP);
-        } else if (tgt_sect_group_type == LIFT) {
+        } else if (tgt_sect_group_type_low_bits == LIFT) {
             set_sector_group_state(tgt_sect_group, GOING_DOWN);
         }
     }

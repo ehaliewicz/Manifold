@@ -276,7 +276,7 @@ void run_flash(s16* params) {
 
 void run_sector_group_process(u16 sect_group) {
     //KLog_U1("running sector group process for sector group: ", sect_group);
-    u8 typ = cur_portal_map->sector_group_types[sect_group];
+    u8 typ = GET_SECTOR_GROUP_TYPE(cur_portal_map->sector_group_types[sect_group]);
     //KLog_U1("type: ", typ);
     s16* params = &live_sector_group_parameters[sect_group<<NUM_SECTOR_GROUP_PARAMS_SHIFT];
 

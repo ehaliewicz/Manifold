@@ -284,7 +284,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
     u8 floor_color = get_sector_group_floor_color(sect_group);
     u8 ceil_color = get_sector_group_ceil_color(sect_group);
 
-    u8 cur_sect_group_type = cur_portal_map->sector_group_types[sect_group];
+    u8 cur_sect_group_type = GET_SECTOR_GROUP_TYPE(cur_portal_map->sector_group_types[sect_group]);
 
 
     light_params ceil_params, floor_params;
@@ -572,7 +572,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
             }
 
             u16 nsect_group = sector_group(portal_sector, map);
-            u8 neighbor_sector_group_type = cur_portal_map->sector_group_types[nsect_group];
+            u8 neighbor_sector_group_type = GET_SECTOR_GROUP_TYPE(cur_portal_map->sector_group_types[nsect_group]);
             if(neighbor_ceil_height < ceil_height) {
 
                 s16 nx1_ytop = project_and_adjust_y_fix(neighbor_ceil_height, z_recip_v1);
@@ -985,7 +985,7 @@ void pvs_scan(u16 src_sector, s16 window_min, s16 window_max, u32 cur_frame) {
 
             if(is_portal) {
                 u16 neighbor_sector_group = sector_group(portal_sector, map);
-                u8 neighbor_sector_group_type = cur_portal_map->sector_group_types[neighbor_sector_group];
+                u8 neighbor_sector_group_type = GET_SECTOR_GROUP_TYPE(cur_portal_map->sector_group_types[neighbor_sector_group]);
                 //s16 neighbor_ceil_color = get_sector_group_floor_color(neighbor_sector_group);
                 //s16 neighbor_floor_color = get_sector_group_floor_color(neighbor_sector_group);
 
