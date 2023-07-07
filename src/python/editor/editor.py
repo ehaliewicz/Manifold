@@ -1059,9 +1059,13 @@ def load_map_from_file(f):
 
     if hasattr(old_map, "sector_groups"):
         new_map.sector_groups = old_map.sector_groups
-        if len(new_map.sector_groups) > 0 and (not hasattr(new_map.sector_groups[0], 'color')):
-            for sctg in new_map.sector_groups:
-                sctg.color = utils.random_bright_color()
+        if len(new_map.sector_groups) > 0:
+            if (not hasattr(new_map.sector_groups[0], 'color')):
+                for sctg in new_map.sector_groups:
+                    sctg.color = utils.random_bright_color()
+            if (not hasattr(new_map.sector_groups[0], "name")):
+                for sctg in new_map.sector_groups:
+                    sctg.name = "Sector group {}".format(sctg.index)
     else:
         new_map.sector_groups = old_sectors_to_new_sector_groups(old_map.sectors)
 
