@@ -250,7 +250,12 @@ def set_cur_state(cs):
     global cur_state
     cur_state = cs
 
+MOD_KEYS_PRESSED = {}
+
 def main_sdl2():
+    global MOD_KEYS_PRESSED
+    MOD_KEYS_PRESSED[KMOD_LCTRL] = False 
+
     def pysdl2_init():
         width, height = 1600, 900
         window_name = "portal editor"
@@ -310,8 +315,14 @@ def main_sdl2():
             if event.type == SDL_QUIT:
                 running = False
                 break
+            elif event.type == SDL_KEYDOWN:
+                mod = event.key.keysym.mod
+                if mod & KMOD_LCTRL:
+                    MOD_KEYS_PRESSED[KMOD_LCTRL] = True
             elif event.type == SDL_KEYUP:
                 mod = event.key.keysym.mod
+                if not (mod & KMOD_LCTRL):
+                    MOD_KEYS_PRESSED[KMOD_LCTRL] = False
                 sym = event.key.keysym.sym
                 if mod & KMOD_LCTRL:
                     if sym in shortcut_tab:
@@ -401,6 +412,10 @@ def reset_state():
     
 
 def add_new_wall(v1, v2):
+    if len(cur_state.cur_sector.walls) == 32:
+        _ = tk.messagebox.showerror("Error", "Cannot add more than 32 walls to a sector.")
+        return None
+
     undo.push_state(cur_state)
     new_wall = line.Wall(v1=v1, v2=v2, 
                          sector_idx=cur_state.cur_sector.index, adj_sector_idx=-1, 
@@ -702,8 +717,12 @@ def interpret_click(x,y,button, cur_hover_sector):
                     return
         return
         
-    if not cur_state.cur_sector:
-        return
+    if cur_state.mode == Mode.THINGS and cur_hover_sector:
+        cur_state.cur_sector = cur_hover_sector
+        cur_state.cur_sector_group = cur_state.map_data.sector_groups[cur_state.cur_sector.sector_group_idx]
+    elif not cur_state.cur_sector:
+        return 
+
 
 
     # add a new vertex and line to the sector
@@ -732,20 +751,26 @@ def interpret_click(x,y,button, cur_hover_sector):
         #ix -= ix%utils.PLAYER_COLLISION_SIZE
         #iy -= iy%utils.PLAYER_COLLISION_SIZE
         if cur_state.mode == Mode.THINGS:
-            cur_state.cur_thing = add_new_thing(ix, iy)
+            if cur_hover_sector:
+                cur_state.cur_thing = add_new_thing(ix, iy)
         else:
             cur_state.cur_vertex = add_new_vertex(ix, iy)
     
         
 
     if prev_cur is not None and prev_cur != cur_state.cur_vertex:
-        cur_state.cur_wall = add_new_wall(prev_cur, cur_state.cur_vertex)
+        nw = add_new_wall(prev_cur, cur_state.cur_vertex)
+        if nw is not None:
+            cur_state.cur_wall = nw
         
 
 last_frame_x = None
 last_frame_y = None
 got_hold_last_frame = False
 got_drag_vert_frames = 0
+got_drag_thing_frames = 0
+
+
 def find_cur_hovered_sector():
     global cur_state
     cur_x,cur_y = imgui.get_mouse_pos()
@@ -778,7 +803,7 @@ def find_cur_hovered_sector():
 
 def on_frame():
     global cur_state, last_frame_x, last_frame_y, got_hold_last_frame
-    global got_drag_vert_frames
+    global got_drag_vert_frames, got_drag_thing_frames
     global last_saved_map_file
 
     imgui.set_next_window_position(0, 0)
@@ -921,15 +946,22 @@ def on_frame():
     #    start_down_x = None
     #    start_down_y = None
         
+    DRAG_DELAY_FRAMES = 40
     cur_x,cur_y = imgui.get_mouse_pos()
     if got_hold_last_frame:
         moved_cam_x = last_frame_x - cur_x
         moved_cam_y = last_frame_y - cur_y
         cur_state.camera_x += moved_cam_x
         cur_state.camera_y += moved_cam_y
-    elif got_drag_vert_frames >= 40:
+    elif got_drag_vert_frames >= DRAG_DELAY_FRAMES:
         cur_state.cur_vertex.x = cur_x+cur_state.camera_x
         cur_state.cur_vertex.y = cur_y+cur_state.camera_y
+    elif got_drag_thing_frames >= DRAG_DELAY_FRAMES:
+        cur_state.cur_thing.x = cur_x+cur_state.camera_x
+        cur_state.cur_thing.y = cur_y+cur_state.camera_y
+
+
+
 
     if True: #window_hovered:
         #print_camera_coordinates()
@@ -955,14 +987,29 @@ def on_frame():
 
 
     hover_vert = vert_hovered(cur_x+cur_state.camera_x, cur_y+cur_state.camera_y)
-    #print(window_hovered, tools_hovered, mouse_button_clicked)
-    if window_hovered and not tools_hovered and mouse_button_clicked:
-        interpret_click(cur_x+cur_state.camera_x, cur_y+cur_state.camera_y, LEFT_BUTTON if left_button_clicked else RIGHT_BUTTON)
+    hover_thing = thing_hovered(cur_x+cur_state.camera_x, cur_y+cur_state.camera_y)
+
+    if window_hovered and cur_hov_sector is not None and not tools_hovered and mouse_button_clicked and MOD_KEYS_PRESSED[KMOD_LCTRL]:
+        cur_state.cur_sector = cur_hov_sector
+        cur_state.cur_sector_group = cur_state.map_data.sector_groups[cur_state.cur_sector.sector_group_idx]
+        cur_state.mode = Mode.SECTOR
+    elif window_hovered and not tools_hovered and mouse_button_clicked:
+        interpret_click(cur_x+cur_state.camera_x, cur_y+cur_state.camera_y, 
+                        LEFT_BUTTON if left_button_clicked else RIGHT_BUTTON,
+                        cur_hov_sector)
+                        
+    elif (hover_thing is not None) and left_button_down:
+        if not got_drag_thing_frames:
+            cur_state.cur_thing = hover_thing 
+        got_drag_thing_frames += 1
+        if got_drag_thing_frames == DRAG_DELAY_FRAMES:
+            undo.push_state(cur_state)
+            
     elif (hover_vert is not None) and left_button_down:
         if not got_drag_vert_frames:
             cur_state.cur_vertex = hover_vert
         got_drag_vert_frames += 1
-        if got_drag_vert_frames == 30:
+        if got_drag_vert_frames == DRAG_DELAY_FRAMES:
             undo.push_state(cur_state)
 
     elif window_hovered and left_button_down:
@@ -971,6 +1018,7 @@ def on_frame():
     elif not left_button_down:
         got_hold_last_frame = False
         got_drag_vert_frames = 0
+        got_drag_thing_frames = 0
 
     
     imgui.end()
