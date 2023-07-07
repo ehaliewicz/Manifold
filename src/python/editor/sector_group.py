@@ -57,6 +57,7 @@ class SectorGroup():
             
 
         self.index = index
+        self.name = "Sector group {}".format(index)
 
         self.type = type
         self.key = 0
@@ -91,8 +92,12 @@ def draw_sector_group_mode(cur_state):
 
     if cur_state.cur_sector_group is not None:
         cur_sect_group = cur_state.cur_sector_group
+
+        imgui.text("Sector Group: {}".format(cur_sect_group.name))
         
-        imgui.text("Sector Group: {}".format(cur_sect_group.index))
+        name_changed, new_name = imgui.core.input_text("Name: ", cur_sect_group.name, buffer_length=64)
+        if name_changed:
+            cur_sect_group.name = new_name
 
         set_orig_height = lambda v: set_sector_group_attr(cur_state, cur_sect_group, 'orig_height', v)
         set_ticks_left = lambda v: set_sector_group_attr(cur_state, cur_sect_group, 'ticks_left', v)
