@@ -476,12 +476,13 @@ int handle_input() {
         run_in_phs(cur_player_pos.cur_sector, wake_enemies_in_sector, cur_portal_map);
 
         shooting = 12;
-        KLog_U2("drawn to center: ", drawn_to_center_cols, " sprite idX: ", sprite_on_center_col);
+        //KLog_U2("drawn to center: ", drawn_to_center_cols, " sprite idX: ", sprite_on_center_col);
         if(drawn_to_center_cols == OBJECT && sprite_on_center_col != NULL_OBJ_LINK) {
-            KLog("object rendered to center of screen");
-            // destroy the object
-            free_object(sprite_on_center_col, center_object_sector);
-
+            if(OBJ_LINK_DEREF(sprite_on_center_col).current_state != MAYBE_GET_PICKED_UP_STATE) {
+                //KLog("object rendered to center of screen");
+                // destroy the object
+                free_object(sprite_on_center_col, center_object_sector);
+            }
         }
     }
 

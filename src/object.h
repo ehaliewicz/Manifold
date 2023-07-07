@@ -67,6 +67,7 @@ typedef u8 decoration_link;
 #define DEC_LINK_DEREF(lnk) (decorations[(lnk)])
 
 #define IDLE_STATE 0 
+#define MAYBE_GET_PICKED_UP_STATE 3
 typedef struct object object;
 
 // 22 bytes!, 2772 bytes for objects
