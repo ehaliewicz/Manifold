@@ -848,7 +848,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
             draw_rle_sprite(left_x, right_x, top_y>>4, bot_y>>4, 
                             window_min, window_max, 
                             obj_clip_buf, type->sprite,
-                            obj_link, type->type, sector);
+                            obj_link, type->init_state == IDLE_STATE ? DECORATION : OBJECT, sector);
         }
         
         free_clip_buffer(obj_clip_buf);
