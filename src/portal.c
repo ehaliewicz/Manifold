@@ -1120,9 +1120,9 @@ void portal_rend(u16 src_sector, u32 cur_frame) {
 
     #ifdef H32_MODE
         if(cur_portal_map->has_pvs) {
-        pvs_scan(src_sector, 0, RENDER_WIDTH-7-1, cur_frame);
+        pvs_scan(src_sector, 0, RENDER_WIDTH-1, cur_frame);
         } else {
-            visit_graph(src_sector, src_sector, 0, RENDER_WIDTH-7-1, cur_frame, 0);
+            visit_graph(src_sector, src_sector, 2, RENDER_WIDTH-2, cur_frame, 0);
         }
         //visit_graph(src_sector, src_sector, 7, RENDER_WIDTH-7-1, cur_frame, 0);
     #else
