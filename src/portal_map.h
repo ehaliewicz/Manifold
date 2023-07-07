@@ -63,6 +63,7 @@ typedef struct __attribute__((__packed__)){
     // each sector has a list of 8 s16s
     // the first is the trigger type, and the remaining 7 are sector group targets
     const s16* sector_group_triggers;
+
     const u16* walls;
 
     //const u16* collision_hull_walls; // 
@@ -73,6 +74,7 @@ typedef struct __attribute__((__packed__)){
 
     const s16* portals;
     const u8* wall_colors;
+    const u8* wall_tex_repetitions;
     const vertex* vertexes;
     const vertex* collision_vertexes;
     const u8* wall_norm_quadrants;

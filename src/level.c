@@ -22,44 +22,11 @@ portal_map* cur_portal_map = NULL;
     memcpy(live_sector_group_parameters, cur_portal_map->sector_group_params, num_bytes);
  }
 
-u16 *wall_tex_repetitions;
-
  void clean_sector_parameters() {
     free(live_sector_group_parameters, "live sector group params table");
     live_sector_group_parameters = NULL;
  }
 
-void clean_wall_tex_repetitions() {
-    free(wall_tex_repetitions, "texture repeat table");
-    wall_tex_repetitions = NULL;
-}
-void init_wall_tex_repetitions(portal_map* map) {
-    u16 num_walls = map->num_walls;
-    wall_tex_repetitions = malloc(sizeof(u16)*num_walls, "texture repeat table");
-    u16 num_sectors = map->num_sectors;
-
-    for(int sector = 0; sector < num_sectors; sector++) {
-        u16 wall_offset = sector_wall_offset(sector, map);
-        u16 sect_num_walls = sector_num_walls(sector, map);
-        u16 portal_offset = sector_portal_offset(sector, map);
-        for(int j = 0; j < sect_num_walls; j++) {
-            u16 wall_idx = wall_offset+j;
-            u16 portal_idx = portal_offset+j;
-
-            u16 v1_idx = cur_portal_map->walls[wall_idx];
-            u16 v2_idx = cur_portal_map->walls[wall_idx+1];
-
-            vertex v1 = cur_portal_map->vertexes[v1_idx];
-            vertex v2 = cur_portal_map->vertexes[v2_idx];
-            u16 repetitions = get_texture_repetitions(v1.x, v1.y, v2.x, v2.y);
-
-
-            wall_tex_repetitions[portal_idx] = repetitions;
-
-        }
-    }
-
-}
 
 
 Vect2D_f32 get_sector_center(int i) {
@@ -142,7 +109,6 @@ void init_objects() {
 
 void clean_portal_map() {
     clean_sector_parameters();
-    clean_wall_tex_repetitions();
 }
 
 #define MIN_ACTIVATE_DIST 40
@@ -238,7 +204,6 @@ void load_portal_map(portal_map* l) {
 
     init_sector_parameters(l);
 
-    init_wall_tex_repetitions(l);
     init_player_pos();    
    
     //if(cur_portal_map->palette != NULL) {

@@ -251,6 +251,7 @@ def export_map_to_rom(cur_path, cur_state, set_launch_flags=False, texture_index
             walls_ptr_offset = pointer_placeholder(f)
             portals_ptr_offset = pointer_placeholder(f)
             wall_colors_ptr_offset = pointer_placeholder(f)
+            wall_tex_repetitions_ptr_offset = pointer_placeholder(f)
             vertexes_ptr_offset = pointer_placeholder(f)
             collision_vertexes_ptr_offset = pointer_placeholder(f)
 
@@ -421,7 +422,7 @@ def export_map_to_rom(cur_path, cur_state, set_launch_flags=False, texture_index
                         tex_file_list.append(tex_file)
                         cur_tex_idx += 1
 
-
+            # wall colors/textures
             for sect in data.sectors:
                 for wall in sect.walls:
                     tex_idx = tex_file_to_idx_map[wall.texture_file]
@@ -433,7 +434,16 @@ def export_map_to_rom(cur_path, cur_state, set_launch_flags=False, texture_index
                         wall.mid_color
                     ))
             align(f)
-            
+
+            patch_pointer_to_current_offset(
+                f, wall_tex_repetitions_ptr_offset
+            )
+            # wall texture repetitions
+            for sect in data.sectors:
+                for wall in sect.walls:
+                    write_u8(f, wall.calc_texture_repetitions())
+
+            align(f)
             patch_pointer_to_current_offset(
                 f, vertexes_ptr_offset
             )

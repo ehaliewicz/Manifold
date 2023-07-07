@@ -5,8 +5,6 @@
 
 extern portal_map* cur_portal_map;
 
-extern u16 *wall_tex_repetitions;
-
 
 
 void load_portal_map(portal_map* l);

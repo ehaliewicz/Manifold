@@ -34,7 +34,7 @@ typedef struct {
     u32 right_u;   // 16.16
     s16 right_z;
     s32 du_over_dz;
-    u16 repetitions;
+    u8 repetitions;
     lit_texture* tex;
     u8 needs_texture;
 } texmap_params;

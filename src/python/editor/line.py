@@ -23,6 +23,25 @@ class Wall():
     def __str__(self):
         return "v1: {} v2: {}".format(self.v1.index, self.v2.index)
     
+
+    def calc_texture_repetitions(self):
+        # ingame_x1
+        ig_x1 = self.v1.x  * utils.ENGINE_X_SCALE
+        ig_y1 = self.v1.y * utils.ENGINE_Y_SCALE
+        ig_x2 = self.v2.x * utils.ENGINE_X_SCALE
+        ig_y2 = self.v2.y * utils.ENGINE_Y_SCALE
+
+        sqx = (ig_x2-ig_x1)**2
+        sqy = (ig_y2-ig_y1)**2
+
+        dist = math.sqrt(sqx+sqy)
+
+        TEX_REPEAT_DIST = 64
+        ireps = dist // TEX_REPEAT_DIST
+        ret = int(max([1, ireps]))
+        return ret
+
+    
     def rough_mid_point(self):
         v1 = self.v1
         v2 = self.v2
