@@ -836,9 +836,7 @@ void call_sprite_cache_for_wide_run(u16* jump_tgt, u8* cur_texel_ptr, u8* cur_co
 
 
 void draw_col(s16 ytop, s16 min_drawable_y, s16 max_drawable_y, 
-              s16 unclipped_dy, 
               column* col,
-              u32 texels_per_scaled_vpixel, u32 y_per_texels_fix, 
               u8* col_ptr, u32* scaled_run_lengths_lut,
               const u8 draw_wide
                ) {
@@ -956,14 +954,12 @@ void draw_rle_sprite(s16 x1, s16 x2, s16 ytop, s16 ybot,
 
 
     s16 endx = min(window_max, x2);
-    //u32 u_per_x = (1<<16)/dx;
     u32 u_fix = 0;
 
     if(endx < beginx) { return; }
 
     set_up_scale_routine(unclipped_dy);
-    // optimize with lookup table
-    u32 y_per_texels_fix = (unclipped_dy<<16)/ 64; // 16.16 fixed point
+
     
     
 
@@ -977,7 +973,6 @@ void draw_rle_sprite(s16 x1, s16 x2, s16 ytop, s16 ybot,
     u32 cols_per_scaled_hpixel = cols_per_scaled_hpixel_16 << 8; // 16.16
 
 
-    u32 texels_per_scaled_vpixel = scaled_sprite_texel_per_pixel_lut[unclipped_dy];
 
 
     if(skip_x > 0) {
@@ -1044,24 +1039,21 @@ void draw_rle_sprite(s16 x1, s16 x2, s16 ytop, s16 ybot,
                 draw_col(
                     ytop,
                     min_drawable_y, max_drawable_y, 
-                    unclipped_dy, col,
-                    texels_per_scaled_vpixel, y_per_texels_fix,
+                    col,
                     col_ptr, scaled_run_lengths_lut, 1
                 );
             } else {
                 draw_col(
                     ytop,
                     min_drawable_y, max_drawable_y, 
-                    unclipped_dy, col,
-                    texels_per_scaled_vpixel, y_per_texels_fix,
+                    col,
                     col_ptr, scaled_run_lengths_lut, 0
                 );
                 col = &obj->columns[end_u_int];
                 draw_col(
                     ytop,
                     min_drawable_y, max_drawable_y, 
-                    unclipped_dy, col,
-                    texels_per_scaled_vpixel, y_per_texels_fix,
+                    col,
                     col_ptr+1, scaled_run_lengths_lut, 0
                 );
             }
@@ -1070,114 +1062,10 @@ void draw_rle_sprite(s16 x1, s16 x2, s16 ytop, s16 ybot,
     }
 
     if(hit_center) {
-
         drawn_to_center_cols = type;
         sprite_on_center_col = obj_link;
         center_object_sector = sector;
     }
-    flip();
-
-    return; 
-}
-
-/* for drawing moving objects */
-void draw_masked(s16 x1, s16 x2, s16 ytop, s16 ybot,
-                 u16 window_min, u16 window_max,
-                 clip_buf* clipping_buffer,
-                 u8 wall_col) {
-
-    // 4 subpixel bits here
-    ybot>>=4;
-    ytop>>=4;
-    s16 unclipped_dy = ybot-ytop;
-    if(unclipped_dy == 0) { return ;}
-    s16 dx = x2-x1;
-    if(dx == 0) { return ;}
-
-
-    s16 beginx = max(x1, window_min);
-
-    s16 skip_x = beginx - x1;
-
-
-    s16 endx = min(window_max, x2);
-    u32 u_per_x = (1<<16)/dx;
-    u32 u_fix = 0;
-
-    if(skip_x > 0) {
-        u_fix += (skip_x * u_per_x);
-    }
-
-
-    s16 x = beginx;
-    u8* yclip_ptr = &(clipping_buffer->y_clip_buffer[x<<1]);
-
-    u16* offset_ptr = (&buf_column_offset_table[x]);
-
-    //u16* tex = raw_key_mid;
-    const u16* tex = raw_key_32_32_mid;
-    u32 y_per_texels_fix = (unclipped_dy<<16)/ 64; // 16.16 fixed point
-    
-    //s32 dv_per_y_f16 = (64<<16)/unclipped_dy;
-
-
-    for(;x < endx; x++) {    
-        u8 min_drawable_y = *yclip_ptr++;
-        u8 max_drawable_y = *yclip_ptr++;
-        //if(min_drawable_y >= max_drawable_y) { continue; }
-
-        u8 top_draw_y = min_drawable_y; 
-        u8 bot_draw_y = max_drawable_y; 
-
-        //u8* col_ptr = *offset_ptr++;
-        u8* col_ptr = GET_COLUMN_PTR(offset_ptr, bmp_buffer_write);
-        // TODO: information about whether this column was filled in front of the object 
-        // should be loaded from clip buffer
-        u8 col_drawn = is_column_drawn(min_drawable_y, max_drawable_y);
-        if(!col_drawn) {
-            u8 top_draw_y = clamp(ytop, min_drawable_y, max_drawable_y);
-            u8 bot_draw_y = clamp(ybot, min_drawable_y, max_drawable_y);
-            
-            u32 clipped_y_pix_top, clipped_y_pix_bot;
-            u8 skipped_texels;
-
-            clipped_y_pix_top = clipped_y_pix_bot = 0;
-
-            //clipped_y_pix_bot = 0;
-
-            //u8 skipped_bot_texels = 33;
-            //(y_per_texels_fix * skipped_bot_texels) >> 16;
-
-            // get texture column 
-            u32 tex_col = ((u_fix<<TEX_WIDTH_SHIFT)>>16); //TEX_WIDTH_SHIFT)>>16);
-            u32 tex_idx = tex_col<<TEX_HEIGHT_SHIFT; //TEX_HEIGHT_SHIFT;
-            const u16* tex_column = &tex[tex_idx+1];
-
-            // this sprite only has 28 columns of non-transparent pixels :)
-            
-            if(tex_col > 27) {
-                break;
-            } else if (tex_col < 4) {
-                skipped_texels = 8;
-                clipped_y_pix_top = ((y_per_texels_fix << 3)>>16)+1;
-            } else if (tex_col >= 24) {
-                skipped_texels = 28;
-                clipped_y_pix_top = ((y_per_texels_fix * skipped_texels)>>16)+1; 
-            }
-
-            //draw_bottom_clipped_texture_with_tex_chunk(
-            //    chk, 
-            //    ytop, top_draw_y, //+clipped_y_pix_top, 
-            //    ybot, bot_draw_y, 
-            //    col_ptr, tex_column);
-            //draw_bottom_clipped_texture_vertical_line(top_y_int, top_draw_y+clipped_y_pix_top, bot_y_int, bot_draw_y, col_ptr, tex_column);
-            draw_bottom_clipped_texture_vertical_line(ytop, top_draw_y+clipped_y_pix_top, ybot, bot_draw_y, col_ptr, tex_column);
-
-        }
-        u_fix += u_per_x;
-
-    }
-    
     flip();
 
     return; 
@@ -3472,7 +3360,7 @@ void draw_bot_pegged_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
     s16 x = beginx;
     u16 cnt = endx-x;
 
-    u16* offset_ptr = (&buf_column_offset_table[x]);
+    u16* offset_ptr = (u16*)(&buf_column_offset_table[x]);
 
     u8* yclip_ptr = &(yclip[(x<<1)]);
 

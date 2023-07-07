@@ -24,9 +24,6 @@ int within_sector(fix32 x, fix32 y, u16 sector) {
     u16 wall_off = sector_wall_offset(sector, (portal_map*)cur_portal_map);
     u16 num_walls = sector_num_walls(sector, (portal_map*)cur_portal_map);
 
-    int sign = 0;
-    int got_sign = 0;
-
 
     for(int i = 0; i < num_walls; i++) {
         u16 wall_idx = wall_off+i;
@@ -71,7 +68,7 @@ f32 sq_shortest_dist_to_point(fix32 px, fix32 py, vertex a, vertex b) {
 
     // px,py,fixAx,fixAy are 22.10
     // dx,dy,dr2 are 32.0
-    f32 one_over_dr2 = (1<<10)/dr2;
+    //f32 one_over_dr2 = (1<<10)/dr2;
 
     //fix32 lerp = ((px - fixAx) * dx + (py - fixAy) * dy) * one_over_dr2;
     fix32 lerp = ((px - fixAx) * dx + (py - fixAy) * dy) / dr2;
@@ -98,6 +95,7 @@ int within_sector_radius(fix32 x, fix32 y, fix32 z, s32 radius_sqr, u16 sector) 
     u16 cur_sector_group = sector_group(sector, map);
     s16 cur_ceil_height = get_sector_group_ceil_height(cur_sector_group);
     s16 cur_floor_height = get_sector_group_floor_height(cur_sector_group);
+    
     //s16 cur_player_z = (cur_player_pos.z - FIX32(50)) >> (FIX32_FRAC_BITS-4);
     u16 wall_off = sector_wall_offset(sector, map);
     u16 portal_off = sector_portal_offset(sector, map);
