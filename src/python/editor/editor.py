@@ -347,6 +347,8 @@ class State(object):
         self.cur_sector_group = None
         self.cur_sector_pvs = None
 
+        self.last_sector_inside = None
+
         self.camera_x = 0
         self.camera_y = 0
         self.zoom = 0
@@ -655,7 +657,13 @@ def vert_hovered(x,y):
             return vert
     return None
 
-def interpret_click(x,y,button):
+def thing_hovered(x,y):
+    for thing in cur_state.map_data.things:
+        if thing.point_collides(x, y):
+            return thing
+    return None
+
+def interpret_click(x,y,button, cur_hover_sector):
     #global cur_vertex, cur_wall, cur_mode
     ix = int(x)
     iy = int(y)
@@ -738,6 +746,34 @@ last_frame_x = None
 last_frame_y = None
 got_hold_last_frame = False
 got_drag_vert_frames = 0
+def find_cur_hovered_sector():
+    global cur_state
+    cur_x,cur_y = imgui.get_mouse_pos()
+    cur_cx = cur_state.camera_x+cur_x
+    cur_cy = cur_state.camera_y+cur_y
+
+    if cur_state.last_sector_inside is not None:
+        # check this sector again 
+        if cur_state.last_sector_inside.inside(cur_cx, cur_cy):
+            return cur_state.last_sector_inside
+
+        # otherwise check neighboring sectors
+        for wall in cur_state.last_sector_inside.walls:
+            if wall.adj_sector_idx == -1:
+                continue 
+
+            # check neighboring sectors
+            ts = cur_state.map_data.sectors[wall.adj_sector_idx]
+            if ts.inside(cur_cx, cur_cy):
+                cur_state.last_sector_inside = ts 
+                return ts 
+
+    for test_sector in cur_state.map_data.sectors:
+        if test_sector.inside(cur_cx, cur_cy):
+            cur_state.last_sector_inside = test_sector
+            return test_sector
+    
+    return None
 
 
 def on_frame():
@@ -895,6 +931,27 @@ def on_frame():
         cur_state.cur_vertex.x = cur_x+cur_state.camera_x
         cur_state.cur_vertex.y = cur_y+cur_state.camera_y
 
+    if True: #window_hovered:
+        #print_camera_coordinates()
+        cur_hov_sector = find_cur_hovered_sector()
+
+        imgui.push_style_var(imgui.STYLE_WINDOW_ROUNDING, 0.1)
+        imgui.core.set_next_window_position(4, io.display_size.y-64)
+        imgui.set_next_window_size(200,60)
+        imgui.begin("", False,
+                    imgui.WINDOW_NO_MOVE | imgui.WINDOW_NO_COLLAPSE | 
+                    imgui.WINDOW_NO_INPUTS | imgui.WINDOW_NO_TITLE_BAR |
+                    imgui.WINDOW_NO_SCROLLBAR)
+        imgui.text_ansi("Sect: {}".format(cur_hov_sector))
+        imgui.text_ansi("Group: {}".format(
+            cur_state.map_data.sector_groups[cur_hov_sector.sector_group_idx].name if cur_hov_sector else "None"))
+
+        icx = int(cur_x+cur_state.camera_x)
+        icy = int(cur_y+cur_state.camera_y)
+        if window_hovered:
+            imgui.text_ansi("{},{}".format(icx, icy))
+        imgui.end()
+        imgui.pop_style_var(1)
 
 
     hover_vert = vert_hovered(cur_x+cur_state.camera_x, cur_y+cur_state.camera_y)
