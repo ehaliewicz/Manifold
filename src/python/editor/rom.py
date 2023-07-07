@@ -728,9 +728,10 @@ def export_map_to_rom(cur_path, cur_state, set_launch_flags=False, texture_index
                 # let's go with OBJECT rather than DECORATION
                 write_u8(f, 0)
                 sz += 1
-                assert len(thing_def.name) <= 32, "thing def name is too long!"
+                assert len(thing_def.name) < 32, "thing def name is too long!"
                 for c in thing_def.name:
                     f.write(str.encode(c))
+                write_u8(f, 0) # null terminate this string
                 sz += 32
                 assert sz == 47, "{} is not the right size lol".format(sz)
                 f.seek(struct_start + 47) # skip past this struct 
@@ -740,8 +741,8 @@ def export_map_to_rom(cur_path, cur_state, set_launch_flags=False, texture_index
             patch_pointer_to_current_offset(f, thing_ptr_offset)
             for thing in cur_state.map_data.things:
                 write_u16(f, thing.sector_num)
-                write_s16(f, int(thing.x*1.3))
-                write_s16(f, int((-thing.y)*1.3))
+                write_s16(f, int(thing.x * utils.ENGINE_X_SCALE))
+                write_s16(f, int(thing.y * utils.ENGINE_Y_SCALE))
                 write_s16(f, thing.z)
                 write_u8(f, thing.object_type)
 
