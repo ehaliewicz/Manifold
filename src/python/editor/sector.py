@@ -2,11 +2,13 @@ import imgui
 import undo
 from utils import draw_list, ENGINE_X_SCALE, ENGINE_Y_SCALE
 import sector_group
+import shapely.geometry
 
 
 class Sector():
     def __init__(self, index, walls=None, sect_group_index=0):
         self.sector_group_idx = sect_group_index
+
 
         self.is_convex_memo = False
         self.convex_calculated = None
@@ -28,9 +30,23 @@ class Sector():
 
         for i in range(min_x, max_x+1):
             for ang in range(0,1024):
-                
-
                 pass
+
+    def inside(self,x,y):
+        verts = []
+        if len(self.walls) < 3:
+            return False 
+        
+        for i, wall in enumerate(self.walls):
+            if i == 0:
+                verts.append((wall.v1.x,wall.v1.y))
+            verts.append((wall.v2.x,wall.v2.y))
+
+        ls = shapely.geometry.LineString(verts)
+        point = shapely.geometry.Point(x,y)
+        polygon = shapely.geometry.Polygon(ls)
+
+        return polygon.contains(point)
 
     def __str__(self):
         return "Sector {}: Group: {}".format(self.index, self.sector_group_idx) #"F: {} C: {}".format(self.floor_height, self.ceil_height)
