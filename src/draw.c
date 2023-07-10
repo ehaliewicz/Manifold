@@ -2147,6 +2147,18 @@ void calculate_light_levels_for_wall(u32 clipped_dx, s16 inv_z1, s16 inv_z2, s16
     
 }
 
+inline u16* get_tex_column(const u16* light_tex, const u16* dark_tex, const u16 tex_idx, const u16 one_over_z_16, const s8 light_level) {
+    #ifndef WALLS_DIST_LIGHTING
+        return &light_tex[tex_idx];
+    #else 
+        if (light_level == -2 || one_over_z_16 <= FIX_0_16_INV_DARK_DIST) {
+            return &dark_tex[tex_idx];
+        } else {
+            return &light_tex[tex_idx];
+        }
+    #endif
+}
+
 
 void draw_upper_step(s16 x1, s16 x1_ytop, s16 nx1_ytop, s16 x2, s16 x2_ytop, s16 nx2_ytop, 
                      u16 inv_z1, u16 inv_z2,
@@ -2527,11 +2539,6 @@ void draw_lower_step(s16 x1, s16 x1_ybot, s16 nx1_ybot, s16 x2, s16 x2_ybot, s16
 
     s16 dx = x2-x1;
 
-    //fix32 bot_dy_per_dx = (bot_dy_fix<<12) / dx;
-    //fix32 nbot_dy_per_dx = (nbot_dy_fix<<12) / dx;
-    //u16 dx_recip_16 = z_recip_table_16[dx];  
-    //fix32 bot_dy_per_dx = muls_16_by_16(bot_dy_fix, dx_recip_16)>>4;
-    //fix32 nbot_dy_per_dx = muls_16_by_16(nbot_dy_fix, dx_recip_16)>>4;
     fix16 bot_dy_per_dx_8 = divs_32_by_16((bot_dy_fix<<4), dx);
     fix16 nbot_dy_per_dx_8 = divs_32_by_16(nbot_dy_fix<<4, dx);
     fix32 bot_dy_per_dx = bot_dy_per_dx_8<<8;
@@ -2918,18 +2925,6 @@ void draw_solid_color_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
     return; 
 }
 
-inline u16* get_tex_column(const u16* light_tex, const u16* dark_tex, const u16 tex_idx, const u16 one_over_z_16, const s8 light_level) {
-    #ifndef WALLS_DIST_LIGHTING
-        return &light_tex[tex_idx];
-    #else 
-        if (light_level == -2 || one_over_z_16 <= FIX_0_16_INV_DARK_DIST) {
-            return &dark_tex[tex_idx];
-        } else {
-            return &light_tex[tex_idx];
-        }
-    #endif
-}
-
 void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
               s16 x2, s16 x2_ytop, s16 x2_ybot,
               u16 z1_12_4,     u16 z2_12_4,
@@ -2941,6 +2936,13 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
 
 
     // 4 subpixel bits here
+
+    s16 beginx = max(x1, window_min);
+    s16 endx = min(window_max, x2);
+    if(beginx >= endx) { return; }
+    s16 skip_x = beginx - x1;
+    
+    
     s16 top_dy_fix, bot_dy_fix;
     fix32 top_y_fix, bot_y_fix;
     top_dy_fix = x2_ytop - x1_ytop;
@@ -2952,10 +2954,6 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
     fix32 top_dy_per_dx = (top_dy_fix<<12) / dx; // 16.16 / 16 -> 16.16 
     fix32 bot_dy_per_dx = (bot_dy_fix<<12) / dx;
     
-    //fix16 top_dy_per_dx_8 = divs_32_by_16((top_dy_fix), dx);
-    //fix16 bot_dy_per_dx_8 = divs_32_by_16(bot_dy_fix, dx);
-    //fix32 top_dy_per_dx = top_dy_per_dx_8<<8;
-    //fix32 bot_dy_per_dx = bot_dy_per_dx_8<<8; 
     
     s16 top_y_int;
     s16 bot_y_int;
@@ -2971,11 +2969,6 @@ void draw_wall(s16 x1, s16 x1_ytop, s16 x1_ybot,
 
     //s32 cur_fix_inv_z = inv_z1;
 
-    s16 beginx = max(x1, window_min);
-    s16 endx = min(window_max, x2);
-    s16 skip_x = beginx - x1;
-
-    if(beginx >= endx) { return; }
 
     if(skip_x > 0) {
         //top_y_fix += muls_16_by_16(skip_x, top_dy_per_dx_8)<<8;
