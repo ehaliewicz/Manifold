@@ -743,7 +743,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
                 //z_buf[buf_idx] = &obj_buf[buf_idx];
                 u8 obj_type = OBJ_LINK_DEREF(cur_obj).object_type;
                 volatile object_template* type = &object_types[obj_type];
-                u16 floor_draw_offset = type->from_floor_draw_offset;
+                u16 floor_draw_offset = type->from_anchor_draw_offset;
                 u16 height = type->height;
 
                 s16 ytop = project_and_adjust_y_fix(obj_z+floor_draw_offset+height, z_recip);
@@ -783,7 +783,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
                 //z_buf[buf_idx] = &obj_buf[buf_idx];
                 u8 obj_type = DEC_LINK_DEREF(cur_dec).object_type;
                 volatile object_template* type = &object_types[obj_type];
-                u16 floor_draw_offset = type->from_floor_draw_offset;
+                u16 floor_draw_offset = type->from_anchor_draw_offset;
                 u16 height = type->height;
 
                 s16 ytop = project_and_adjust_y_fix(obj_z+floor_draw_offset+height, z_recip);
@@ -859,6 +859,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
 }
 
 
+/*
 void pvs_scan(u16 src_sector, s16 window_min, s16 window_max, u32 cur_frame) {
     portal_map* map = cur_portal_map;
     u16 raw_pvs_offset = map->pvs[src_sector<<PVS_SHIFT];
@@ -871,16 +872,16 @@ void pvs_scan(u16 src_sector, s16 window_min, s16 window_max, u32 cur_frame) {
         u16 sector = map->raw_pvs[raw_pvs_offset++];
         u16 sect_group = sector_group(sector, map);
         
-        /*
-        if(enemies_in_sect(sector) && !rendered_wall_in_sector(sector, cur_frame)) {
-            set_rendered_wall_in_sector(sector, cur_frame);
-            if(has_clip_buffer_remaining()) {
-                clip_buf* buf = pop_free_clip_buf();
-                copy_clipping_state_to_buffer(buf);
-                push_used_clip_buf(buf);
-            }
-        }
-        */
+        
+        //if(enemies_in_sect(sector) && !rendered_wall_in_sector(sector, cur_frame)) {
+        //    set_rendered_wall_in_sector(sector, cur_frame);
+        //    if(has_clip_buffer_remaining()) {
+        //        clip_buf* buf = pop_free_clip_buf();
+        //        copy_clipping_state_to_buffer(buf);
+        //        push_used_clip_buf(buf);
+        //    }
+        //}
+        
         
 
         s8 light_level = get_sector_group_light_level(sect_group);
@@ -1108,7 +1109,7 @@ void pvs_scan(u16 src_sector, s16 window_min, s16 window_max, u32 cur_frame) {
     }
 }
 
-
+*/
 
 void portal_rend(u16 src_sector, u32 cur_frame) {
     #ifdef DEBUG_PORTAL_CLIP
@@ -1129,8 +1130,8 @@ void portal_rend(u16 src_sector, u32 cur_frame) {
     sectors_scanned = 0;
     //clear_light_cache();
 
-    if(cur_portal_map->has_pvs) {
-        pvs_scan(src_sector, 0, RENDER_WIDTH, cur_frame);
+    if(0) { //cur_portal_map->has_pvs) {
+        //pvs_scan(src_sector, 0, RENDER_WIDTH, cur_frame);
     } else {
         //KLog_U1("pvs offsets: ", cur_portal_map->pvs_offsets);
         //if(cur_portal_map->pvs_offsets == NULL) {

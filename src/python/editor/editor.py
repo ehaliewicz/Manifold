@@ -2,6 +2,7 @@ import math
 import os 
 import sys
 import time
+import typing
 
 print(os.getcwd())
 print(sys.executable)
@@ -28,7 +29,6 @@ import imgui
 from imgui.integrations.sdl2 import SDL2Renderer
 
 import OpenGL.GL as gl
-from enum import Enum
 
 import tkinter as tk
 from tkinter import filedialog,messagebox
@@ -40,6 +40,7 @@ import pickle
 import defaults
 import levels
 import line
+from modes import Mode
 import music
 import palette
 import pvs
@@ -47,6 +48,8 @@ import rom
 import script
 import sector
 import sector_group
+from state import State
+from map import Map
 import things
 import trigger
 import tree
@@ -54,195 +57,8 @@ import undo
 import utils
 import vertex
 
-import configparser
 
 # commands
-
-class Mode(Enum):
-    SECTOR = 'Sector'
-    SECTOR_GROUP = 'Sector Groups'
-    LINE = 'Line'
-    VERTEX = 'Vertex'
-    SCRIPT = 'Script'
-    TRIGGER = 'Trigger'
-    TEXTURE = 'Texture'
-    TREE = 'Tree'
-    PVS = 'PVS'
-    MUSIC = 'Music'
-    PALETTE = 'Palette'
-    DEFAULTS = 'Defaults'
-    THING_DEFS = 'Thing Defs'
-    THINGS = 'Things'
-
-
-class Map():
-    def __init__(self, 
-    default_sprite,
-    name="placeholder name", 
-    sectors=None, 
-    vertexes=None,
-    music_path=""):
-        self.bsp = False
-        if not sectors:
-            self.sectors = []
-        else:
-            self.sectors = sectors
-        #self.walls = []
-
-        if not vertexes:
-            self.vertexes = []
-        else:
-            self.vertexes = vertexes
-
-        self.name = name
-        self.music_path = music_path
-        self.palette = palette.DEFAULT_PALETTE
-        self.thing_defs = [things.ThingDef(default_sprite) for i in range(31)]
-        self.things = []
-        self.sector_groups = []
-
-    def generate_c_from_map(self):
-        num_sectors = len(self.sectors)
-        num_vertexes = len(self.vertexes)
-        num_walls = sum(len(sect.walls) for sect in self.sectors)
-
-        NUM_SECTOR_ATTRIBUTES = 7
-
-        res = """#include <genesis.h>
-#include "colors.h"
-#include "portal_map.h"
-#include "vertex.h"
-
-"""
-        
-                
-        res += "static const s16 sectors[{}*SECTOR_SIZE] = ".format(num_sectors) + "{\n"
-
-        wall_offset = 0
-        portal_offset = 0
-        for sect in self.sectors:
-            sect_num_walls = len(sect.walls)
-            res += "    {}, {}, {}, {},\n".format(
-                wall_offset, portal_offset, 
-                sect_num_walls, sect.index)
-            
-            if len(sect.walls) == 0:
-                continue
-            wall_offset += sect_num_walls+1
-            portal_offset += sect_num_walls
-            
-        res += "};\n\n"
-
-
-        # TODO: implement sector groups w/ all of these flags
-        res += "static const s16 sector_group_params[{}*NUM_SECTOR_PARAMS] = ".format(num_sectors) + "{\n"
-        for sect in self.sectors:
-            # light_level, orig_height, ticks_left, state,
-            # floor_height, ceil_height, floor_color, ceil_color
-            res += "{},{},{},{},{}<<4,{}<<4,{},{},\n".format(
-                0, 0, 0, 0, sect.floor_height, sect.ceil_height, sect.floor_color, sect.ceil_color
-            )
-        res += "};\n\n"
-
-        res += "static const s16 sector_group_triggers[{}*8] = ".format(num_sectors) + "{\n"
-        for sect in self.sectors:
-            res += "0,0,0,0,0,0,0,0,\n"
-        res += "};\n\n"
-
-        res += "static const u8 sector_group_types[{}] = ".format(num_sectors) + "{\n"
-        for sect in self.sectors:
-            res += "NO_TYPE,\n"
-        res += "};\n\n"
-            
-        
-
-        # we can have up to 65536 vertexes
-        res += "static const u16 walls[{}]".format(num_walls+num_sectors) + " = {\n"
-        for sect in self.sectors:
-            prev_v2 = None
-            if len(sect.walls) == 0:
-                res += "// sector {} is empty\n".format(sect.index)
-                continue
-            first_v1 = sect.walls[0].v1
-            res += "    "
-            for wall in sect.walls:
-                if prev_v2 is not None:
-                    assert prev_v2 == wall.v1
-
-                res += "{}, ".format(wall.v1.index)
-
-                prev_v2 = wall.v2
-
-            res += "{}, \n".format(first_v1.index)
-
-        res += "};\n"
-
-        res += "static const s16 portals[{}] =".format(num_walls) + "{\n"
-        for sect in self.sectors:
-            res += "    "
-            for wall in sect.walls:
-                res += "{}, ".format(wall.adj_sector_idx)
-                
-            res += "\n"
-        res += "};\n\n"
-
-
-        res += "static const u8 wall_normal_quadrants[{}] =".format(num_walls) + "{\n"
-        for sect in self.sectors:
-            for wall in sect.walls:
-                res += "    {},\n".format(wall.normal_quadrant())
-        res += "};\n\n"
-        
-
-        res += "static const u8 wall_colors[{}*4] =".format(num_walls) + "{\n"
-        for sect in self.sectors:
-            if sect.index == 19:
-                ## TODO: wtf why?
-                ## was this some empty sector issue with a test map?
-                pass
-            for wall in sect.walls:
-                res += "{}, {}, {}, {},\n".format(
-                    wall.texture_idx, 
-                    wall.up_color, 
-                    wall.low_color, 
-                    wall.mid_color
-                    #randrange(3, 12)
-                    )
-                    
-        res += "};\n\n"
-
-        # !!!! this defines the scale of the map. 
-        # it should be settable within the editor itself
-        # as it generally needs to be tweaked for every map
-        res += "#define VERT(x1,y1) { .x = (x1 * 1.3), .y = ((-y1) * 1.3) } \n"
-        
-        res += "static const vertex vertexes[{}]".format(num_vertexes) + " = {\n"
-        for vert in self.vertexes:
-            res += "    VERT({},{}),\n".format(vert.x, vert.y)
-        res += "};\n"
-
-
-        
-        
-        res += "const portal_map {} ".format(self.name.replace(" ", "_")) + " = {\n"
-        res += "    .num_sectors = {},\n".format(num_sectors)
-        res += "    .num_sector_groups = {},\n".format(num_sectors)
-        res += "    .num_walls = {},\n".format(num_walls)
-        res += "    .num_verts = {},\n".format(num_vertexes)
-        res += "    .sectors = sectors,\n"
-        res += "    .sector_group_types = sector_group_types,\n"
-        res += "    .sector_group_params = sector_group_params,\n"
-        res += "    .sector_group_triggers = sector_group_triggers,\n"
-        res += "    .walls = walls,\n"
-        res += "    .portals = portals,\n"
-        res += "    .vertexes = vertexes,\n"
-        res += "    .wall_colors = wall_colors,\n"
-        res += "    .wall_norm_quadrants = wall_normal_quadrants,\n"
-        res += "    .has_pvs = 0\n"
-        res += "};"
-                
-        
-        return res
 
 
 
@@ -347,68 +163,15 @@ def main_sdl2():
     SDL_Quit()
 
 
+cur_state: State 
 
-class State(object):
-    def __init__(self):
-        self.mode = Mode.SECTOR
-        self.cur_sector = None
-        self.cur_wall = None
-        self.cur_vertex = None
-        self.cur_thing = None
-        self.cur_sector_group = None
-        self.cur_sector_pvs = None
-
-        self.last_sector_inside = None
-
-        self.camera_x = 0
-        self.camera_y = 0
-        self.zoom = 0
-        
-
-        self.emulator_path = ""
-        self.xgmtool_path = ""
-        self.textures_path = "textures/"
-        self.music_tracks_path = "music/"
-        self.sprites_path = "sprites/"
-
-        self.load_config()
-        tex_files = utils.get_texture_files(self)
-        sprite_files = utils.get_sprite_files(self)
-
-        self.hovered_item = None
-
-        self.default_up_color = 3
-        self.default_low_color = 3
-        self.default_mid_color = 0
-        self.default_floor_color = 4
-        self.default_ceil_color = 5
-        self.default_texture_file = tex_files[0]
-        self.default_sprite_file = sprite_files[0]
-        self.default_thing_type = 0
-
-        self.map_data = Map(self.default_sprite_file)
-
-    def load_config(self):
-        conf_file_path = os.path.join(cur_path, "conf.ini")
-        conf_exists = os.path.exists(conf_file_path)
-        if not conf_exists:
-            print("No configuration file, using defaults!")
-            return 
-        config = configparser.ConfigParser()
-        config.read(conf_file_path)
-        self.emulator_path = config.get("Default Settings", "emulator-path")
-        self.xgmtool_path = config.get("Default Settings", "xgmtool-path")
-        self.textures_path = config.get("Default Settings", "textures-path")
-        self.sprites_path = config.get("Default Settings", "sprites-path")
-        self.music_tracks_path = config.get("Default Settings", "music-tracks-path")
-        self.megalink_path = config.get("Default Settings", "megalink-path")
 
 def reset_state():
     global cur_state, last_saved_map_file
     rom.reset_last_exported_rom_file()
 
     last_saved_map_file = None
-    cur_state = State()
+    cur_state = State(cur_path)
     
 
 def add_new_wall(v1, v2):
@@ -1075,7 +838,22 @@ def old_sectors_to_new_sector_groups(sectors):
                 #floor_height=s.floor_height, ceil_height=s.ceil_height,
                 #floor_color=s.floor_color, ceil_color=s.ceil_color) for s in sectors]
         
+def old_thing_defs_to_new_things_defs(old_things):
+    res = []
+    for old_thing in old_things:
+        anchor_draw_offset = old_thing.floor_draw_offset if hasattr(old_thing, 'floor_draw_offset') else old_thing.anchor_draw_offset
+        anchor_top = old_thing.anchor_top if hasattr(old_thing, 'anchor_top') else False
+        anchor_bottom = old_thing.anchor_bottom if hasattr(old_thing, 'anchor_bottom') else True
+        res.append(things.ThingDef(
+            sprite_file=old_thing.sprite_file, name=old_thing.name,
+            width=old_thing.width, height=old_thing.height, 
+            anchor_draw_offset=anchor_draw_offset, init_state=old_thing.init_state, speed=old_thing.speed,
+            anchor_top=anchor_top, anchor_bottom=anchor_bottom,
+        ))
+    return res              
         
+#State = state.State
+#Map = map.Map
 def load_map_from_file(f):
     global cur_state
     reset_state()
@@ -1100,7 +878,7 @@ def load_map_from_file(f):
         new_map.palette = old_map.palette
 
     if hasattr(old_map, 'thing_defs'):
-        new_map.thing_defs = old_map.thing_defs
+        new_map.thing_defs = old_thing_defs_to_new_things_defs(old_map.thing_defs)
 
     if hasattr(old_map, "things"):
         new_map.things = old_map.things

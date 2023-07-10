@@ -3,15 +3,21 @@ import imgui
 import utils 
 import undo
 
+
+KEY_TYPES = ['None', 'Blue key', 'Green key', 'Red key']
+
 class ThingDef(object):
-    def __init__(self, default_spr): 
-        self.name = ""
-        self.sprite_file = default_spr
-        self.width = 64
-        self.height = 64
-        self.floor_draw_offset = 0
-        self.init_state = 0
-        self.speed = 3
+    def __init__(self, sprite_file, name="", width=64, height=64, anchor_draw_offset=0, init_state=0, speed=3, anchor_top = False, anchor_bottom = True, key_type = 0): 
+        self.name = name
+        self.sprite_file = sprite_file
+        self.width = width
+        self.height = height
+        self.anchor_draw_offset = anchor_draw_offset
+        self.init_state = init_state
+        self.speed = speed
+        self.anchor_top = anchor_top
+        self.anchor_bottom = anchor_bottom
+        self.key_type = key_type
 #def draw_things_mode(cur_state):
 #    for i in range(cur_state.map_data.things):
 
@@ -60,10 +66,19 @@ def draw_thing_defs_mode(cur_state):
         width_changed, new_width = imgui.input_int("width:##obj_{}_width".format(idx), thing_defs[idx].width)
         height_changed, new_height = imgui.input_int("height:##obj_{}_height".format(idx), thing_defs[idx].height)
         speed_changed, new_speed = imgui.input_int("speed:##obj_{}_speed".format(idx), thing_defs[idx].speed)
-        floor_draw_off_changed, new_floor_draw_offset = imgui.input_int("floor draw offset:##obj_floor_draw_off{}".format(idx), thing_defs[idx].floor_draw_offset)
+        anchor_draw_off_changed, new_anchor_draw_offset = imgui.input_int("anchor draw offset:##obj_floor_draw_off{}".format(idx), thing_defs[idx].anchor_draw_offset)
 
-        state_options = ["idle","look for player", "follow player", "maybe get picked up"]
-        init_state_changed, new_init_state = imgui.core.combo("init_state:##obj_{}_init_state".format(idx), thing_def.init_state, state_options)
+        #state_options = ["idle","look for player", "follow player", "maybe get picked up"]
+        state_options = ["static","look for player", "follow player", "maybe get picked up"]
+
+        init_state_changed, new_init_state = imgui.core.combo("init state:##obj_{}_init_state".format(idx), thing_def.init_state, state_options)
+
+        key_type_changed, new_key_type = imgui.core.combo("key type:##obj_{}_key_type".format(idx), thing_def.key_type, KEY_TYPES)
+        
+        anchor_top_changed, new_anchor_top = imgui.core.checkbox("anchor top##obj_{}_anchor_top".format(idx), thing_def.anchor_top)
+        imgui.same_line()
+        anchor_bot_changed, new_anchor_bot = imgui.core.checkbox("anchor bottom##obj_{}_anchor_bot".format(idx), thing_def.anchor_bottom)
+
 
         if name_changed:
             undo.push_state(cur_state)
@@ -81,13 +96,22 @@ def draw_thing_defs_mode(cur_state):
             undo.push_state(cur_state)
             thing_defs[idx].speed = new_speed
 
-        if floor_draw_off_changed:
+        if anchor_draw_off_changed:
             undo.push_state(cur_state)
-            thing_defs[idx].floor_draw_offset = new_floor_draw_offset
+            thing_defs[idx].anchor_draw_offset = new_anchor_draw_offset
 
         if init_state_changed:
             undo.push_state(cur_state)
             thing_defs[idx].init_state = new_init_state
+
+        if anchor_top_changed:
+            thing_defs[idx].anchor_top = new_anchor_top
+
+        if anchor_bot_changed:
+            thing_defs[idx].anchor_bottom = new_anchor_bot
+
+        if key_type_changed:
+            thing_defs[idx].key_type = new_key_type
 
         imgui.dummy(0, 10)
     

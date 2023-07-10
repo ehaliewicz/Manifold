@@ -31,7 +31,7 @@ typedef enum {
 
 typedef struct  __attribute__((__packed__)) {
     rle_sprite* sprite;
-    uint16_t from_floor_draw_offset;
+    uint16_t from_anchor_draw_offset;
     uint16_t width;
     uint16_t height;
     uint8_t init_state;

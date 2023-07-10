@@ -8,6 +8,7 @@ import palette
 import pvs
 import sector_group
 import sprite_utils
+import state
 import texture_utils
 import utils
 
@@ -133,7 +134,7 @@ def err(msg):
     )
     return
 
-def export_map_to_rom(cur_path, cur_state, set_launch_flags=False, texture_indexes=None, music_indexes=None):
+def export_map_to_rom(cur_path, cur_state: state.State, set_launch_flags=False, texture_indexes=None, music_indexes=None):
     global last_exported_rom_file
     if last_exported_rom_file is None:
         f = filedialog.asksaveasfile(mode="r")
@@ -722,7 +723,7 @@ def export_map_to_rom(cur_path, cur_state, set_launch_flags=False, texture_index
                 sz = 0
                 write_u32(f, sprite_to_wad_offset_map[thing_def.sprite_file])
                 sz += 4
-                write_u16(f, thing_def.floor_draw_offset*16)
+                write_u16(f, thing_def.anchor_draw_offset*16)
                 sz += 2
                 write_u16(f, thing_def.width)
                 sz += 2
@@ -732,18 +733,27 @@ def export_map_to_rom(cur_path, cur_state, set_launch_flags=False, texture_index
                 sz += 1
                 write_u16(f, thing_def.speed)
                 sz += 2
+
                 write_u8(f, 0) # not player :^)
                 sz += 1
+
                 # type of object 
                 # let's go with OBJECT rather than DECORATION
                 write_u8(f, 0)
                 sz += 1
+
+                # anchor top or bottom
+                assert thing_def.anchor_top or thing_def.anchor_bottom, "Thing must be anchored to top or bottom"
+                write_u8(f, thing_def.anchor_top)
+                write_u8(f, thing_def.anchor_bottom)
+                sz += 2
+
                 assert len(thing_def.name) < 32, "thing def name is too long!"
                 for c in thing_def.name:
                     f.write(str.encode(c))
                 write_u8(f, 0) # null terminate this string
                 sz += 32
-                assert sz == 47, "{} is not the right size lol".format(sz)
+                assert sz == 49, "{} is not the right size lol".format(sz)
                 f.seek(struct_start + 47) # skip past this struct 
 
             f.seek(prev_wad_ptr)
