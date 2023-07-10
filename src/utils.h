@@ -13,6 +13,37 @@
 //s32 muls_16_by_16(u16 a, u16 b);
 u16 sub_16_16(u16 a, u16 b);
 
+
+#define FETCH_INC_BYTE(var, ptr) do {\
+    __asm volatile(                 \
+        "move.b (%1)+, %0"          \
+        : "=d" (var), "+a" (ptr)    \
+    );                              \
+} while(0);
+
+#define FETCH_INC_WORD(var, ptr) do {\
+    __asm volatile(                 \
+        "move.w (%1)+, %0"          \
+        : "=d" (var), "+a" (ptr)    \
+    );                              \
+} while(0);
+
+#define WRITE_WORD_INC(var, ptr) do {\
+    __asm volatile(                 \
+        "move.w %1, (%0)+"          \
+        : "+a" (ptr)                \
+        : "d" (var)                 \
+    );                              \
+} while(0);
+
+#define WRITE_BYTE_INC(var, ptr) do {\
+    __asm volatile(                 \
+        "move.b %1, (%0)+"          \
+        : "+a" (ptr)                \
+        : "d" (var)                 \
+    );                              \
+} while(0);
+
 inline u16 divu_32_by_16(u32 num, u16 denom) {
      __asm volatile(
         "divu.w %1, %0"

@@ -774,8 +774,12 @@ game_mode run_game() {
     //if(init_load_level == OVERLAPPING_ROOMS) {
     //    update_wall_vertex();
     //}
-    draw_3d_view(cur_frame);
+    
+    //KLog_F2("px: ", cur_player_pos.x, " py: ", cur_player_pos.y);
+    //KLog_U1("ang: ", cur_player_pos.ang);
+    //KLog_U1("sp: ", cur_player_pos.cur_sector);
 
+    draw_3d_view(cur_frame);
     //SPR_update();
     u32 end_ticks = getTick();
     last_frame_ticks = end_ticks - start_ticks;

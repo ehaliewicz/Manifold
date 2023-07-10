@@ -350,6 +350,8 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
         #endif 
             //inc_counter(NEAR_Z_CULL_COUNTER);
             if(sector == src_sector && is_portal) {
+                s16 orig_z1 = trans_v1.y;
+                s16 orig_z2 = trans_v2.y;
                 #ifdef DEBUG_PORTAL_CLIP
                 if(is_portal) {
                     portals_frustum_culled++;
@@ -358,31 +360,41 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
                 }
                 #endif
                 
-                if(trans_v1.y < 0 && trans_v2.y < 0) {  
+                if(orig_z1 < 0 && orig_z2 < 0) {  
                 #ifdef DEBUG_PORTAL_CLIP
-                    KLog("both verts are near clipped skipping this");
+                    KLog("both verts are behind skipping this");
                 #endif
                     continue;
                 }
+
+                s16 x1, x2;
                 if(trans_v1.y < NEAR_Z_FIX) { 
                 #ifdef DEBUG_PORTAL_CLIP
                     KLog("left vert is near z clipped, setting it to near z plane");
                 #endif
-                    trans_v1.y = (1<<2)<<TRANS_Z_FRAC_BITS; z_recip_v1 = 65535;
+                    //trans_v1.y = (1<<2)<<TRANS_Z_FRAC_BITS; z_recip_v1 = 65535;
+                    trans_v1.y = NEAR_Z_FIX; z_recip_v1 = 65535;
                 }
+
+                x1 = project_and_adjust_x(trans_v1.x, z_recip_v1);
+
+
                 if(trans_v2.y < NEAR_Z_FIX) { 
                 #ifdef DEBUG_PORTAL_CLIP
                     KLog("right vert is near z clipped, setting it to near z plane");
                 #endif
-                    trans_v2.y = (1<<2)<<TRANS_Z_FRAC_BITS; z_recip_v2 = 65535;
-                 }
+                    //trans_v2.y = (1<<2)<<TRANS_Z_FRAC_BITS; z_recip_v2 = 65535;
+                    trans_v2.y = NEAR_Z_FIX; z_recip_v2 = 65535;
+                }
+
+                x2 = project_and_adjust_x(trans_v2.x, z_recip_v2);
+
                 //if(trans_v1.y < NEAR_Z_FIX) { trans_v1.y =  NEAR_Z_FIX; z_recip_v1 = 65535; }
                 //if(trans_v2.y < NEAR_Z_FIX) { trans_v2.y = NEAR_Z_FIX; z_recip_v2 = 65535; }
                 
                 //s16 x1 = (clipped & LEFT_FRUSTUM_CLIPPED) ? 0 : project_and_adjust_x(trans_v1.x, z_recip_v1);
                 //s16 x2 = (clipped & RIGHT_FRUSTUM_CLIPPED) ? RENDER_WIDTH : project_and_adjust_x(trans_v2.x, z_recip_v2);
-                s16 x1 = project_and_adjust_x(trans_v1.x, z_recip_v1);
-                s16 x2 = project_and_adjust_x(trans_v2.x, z_recip_v2);
+
 
 
                 if(x1 > window_max) {
@@ -410,11 +422,18 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
                     }
                 }
                 if(x1 >= x2) { 
-                    #ifdef DEBUG_PORTAL_CLIP
-                    post_project_backfacing_walls++;
-                    KLog_S2("portal backface culled after near clip?: ", portal_idx, " to sect ", portal_sector);
-                    #endif
-                    continue;
+                    //if(trans)
+                    if(orig_z1 > 0 && orig_z2 > 0) {
+                        //x1 = window_min;
+                        //x2 = window_max;
+                    } else {
+                        #ifdef DEBUG_PORTAL_CLIP
+                        post_project_backfacing_walls++;
+                        KLog_S2("portal backface culled after near clip?: ", portal_idx, " to sect ", portal_sector);
+                        KLog_U2("x1: ", x1, " x2: ", x2);
+                        #endif
+                        continue;
+                    }
                 }
                 u16 portal_sect_group = sector_group(portal_sector, map);
                 neighbor_floor_height = get_sector_group_floor_height(portal_sect_group);
@@ -456,15 +475,50 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
         }
 
         if(x1 >= x2) {
+            //if(trans_v1_z_fix > 0 || trans_v2_z_fix > 0) {}
+            
             #ifdef DEBUG_PORTAL_CLIP
+            KLog_U2("backfacing? x1: ", x1, " x2: ", x2);
+            KLog_F2("z1: ", trans_v1_z_fix<<(FIX32_FRAC_BITS-4), " z2: ", trans_v2_z_fix<<(FIX32_FRAC_BITS-4));
             if(is_portal) {
-                KLog_S2("portal backface culled without being clipped: ", portal_idx, " to sect ", portal_sector);
+                KLog_S2("portal backface culled without being clipped?: ", portal_idx, " to sect ", portal_sector);
             } else {
                 KLog_S1("wall backface culled without being clipped: ", portal_idx);
             }
             #endif
             //inc_counter(POST_PROJ_BACKFACE_CULL_COUNTER);
-            continue;
+            if(sector != src_sector || !is_portal) {
+            #ifdef DEBUG_PORTAL_CLIP
+                KLog("portal actually backface culled");
+            #endif
+                // we know that it's in front of us, and within the frustum
+                // if it's in the same sector as us, it's not actually backfacing, it's just partially behind us
+                // so we know it's not actually backfacing
+                continue;
+            }
+            #ifdef DEBUG_PORTAL_CLIP
+            KLog("portal not backface culled");
+            #endif
+
+            if(clipped & LEFT_Z_CLIPPED) {
+            #ifdef DEBUG_PORTAL_CLIP
+            KLog("portal was left z clipped, causing backface cull, adjusting");
+            #endif
+                x1 = window_min;
+                beginx = window_min;
+            } else if (clipped & RIGHT_Z_CLIPPED) {
+            #ifdef DEBUG_PORTAL_CLIP
+            KLog("portal was right z clipped, causing backface cull, adjusting");
+            #endif
+                x2 = window_max;
+                endx = window_max;
+            } else {
+            #ifdef DEBUG_PORTAL_CLIP
+                KLog("portal actually backface culled");
+            #endif
+                // not partially z clipped? 
+                continue;
+            }
         }
 
 
@@ -561,7 +615,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
         if (is_portal) {
 
             #ifdef DEBUG_PORTAL_CLIP
-            KLog_S2("portal in sector: ", sector, " drawn with wall idx: ", i);
+            KLog_S2("portal in sector: ", sector, " drawing with wall idx: ", i);
             #endif
                 
             // draw floor first if necessary, so that lower steps cannot block it from drawing

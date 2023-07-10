@@ -38,12 +38,12 @@ typedef struct  __attribute__((__packed__)) {
     uint16_t speed; // 3 for claw guy?
     u8 is_player;
     u8 type;
-    u8 anchor_top; 
-    u8 anchor_bot;
+    u8 anchor_top; u8 anchor_bot;
     char name[32];
 } object_template;
 
 extern const object_template object_types[];
+
 
 
 // 64 active objects

@@ -717,7 +717,7 @@ int debug_draw_cleared = 0;
 
 int last_pressed_a = 0;
 void flip() {  
-    return;
+    //return;
   //u8* dst_buf = (bmp_buffer_write == bmp_buffer_0) ? bmp_buffer_1 : bmp_buffer_0;
   //return;
   if(JOY_readJoypad(JOY_1) & BUTTON_C) {
@@ -752,6 +752,17 @@ extern const u16 sprite_draw_cache_size_lookup[512];
 
 #define RTS_OPCODE 0x4E75 
 #define SPRITE_MOVE_OPCODE 0x1368
+
+void print_sprite_draw_cache(int num_pix) {    
+    u16* ptr = (u16*)sprite_draw_cache;
+    char buf[32];
+    for(int i = 0; i < num_pix; i++) {
+        ptr++;
+        sprintf(buf, "move.b %i(a0), %i(a1)", *ptr, *(ptr+1));
+        KLog(buf);
+        ptr += 2;
+    }
+}
 
 void init_sprite_draw_cache() {
     // sprite_draw_cache is a table of 256 move.b X(a0), Y(a1) instructions
@@ -810,7 +821,14 @@ void set_up_scale_routine(s16 unclipped_dy) {
     *ptr++ = RTS_OPCODE;
 }
 
+u8 debug_call_sprite_cache = 0;
+
 void call_sprite_cache_for_run(u16* jump_tgt, const u8* cur_texel_ptr, u8* cur_column_ptr) {
+    //if(debug_call_sprite_cache) {
+    //    KLog_U1("texel ptr: ", cur_texel_ptr);
+    //    KLog_U1("column ptr: ", cur_column_ptr);
+    //    KLog_U1("jump_tgt: ", jump_tgt);
+    //}
     register const u8* a0 asm ("%a0") = cur_texel_ptr;   // this lets me make sure a0 and a1 are initialized correctly
     register const u8* a1 asm ("%a1") = cur_column_ptr;
 
@@ -822,9 +840,13 @@ void call_sprite_cache_for_run(u16* jump_tgt, const u8* cur_texel_ptr, u8* cur_c
 }
 
 void call_sprite_cache_for_wide_run(u16* jump_tgt, u8* cur_texel_ptr, u8* cur_column_ptr) {
+    //if(debug_call_sprite_cache) {
+    //    KLog_U1("w texel ptr: ", cur_texel_ptr);
+    //    KLog_U1("w column ptr: ", cur_column_ptr);
+    //    KLog_U1("w jump_tgt: ", jump_tgt);
+    //}   
     register const a0 asm ("%a0") = (u32)cur_texel_ptr;   // this lets me make sure a0 and a1 are initialized correctly
     register const a1 asm ("%a1") = (u32)cur_column_ptr;
-            
     __asm volatile(
         "jsr (%0)\t\n\
         addq.l #1, %2\t\n\
@@ -894,6 +916,9 @@ void draw_col(s16 ytop, s16 min_drawable_y, s16 max_drawable_y,
         u8* cur_col_ptr = &col_ptr[span_draw_top<<1];
 
         jump_tgt[num_scaled_pixels*3] = RTS_OPCODE;
+        //if(debug_call_sprite_cache) {
+        //    print_sprite_draw_cache(num_scaled_pixels);
+        //}
 
         if(draw_wide) {
             call_sprite_cache_for_wide_run(jump_tgt, cur_texel_ptr, cur_col_ptr);
@@ -1572,7 +1597,8 @@ void calculate_tex_coords_for_wall_old(
 
     
 
-    #define TEXMAP_ITER do { \
+    #define TEXMAP_ITER \
+    do { \
         u32 z = (1<<26)/one_over_z_26;\
         u32 u_23 = u_over_z_23 * z;\
         u32 u_scaled_by_width = 0; \
@@ -1594,7 +1620,8 @@ void calculate_tex_coords_for_wall_old(
     // u32 tmp = 1<<16; 
 
 
-    #define TEXMAP_16_ITER do { \
+    #define TEXMAP_16_ITER \
+    do { \
         u32 tmp;\
     __asm volatile(\
         "moveq #1, %3\t\n\
@@ -1616,7 +1643,8 @@ void calculate_tex_coords_for_wall_old(
     // mask so we keep only the top 5 fractional bits out of 11
 
 
-    #define TEXMAP_16_32_ITER do {                  \
+    #define TEXMAP_16_32_ITER \
+    do {                  \
         u16 u_7; u32 u_tmp = u_over_z_23;           \
         __asm volatile(                             \
             "divu.w %3, %1\t\n                      \
@@ -1630,7 +1658,8 @@ void calculate_tex_coords_for_wall_old(
         u_over_z_23 += d_u_over_z_dx_23;            \
     } while(0)
 
-    #define AFFINE_TEXMAP_16_32_ITER do {                  \
+    #define AFFINE_TEXMAP_16_32_ITER \
+    do {                  \
         u16 u_7; u32 u_tmp = u_over_z_23;           \
         __asm volatile(                             \
             "lsl.w #4, %0\t\n                       \
@@ -1644,7 +1673,8 @@ void calculate_tex_coords_for_wall_old(
     //one_over_z_16 += d_one_over_z_dx_16;
     //u_over_z_16 += d_u_over_z_dx_16;
 
-    #define AFFINE_TEXMAP_ITER do { \
+    #define AFFINE_TEXMAP_ITER \
+    do { \
         u32 u_scaled_by_width = 0;      \
         __asm volatile(                         \
             "move.l %1, %2\t\n\

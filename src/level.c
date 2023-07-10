@@ -57,13 +57,18 @@ void init_player_pos() {
     cur_player_pos.x = sector_0_center.x;
     cur_player_pos.y = sector_0_center.y;
     cur_player_pos.cur_sector = init_player_sector;
+    cur_player_pos.ang = 0;
+    
+    //cur_player_pos.x = FIX32(1639.25);
+    //cur_player_pos.y = FIX32(-623.46);
+    //cur_player_pos.ang = 80;
+    //cur_player_pos.cur_sector = 27;
 
     u16 sect_group = sector_group(cur_player_pos.cur_sector, cur_portal_map);
 
     cur_player_pos.z = (get_sector_group_floor_height(sect_group)<<(FIX32_FRAC_BITS-4));// + FIX32(50);
 
 
-    cur_player_pos.ang = 0;
 }
 
 

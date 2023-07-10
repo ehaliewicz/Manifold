@@ -40,6 +40,7 @@ typedef enum {
 } clip_result;
 
 //#define NEAR_Z_32 (20 << FIX32_FRAC_BITS)
+// NEAR_Z_16 10
 #define NEAR_Z_16 10
 //25 
 #define NEAR_Z_FIX (NEAR_Z_16<<TRANS_Z_FRAC_BITS)
