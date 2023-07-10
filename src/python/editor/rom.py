@@ -754,7 +754,7 @@ def export_map_to_rom(cur_path, cur_state: state.State, set_launch_flags=False, 
                 write_u8(f, 0) # null terminate this string
                 sz += 32
                 assert sz == 49, "{} is not the right size lol".format(sz)
-                f.seek(struct_start + 47) # skip past this struct 
+                f.seek(struct_start + 49) # skip past this struct 
 
             f.seek(prev_wad_ptr)
             # write map things

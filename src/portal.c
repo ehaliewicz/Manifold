@@ -743,11 +743,21 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
                 //z_buf[buf_idx] = &obj_buf[buf_idx];
                 u8 obj_type = OBJ_LINK_DEREF(cur_obj).object_type;
                 volatile object_template* type = &object_types[obj_type];
-                u16 floor_draw_offset = type->from_anchor_draw_offset;
+
+                u16 anchor_draw_offset = type->from_anchor_draw_offset;
                 u16 height = type->height;
 
-                s16 ytop = project_and_adjust_y_fix(obj_z+floor_draw_offset+height, z_recip);
-                s16 ybot = project_and_adjust_y_fix(obj_z+floor_draw_offset, z_recip);
+                s16 ytop, ybot;
+                if (type->anchor_bot && type->anchor_top) {
+                    ytop = project_and_adjust_y_fix(ceil_height-anchor_draw_offset, z_recip);
+                    ybot = project_and_adjust_y_fix(floor_height+anchor_draw_offset, z_recip);
+                } else if(type->anchor_bot) {
+                    ytop = project_and_adjust_y_fix(obj_z+anchor_draw_offset+height, z_recip);
+                    ybot = project_and_adjust_y_fix(obj_z+anchor_draw_offset, z_recip);
+                } else {
+                    ytop = project_and_adjust_y_fix(ceil_height-anchor_draw_offset, z_recip);
+                    ybot = project_and_adjust_y_fix(ceil_height-anchor_draw_offset-height, z_recip);
+                }
 
                 obj_sort_buf[buf_idx].obj_type = obj_type;
                 obj_sort_buf[buf_idx].x = trans_pos.x;
@@ -783,11 +793,20 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
                 //z_buf[buf_idx] = &obj_buf[buf_idx];
                 u8 obj_type = DEC_LINK_DEREF(cur_dec).object_type;
                 volatile object_template* type = &object_types[obj_type];
-                u16 floor_draw_offset = type->from_anchor_draw_offset;
+                u16 anchor_draw_offset = type->from_anchor_draw_offset;
                 u16 height = type->height;
 
-                s16 ytop = project_and_adjust_y_fix(obj_z+floor_draw_offset+height, z_recip);
-                s16 ybot = project_and_adjust_y_fix(obj_z+floor_draw_offset, z_recip);
+                s16 ytop, ybot;
+                if (type->anchor_bot && type->anchor_top) {
+                    ytop = project_and_adjust_y_fix(ceil_height-anchor_draw_offset, z_recip);
+                    ybot = project_and_adjust_y_fix(floor_height+anchor_draw_offset, z_recip);
+                } else if(type->anchor_bot) {
+                    ytop = project_and_adjust_y_fix(obj_z+anchor_draw_offset+height, z_recip);
+                    ybot = project_and_adjust_y_fix(obj_z+anchor_draw_offset, z_recip);
+                } else {
+                    ytop = project_and_adjust_y_fix(ceil_height-anchor_draw_offset, z_recip);
+                    ybot = project_and_adjust_y_fix(ceil_height-anchor_draw_offset-height, z_recip);
+                }
 
                 obj_sort_buf[buf_idx].obj_type = obj_type;
                 obj_sort_buf[buf_idx].x = trans_pos.x;
