@@ -29,6 +29,13 @@ typedef enum {
     DECORATION = 1,
 } obj_type;
 
+#define FLAGS_KEY_TYPE_MASK   0b00011100
+#define FLAGS_KEY_TYPE_SHIFT  2
+#define FLAGS_ANCHOR_TOP_MASK 0b00000010
+#define FLAGS_ANCHOR_BOT_MASK 0b00000001
+#define FLAGS_RE
+
+
 typedef struct  __attribute__((__packed__)) {
     rle_sprite* sprite;
     uint16_t from_anchor_draw_offset;
@@ -38,7 +45,7 @@ typedef struct  __attribute__((__packed__)) {
     uint16_t speed; // 3 for claw guy?
     u8 is_player;
     u8 type;
-    u8 anchor_top; u8 anchor_bot;
+    u8 flags; // KEY_TYPE: 2 bits, anchor_top: 1bit, anchor_bot: 1bit
     char name[32];
 } object_template;
 

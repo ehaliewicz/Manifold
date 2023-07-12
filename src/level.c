@@ -59,10 +59,10 @@ void init_player_pos() {
     cur_player_pos.cur_sector = init_player_sector;
     cur_player_pos.ang = 0;
     
-    //cur_player_pos.x = FIX32(1639.25);
-    //cur_player_pos.y = FIX32(-623.46);
-    //cur_player_pos.ang = 80;
-    //cur_player_pos.cur_sector = 27;
+    //cur_player_pos.x = FIX32(884.61);
+    //cur_player_pos.y = FIX32(-567.12);
+    //cur_player_pos.ang = 510;
+    //cur_player_pos.cur_sector = 0;
 
     u16 sect_group = sector_group(cur_player_pos.cur_sector, cur_portal_map);
 
@@ -177,18 +177,21 @@ int check_trigger_switch(player_pos* pos) {
                     console_push_message("You need the blue key!", 22, 20);
                     return 0;
                 }
+                console_push_message("The blue key opened the door!", 29, 20);
                 break;
             case RED_KEYCARD:
                 if(!inventory_has_item(RED_KEY)) {
                     console_push_message("You need the red key!", 21, 20);
                     return 0;
                 }
+                console_push_message("The red key opened the door!", 28, 20);
                 break;
             case GREEN_KEYCARD:
                 if(!inventory_has_item(GREEN_KEY)) {
                     console_push_message("You need the green key!", 23, 20);
                     return 0;
                 }
+                console_push_message("The green key opened the door!", 30, 20);
                 break;
             default:
                 break;
