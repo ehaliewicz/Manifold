@@ -474,10 +474,10 @@ clip_result frustum_cull_vertex_16(Vect2D_s16* __restrict__ trans_v1, Vect2D_s16
     const u8 left_vert_outside_right_frustum = (rx1 > (rz1_12_4>>4));
     const u8 right_vert_outside_right_frustum = (rx2 > (rz2_12_4>>4));
     if(left_vert_outside_left_frustum && right_vert_outside_left_frustum) {
-        return OFFSCREEN;
+        return FRUSTUM_CULLED;
     }
     if(left_vert_outside_right_frustum && right_vert_outside_right_frustum) {
-        return OFFSCREEN;
+        return FRUSTUM_CULLED;
     }
     return UNCLIPPED;
 }
@@ -492,24 +492,25 @@ clip_result clip_map_vertex_16(Vect2D_s16* __restrict__ trans_v1, Vect2D_s16* __
     s16 rx2 = trans_v2->x;
     s16 rz2_12_4 = trans_v2->y; // 12.4
 
-
-    clip_result clip_status = UNCLIPPED;
-
-    if(rz1_12_4 < NEAR_Z_FIX && rz2_12_4 < NEAR_Z_FIX) {  
-        return OFFSCREEN;  
-    }
-
-    
+ 
     const u8 left_vert_outside_left_frustum = (-rx1 > (rz1_12_4>>4));
     const u8 right_vert_outside_left_frustum = (-rx2 > (rz2_12_4>>4));
     const u8 left_vert_outside_right_frustum = (rx1 > (rz1_12_4>>4));
     const u8 right_vert_outside_right_frustum = (rx2 > (rz2_12_4>>4));
     if(left_vert_outside_left_frustum && right_vert_outside_left_frustum) {
-        return OFFSCREEN;
+        return FRUSTUM_CULLED;
     }
     if(left_vert_outside_right_frustum && right_vert_outside_right_frustum) {
-        return OFFSCREEN;
+        return FRUSTUM_CULLED;
     }
+    
+
+    if(rz1_12_4 < NEAR_Z_FIX && rz2_12_4 < NEAR_Z_FIX) {  
+        return NEAR_Z_CULLED;  
+    }
+
+   
+    clip_result clip_status = UNCLIPPED;
 
     s16 dz_12_4 = rz2_12_4 - rz1_12_4;
 

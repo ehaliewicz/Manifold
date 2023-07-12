@@ -43,7 +43,7 @@ void cleanup_portal_renderer() {
 }
 
 
-// #define DEBUG_PORTAL_CLIP
+//#define DEBUG_PORTAL_CLIP
 
 
 #define MAX_DEPTH 32
@@ -111,25 +111,39 @@ void load_transform_and_duplicate_verts(u16 num_vertexes, u16* indexes, vertex* 
     s16 prev_res_x = cur_res_x;
     s16 prev_res_y = cur_res_y;
 
+    int i = 0;
     while(num_walls--) {
     //for(int i = 0; i < num_walls; i++) {
 
         index = *--last_index_ptr;
         component_index = index + index;
-        s16* ptr = vert_component_pointer+component_index;
+        //s16* ptr = vert_component_pointer+component_index;
 
 
-        cur_x = *ptr++;
-        cur_y = *ptr++;
+        //cur_x = *ptr++;
+        //cur_y = *ptr++;
         cur_x = vert_component_pointer[component_index++];     
         cur_y = vert_component_pointer[component_index];       
+        #ifdef DEBUG_PORTAL_CLIP
+        KLog_S3("transform vert i: ", i, " x: ", cur_x, " y: ", cur_y);  
+        #endif
+
 
         tlx = cur_x - playerXInt;                              
-        tly = cur_y - playerYInt;                              
+        tly = cur_y - playerYInt;          
+        #ifdef DEBUG_PORTAL_CLIP 
+        KLog_S2(" tlx: ", tlx, " tly: ", tly);     
+        #endif                    
         rx = (tlx * angleSin16) - (tly * angleCos16);          
-        ry = (tlx * angleCos16) + (tly * angleSin16);          
+        ry = (tlx * angleCos16) + (tly * angleSin16);        
+        #ifdef DEBUG_PORTAL_CLIP  
+        KLog_S2(" rx: ", tlx, " ry: ", tly);           
+        #endif
         cur_res_x = rx >> (FIX16_FRAC_BITS);                   
-        cur_res_y = ry >> (FIX16_FRAC_BITS-TRANS_Z_FRAC_BITS); 
+        cur_res_y = ry >> (FIX16_FRAC_BITS-TRANS_Z_FRAC_BITS);     
+        #ifdef DEBUG_PORTAL_CLIP
+        KLog_S2(" cur_res_x: ", cur_res_x, " cur_res_y: ", cur_res_y);      
+        #endif
 
         __asm volatile(
             "move.w %2, -(%0)\t\n\
@@ -340,11 +354,18 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
         #endif 
 
 
+        if(clipped == FRUSTUM_CULLED) {
+        #ifdef DEBUG_PORTAL_CLIP
+            KLog_U1("frustum culled!: ", i);
+        #endif 
+            continue;
+        }
         u16 z_recip_v1 = z_recip_table_16[trans_v1.y>>TRANS_Z_FRAC_BITS];
         u16 z_recip_v2 = z_recip_table_16[trans_v2.y>>TRANS_Z_FRAC_BITS];
         s16 neighbor_floor_height, neighbor_ceil_height;
 
-        if(clipped == OFFSCREEN) {
+
+        if(clipped == NEAR_Z_CULLED) {
         #ifdef DEBUG_PORTAL_CLIP
             KLog_U2("in sector: ", sector, " wall idx offscreen: ", i);
         #endif 
@@ -395,35 +416,44 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
                 //s16 x1 = (clipped & LEFT_FRUSTUM_CLIPPED) ? 0 : project_and_adjust_x(trans_v1.x, z_recip_v1);
                 //s16 x2 = (clipped & RIGHT_FRUSTUM_CLIPPED) ? RENDER_WIDTH : project_and_adjust_x(trans_v2.x, z_recip_v2);
 
-
-
+            #ifdef DEBUG_PORTAL_CLIP
+                KLog_S2("after transform and clip x1: ", x1, " x2: ", x2);
+            #endif
                 if(x1 > window_max) {
-                    if(trans_v1.y < 0 && trans_v2.y > 0) {
-                        x1 = window_min;
-                    } else {
+                    //if(trans_v1.y < 0 && trans_v2.y > 0) {
+                    //    x1 = window_min;
+                    //} else {
                     #ifdef DEBUG_PORTAL_CLIP
                         walls_frustum_culled++;
                         KLog_S2("portal right frustum culled after near clip?: ", portal_idx, " to sect ", portal_sector);
                         KLog_S2("left: ", x1, " right: ", x2);
                     #endif
                         continue;
-                    }
+                    //}
                 }
                 if(x2 <= window_min) {
-                    if(trans_v2.y < 0 && trans_v1.y > 0) {
-                        //goto submit_anyway;
-                        x2 = window_max;
-                    } else {
+                    //if(trans_v2.y < 0 && trans_v1.y > 0) {
+                    //    KLog("x2 is left than window min, but we're continuing anyway?")
+                    //    //goto submit_anyway;
+                    //    x2 = window_max;
+                    //} else {
                     #ifdef DEBUG_PORTAL_CLIP
                     walls_frustum_culled++;
                     KLog_S2("portal left frustum culled after near clip?: ", portal_idx, " to sect ", portal_sector);
                     #endif
                     continue;
-                    }
+                    //}
                 }
+
                 if(x1 >= x2) { 
+                    #ifdef DEBUG_PORTAL_CLIP
+                    KLog("portal seems to be backface culled");
+                    #endif
                     //if(trans)
-                    if(orig_z1 > 0 && orig_z2 > 0) {
+                    if(orig_z1 >= 0 || orig_z2 >= 0) {
+                    #ifdef DEBUG_PORTAL_CLIP
+                        KLog("one of the vertexes is in front of the player, so not backface culled");
+                    #endif
                         //x1 = window_min;
                         //x2 = window_max;
                     } else {
@@ -600,12 +630,11 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
             x2_ytop = project_and_adjust_y_fix(x2_ytop_floor_height, z_recip_v2);
             x1_ytop = project_and_adjust_y_fix(x1_ytop_floor_height, z_recip_v1);
 
-            if(cur_sect_group_type == DOOR || cur_sect_group_type == LIFT) {
+            if(cur_sect_group_type == LIFT || cur_sect_group_type == DOOR) {
                 // top peg all walls in a door/crusher type sector
-                s16 orig_door_height = get_sector_group_orig_height(sect_group);
-                //s16 orig_height_diff = orig_door_height - neighbor_floor_height;
-                x1_pegged = project_and_adjust_y_fix(orig_door_height, z_recip_v1);
-                x2_pegged = project_and_adjust_y_fix(orig_door_height, z_recip_v2);
+                s16 orig_height = get_sector_group_orig_height(sect_group);
+                x1_pegged = project_and_adjust_y_fix(orig_height, z_recip_v1);
+                x2_pegged = project_and_adjust_y_fix(orig_height, z_recip_v2);
             }
 
         }
@@ -662,8 +691,8 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
 
                 }
             } else {
-                u16 neighbor_ceil_color = neighbor_sect_group_param_pointer[SECTOR_GROUP_PARAM_CEIL_COLOR_IDX]; //get_sector_group_ceil_color(neighbor_sect_group);
-                u16 neighbor_light_level = neighbor_sect_group_param_pointer[SECTOR_GROUP_PARAM_LIGHT_IDX];
+                //u16 neighbor_ceil_color = neighbor_sect_group_param_pointer[SECTOR_GROUP_PARAM_CEIL_COLOR_IDX]; //get_sector_group_ceil_color(neighbor_sect_group);
+                //u16 neighbor_light_level = neighbor_sect_group_param_pointer[SECTOR_GROUP_PARAM_LIGHT_IDX];
                 //if(neighbor_ceil_color != ceil_color || neighbor_ceil_height != ceil_height || !recur || neighbor_light_level != light_level) {
                     draw_ceiling_update_clip(x1, x1_ytop, x2, x2_ytop,
                                             min(z_recip_v1, z_recip_v2),
@@ -678,36 +707,45 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
                 s16 nx2_ybot = project_and_adjust_y_fix(neighbor_floor_height, z_recip_v2);
 
                 if(neighbor_sector_group_type == LIFT) {
+                    u16 neighbor_state = neighbor_sect_group_param_pointer[SECTOR_GROUP_PARAM_STATE_IDX];
+                    if(neighbor_state == GOING_DOWN || neighbor_state == GOING_UP || neighbor_state == OPEN) {
+                        s16 diff = neighbor_sect_group_param_pointer[SECTOR_GROUP_PARAM_SCRATCH_ONE_IDX] - 
+                                   floor_height; //neighbor_sect_group_param_pointer[SECTOR_GROUP_PARAM_SCRATCH_TWO_IDX];
+                        x1_pegged = project_and_adjust_y_fix(neighbor_floor_height-diff, z_recip_v1);
+                        x2_pegged = project_and_adjust_y_fix(neighbor_floor_height-diff, z_recip_v2);
 
-                    s16 orig_lift_height = neighbor_sect_group_param_pointer[SECTOR_GROUP_PARAM_ORIG_HEIGHT_IDX]; //get_sector_group_orig_height(neighbor_sect_group);
-                    s16 orig_height_diff = neighbor_ceil_height - orig_lift_height;
-                    x1_pegged = project_and_adjust_y_fix(neighbor_floor_height-orig_height_diff, z_recip_v1);
-                    x2_pegged = project_and_adjust_y_fix(neighbor_floor_height-orig_height_diff, z_recip_v2);
+                    } else { // if (neighbor_state == CLOSED) {
+                        x1_pegged = x1_ybot;
+                        x2_pegged = x2_ybot;
+                    }
                 }
 
                 u8 lower_color = map->wall_colors[(portal_idx<<WALL_COLOR_NUM_PARAMS_SHIFT)+WALL_LOW_COLOR_IDX];
 
                 if(neighbor_sector_group_type == LIFT && !is_solid_color) {
-
                     draw_bottom_pegged_textured_lower_step(x1, x1_ybot, nx1_ybot, x2, x2_ybot, nx2_ybot,
                                                         trans_v1_z_fix, trans_v2_z_fix,
                                                         z_recip_v1, z_recip_v2,
                                                         window_min, window_max, light_level,
                                                         &tmap_info,
                                                         &floor_params, x1_pegged, x2_pegged);
+
                 } else {
                     // draw step from floor
                     draw_lower_step(x1, x1_ybot, nx1_ybot, x2, x2_ybot, nx2_ybot,
                                     z_recip_v1, z_recip_v2,
                                     window_min, window_max, lower_color, light_level, &floor_params);
                 }
-            } else {            
+            } else {          
                 //u16 neighbor_floor_color = neighbor_sect_group_param_pointer[SECTOR_GROUP_PARAM_FLOOR_COLOR_IDX]; //get_sector_group_floor_color(neighbor_sect_group);
                 //u16 neighbor_light_level = neighbor_sect_group_param_pointer[SECTOR_GROUP_PARAM_LIGHT_IDX];
                 //if(neighbor_floor_color != floor_color || neighbor_floor_height != floor_height || !recur || neighbor_light_level != light_level) {
-                    draw_floor_update_clip(x1, x1_ybot, x2, x2_ybot,
-                                        min(z_recip_v1, z_recip_v2),
-                                        window_min, window_max, &floor_params);
+                
+                // this is redundant
+                //    draw_floor_update_clip(x1, x1_ybot, x2, x2_ybot,
+                //                        min(z_recip_v1, z_recip_v2),
+                //                        window_min, window_max, &floor_params);
+                
                 //}
             }
 
@@ -802,13 +840,16 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
                 u16 height = type->height;
 
                 s16 ytop, ybot;
-                if (type->anchor_bot && type->anchor_top) {
+                u8 anchor_flags = type->flags & (FLAGS_ANCHOR_TOP_MASK | FLAGS_ANCHOR_BOT_MASK);
+
+                if (anchor_flags == (FLAGS_ANCHOR_TOP_MASK | FLAGS_ANCHOR_BOT_MASK)) {
                     ytop = project_and_adjust_y_fix(ceil_height-anchor_draw_offset, z_recip);
                     ybot = project_and_adjust_y_fix(floor_height+anchor_draw_offset, z_recip);
-                } else if(type->anchor_bot) {
+                } else if(anchor_flags == FLAGS_ANCHOR_BOT_MASK) {
                     ytop = project_and_adjust_y_fix(obj_z+anchor_draw_offset+height, z_recip);
                     ybot = project_and_adjust_y_fix(obj_z+anchor_draw_offset, z_recip);
                 } else {
+                    // anchored to top
                     ytop = project_and_adjust_y_fix(ceil_height-anchor_draw_offset, z_recip);
                     ybot = project_and_adjust_y_fix(ceil_height-anchor_draw_offset-height, z_recip);
                 }
@@ -851,13 +892,16 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
                 u16 height = type->height;
 
                 s16 ytop, ybot;
-                if (type->anchor_bot && type->anchor_top) {
+                u8 anchor_flags = type->flags & (FLAGS_ANCHOR_TOP_MASK | FLAGS_ANCHOR_BOT_MASK);
+
+                if (anchor_flags == (FLAGS_ANCHOR_TOP_MASK | FLAGS_ANCHOR_BOT_MASK)) {
                     ytop = project_and_adjust_y_fix(ceil_height-anchor_draw_offset, z_recip);
                     ybot = project_and_adjust_y_fix(floor_height+anchor_draw_offset, z_recip);
-                } else if(type->anchor_bot) {
+                } else if(anchor_flags == FLAGS_ANCHOR_BOT_MASK) {
                     ytop = project_and_adjust_y_fix(obj_z+anchor_draw_offset+height, z_recip);
                     ybot = project_and_adjust_y_fix(obj_z+anchor_draw_offset, z_recip);
                 } else {
+                    // anchored to top
                     ytop = project_and_adjust_y_fix(ceil_height-anchor_draw_offset, z_recip);
                     ybot = project_and_adjust_y_fix(ceil_height-anchor_draw_offset-height, z_recip);
                 }
