@@ -3,22 +3,41 @@ HEADER_TOP_CLIP = """
     lsl.l #2, %d0
     jmp scale_64_{}_jump(%pc, %d0.w)
 """
-HEADER_BOT_CLIP = """
+
+TABLE_HEADER_BOT_CLIP = """
     | tex_column in a0, col_ptr in a1, top_clip in d0, bot_clip in d1
-    add.l %d1, %d0 | d0 = clip_top+clip_bot
-    lsl.l #2, %d0 | d0 = (clip_top+clip_bot)<<=2
+    add.w %d1, %d0 | d0 = clip_top+clip_bot
+    lsl.w #2, %d0 | d0 = (clip_top+clip_bot)<<=2
     move.l %a0, -(%sp) | stash tex_column for now
     move.l #skip_64_{}, %a0
     move.b 0(%a0, %d1.w), %d1 | d1 = texels to skip backwards
-    ext.w %d1 |ext.w %d1 | andi.w #255, %d1
+    | ext.w %d1 | extend d1 to a longword |ext.w %d1 | andi.w #255, %d1
     move.l (%sp)+, %a0
-    sub.l %d1, %a0
+    sub.w %d1, %a0
     jmp scale_64_{}_jump(%pc, %d0.w)
 
 """
 
 
+# sadly, this doesnt seem to solve the problem
+# becuse there are different sources of error caused by jumping to the right/wrong position in the instruction stream
+HEADER_BOT_CLIP = """
+    | tex_column in a0, col_ptr in a1, top_clip in d0, bot_clip in d1
+    lsl.w #2, %d0    | d0 is top_clip * 4
+    move.l %a0, -(%sp) | stash tex_column for now
+    move.w scale_64_{}_jump+2(%pc, %d0.l), %a0 | a0 = expected offset
+    lsl.w #2, %d1    | d1 is bot_clip * 4   
+    add.w %d1, %d0 | d0 = (top_clip*4+bot_clip*4)
+    move.w scale_64_{}_jump+2(%pc, %d0.l), %d1 | d1 = actual offset
+    sub.w %a0, %d1  |  negative offset to use
+    ext.w %d1       | extend d1 to a longword
+    move.l (%sp)+, %a0
+    sub.l %d1, %a0
+    jmp scale_64_{}_jump(%pc, %d0.w)
 """
+
+
+
 for y in range(513):
   print(".globl scale_64_{}_top_clip".format(y))
   print(".globl scale_64_{}_bot_clip".format(y))
@@ -34,7 +53,7 @@ for y in range(513):
   if y == 0:
     print("rts")
   else:
-    print(HEADER_BOT_CLIP.format(y, y))
+    print(TABLE_HEADER_BOT_CLIP.format(y, y, y, y, y, y, y))
 
   if y == 0:
     continue  
@@ -68,7 +87,7 @@ for y in range(513):
         print("move.w {}(%a0), (%a1)+".format(2*int_u))
   print("rts")
 
-"""
+
 
   #print(".global skip_64_{}".format(y))
   #print("skip_64_{}:".format(y))
@@ -107,9 +126,9 @@ for y in range(1,513):
 #    print("")
 #print("}")
 
-print("jump_table_bot_clip_lut[513] = {")
-for y in range(1, 513):
-  print("scale_64_{}_bot_clip, ".format(y), end="")
-  if y % 8 == 0:
-    print("")
-print("}")
+#print("jump_table_bot_clip_lut[513] = {")
+#for y in range(1, 513):
+#  print("scale_64_{}_bot_clip, ".format(y), end="")
+#  if y % 8 == 0:
+#    print("")
+#print("}")

@@ -844,11 +844,12 @@ def old_thing_defs_to_new_things_defs(old_things):
         anchor_draw_offset = old_thing.floor_draw_offset if hasattr(old_thing, 'floor_draw_offset') else old_thing.anchor_draw_offset
         anchor_top = old_thing.anchor_top if hasattr(old_thing, 'anchor_top') else False
         anchor_bottom = old_thing.anchor_bottom if hasattr(old_thing, 'anchor_bottom') else True
+        key_type = old_thing.key_type if hasattr(old_thing, 'key_type') else None
         res.append(things.ThingDef(
             sprite_file=old_thing.sprite_file, name=old_thing.name,
             width=old_thing.width, height=old_thing.height, 
             anchor_draw_offset=anchor_draw_offset, init_state=old_thing.init_state, speed=old_thing.speed,
-            anchor_top=anchor_top, anchor_bottom=anchor_bottom,
+            anchor_top=anchor_top, anchor_bottom=anchor_bottom, key_type=key_type,
         ))
     return res              
         

@@ -10,8 +10,8 @@ class Map():
     def __init__(self, 
     default_sprite,
     name="placeholder name", 
-    sectors:typing.List[sector.Sector] | None=None, 
-    vertexes:typing.List[vertex.Vertex] | None=None,
+    sectors=None, 
+    vertexes=None,
     music_path=""):
         self.bsp = False
         if not sectors:
