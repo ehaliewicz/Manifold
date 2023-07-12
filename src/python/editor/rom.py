@@ -3,6 +3,7 @@ import os
 import struct 
 import subprocess
 import time
+import typing
 
 import palette
 import pvs
@@ -219,20 +220,20 @@ def export_map_to_rom(cur_path, cur_state: state.State, set_launch_flags=False, 
             write_u32(f, map_struct_offset)
 
             # gather live sectors and remap indexes
-            live_sector_group_map_tbl = {} # maps original sector group idx to current sector group idx
-            new_sector_group_idx = 0
-            live_sector_groups = []
-            for sector in data.sectors:
-                sect_group_idx = sector.sector_group_idx 
-                if sect_group_idx not in live_sector_group_map_tbl:
-                    live_sector_group_map_tbl[sect_group_idx] = new_sector_group_idx
-                    live_sector_groups.append(data.sector_groups[sect_group_idx])
-                    new_sector_group_idx += 1
+            #live_sector_group_map_tbl = {} # maps original sector group idx to current sector group idx
+            #new_sector_group_idx = 0
+            #live_sector_groups: typing.List[sector_group.SectorGroup] = []
+            #for sector in data.sectors:
+            #    sect_group_idx = sector.sector_group_idx 
+            ##    if sect_group_idx not in live_sector_group_map_tbl:
+            #        live_sector_group_map_tbl[sect_group_idx] = new_sector_group_idx
+            #        live_sector_groups.append(data.sector_groups[sect_group_idx])
+            #        new_sector_group_idx += 1
             
 
             num_sectors = len(data.sectors)
-            #num_sector_groups = len(data.sector_groups)
-            num_sector_groups = len(live_sector_group_map_tbl)
+            num_sector_groups = len(data.sector_groups)
+            #num_sector_groups = len(live_sector_group_map_tbl)
 
             num_vertexes = len(data.vertexes)
             num_walls = sum(len(sect.walls) for sect in data.sectors)
@@ -293,7 +294,7 @@ def export_map_to_rom(cur_path, cur_state: state.State, set_launch_flags=False, 
                 f.write(struct.pack(
                     ">hhhh",
                     wall_offset, portal_offset,
-                    sect_num_walls, live_sector_group_map_tbl[sect.sector_group_idx]
+                    sect_num_walls, sect.sector_group_idx
                 ))
                 if len(sect.walls) == 0:
                     continue
@@ -306,7 +307,7 @@ def export_map_to_rom(cur_path, cur_state: state.State, set_launch_flags=False, 
 
             # write sector group types for LIVE (aka used) sector groups only
             print("Checking sector group params...")
-            for sect_group in live_sector_groups:
+            for sect_group in data.sector_groups:
                 sect_group_key = sect_group.key if hasattr(sect_group, 'key') else 0
                 f.write(struct.pack('>B', sect_group.type | (sect_group_key<<5)))    
                 if (sect_group.type != sector_group.DOOR and
@@ -348,21 +349,22 @@ def export_map_to_rom(cur_path, cur_state: state.State, set_launch_flags=False, 
 
             # write sector group params for LIVE/used sector groups only
 
-            for sect_group in live_sector_groups:
+            for sect_group in data.sector_groups:
                 f.write(struct.pack(
-                    # light level, orig_height, ticks_left, state
-                    # floor_height, ceil_height, floor_color, ceil_color
+                    # light level:3|ceil_color:4|floor_color:4, orig_height, ticks_left, state
+                    # floor_height, ceil_height, scratch, scratch
                     ">hhhhhhhh",
-                    sect_group.light_level, sect_group.orig_height*16, sect_group.state, sect_group.ticks_left, 
+                    (sect_group.light_level<<8)|(sect_group.ceil_color<<4)|(sect_group.floor_color), 
+                    sect_group.orig_height*16, sect_group.state, sect_group.ticks_left, 
                     sect_group.floor_height*16, sect_group.ceil_height*16,
-                    sect_group.floor_color, sect_group.ceil_color
+                    sect_group.scratch_one if hasattr(sect_group, 'scratch_one') else 0, sect_group.scratch_two if hasattr(sect_group, 'scratch_two') else 0
                 ))
             
             # write sector group triggers
             patch_pointer_to_current_offset(
                 f, sector_group_triggers_ptr_offset
             )
-            for sect_group in live_sector_groups: #data.sector_groups:
+            for sect_group in data.sector_groups: #data.sector_groups:
                 cnt = 0
                 #f.write(struct.pack(">hhhhhhhh", *[0,0,0,0,0,0,0,0]))
                 
@@ -744,17 +746,21 @@ def export_map_to_rom(cur_path, cur_state: state.State, set_launch_flags=False, 
 
                 # anchor top or bottom
                 assert thing_def.anchor_top or thing_def.anchor_bottom, "Thing must be anchored to top or bottom"
-                write_u8(f, thing_def.anchor_top)
-                write_u8(f, thing_def.anchor_bottom)
-                sz += 2
+                flags = (
+                    thing_def.anchor_bottom |
+                    (thing_def.anchor_top<<1) |
+                    (thing_def.key_type<<2))
+                write_u8(f, flags)
+                #write_u8(f, thing_def.anchor_bottom)
+                sz += 1
 
                 assert len(thing_def.name) < 32, "thing def name is too long!"
                 for c in thing_def.name:
                     f.write(str.encode(c))
                 write_u8(f, 0) # null terminate this string
                 sz += 32
-                assert sz == 49, "{} is not the right size lol".format(sz)
-                f.seek(struct_start + 47) # skip past this struct 
+                assert sz == 48, "{} is not the right size lol".format(sz)
+                f.seek(struct_start + 48) # skip past this struct 
 
             f.seek(prev_wad_ptr)
             # write map things

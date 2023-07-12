@@ -120,7 +120,7 @@ void clean_object_lists() {
 const object_template object_types[32+1] = {
     // first object type is player
     {.is_player = 0, .name = "player_object_type", .type = OBJECT},
-    {.init_state = 0, .anchor_bot = 1,. anchor_top = 0,
+    {.init_state = 0, .flags=FLAGS_ANCHOR_BOT_MASK,
      .name = "claw guy", //.sprite=&claw_guy_sprite,
     .from_anchor_draw_offset = 10<<4, .width=46, .height=80<<4,
     .type = OBJECT},
@@ -406,11 +406,27 @@ int maybe_get_picked_up(object_link cur_obj, uint16_t cur_sector) {
     u32 dist = fastLength(dx, dy);
     
     if(dist < 32) { 
-        if(inventory_add_item(BLUE_KEY)) {
-            char buf[50];
-            int len = sprintf(buf, "picked up the %s!", object_types[OBJ_LINK_DEREF(cur_obj).object_type].name);
-            console_push_message_high_priority(buf, len, 30);
+        u8 flags = object_types[OBJ_LINK_DEREF(cur_obj).object_type].flags;
+        u8 key_type = (flags & FLAGS_KEY_TYPE_MASK)>>FLAGS_KEY_TYPE_SHIFT;
+        const u8 key_type_to_inv_item[4] = {
+            // nothing
+            0,
+            BLUE_KEY,
+            GREEN_KEY,
+            RED_KEY,
+        };
+        if(key_type) {
+            if(inventory_add_item(key_type_to_inv_item[key_type])) {
+                char buf[50];
+                int len = sprintf(buf, "picked up the %s!", object_types[OBJ_LINK_DEREF(cur_obj).object_type].name);
+                console_push_message_high_priority(buf, len, 30);
+            }
         }
+        //if(inventory_add_item(BLUE_KEY)) {
+        //    char buf[50];
+        //    int len = sprintf(buf, "picked up the %s!", object_types[OBJ_LINK_DEREF(cur_obj).object_type].name);
+        //    console_push_message_high_priority(buf, len, 30);
+        //}
 
         return 0;
     }

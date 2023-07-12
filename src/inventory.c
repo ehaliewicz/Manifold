@@ -93,6 +93,8 @@ u32 load_inventory_items_to_vram(u32 tile_loc) {
 
     tile_loc = load_item(&armor_inv, ARMOR_CHARGE, tile_loc);
     tile_loc = load_item(&blue_key_inv, BLUE_KEY, tile_loc);
+    tile_loc = load_item(&red_key_inv, RED_KEY, tile_loc);
+    tile_loc = load_item(&green_key_inv, GREEN_KEY, tile_loc);
     tile_loc = load_item(&bullet_inv, BULLET_CHARGE, tile_loc);
     tile_loc = load_item(&heart_inv, HEALTH_RECHARGE, tile_loc);
     tile_loc = load_item(&shield_inv, SHIELD_CHARGE, tile_loc);

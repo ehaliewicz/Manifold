@@ -7,7 +7,7 @@
 #define CONSOLE_NUM_MESSAGES 4
 #define CONSOLE_NUM_MESSAGES_MASK 0b111
 
-#define NUM_TILES 16
+#define NUM_TILES 21
 
 //#define CONSOLE_SPRITES 
 
@@ -105,6 +105,7 @@ void console_render() {
     #endif 
 
     if(tiles_to_draw > NUM_TILES) {
+        KLog_U2("truncating message from ", tiles_to_draw, " tiles to ", NUM_TILES);
         tiles_to_draw = NUM_TILES;
     }
 

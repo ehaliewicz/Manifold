@@ -8,6 +8,7 @@ FLASHING = 1
 DOOR = 2
 LIFT = 3
 STAIRS = 4
+LOWERING_STAIRS = 5
 
 
 SECTOR_GROUP_EFFECT_TYPES = ["No effect", "Flashing", "Door", "Lift", "Stairs", "Lowering stairs"] 
@@ -73,6 +74,9 @@ class SectorGroup():
 
         self.triggers = triggers
 
+        self.scratch_one = 0
+        self.scratch_two = 0
+
     
 def add_new_sector_group(cur_state):
     undo.push_state(cur_state)
@@ -106,6 +110,7 @@ def draw_sector_group_mode(cur_state):
         set_floor_color = lambda v: set_sector_group_attr(cur_state, cur_sect_group, 'floor_color', v)
         set_ceil_height = lambda v: set_sector_group_attr(cur_state, cur_sect_group, 'ceil_height', v)
         set_ceil_color = lambda v: set_sector_group_attr(cur_state, cur_sect_group, 'ceil_color', v)
+        set_scratch_one = lambda v: set_sector_group_attr(cur_state, cur_sect_group, 'scratch_one', v)
 
         type_changed, new_type_idx = imgui.core.combo("Type:   ", cur_sect_group.type, SECTOR_GROUP_EFFECT_TYPES)
         if type_changed:
@@ -125,23 +130,33 @@ def draw_sector_group_mode(cur_state):
         if light_level_changed:
             cur_sect_group.light_level = new_light_level_idx-2
 
-        input_int("Original height:    ", "##sector{}_orig_height".format(cur_sect_group.index), cur_sect_group.orig_height, set_orig_height)
-        
-        input_int("Ticks left: ", "##sector{}_ticks_left".format(cur_sect_group.index), cur_sect_group.ticks_left, set_ticks_left)
         state_options = ["No state"]
         state_label = "No state"
         if cur_sect_group.type == DOOR:
+            orig_height_label = "Open height"
             state_label = "Door state"
             state_options = DOOR_LIFT_STATES
         elif cur_sect_group.type == FLASHING:
             state_label = "Flicker base light level"
             state_options = ["-2", "-1", "0", "1", "2"]
         elif cur_sect_group.type == LIFT:
+            orig_height_label = "Lower height"
             state_label = "Lift state"
             state_options = DOOR_LIFT_STATES
         elif cur_sect_group.type == STAIRS:
+            orig_height_label = "Raise height"
             state_label = "Stair state"
             state_options = STAIR_STATES
+        elif cur_sect_group.type == LOWERING_STAIRS:
+            orig_height_label = "Lower height"
+            state_label = "Stair state"
+            state_options = STAIR_STATES
+        else:
+            orig_height_label = "Original height"
+        
+        input_int("{}:    ".format(orig_height_label), "##sector{}_orig_height".format(cur_sect_group.index), cur_sect_group.orig_height, set_orig_height)
+        
+        input_int("Ticks left: ", "##sector{}_ticks_left".format(cur_sect_group.index), cur_sect_group.ticks_left, set_ticks_left)
 
 
         if cur_sect_group.type == FLASHING:
@@ -161,6 +176,11 @@ def draw_sector_group_mode(cur_state):
         
         input_int("Ceiling height: ", "##sector{}_ceil".format(cur_sect_group.index), cur_sect_group.ceil_height, set_ceil_height)
         input_int("Ceiling color:  ", "##sector{}_ceil_color".format(cur_sect_group.index), cur_sect_group.ceil_color, set_ceil_color)
+
+
+
+        #if cur_sect_group.type == LIFT:
+        #    input_int("Reset height:  ", "##sector{}_reset_height".format(cur_sect_group.index), cur_sect_group.scratch_one, set_scratch_one)
 
 
         trigger_type_changed, new_trigger_type_index = imgui.core.combo("Trigger type:  ", cur_sect_group.triggers[0], SECTOR_GROUP_TRIGGER_TYPES)
