@@ -12,12 +12,63 @@
 s16* live_sector_group_parameters;
 
 
+s8 get_sector_group_light_level_inner(s16* params) {
+    s16* field_ptr = &params[SECTOR_GROUP_PARAM_LIGHT_FLOOR_CEIL_COLOR_IDX];
+    light_and_floor_ceil_color* cast_ptr = (light_and_floor_ceil_color*)field_ptr;
+    return cast_ptr->light_level;
+}
+
 s8 get_sector_group_light_level(u16 sect_group) {
-    return live_sector_group_parameters[(sect_group<<NUM_SECTOR_GROUP_PARAMS_SHIFT)+SECTOR_GROUP_PARAM_LIGHT_IDX];
+    return get_sector_group_light_level_inner(&live_sector_group_parameters[(sect_group<<NUM_SECTOR_GROUP_PARAMS_SHIFT)]);
+}
+
+void set_sector_group_light_level_inner(s16* params, s8 light_level) {
+    s16* field_ptr = &params[SECTOR_GROUP_PARAM_LIGHT_FLOOR_CEIL_COLOR_IDX];
+    light_and_floor_ceil_color* cast_ptr = (light_and_floor_ceil_color*)field_ptr;
+    cast_ptr->light_level = light_level;
 }
 
 void set_sector_group_light_level(u16 sect_group, s8 light_level) {
-    live_sector_group_parameters[(sect_group<<NUM_SECTOR_GROUP_PARAMS_SHIFT)+SECTOR_GROUP_PARAM_LIGHT_IDX] = light_level;
+    set_sector_group_light_level_inner(
+        &live_sector_group_parameters[(sect_group<<NUM_SECTOR_GROUP_PARAMS_SHIFT)], light_level);
+}
+
+u16 get_sector_group_floor_color_inner(s16* params) {
+    s16* field_ptr = &params[SECTOR_GROUP_PARAM_LIGHT_FLOOR_CEIL_COLOR_IDX];
+    light_and_floor_ceil_color* cast_ptr = (light_and_floor_ceil_color*)field_ptr;
+    return (cast_ptr->floor_ceil_color)&0xF;
+}
+
+u16 get_sector_group_floor_color(u16 sect_group) {
+    return get_sector_group_floor_color_inner(&live_sector_group_parameters[sect_group<<NUM_SECTOR_GROUP_PARAMS_SHIFT]);
+}
+
+void set_sector_group_floor_color_inner(s16* params, u8 floor_color) {
+    s16* field_ptr = &params[SECTOR_GROUP_PARAM_LIGHT_FLOOR_CEIL_COLOR_IDX];
+    light_and_floor_ceil_color* cast_ptr = (light_and_floor_ceil_color*)field_ptr;
+    u8 colors = cast_ptr->floor_ceil_color;
+    colors &= 0xF0; // clear floor color
+    colors |= floor_color; // set floor color
+    cast_ptr->floor_ceil_color = colors;
+}
+
+u16 get_sector_group_ceil_color_inner(s16* params) {
+    s16* field_ptr = &params[SECTOR_GROUP_PARAM_LIGHT_FLOOR_CEIL_COLOR_IDX];
+    light_and_floor_ceil_color* cast_ptr = (light_and_floor_ceil_color*)field_ptr;
+    return (cast_ptr->floor_ceil_color)>>4;
+}
+
+u16 get_sector_group_ceil_color(u16 sect_group) {
+    return get_sector_group_ceil_color_inner(&live_sector_group_parameters[(sect_group<<NUM_SECTOR_GROUP_PARAMS_SHIFT)]);
+}
+
+void set_sector_group_ceil_color_inner(s16* params, u8 ceil_color) {
+    s16* field_ptr = &params[SECTOR_GROUP_PARAM_LIGHT_FLOOR_CEIL_COLOR_IDX];
+    light_and_floor_ceil_color* cast_ptr = (light_and_floor_ceil_color*)field_ptr;
+    u8 colors = cast_ptr->floor_ceil_color;
+    colors &= 0x0F; // clear ceil color
+    colors |= (ceil_color<<4); // set ceil color
+    cast_ptr->floor_ceil_color = colors;
 }
 
 s16* get_sector_group_pointer(u16 sect_group) {
@@ -58,14 +109,6 @@ s16 get_sector_group_ceil_height(u16 sect_group) {
 
 void set_sector_group_ceil_height(u16 sect_group, s16 height) {
     live_sector_group_parameters[(sect_group<<NUM_SECTOR_GROUP_PARAMS_SHIFT) + SECTOR_GROUP_PARAM_CEIL_HEIGHT_IDX] = height;
-}
-
-u16 get_sector_group_floor_color(u16 sect_group) {
-    return live_sector_group_parameters[(sect_group<<NUM_SECTOR_GROUP_PARAMS_SHIFT) + SECTOR_GROUP_PARAM_FLOOR_COLOR_IDX];
-}
-
-u16 get_sector_group_ceil_color(u16 sect_group) {
-    return live_sector_group_parameters[(sect_group<<NUM_SECTOR_GROUP_PARAMS_SHIFT) + SECTOR_GROUP_PARAM_CEIL_COLOR_IDX];
 }
 
 void run_door(s16* params, u16 sect_group) {
@@ -125,12 +168,14 @@ void run_lift(s16* params, u16 sect_group) {
     s16 cur_height = params[SECTOR_GROUP_PARAM_FLOOR_HEIGHT_IDX];
     s16 ceil_height = params[SECTOR_GROUP_PARAM_CEIL_HEIGHT_IDX];
     s16 orig_lift_height = params[SECTOR_GROUP_PARAM_ORIG_HEIGHT_IDX];
+    s16 reset_height = params[SECTOR_GROUP_PARAM_SCRATCH_ONE_IDX];
     switch(state) {
         case CLOSED: 
+            params[SECTOR_GROUP_PARAM_SCRATCH_ONE_IDX] = cur_height;
             break;
 
         case GOING_DOWN: do {
-                if(cur_height == ceil_height) {
+                if(cur_height == reset_height) {
                     propagate_sfx_from_sect_group(SFX_OPEN_DOOR_ID, 1, sect_group, cur_player_pos.cur_sector);
                 }
                 cur_height -= 128;
@@ -158,8 +203,8 @@ void run_lift(s16* params, u16 sect_group) {
         case GOING_UP: do {
                 cur_height += 128;
                 params[SECTOR_GROUP_PARAM_FLOOR_HEIGHT_IDX] = cur_height;
-                if(cur_height >= ceil_height) {
-                    params[SECTOR_GROUP_PARAM_FLOOR_HEIGHT_IDX] = ceil_height;
+                if(cur_height >= reset_height) {
+                    params[SECTOR_GROUP_PARAM_FLOOR_HEIGHT_IDX] = reset_height;
                     params[SECTOR_GROUP_PARAM_STATE_IDX] = CLOSED;
                     params[SECTOR_GROUP_PARAM_TICKS_LEFT_IDX] = 30;
                 }
@@ -186,7 +231,7 @@ void run_stairs(s16* params, u16 sect_group) {
                 //params[SECTOR_PARAM_TICKS_LEFT_IDX] = ticks;
                 
                 // TODO: floor color hack!
-                params[SECTOR_GROUP_PARAM_FLOOR_COLOR_IDX] = 12;
+                set_sector_group_floor_color_inner(params, 12);
                 
                 params[SECTOR_GROUP_PARAM_FLOOR_HEIGHT_IDX] = cur_height;
                 if(cur_height >= orig_stairs_height) {
@@ -220,7 +265,7 @@ void run_lowering_stairs(s16* params, u16 sect_group) {
                 //params[SECTOR_PARAM_TICKS_LEFT_IDX] = ticks;
                 
                 // TODO: floor color hack!
-                params[SECTOR_GROUP_PARAM_FLOOR_COLOR_IDX] = 12;
+                set_sector_group_floor_color_inner(params, 12);
                 
                 params[SECTOR_GROUP_PARAM_FLOOR_HEIGHT_IDX] = cur_height;
                 if(cur_height <= orig_stairs_height) {
@@ -240,7 +285,8 @@ void run_lowering_stairs(s16* params, u16 sect_group) {
 
 
 void run_flash(s16* params) {
-    s8 light_level = params[SECTOR_GROUP_PARAM_LIGHT_IDX];
+    s8 light_level = get_sector_group_light_level_inner(params);
+
     s8 orig_light_level = params[SECTOR_GROUP_PARAM_STATE_IDX];
     s16 ticks_left = params[SECTOR_GROUP_PARAM_TICKS_LEFT_IDX];
     //KLog_S1("Light level: ", light_level);
@@ -269,7 +315,7 @@ void run_flash(s16* params) {
         }
     }
 
-    params[SECTOR_GROUP_PARAM_LIGHT_IDX] = light_level;
+    set_sector_group_light_level_inner(params, light_level);
     params[SECTOR_GROUP_PARAM_TICKS_LEFT_IDX] = ticks_left;
     params[SECTOR_GROUP_PARAM_STATE_IDX] = orig_light_level;
 }

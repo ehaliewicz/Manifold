@@ -7,16 +7,25 @@
 #define NUM_SECTOR_GROUP_PARAMS 8
 #define NUM_SECTOR_GROUP_PARAMS_SHIFT 3
 
+typedef struct __attribute__((__packed__)) {
+    s8 light_level;
+    u8 floor_ceil_color;
+} light_and_floor_ceil_color;
 
 // these params are actual sector group params
-#define SECTOR_GROUP_PARAM_LIGHT_IDX 0
+
+// light level is only 3 bits, using 16 bits :(
+// 00000 light_level:3 ceil_col:4 floor_col:4
+
+#define SECTOR_GROUP_PARAM_LIGHT_FLOOR_CEIL_COLOR_IDX 0
 #define SECTOR_GROUP_PARAM_ORIG_HEIGHT_IDX 1
+// state is probably only 8 bits, could possibly be more than that eventually
 #define SECTOR_GROUP_PARAM_STATE_IDX 2
 #define SECTOR_GROUP_PARAM_TICKS_LEFT_IDX 3
 #define SECTOR_GROUP_PARAM_FLOOR_HEIGHT_IDX 4
 #define SECTOR_GROUP_PARAM_CEIL_HEIGHT_IDX 5
-#define SECTOR_GROUP_PARAM_FLOOR_COLOR_IDX 6
-#define SECTOR_GROUP_PARAM_CEIL_COLOR_IDX 7
+#define SECTOR_GROUP_PARAM_SCRATCH_ONE_IDX 6
+#define SECTOR_GROUP_PARAM_SCRATCH_TWO_IDX 7
 
 #define NO_TYPE 0
 #define FLASHING 1
