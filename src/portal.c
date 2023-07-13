@@ -360,12 +360,15 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
         #endif 
             continue;
         }
+        
         u16 z_recip_v1 = z_recip_table_16[trans_v1.y>>TRANS_Z_FRAC_BITS];
         u16 z_recip_v2 = z_recip_table_16[trans_v2.y>>TRANS_Z_FRAC_BITS];
         s16 neighbor_floor_height, neighbor_ceil_height;
 
 
-        if(clipped == NEAR_Z_CULLED) {
+ // adding this check for frustum culled here fixes a crash bug
+ // but WHY?
+        if(clipped == NEAR_Z_CULLED || clipped == FRUSTUM_CULLED) {
         #ifdef DEBUG_PORTAL_CLIP
             KLog_U2("in sector: ", sector, " wall idx offscreen: ", i);
         #endif 
@@ -846,12 +849,15 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
                     ytop = project_and_adjust_y_fix(ceil_height-anchor_draw_offset, z_recip);
                     ybot = project_and_adjust_y_fix(floor_height+anchor_draw_offset, z_recip);
                 } else if(anchor_flags == FLAGS_ANCHOR_BOT_MASK) {
-                    ytop = project_and_adjust_y_fix(obj_z+anchor_draw_offset+height, z_recip);
-                    ybot = project_and_adjust_y_fix(obj_z+anchor_draw_offset, z_recip);
-                } else {
+                    ytop = project_and_adjust_y_fix(floor_height+anchor_draw_offset+height, z_recip);
+                    ybot = project_and_adjust_y_fix(floor_height+anchor_draw_offset, z_recip);
+                } else if(anchor_flags == FLAGS_ANCHOR_TOP_MASK) {
                     // anchored to top
                     ytop = project_and_adjust_y_fix(ceil_height-anchor_draw_offset, z_recip);
                     ybot = project_and_adjust_y_fix(ceil_height-anchor_draw_offset-height, z_recip);
+                } else {
+                    ytop = project_and_adjust_y_fix(obj_z+anchor_draw_offset+height, z_recip);
+                    ybot = project_and_adjust_y_fix(obj_z+anchor_draw_offset, z_recip);
                 }
 
                 obj_sort_buf[buf_idx].obj_type = obj_type;
@@ -898,12 +904,15 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
                     ytop = project_and_adjust_y_fix(ceil_height-anchor_draw_offset, z_recip);
                     ybot = project_and_adjust_y_fix(floor_height+anchor_draw_offset, z_recip);
                 } else if(anchor_flags == FLAGS_ANCHOR_BOT_MASK) {
-                    ytop = project_and_adjust_y_fix(obj_z+anchor_draw_offset+height, z_recip);
-                    ybot = project_and_adjust_y_fix(obj_z+anchor_draw_offset, z_recip);
-                } else {
+                    ytop = project_and_adjust_y_fix(floor_height+anchor_draw_offset+height, z_recip);
+                    ybot = project_and_adjust_y_fix(floor_height+anchor_draw_offset, z_recip);
+                } else if(anchor_flags == FLAGS_ANCHOR_TOP_MASK) {
                     // anchored to top
                     ytop = project_and_adjust_y_fix(ceil_height-anchor_draw_offset, z_recip);
                     ybot = project_and_adjust_y_fix(ceil_height-anchor_draw_offset-height, z_recip);
+                } else {
+                    ytop = project_and_adjust_y_fix(obj_z+anchor_draw_offset+height, z_recip);
+                    ybot = project_and_adjust_y_fix(obj_z+anchor_draw_offset, z_recip);
                 }
 
                 obj_sort_buf[buf_idx].obj_type = obj_type;
