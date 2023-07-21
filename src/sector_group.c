@@ -123,7 +123,7 @@ void run_door(s16* params, u16 sect_group) {
 
         case GOING_UP: do {
             if(cur_height == floor_height) {
-                play_sfx(SFX_OPEN_DOOR_ID, 1);
+                play_sfx(SFX_OPEN_DOOR_ID, 8);
             }
             cur_height += 180; //160;
             params[SECTOR_GROUP_PARAM_CEIL_HEIGHT_IDX] = cur_height;
@@ -140,7 +140,7 @@ void run_door(s16* params, u16 sect_group) {
 
             if(ticks_left == 0) {
                 //play_sfx(SFX_CLOSE_DOOR_ID, 1);
-                propagate_sfx_from_sect_group(SFX_CLOSE_DOOR_ID, 1, sect_group, cur_player_pos.cur_sector);
+                propagate_sfx_from_sect_group(SFX_CLOSE_DOOR_ID, 8, sect_group, cur_player_pos.cur_sector);
                 params[SECTOR_GROUP_PARAM_STATE_IDX] = GOING_DOWN;
             } else {
                 params[SECTOR_GROUP_PARAM_TICKS_LEFT_IDX]--;
@@ -176,7 +176,7 @@ void run_lift(s16* params, u16 sect_group) {
 
         case GOING_DOWN: do {
                 if(cur_height == reset_height) {
-                    propagate_sfx_from_sect_group(SFX_OPEN_DOOR_ID, 1, sect_group, cur_player_pos.cur_sector);
+                    propagate_sfx_from_sect_group(SFX_OPEN_DOOR_ID, 8, sect_group, cur_player_pos.cur_sector);
                 }
                 cur_height -= 128;
                 params[SECTOR_GROUP_PARAM_FLOOR_HEIGHT_IDX] = cur_height;
@@ -192,7 +192,7 @@ void run_lift(s16* params, u16 sect_group) {
         do {
             u16 ticks_left = params[SECTOR_GROUP_PARAM_TICKS_LEFT_IDX];
             if(ticks_left == 0) {
-                propagate_sfx_from_sect_group(SFX_LIFT_GO_UP_ID, 1, sect_group, cur_player_pos.cur_sector);
+                propagate_sfx_from_sect_group(SFX_LIFT_GO_UP_ID, 8, sect_group, cur_player_pos.cur_sector);
                 params[SECTOR_GROUP_PARAM_STATE_IDX] = GOING_UP;
             } else {
                 params[SECTOR_GROUP_PARAM_TICKS_LEFT_IDX]--;

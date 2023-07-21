@@ -14,14 +14,36 @@ void toggle_sfx(int menu_idx) {
 
 void play_sfx(u8 id, u8 priority) {
     if(!sfx_on) { return; }
+    //KLog_U2("playing sfx: ", id, " with priority: ", priority);
+
+    // check for a free channel first
     for(int i = 0; i < NUM_SFX_CHANNELS; i++) {
         u8 ch_used = channels_in_use[i];
         s8 old_priority = ch_used-1;
         s8 pcm_equal = pcm_id[i] - id;
         s8 prio_diff = priority - (ch_used-1);  // if 0, that means it's actually higher priority
         
-        if((ch_used == 0) || ((priority > old_priority) && (pcm_equal != 0))) {
+        if(ch_used == 0) {
         //if(priority >= channels_in_use[i] && pcm_id[i] != id) { // sadly, we need to check this to make sure a sfx gets played if possible
+            //KLog_U1("playing on unused channel: ", sfx_channels[i]);
+            XGM_startPlayPCM(id, priority, sfx_channels[i]);
+            //KLog_S2("playing id: ", id, " on channel: ", i+1);
+            channels_in_use[i] = priority+1;
+            //KLog_S3("ch used: ", ch_used, " prev priority: ", old_priority, " cur priority: ", priority);
+            pcm_id[i] = id;
+            return;
+        }
+    }
+    // if no free channels, check for a lower priority channel
+    for(int i = 0; i < NUM_SFX_CHANNELS; i++) {
+        u8 ch_used = channels_in_use[i];
+        s8 old_priority = ch_used-1;
+        s8 pcm_equal = pcm_id[i] - id;
+        s8 prio_diff = priority - (ch_used-1);  // if 0, that means it's actually higher priority
+        
+        if((priority > old_priority) && (pcm_equal != 0)) {
+        //if(priority >= channels_in_use[i] && pcm_id[i] != id) { // sadly, we need to check this to make sure a sfx gets played if possible
+            //KLog_U1("playing on lower priority channel: ", sfx_channels[i]);
             XGM_startPlayPCM(id, priority, sfx_channels[i]);
             //KLog_S2("playing id: ", id, " on channel: ", i+1);
             channels_in_use[i] = priority+1;

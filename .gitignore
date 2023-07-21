@@ -83,3 +83,6 @@ src/python/editor/SDL2.dll
 src/python/editor/editor.onefile-build/
 src/python/editor/editor.dist.7z
 src/python/editor/DLLs/
+src/python/editor/fixed_rom.bin
+src/python/editor/xgm_output.bin
+src/python/editor/maps/
