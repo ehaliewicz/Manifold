@@ -2,6 +2,7 @@
 #define _RES_GRAPHICS_RES_H_
 
 extern const Palette two_light_levels_pal;
+extern const TileSet pause_checker;
 extern const Image skybox_gradient;
 
 #endif // _RES_GRAPHICS_RES_H_

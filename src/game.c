@@ -43,7 +43,6 @@ fix16 angleSinFrac12, angleCosFrac12;
 s16 playerZCam12Frac4;
 
 
-static int pause_game = 0;
 static int quit_game = 0;
 
 
@@ -72,7 +71,7 @@ int cur_frame;
 
 u16 smiley_addr;
 u16 frown_addr;
-
+u16 pause_checker_addr;
 
 
 u16 last_vints_arr[4] = { 0, 0, 0, 0 };
@@ -81,8 +80,7 @@ u8 last_vints_idx = 0;
 u16 vints_avg = 0;
 
 u16 last_vints = 0;
-void showStats(u16 float_display)
-{
+void showStats() {
     char str[32];
     u16 y = 5;
 
@@ -176,7 +174,7 @@ void draw_3d_view(u32 cur_frame) {
     //KLog("END RENDER");
 
     // display fps
-    showStats(0);
+    //showStats(0);
 
     // request a flip when vsync process is idle (almost always, as the software renderer is much slower than the framebuffer DMA process)
     request_flip();
@@ -322,19 +320,45 @@ int holding_down_move = 0;
 
 u8 render_mode;
 
+static u8 prev_start_pressed = 0;
+
+static u8 paused = 0;
+
+#define PAUSE_SCREEN 5
+#define UNPAUSE_SCREEN 6
+
 int handle_input() {
+
+    //int pressed_b = joy_button_pressed(BUTTON_B);
+    int start_pressed = joy_button_pressed(BUTTON_START);
+    if (start_pressed && !prev_start_pressed) {
+        if(paused) {
+            paused = 0;
+            prev_start_pressed = start_pressed;
+            return UNPAUSE_SCREEN;
+        } else {
+            paused = 1;
+            prev_start_pressed = start_pressed;
+            return PAUSE_SCREEN;
+        }
+    }
+
+    prev_start_pressed = start_pressed;
+    if(paused) {
+        return 0;
+    }
+
+
     int strafe_left = joy_button_pressed(BUTTON_X);
     int strafe_right = joy_button_pressed(BUTTON_Z);
     int jump_pressed = joy_button_pressed(BUTTON_Y);
-
-    //int pressed_b = joy_button_pressed(BUTTON_B);
-
 
     int moved = 0;
     fix32 curx = cur_player_pos.x;
     fix32 cury = cur_player_pos.y;
     fix32 newx, newy;
     u16 newang = cur_player_pos.ang;
+
 
     if (joy_button_pressed(BUTTON_LEFT)) {
 
@@ -464,7 +488,7 @@ int handle_input() {
         if(jumping >= 6) { cur_player_pos.z += FIX32(16); }
         jumping--;
         if(jumping == 0) {
-            play_sfx(SFX_JUMP2_ID, 1);
+            play_sfx(SFX_JUMP2_ID, 15);
         }
     }
 
@@ -472,7 +496,7 @@ int handle_input() {
     if(joy_button_pressed(BUTTON_A) && !shooting) {  
         //play_sfx(SFX_PEASHOOTER_ID, 1);
         reset_gun_bob();
-        play_sfx(SFX_SHOTGUN_ID, 16);
+        play_sfx(SFX_SHOTGUN_ID, 15);
         run_in_phs(cur_player_pos.cur_sector, wake_enemies_in_sector, cur_portal_map);
 
         shooting = 12;
@@ -490,13 +514,13 @@ int handle_input() {
         //play_sfx(SFX_SELECT_ID, 1);
         pressing = 2;
         if(!check_trigger_switch(&cur_player_pos)) {        
-            play_sfx(SFX_JUMP1_ID, 1);
+            play_sfx(SFX_JUMP1_ID, 15);
         }
 
     }
 
     if(jump_pressed && !jumping) {
-        play_sfx(SFX_JUMP1_ID, 1);
+        play_sfx(SFX_JUMP1_ID, 15);
         jumping = 10;
     }
 
@@ -504,8 +528,6 @@ int handle_input() {
 
     return 0;
 
-
-    pause_game = joy_button_pressed(BUTTON_START);
 
     u16 joy = JOY_readJoypad(JOY_1);
 
@@ -537,7 +559,6 @@ int handle_input() {
 
 void return_to_menu() {
     quit_game = 1;
-    pause_game = 0;
 }
 
 const menu game_menu = {
@@ -623,10 +644,6 @@ void init_game() {
 
 
     quit_game = 0;
-    if(pause_game) {
-        pause_game = 0;
-    } else {
-    }
 
 
     init_clip_buffer_list();
@@ -700,10 +717,12 @@ void init_game() {
 
     free_tile_loc = init_shotgun(free_tile_loc);
 
-    VDP_loadTileData(smile.tiles, free_tile_loc, 16, DMA);
-    smiley_addr = free_tile_loc; free_tile_loc += 16;
-    VDP_loadTileData(frown.tiles, free_tile_loc, 16, DMA);
-    frown_addr = free_tile_loc; free_tile_loc += 16;
+    //VDP_loadTileData(smile.tiles, free_tile_loc, 16, DMA);
+    //smiley_addr = free_tile_loc; free_tile_loc += 16;
+    //VDP_loadTileData(frown.tiles, free_tile_loc, 16, DMA);
+    //frown_addr = free_tile_loc; free_tile_loc += 16;
+    VDP_loadTileData(pause_checker.tiles, free_tile_loc, 1, DMA);
+    pause_checker_addr = free_tile_loc; free_tile_loc += 1;
 
     //KLog("allocating object?");
 
@@ -736,16 +755,12 @@ void cleanup_level() {
 game_mode run_game() {
 
     u32 start_ticks = getTick();
-    process_all_objects(cur_frame);
-    
-    // temp disable stuff for debugging tearing
-    console_tick();
-    inventory_draw();
-    update_sfx();
-    run_sector_group_processes();
-    
+
     calc_movement_speeds();
-    if(handle_input() == LEVEL_END) {
+
+    int input_res = handle_input();
+    if(input_res == LEVEL_END) {
+        VDP_setHilightShadow(0);
         const int num_maps = map_table[1];
         init_load_level+= 1;
         if(init_load_level >= num_maps) {
@@ -753,7 +768,38 @@ game_mode run_game() {
         }
         KLog_U1("going to level: ", init_load_level);
         return RESET_MODE;
+    } else if (input_res == PAUSE_SCREEN) {
+        VDP_setHilightShadow(1);
+        for(int ty = 0; ty < 30; ty++) {
+            for(int tx = 0; tx < 40; tx++) {
+                // priority 0 for shadowing
+                VDP_setTileMapXY(BG_B, TILE_ATTR_FULL(PAL0, 0, 0, 0, pause_checker_addr), tx, ty);
+                //base_tile_addr++;
+            }
+        }
+    } else if (input_res == UNPAUSE_SCREEN) {
+        VDP_setHilightShadow(0);
+        for(int ty = 0; ty < 30; ty++) {
+            for(int tx = 0; tx < 40; tx++) {
+                // priority 0 for shadowing
+                VDP_setTileMapXY(BG_B, TILE_ATTR_FULL(PAL0, 1, 0, 0, 0), tx, ty);
+                //base_tile_addr++;
+            }
+        }
+
     }
+
+    if(paused) {
+        return SAME_MODE;
+    }
+
+    process_all_objects(cur_frame);
+    
+    // temp disable stuff for debugging tearing
+    console_tick();
+    inventory_draw();
+    update_sfx();
+    run_sector_group_processes();
 
     angleCos32 = cosFix32(cur_player_pos.ang);
     angleSin32 = sinFix32(cur_player_pos.ang); 
