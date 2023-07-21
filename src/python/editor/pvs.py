@@ -1,8 +1,10 @@
 import math
+import typing
 import shapely.geometry
 from typing import List, NewType, Optional, Set, Tuple
 import utils
 import imgui
+import line
 
 
 #Portal = NewType('Portal', Tuple[Point, Point, int])
@@ -151,9 +153,74 @@ def create_new_frustum(draw_list, cur_state, cur_frustum, start_frustum_portal, 
         return result_frustum
         #return new_frustum
 
-def recursive_pvs(cur_sector, cur_state, map_data):
+def can_merge_front(b1: line.Wall, b2: line.Wall):
+    last_of_b1 = b1[-1]
+    first_of_b2 = b2[0]
+    if last_of_b1.sector_idx != first_of_b2.sector_idx:
+        return False 
+    
+    return last_of_b1.v2 == first_of_b2.v1
+
+def can_merge_back(b1, b2):
+    last_of_b2 = b2[-1]
+    first_of_b1 = b1[0]
+    if last_of_b2.sector_idx != first_of_b1.sector_idx:
+        return False 
+    
+    return last_of_b2.v2 == first_of_b1.v1
+
+def merge_bunches(bunches):
+
+    merged_at_least_one = True 
+    while merged_at_least_one: 
+        merged_at_least_one = False
+        idx = 0
+        while idx < len(bunches):
+            candidate_bunch = bunches[idx]
+            other_bunches = bunches[0:idx] + bunches[idx+1:]
+
+            # check if it can be merged with either the front or end of the bunch we're testing against
+
+            for test_idx in range(len(other_bunches)):
+                test_bunch = other_bunches[test_idx]
+
+                if can_merge_front(candidate_bunch, test_bunch):
+                    merged_at_least_one = True 
+                    
+                    other_bunches[test_idx] = candidate_bunch + test_bunch
+                    bunches = other_bunches
+                    break
+
+                if can_merge_back(candidate_bunch, test_bunch):
+                    merged_at_least_one = True 
+                    other_bunches[test_idx] =  test_bunch + candidate_bunch
+                    bunches = other_bunches
+                    break
+
+
+            idx += 1
+
+    return bunches
+
+
+
+def recursive_pvs(cur_sector, cur_state, map_data) -> typing.Tuple[typing.Dict, typing.List]:
     
     pvs = {}
+    bunches = []
+    cur_bunch = []
+
+    def output_bunch():
+        nonlocal cur_bunch
+        if len(cur_bunch) > 0:
+            bunches.append(cur_bunch)
+            cur_bunch = []
+
+    def add_wall_to_cur_bunch(w):
+        nonlocal cur_bunch
+        cur_bunch.append(w)
+
+
     pvs[cur_sector.index] = set()
     cur_sect_pvs = pvs[cur_sector.index]
 
@@ -161,9 +228,11 @@ def recursive_pvs(cur_sector, cur_state, map_data):
     def recursive_pvs_inner(cur_sector, cur_frustum, start_frustum_portal, depth, last_traversed_portal):
         if depth >= 100:
             return 
-    
+
         #group = []
         next_calls = []
+
+
         if cur_sector.index not in pvs:
             pvs[cur_sector.index] = set()
         cur_sect_pvs = pvs[cur_sector.index]
@@ -172,7 +241,10 @@ def recursive_pvs(cur_sector, cur_state, map_data):
             
             portal_sector = wall.adj_sector_idx
             # don't go back through portals we just went through
+
             if wall.v1 == last_traversed_portal.v2 and wall.v2 == last_traversed_portal.v1:
+                # don't traverse back through portals
+                output_bunch()
                 continue
             #if portal_sector == last_sector_idx:
             #    continue
@@ -182,17 +254,21 @@ def recursive_pvs(cur_sector, cur_state, map_data):
             #    pass
             if cur_frustum is not None:
                 if not within_frustum(wall, cur_frustum, debug=cur_sector.index==5):
+                    output_bunch()
                     continue
             
             dp = dot_product(normalize(wall.normal()), normalize(start_frustum_portal.portal_out_normal()))
             if dp == 1:  # TODO: test if this should be >0 or >=0
                 #print("wall {} is backfacing".format(idx))
+                output_bunch()
                 continue # this wall isn't visible through the start_frustum_portal
 
-
+            add_wall_to_cur_bunch(wall)
             cur_sect_pvs.add(wall)
+    
             if portal_sector == -1:
                 # line from v1 of start frustum to v2 of new frustum, and vice versa
+                output_bunch()
                 continue
 
 
@@ -212,6 +288,8 @@ def recursive_pvs(cur_sector, cur_state, map_data):
             nsect = map_data.sectors[portal_sector]
             next_calls.append([nsect, next_frustum, wall])
             
+        output_bunch()
+
         for next_call in next_calls:
             (nsect, nfrust, last_traversed_portal) = next_call         
             if draw_frustums:  
@@ -220,6 +298,7 @@ def recursive_pvs(cur_sector, cur_state, map_data):
 
 
     for wall in cur_sector.walls:
+        add_wall_to_cur_bunch(wall)
         cur_sect_pvs.add(wall)
 
         portal_sector = wall.adj_sector_idx
@@ -229,12 +308,13 @@ def recursive_pvs(cur_sector, cur_state, map_data):
         start_frustum_portal = wall
         # we can see all walls in directly attached sectors
         next_sect = map_data.sectors[portal_sector]
+        output_bunch()
         recursive_pvs_inner(next_sect, None, start_frustum_portal, depth=1, last_traversed_portal= wall)
 
 
 
 
-    return pvs
+    return pvs, bunches
 
 
 
@@ -247,10 +327,19 @@ def draw_pvs_mode(cur_state):
     if imgui.button("frustums## Toggle Frustums"):
         draw_frustums = not draw_frustums
 
-    if cur_state.cur_sector is not None:
-        cur_state.cur_sector_pvs = recursive_pvs(cur_state.cur_sector, cur_state, cur_state.map_data)
 
+
+    if cur_state.cur_sector is not None:
+        pvs,bunches = recursive_pvs(cur_state.cur_sector, cur_state, cur_state.map_data)
+        cur_state.cur_sector_pvs = pvs 
+
+        cur_state.cur_sector_pvs_bunches = bunches
+        cur_state.cur_sector_pvs_merged_bunches = merge_bunches(bunches)
         imgui.text("Sector {}".format(cur_state.cur_sector.index))
+        imgui.text("Num bunches: {}".format(len(cur_state.cur_sector_pvs_bunches)))
+        imgui.text("Num merged bunches: {}".format(len(cur_state.cur_sector_pvs_merged_bunches)))
+        imgui.text("Num walls: {}".format(sum(len(b) for b in cur_state.cur_sector_pvs_bunches)))
+
     
 
     utils.draw_list(cur_state, "Sectors", "Sector list", 

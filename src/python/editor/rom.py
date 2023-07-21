@@ -479,7 +479,8 @@ def export_map_to_rom(cur_path, cur_state: state.State, set_launch_flags=False, 
 
             sector_pvs_map = {}
             for sector in data.sectors:
-                sector_pvs_map[sector.index] = pvs.recursive_pvs(sector, cur_state, data).keys()
+                sect_pvs, bunches =  pvs.recursive_pvs(sector, cur_state, data)
+                sector_pvs_map[sector.index] = sect_pvs.keys()
             sector_phs_map = {}
             for sector in data.sectors:
                 cur_phs = set()
