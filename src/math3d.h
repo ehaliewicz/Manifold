@@ -32,6 +32,7 @@ typedef struct {
 
 typedef enum {
     UNCLIPPED             = 0b00000000,
+    //OFFSCREEN             = 0b00000001,
     NEAR_Z_CULLED         = 0b00000001,
     FRUSTUM_CULLED        = 0b00000010,
     LEFT_Z_CLIPPED        = 0b00000100,

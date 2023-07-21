@@ -354,21 +354,14 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
         #endif 
 
 
-        if(clipped == FRUSTUM_CULLED) {
-        #ifdef DEBUG_PORTAL_CLIP
-            KLog_U1("frustum culled!: ", i);
-        #endif 
-            continue;
-        }
         
         u16 z_recip_v1 = z_recip_table_16[trans_v1.y>>TRANS_Z_FRAC_BITS];
         u16 z_recip_v2 = z_recip_table_16[trans_v2.y>>TRANS_Z_FRAC_BITS];
         s16 neighbor_floor_height, neighbor_ceil_height;
 
 
- // adding this check for frustum culled here fixes a crash bug
- // but WHY?
         if(clipped == NEAR_Z_CULLED || clipped == FRUSTUM_CULLED) {
+            if(clipped == FRUSTUM_CULLED) { continue; }
         #ifdef DEBUG_PORTAL_CLIP
             KLog_U2("in sector: ", sector, " wall idx offscreen: ", i);
         #endif 
