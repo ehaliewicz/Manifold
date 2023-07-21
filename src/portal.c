@@ -223,7 +223,11 @@ void load_and_transform_pvs_walls(u16 num_walls, u16* pvs_wall_indexes,
 //s16 proj_x_buffer[62];
 
 
+const s16 y_pos_modulate[16] = {0<<4,1<<4,2<<4,3<<4,4<<4,3<<4,2<<4,1<<4,0<<4,-1<<4,-2<<4,-3<<4,-4<<4,-3<<4,-2<<4,-1<<4};
+
 void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint8_t depth) {
+    
+
     #ifdef DEBUG_PORTAL_CLIP
     KLog_U1("in sector: ", sector);
     #endif 
@@ -811,8 +815,7 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
         //}
     }
 
-    
-
+    s16 y_pos_mod = y_pos_modulate[cur_frame&0b1111];
     
     if(obj_clip_buf != NULL) { //} objects_in_sect != NULL_OBJ_LINK || decorations_in_sect != NULL_DEC_LINK) {
         u8 buf_idx = 0;
@@ -831,27 +834,32 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
                 //z_buf[buf_idx] = &obj_buf[buf_idx];
                 u8 obj_type = OBJ_LINK_DEREF(cur_obj).object_type;
                 volatile object_template* type = &object_types[obj_type];
+                // bob pickup-able items up and down a bit
+                s16 cur_y_pos_mod = type->init_state == MAYBE_GET_PICKED_UP_STATE ? y_pos_mod : 0;
 
                 u16 anchor_draw_offset = type->from_anchor_draw_offset;
                 u16 height = type->height;
 
-                s16 ytop, ybot;
                 u8 anchor_flags = type->flags & (FLAGS_ANCHOR_TOP_MASK | FLAGS_ANCHOR_BOT_MASK);
 
+                s16 world_ytop, world_ybot;
                 if (anchor_flags == (FLAGS_ANCHOR_TOP_MASK | FLAGS_ANCHOR_BOT_MASK)) {
-                    ytop = project_and_adjust_y_fix(ceil_height-anchor_draw_offset, z_recip);
-                    ybot = project_and_adjust_y_fix(floor_height+anchor_draw_offset, z_recip);
+                    world_ytop = ceil_height-anchor_draw_offset+cur_y_pos_mod;
+                    world_ybot = floor_height+anchor_draw_offset+cur_y_pos_mod;
                 } else if(anchor_flags == FLAGS_ANCHOR_BOT_MASK) {
-                    ytop = project_and_adjust_y_fix(floor_height+anchor_draw_offset+height, z_recip);
-                    ybot = project_and_adjust_y_fix(floor_height+anchor_draw_offset, z_recip);
+                    world_ytop = floor_height+anchor_draw_offset+height+cur_y_pos_mod;
+                    world_ybot = floor_height+anchor_draw_offset+cur_y_pos_mod;
                 } else if(anchor_flags == FLAGS_ANCHOR_TOP_MASK) {
                     // anchored to top
-                    ytop = project_and_adjust_y_fix(ceil_height-anchor_draw_offset, z_recip);
-                    ybot = project_and_adjust_y_fix(ceil_height-anchor_draw_offset-height, z_recip);
+                    world_ytop = ceil_height-anchor_draw_offset+cur_y_pos_mod;
+                    world_ybot = ceil_height-anchor_draw_offset-height+cur_y_pos_mod;
                 } else {
-                    ytop = project_and_adjust_y_fix(obj_z+anchor_draw_offset+height, z_recip);
-                    ybot = project_and_adjust_y_fix(obj_z+anchor_draw_offset, z_recip);
+                    world_ytop = obj_z+anchor_draw_offset+height+cur_y_pos_mod;
+                    world_ybot = obj_z+anchor_draw_offset+cur_y_pos_mod;
                 }
+
+                s16 ytop = project_and_adjust_y_fix(world_ytop, z_recip);
+                s16 ybot = project_and_adjust_y_fix(world_ybot, z_recip);
 
                 obj_sort_buf[buf_idx].obj_type = obj_type;
                 obj_sort_buf[buf_idx].x = trans_pos.x;
