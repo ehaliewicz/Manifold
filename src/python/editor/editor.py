@@ -386,7 +386,18 @@ def draw_sector(draw_list, sector, sect_group, highlight=False, cur_sector_pvs=N
         wall_in_pvs = cur_state.mode == Mode.PVS and cur_sector_pvs is not None and (wall in (cur_sector_pvs[wall.sector_idx] if wall.sector_idx in cur_sector_pvs else set()))
         
         draw_map_wall(draw_list, wall, sect_group.color, (highlight or wall_selected or wall_hovered or wall_in_pvs), tree_mode, concave_sector)
+    
 
+    cam_x = cur_state.camera_x
+    cam_y = cur_state.camera_y
+     
+    #poly = sector.get_collision_polygon(20)
+    #for wall in poly:
+    #    
+    #    (cv1x,cv1y),(cv2x,cv2y) = wall
+    #    draw_list.add_line(cv1x-cam_x, cv1y-cam_y, cv2x-cam_x, cv2y-cam_y, imgui.get_color_u32_rgba(*sect_group.color), 1.0)
+
+    #print(poly)
         
 # returns true if hovered
 def draw_map():
@@ -844,7 +855,7 @@ def old_thing_defs_to_new_things_defs(old_things):
         anchor_draw_offset = old_thing.floor_draw_offset if hasattr(old_thing, 'floor_draw_offset') else old_thing.anchor_draw_offset
         anchor_top = old_thing.anchor_top if hasattr(old_thing, 'anchor_top') else False
         anchor_bottom = old_thing.anchor_bottom if hasattr(old_thing, 'anchor_bottom') else True
-        key_type = old_thing.key_type if hasattr(old_thing, 'key_type') else None
+        key_type = old_thing.key_type if hasattr(old_thing, 'key_type') else 0
         res.append(things.ThingDef(
             sprite_file=old_thing.sprite_file, name=old_thing.name,
             width=old_thing.width, height=old_thing.height, 

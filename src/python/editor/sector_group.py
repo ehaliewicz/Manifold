@@ -132,6 +132,7 @@ def draw_sector_group_mode(cur_state):
 
         state_options = ["No state"]
         state_label = "No state"
+        orig_height_label = None
         if cur_sect_group.type == DOOR:
             orig_height_label = "Open height"
             state_label = "Door state"
@@ -154,7 +155,8 @@ def draw_sector_group_mode(cur_state):
         else:
             orig_height_label = "Original height"
         
-        input_int("{}:    ".format(orig_height_label), "##sector{}_orig_height".format(cur_sect_group.index), cur_sect_group.orig_height, set_orig_height)
+        if orig_height_label is not None:
+            input_int("{}:    ".format(orig_height_label), "##sector{}_orig_height".format(cur_sect_group.index), cur_sect_group.orig_height, set_orig_height)
         
         input_int("Ticks left: ", "##sector{}_ticks_left".format(cur_sect_group.index), cur_sect_group.ticks_left, set_ticks_left)
 
