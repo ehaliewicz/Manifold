@@ -1,5 +1,6 @@
 #include <genesis.h>
 #include <kdebug.h>
+#include "bunch_render.h"
 #include "clip_buf.h"
 #include "colors.h"
 #include "config.h"
@@ -56,6 +57,7 @@ int portals_frustum_culled;
 
 int sectors_scanned = 0;
 
+// if j1 is further away, 
 int needs_to_move_right(z_buf_obj j1, z_buf_obj j2) {
     u16 j1_z_recip = j1.z_recip;
     u16 j2_z_recip = j2.z_recip;
@@ -70,150 +72,6 @@ int needs_to_move_right(z_buf_obj j1, z_buf_obj j2) {
     }
     return 0;
 }
-
-
-void load_transform_and_duplicate_verts(u16 num_vertexes, u16* indexes, vertex* map_vertexes, Vect2D_s16* out) {
-    /* 
-        this function will load and transform all vertexes in a sector
-        but in backwards order
-        this is so that by duplicated them per wall,
-
-        e.g. 
-        vertexes 0,1,2,3
-        into
-        wall vertexes: 0,1, 1,2, 2,3
-    
-        we don't overwrite any values we need later
-
-        other than that, it's just simple vertex transformations with the transform function manually inlined.
-    */
-
-    s16* vert_component_pointer = (s16*)map_vertexes;
-
-    u16* last_index_ptr = indexes + num_vertexes;
-
-    s16 num_walls = (num_vertexes-1);
-    s16* last_out_ptr = out + (num_walls*2);
-
-    u16 index = *--last_index_ptr;
-    u16 component_index = index+index;
-    s16 cur_x = vert_component_pointer[component_index++];
-    s16 cur_y = vert_component_pointer[component_index];
-
-    s16 tlx = cur_x - playerXInt;
-    s16 tly = cur_y - playerYInt;
-    s32 rx = (tlx * angleSin16) - (tly * angleCos16); // 22.10 * 16 -> 22.10
-    s32 ry = (tlx * angleCos16) + (tly * angleSin16);
-    s16 cur_res_x = rx>>(FIX16_FRAC_BITS);
-    s16 cur_res_y = ry>>(FIX16_FRAC_BITS-TRANS_Z_FRAC_BITS); // 12.4
-
-
-    s16 prev_res_x = cur_res_x;
-    s16 prev_res_y = cur_res_y;
-
-    int i = 0;
-    while(num_walls--) {
-    //for(int i = 0; i < num_walls; i++) {
-
-        index = *--last_index_ptr;
-        component_index = index + index;
-        //s16* ptr = vert_component_pointer+component_index;
-
-
-        //cur_x = *ptr++;
-        //cur_y = *ptr++;
-        cur_x = vert_component_pointer[component_index++];     
-        cur_y = vert_component_pointer[component_index];       
-        #ifdef DEBUG_PORTAL_CLIP
-        KLog_S3("transform vert i: ", i, " x: ", cur_x, " y: ", cur_y);  
-        #endif
-
-
-        tlx = cur_x - playerXInt;                              
-        tly = cur_y - playerYInt;          
-        #ifdef DEBUG_PORTAL_CLIP 
-        KLog_S2(" tlx: ", tlx, " tly: ", tly);     
-        #endif                    
-        rx = (tlx * angleSin16) - (tly * angleCos16);          
-        ry = (tlx * angleCos16) + (tly * angleSin16);        
-        #ifdef DEBUG_PORTAL_CLIP  
-        KLog_S2(" rx: ", tlx, " ry: ", tly);           
-        #endif
-        cur_res_x = rx >> (FIX16_FRAC_BITS);                   
-        cur_res_y = ry >> (FIX16_FRAC_BITS-TRANS_Z_FRAC_BITS);     
-        #ifdef DEBUG_PORTAL_CLIP
-        KLog_S2(" cur_res_x: ", cur_res_x, " cur_res_y: ", cur_res_y);      
-        #endif
-
-        __asm volatile(
-            "move.w %2, -(%0)\t\n\
-            move.w %1, -(%0)\t\n\
-            move.w %4, -(%0)\t\n\
-            move.w %3, -(%0)\t\n\
-            "
-            : "+a" (last_out_ptr)
-            : "d" (prev_res_x), "d" (prev_res_y), "d" (cur_res_x), "d" (cur_res_y)
-        );
-
-        prev_res_x = cur_res_x;
-        prev_res_y = cur_res_y;
-
-    }
-}
-
-void load_and_transform_pvs_walls(u16 num_walls, u16* pvs_wall_indexes, 
-                                  u16* map_walls, vertex* map_vertexes, 
-                                  Vect2D_s16* out) {
-
-    s16* vert_component_pointer = (s16*)map_vertexes;
-
-    for(int i = 0; i < num_walls; i++) {
-        
-        s16 wall_idx = *pvs_wall_indexes++;
-        u16 v1_idx = map_walls[wall_idx++];
-        u16 v2_idx = map_walls[wall_idx];
-        v1_idx += v1_idx;
-        v2_idx += v2_idx;
-        
-        s16 v1x = vert_component_pointer[v1_idx++];
-        s16 v1y = vert_component_pointer[v1_idx];
-
-        s16 tlx = v1x - playerXInt; // 16-bit integer
-        s16 tly = v1y - playerYInt; // 16-bit integer
-
-        s32 rx = (tlx * angleSin16) - (tly * angleCos16); // 22.10 * 16 -> 22.10
-        s32 ry = (tlx * angleCos16) + (tly * angleSin16);
-        s16 res_x = rx>>(FIX16_FRAC_BITS);
-        s16 res_y = ry>>(FIX16_FRAC_BITS-TRANS_Z_FRAC_BITS); // 12.4
-
-        __asm volatile(
-            "move.w %1, (%0)+\t\n\
-             move.w %2, (%0)+\t\n\
-            "
-            : "+a" (out)
-            : "d" (res_x), "d" (res_y)
-        );
-
-        s16 v2x = vert_component_pointer[v2_idx++];
-        s16 v2y = vert_component_pointer[v2_idx];
-        tlx = v2x - playerXInt;
-        tly = v2y - playerYInt;
-
-        rx = (tlx * angleSin16) - (tly * angleCos16); // 22.10 * 16 -> 22.10
-        ry = (tlx * angleCos16) + (tly * angleSin16);
-        res_x = rx>>(FIX16_FRAC_BITS);
-        res_y = ry>>(FIX16_FRAC_BITS-TRANS_Z_FRAC_BITS); // 12.4
-
-        __asm volatile(
-            "move.w %1, (%0)+\t\n\
-             move.w %2, (%0)+\t\n\
-            "
-            : "+a" (out)
-            : "d" (res_x), "d" (res_y)
-        );
-    }
-}
-
 
 
 //u8 is_portal[62];
@@ -944,12 +802,12 @@ void visit_graph(u16 src_sector, u16 sector, u16 x1, u16 x2, u32 cur_frame, uint
             for (int i = gap; i < buf_idx; i += 1) {
             z_buf_obj temp = z_sort_buf[i];
   
-            int j;            
-            for (j = i; j >= gap && needs_to_move_right(z_sort_buf[j - gap], temp); j -= gap) {
-                z_sort_buf[j] = z_sort_buf[j - gap];
-            }              
-            //  put temp (the original a[i]) in its correct location
-            z_sort_buf[j] = temp;
+                int j;            
+                for (j = i; j >= gap && needs_to_move_right(z_sort_buf[j - gap], temp); j -= gap) {
+                    z_sort_buf[j] = z_sort_buf[j - gap];
+                }              
+                //  put temp (the original a[i]) in its correct location
+                z_sort_buf[j] = temp;
             }   
         }
         for(int i = 0; i < buf_idx; i++) {
@@ -1238,6 +1096,8 @@ void pvs_scan(u16 src_sector, s16 window_min, s16 window_max, u32 cur_frame) {
 
 */
 
+
+
 void portal_rend(u16 src_sector, u32 cur_frame) {
     #ifdef DEBUG_PORTAL_CLIP
     pre_transform_backfacing_walls = 0;
@@ -1266,6 +1126,10 @@ void portal_rend(u16 src_sector, u32 cur_frame) {
 
             visit_graph(src_sector, src_sector, 0, RENDER_WIDTH, cur_frame, 0);
 
+            //pvs_bunch_group* pvs_grp = &cur_portal_map->pvs_bunch_groups[src_sector];
+            //KLog_U2("sector: ", src_sector, " num_bunches: ", pvs_grp->num_bunches);
+            ////prepare_bunches(src_sector, cur_frame);
+            //draw_bunches(src_sector, cur_frame);
 
         //} else {
         //    u16 pvs_offset = cur_portal_map->pvs_offsets[src_sector];

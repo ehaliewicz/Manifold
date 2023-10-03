@@ -4,6 +4,7 @@
 #include <genesis.h>
 #include "texture.h"
 #include "utils.h"
+#include "vertex.h"
 
 // .888
 #define ASPECT_RATIO (SCREEN_WIDTH / SCREEN_HEIGHT) // 0.44
@@ -77,5 +78,18 @@ s16 project_and_adjust_y_fix_c(s16 y, s16 z);
 s8 point_sign_int_vert(f32 x, f32 y, s16 v1_x, s16 v1_y, s16 v2_x, s16 v2_y);
 s8 point_sign_int_vert_s16(s16 x, s16 y, s16 v1_x, s16 v1_y, s16 v2_x, s16 v2_y);
 u8 within_frustum(s16 x1, s16 y1, s16 x2, s16 y2);
+
+
+
+void load_transform_and_duplicate_verts(
+    u16 num_vertexes, u16* indexes, 
+    vertex* map_vertexes, Vect2D_s16* out
+);
+
+void load_and_transform_pvs_walls(u16 num_walls, u16* pvs_wall_indexes, 
+                                  u16* map_walls, vertex* map_vertexes, 
+                                  Vect2D_s16* out);
+
+
 
 #endif

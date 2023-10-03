@@ -9,9 +9,10 @@ DOOR = 2
 LIFT = 3
 STAIRS = 4
 LOWERING_STAIRS = 5
+UP_DOWN = 6
 
 
-SECTOR_GROUP_EFFECT_TYPES = ["No effect", "Flashing", "Door", "Lift", "Stairs", "Lowering stairs"] 
+SECTOR_GROUP_EFFECT_TYPES = ["No effect", "Flashing", "Door", "Lift", "Stairs", "Lowering stairs", "Up down"] 
 
 
 
@@ -110,7 +111,6 @@ def draw_sector_group_mode(cur_state):
         set_floor_color = lambda v: set_sector_group_attr(cur_state, cur_sect_group, 'floor_color', v)
         set_ceil_height = lambda v: set_sector_group_attr(cur_state, cur_sect_group, 'ceil_height', v)
         set_ceil_color = lambda v: set_sector_group_attr(cur_state, cur_sect_group, 'ceil_color', v)
-        set_scratch_one = lambda v: set_sector_group_attr(cur_state, cur_sect_group, 'scratch_one', v)
 
         type_changed, new_type_idx = imgui.core.combo("Type:   ", cur_sect_group.type, SECTOR_GROUP_EFFECT_TYPES)
         if type_changed:
@@ -136,6 +136,10 @@ def draw_sector_group_mode(cur_state):
         if cur_sect_group.type == DOOR:
             orig_height_label = "Open height"
             state_label = "Door state"
+            state_options = DOOR_LIFT_STATES
+        elif cur_sect_group.type == UP_DOWN:
+            orig_height_label = "Max height"
+            state_label = "Up down state"
             state_options = DOOR_LIFT_STATES
         elif cur_sect_group.type == FLASHING:
             state_label = "Flicker base light level"

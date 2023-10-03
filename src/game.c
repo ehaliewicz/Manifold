@@ -20,6 +20,7 @@
 #include "object.h"
 #include "portal.h"
 #include "portal_map.h"
+#include "real_timer.h"
 #include "sector_group.h"
 #include "sfx.h"
 #include "sfx_res.h"
@@ -27,6 +28,7 @@
 #include "utils.h"
 #include "vwf.h"
 
+#include "weapon_sprites.h"
 #include "graphics_res.h"
 #include "sprites_res.h"
 
@@ -174,7 +176,7 @@ void draw_3d_view(u32 cur_frame) {
     //KLog("END RENDER");
 
     // display fps
-    //showStats(0);
+    showStats(0);
 
     // request a flip when vsync process is idle (almost always, as the software renderer is much slower than the framebuffer DMA process)
     request_flip();
@@ -244,19 +246,19 @@ void unapply_bob() {
 
 
 //Sprite* shotgun_spr;
-#define BASE_GUN_X 128
-#define BASE_GUN_Y 120
 
 int shotgun_spr_idx_start, shotgun_num_sprites;
 
 
 void set_gun_pos() {
+    
     u8 idx = (gun_bob_idx>>4) % 20;
 
     s16 bobOffX = gun_bobs[idx].x<<1;
     s16 bobOffY = gun_bobs[idx].y<<1;
+    set_weapon_sprite_position_offset(bobOffX, bobOffY);
 
-    
+    /*
     AnimationFrame *frame1 = shotgun.animations[0]->frames[0];
     FrameVDPSprite** f = frame1->frameInfos[0].frameVDPSprites;
     for(int i = 0; i < shotgun_num_sprites; i++) {
@@ -267,7 +269,7 @@ void set_gun_pos() {
         );
     }
     VDP_updateSprites(shotgun_num_sprites, DMA_QUEUE);
-    
+    */
    
 }
 
@@ -281,38 +283,9 @@ void reset_gun_bob() {
     set_gun_pos();
 }
 
-u32 init_shotgun(u32 tile_loc) {
 
-    VDP_loadTileSet(shotgun.animations[0]->frames[0]->tileset, tile_loc, DMA);
-    //u8 shotgun_w = shotgun.animations[0]->frames[0]->w/8;
-    //u8 shotgun_h = shotgun.animations[0]->frames[0]->h/8;
-    AnimationFrame *frame1 = shotgun.animations[0]->frames[0];
-
-    VDP_resetSprites();
-    s16 spr_idx = VDP_allocateSprites(frame1->numSprite);
-    shotgun_num_sprites = frame1->numSprite;
-    shotgun_spr_idx_start = spr_idx;
-
-    u16 tile_idx = tile_loc;
-
-    FrameVDPSprite** f = frame1->frameInfos[0].frameVDPSprites;
-    for(int i = 0; i < frame1->numSprite; i++) {
-        FrameVDPSprite* spr = f[i];
-
-        VDP_setSprite(
-            spr_idx+i,
-            BASE_GUN_X+spr->offsetX, BASE_GUN_Y+spr->offsetY,
-            spr->size,
-            TILE_ATTR_FULL(PAL0, 0, 0, 0, tile_idx)
-        );
-        tile_idx += spr->numTile;
-
-    }
-    tile_loc += shotgun.maxNumTile;
-    VDP_linkSprites(0, frame1->numSprite);
-    VDP_updateSprites(frame1->numSprite, DMA);
-
-    return tile_loc;
+void init_shotgun() {
+    set_weapon_anim(SHOTGUN_IDLE_ANIM, DMA);
 }
 
 
@@ -461,7 +434,7 @@ int handle_input() {
     //cur_player_pos.z = (cur_sector_height<<(FIX32_FRAC_BITS-4)) + FIX32(50);   
 
     apply_bob();
-
+    step_weapon_animation();
 
     u8 move_button = joy_button_pressed(BUTTON_UP) ? BUTTON_UP : (joy_button_pressed(BUTTON_DOWN) ? BUTTON_DOWN : 0);
     
@@ -477,6 +450,7 @@ int handle_input() {
     
     if(shooting) { 
         shooting--;
+        if(shooting == 4) { set_weapon_anim(SHOTGUN_RELOAD_ANIM, DMA_QUEUE); }
         if(shooting == 0 && joy_button_pressed(BUTTON_A)) { shooting = 1;}
     }
     if(pressing) { 
@@ -622,7 +596,7 @@ void init_game() {
         
     XGM_stopPlay();
     //SYS_setVIntCallback(do_vint_flip);
-    VDP_setVerticalScroll(BG_B, 0);
+    VDP_setVerticalScroll(BG_B, -1); // scroll down by 1 pixel to show the top of console messages :)
     
     #ifdef H32_MODE
     VDP_setScreenWidth256();
@@ -714,8 +688,8 @@ void init_game() {
 
     init_portal_renderer();
 
-
-    free_tile_loc = init_shotgun(free_tile_loc);
+    free_tile_loc = init_weapon_sprites(free_tile_loc);
+    init_shotgun(free_tile_loc);
 
     //VDP_loadTileData(smile.tiles, free_tile_loc, 16, DMA);
     //smiley_addr = free_tile_loc; free_tile_loc += 16;
@@ -734,8 +708,7 @@ void init_game() {
     //obj_sprite_init(free_tile_loc);
 
     //const char* init_str = "game initialized!";
-    console_push_message("game initialized!", 17, 30);
-
+    //console_push_message("game initialized!", 17, 30);
     MEM_pack();
 
     u16 free_bytes = MEM_getFree();
@@ -753,9 +726,10 @@ void cleanup_level() {
 
 
 game_mode run_game() {
+    console_push_message_high_priority("game initialized!", 17, 2);
 
     u32 start_ticks = getTick();
-
+    update_real_timer();
     calc_movement_speeds();
 
     int input_res = handle_input();
@@ -830,6 +804,8 @@ game_mode run_game() {
     u32 end_ticks = getTick();
     last_frame_ticks = end_ticks - start_ticks;
 
+    //KLog_U1("ms since last frame: ", ms_since_last_frame());
+    //KLog_U1("total vints: ", total_vints());
     cur_frame++;
     return SAME_MODE;
 }

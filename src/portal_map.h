@@ -50,6 +50,19 @@ typedef struct {
 #define NUM_PVS_PARAMS 2
 #define PVS_SHIFT 1
 
+typedef struct __attribute__((__packed__)) {
+    const u16 bunch_offset;
+    const u8 num_bunches;
+} pvs_bunch_group;
+
+typedef struct __attribute__((__packed__)) {
+    const u16 sector_num;
+    const u16 wall_offset;
+    const u8 num_walls;
+} pvs_bunch_entry;
+
+
+// in total 1088 bytes
 
 typedef struct __attribute__((__packed__)){
     const u16 num_sector_groups;
@@ -85,6 +98,10 @@ typedef struct __attribute__((__packed__)){
     const u16* pvs_offsets;
     const s16* sector_list_offsets;
     const u16* wall_pvs; // each index from above points to a list consisting of N:num_sectors, N 32-bit bitmaps
+
+
+    const pvs_bunch_group* pvs_bunch_groups;
+    const pvs_bunch_entry* pvs_bunch_entries;
     
     const u32* sector_pvs_offsets; // offsets rle-encoded sector pvs
     const s8* sector_pvs_entries; 

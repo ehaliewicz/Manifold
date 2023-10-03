@@ -28,6 +28,12 @@ typedef struct __attribute__((__packed__)) {
     const uint16_t* const light;
 } lit_texture;
 
+typedef struct __attribute__((__packed__)) {
+    uint8_t num_frames;
+    uint8_t frequency;
+    uint8_t frame_0_idx;
+} anim_texture;
+
 typedef struct {
     u32 left_u;    // 16.16
     s16 left_z;

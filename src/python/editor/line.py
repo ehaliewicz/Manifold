@@ -1,8 +1,17 @@
 import imgui
 import utils 
 import math
+import numpy as np
 import undo
 import vertex
+
+
+def line_formula(p, q):
+    a = q[1] - p[1]
+    b = p[0] - q[0]
+    c = a * (p[0]) + b * (p[1])
+    return a,b,c
+
 
 
 class Wall():
@@ -19,6 +28,10 @@ class Wall():
         self.mid_color = 0
 
         self.output_idx = -1
+
+
+    
+
         
     def __str__(self):
         return "v1: {} v2: {}".format(self.v1.index, self.v2.index)
@@ -41,7 +54,6 @@ class Wall():
         ret = int(max([1, ireps]))
         return ret
 
-    
     def rough_mid_point(self):
         v1 = self.v1
         v2 = self.v2
@@ -117,8 +129,8 @@ class Wall():
         (nx,ny) = self.normal()
         return (mx,my), (mx+nx, my+ny)
     
-    
-    def get_collision_hull_verts(self, world_unit_size):
+
+    def get_collision_line_verts(self, world_unit_size):
         (norm_x,norm_y) = self.normal()
         len = math.sqrt((norm_x*norm_x)+(norm_y*norm_y))
         
@@ -132,6 +144,49 @@ class Wall():
         cv2y = self.v2.y + scaled_nny
 
         return ((cv1x, cv1y), (cv2x, cv2y))
+    
+    def get_intersecting_vert(self, world_unit_size, cl2):   
+        """ 
+        Returns the point of intersection of the lines passing through a2,a1 and b2,b1.
+        a1: [x, y] a point on the first line
+        a2: [x, y] another point on the first line
+        b1: [x, y] a point on the second line
+        b2: [x, y] another point on the second line
+    """
+        cl1 = self.get_collision_line_verts(world_unit_size)
+        (a1,a2) = cl1
+        (b1,b2) = cl2
+        s = np.vstack([a1,a2,b1,b2])        # s for stacked
+        h = np.hstack((s, np.ones((4, 1)))) # h for homogeneous
+        l1 = np.cross(h[0], h[1])           # get first line
+        l2 = np.cross(h[2], h[3])           # get second line
+        x, y, z = np.cross(l1, l2)          # point of intersection
+        if z == 0:                          # lines are parallel
+            #assert a2[0] == b1[0] and a2[1] == b1[1] 
+            return a2 
+            #return (float('inf'), float('inf'))
+        return (x/z, y/z)
+
+    #def get_intersecting_vert(self, world_unit_size, cl2):
+    #    cl1 = self.get_collision_line_verts(world_unit_size)
+
+    #    ((cl1v1x, cl1v1y), (cl1v2x, cl1v2y)) = cl1
+    #    ((cl2v1x, cl2v1y), (cl2v2x, cl2v2y)) = cl2
+        
+    #    dy1 = cl1v2y - cl1v1y 
+    #    dx1 = cl1v2x - cl1v1x 
+    #    dy2 = cl2v2y - cl2v1y 
+    #    dx2 = cl2v2x - cl2v1x
+
+    #    assert dy1 * dx2 != dy2 * dx1, "Lines are parallel!"
+        
+    #    if dx1 == 0:
+    #        # use dx2 instead 
+    #    else:
+    #        x = ((cl2v1y - cl1v1y) * dx1 * dx2 + dy1 * dx2 * cl1v1x - dy2 * dx1 * cl2v1x) / (dy1 * dx2 - dy2 * dx1)
+    #        y = cl1v1y + (dy1 / dx1) * (x - cl1v1x)
+
+    #    return (x, y)
 
 
         

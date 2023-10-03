@@ -64,6 +64,11 @@ u8* bmp_buffer_1;
 static vu16 state;
 static vs16 phase;
 
+
+volatile u32 prev_end_of_frame_vints = 0;
+volatile u32 end_of_frame_vints = 0;
+volatile u32 vints = 0;
+
 static u8 start_blit_cell;
 
 #define BMP_PLAN_ADR            (*bmp_plane_addr)
@@ -931,7 +936,6 @@ void copy_quarter_words(u8* src, u32 dst) {
         QUARTER_WORDS, 4);
 }
 
-volatile u16 vints = 0;
 void do_vint_flip() {
     phase = 0;
     vints++;
@@ -971,6 +975,8 @@ void do_vint_flip() {
         after_flip_vscroll_adjustment();
 
         vint_flipping = 0;
+        prev_end_of_frame_vints = end_of_frame_vints;
+        end_of_frame_vints = vints;
     } else if(vint_flip_requested) {
         vint_flipping = 1;
         vint_flip_requested = 0;

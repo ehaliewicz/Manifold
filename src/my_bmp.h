@@ -1,6 +1,10 @@
 #include <genesis.h>
 
 
+extern volatile u32 prev_end_of_frame_vints;
+extern volatile u32 end_of_frame_vints;
+
+extern volatile u32 vints;
 //VDPPlane bmp_plane;
 //u8 bmp_pal;
 //u8 bmp_prio;
@@ -35,7 +39,6 @@ void bmp_init_horizontal(u16 double_buffer, VDPPlane plane, u16 palette, u16 pri
 void bmp_init_vertical(u16 double_buffer, VDPPlane plane, u16 palette, u16 priority);
 
 
-volatile u16 vints;
 void bmp_end();
 
 u16 bmp_flip_partial(u16 async, u8 start_cell);

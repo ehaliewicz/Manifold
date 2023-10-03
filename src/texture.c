@@ -66,7 +66,6 @@ typedef u8* (*bot_clip_wall_fill_func)(u8* col_ptr, u16* tex_column, u16 clip_to
 
 
 void draw_texture_vertical_line(s16 unclipped_y0, u16 y0, s16 unclipped_y1, u8* col_ptr, const u16* tex_column) {
-
     u16 unclipped_dy = unclipped_y1;
     __asm volatile(             
         "sub.w %1, %0"          

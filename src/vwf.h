@@ -11,7 +11,7 @@
 typedef struct {
     char chr;
     int width; // width in 2-pixel pairs (bytes), always a minimum of two, so we can write words at once
-    tile bitmap;
+    two_pix_col_tile bitmap;
 } char_entry;
 
 extern const char_entry charmap[96];

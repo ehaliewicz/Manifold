@@ -4,6 +4,7 @@
 #include "game.h"
 #include "texture.h"
 #include "utils.h"
+#include "vertex.h"
 
 /*
 Vect2D_f32 transform_map_vert(s16 x, s16 y) {
@@ -61,9 +62,6 @@ Vect2D_s16 transform_map_vert_16(s16 x, s16 y) {
     return (Vect2D_s16){.x = res_x, .y = res_y};
 }
 
-
-
-// returns -1 if on right side, -1 if on left side
 
 s8 point_sign_int_vert(f32 x, f32 y, s16 v1_x, s16 v1_y, s16 v2_x, s16 v2_y) {
     //s32 left = muls_16_by_16(
@@ -495,10 +493,11 @@ clip_result clip_map_vertex_16(Vect2D_s16* __restrict__ trans_v1, Vect2D_s16* __
     s16 rz2_12_4 = trans_v2->y; // 12.4
 
     
-    const u8 left_vert_outside_left_frustum = (-rx1 > (rz1_12_4>>4));
-    const u8 right_vert_outside_left_frustum = (-rx2 > (rz2_12_4>>4));
-    const u8 left_vert_outside_right_frustum = (rx1 > (rz1_12_4>>4));
-    const u8 right_vert_outside_right_frustum = (rx2 > (rz2_12_4>>4));
+    // don't drop fractional bits of z coords
+    const u8 left_vert_outside_left_frustum = ((-rx1<<4) > rz1_12_4);
+    const u8 right_vert_outside_left_frustum = ((-rx2<<4) > rz2_12_4);
+    const u8 left_vert_outside_right_frustum = ((rx1<<4) > rz1_12_4);
+    const u8 right_vert_outside_right_frustum = ((rx2<<4) > rz2_12_4);
     if(left_vert_outside_left_frustum && right_vert_outside_left_frustum) {
         //return OFFSCREEN; 
         return FRUSTUM_CULLED;
@@ -536,7 +535,7 @@ clip_result clip_map_vertex_16(Vect2D_s16* __restrict__ trans_v1, Vect2D_s16* __
 
     // this frustum code seems to cause some issues with portal clipping
     // with pvs renderer, doesn't seem to be an issue?
-    if(0) { //left_vert_outside_left_frustum) {
+    if(0){ //left_vert_outside_left_frustum) {
 
 
         //s16 frustum_left_x = -16384;
@@ -564,6 +563,8 @@ clip_result clip_map_vertex_16(Vect2D_s16* __restrict__ trans_v1, Vect2D_s16* __
             //s16 slope_a_4 = (rz2_12_4-rz1_12_4)/(rx2-rx1);            
             s16 dx = rx2-rx1;
             s32 tmp = rz2_12_4-rz1_12_4; 
+
+            // slope is dz/x
             s16 slope_a_4;
             __asm volatile(
                 "divs.w %2, %0\t\n\
@@ -575,6 +576,7 @@ clip_result clip_map_vertex_16(Vect2D_s16* __restrict__ trans_v1, Vect2D_s16* __
 
             if(slope_a_4 == 0) {
                 intersection_x = -rz1_12_4>>4;
+                KLog_U1("slope is zero, intersection x is: ", intersection_x);
                 intersection_z_4 = rz1_12_4;
 
                 if(tmap->needs_texture) {
@@ -593,7 +595,11 @@ clip_result clip_map_vertex_16(Vect2D_s16* __restrict__ trans_v1, Vect2D_s16* __
                     : "+d" (tmp)
                     : "d" (rx1)
                 );
+                // tmp is change in rz now 
+
                 tmp -= rz1_12_4;
+                // from 0 to rx1, tmp is how much the z changes
+
                 __asm volatile(
                     "divs.w %2, %0\t\n\
                     move.w %0, %1"
@@ -822,3 +828,148 @@ clip_result clip_map_vertex(Vect2D_f32* trans_v1, Vect2D_f32* trans_v2) {
     }
 }
 */
+
+
+
+void load_transform_and_duplicate_verts(u16 num_vertexes, u16* indexes, vertex* map_vertexes, Vect2D_s16* out) {
+    /* 
+        this function will load and transform all vertexes in a sector
+        but in backwards order
+        this is so that by duplicated them per wall,
+
+        e.g. 
+        vertexes 0,1,2,3
+        into
+        wall vertexes: 0,1, 1,2, 2,3
+    
+        we don't overwrite any values we need later
+
+        other than that, it's just simple vertex transformations with the transform function manually inlined.
+    */
+
+    s16* vert_component_pointer = (s16*)map_vertexes;
+
+    u16* last_index_ptr = indexes + num_vertexes;
+
+    s16 num_walls = (num_vertexes-1);
+    s16* last_out_ptr = out + (num_walls*2);
+
+    u16 index = *--last_index_ptr;
+    u16 component_index = index+index;
+    s16 cur_x = vert_component_pointer[component_index++];
+    s16 cur_y = vert_component_pointer[component_index];
+
+    s16 tlx = cur_x - playerXInt;
+    s16 tly = cur_y - playerYInt;
+    s32 rx = (tlx * angleSin16) - (tly * angleCos16); // 22.10 * 16 -> 22.10
+    s32 ry = (tlx * angleCos16) + (tly * angleSin16);
+    s16 cur_res_x = rx>>(FIX16_FRAC_BITS);
+    s16 cur_res_y = ry>>(FIX16_FRAC_BITS-TRANS_Z_FRAC_BITS); // 12.4
+
+
+    s16 prev_res_x = cur_res_x;
+    s16 prev_res_y = cur_res_y;
+
+    int i = 0;
+    while(num_walls--) {
+    //for(int i = 0; i < num_walls; i++) {
+
+        index = *--last_index_ptr;
+        component_index = index + index;
+        //s16* ptr = vert_component_pointer+component_index;
+
+
+        //cur_x = *ptr++;
+        //cur_y = *ptr++;
+        cur_x = vert_component_pointer[component_index++];     
+        cur_y = vert_component_pointer[component_index];       
+        #ifdef DEBUG_PORTAL_CLIP
+        KLog_S3("transform vert i: ", i, " x: ", cur_x, " y: ", cur_y);  
+        #endif
+
+
+        tlx = cur_x - playerXInt;                              
+        tly = cur_y - playerYInt;          
+        #ifdef DEBUG_PORTAL_CLIP 
+        KLog_S2(" tlx: ", tlx, " tly: ", tly);     
+        #endif                    
+        rx = (tlx * angleSin16) - (tly * angleCos16);          
+        ry = (tlx * angleCos16) + (tly * angleSin16);        
+        #ifdef DEBUG_PORTAL_CLIP  
+        KLog_S2(" rx: ", tlx, " ry: ", tly);           
+        #endif
+        cur_res_x = rx >> (FIX16_FRAC_BITS);                   
+        cur_res_y = ry >> (FIX16_FRAC_BITS-TRANS_Z_FRAC_BITS);     
+        #ifdef DEBUG_PORTAL_CLIP
+        KLog_S2(" cur_res_x: ", cur_res_x, " cur_res_y: ", cur_res_y);      
+        #endif
+
+        __asm volatile(
+            "move.w %2, -(%0)\t\n\
+            move.w %1, -(%0)\t\n\
+            move.w %4, -(%0)\t\n\
+            move.w %3, -(%0)\t\n\
+            "
+            : "+a" (last_out_ptr)
+            : "d" (prev_res_x), "d" (prev_res_y), "d" (cur_res_x), "d" (cur_res_y)
+        );
+
+        prev_res_x = cur_res_x;
+        prev_res_y = cur_res_y;
+
+    }
+}
+
+void load_and_transform_pvs_walls(u16 num_walls, u16* pvs_wall_indexes, 
+                                  u16* map_walls, vertex* map_vertexes, 
+                                  Vect2D_s16* out) {
+
+    s16* vert_component_pointer = (s16*)map_vertexes;
+
+    for(int i = 0; i < num_walls; i++) {
+        
+        s16 wall_idx = *pvs_wall_indexes++;
+        u16 v1_idx = map_walls[wall_idx++];
+        u16 v2_idx = map_walls[wall_idx];
+        v1_idx += v1_idx;
+        v2_idx += v2_idx;
+        
+        s16 v1x = vert_component_pointer[v1_idx++];
+        s16 v1y = vert_component_pointer[v1_idx];
+
+        s16 tlx = v1x - playerXInt; // 16-bit integer
+        s16 tly = v1y - playerYInt; // 16-bit integer
+
+        s32 rx = (tlx * angleSin16) - (tly * angleCos16); // 22.10 * 16 -> 22.10
+        s32 ry = (tlx * angleCos16) + (tly * angleSin16);
+        s16 res_x = rx>>(FIX16_FRAC_BITS);
+        s16 res_y = ry>>(FIX16_FRAC_BITS-TRANS_Z_FRAC_BITS); // 12.4
+
+        __asm volatile(
+            "move.w %1, (%0)+\t\n\
+             move.w %2, (%0)+\t\n\
+            "
+            : "+a" (out)
+            : "d" (res_x), "d" (res_y)
+        );
+
+        s16 v2x = vert_component_pointer[v2_idx++];
+        s16 v2y = vert_component_pointer[v2_idx];
+        tlx = v2x - playerXInt;
+        tly = v2y - playerYInt;
+
+        rx = (tlx * angleSin16) - (tly * angleCos16); // 22.10 * 16 -> 22.10
+        ry = (tlx * angleCos16) + (tly * angleSin16);
+        res_x = rx>>(FIX16_FRAC_BITS);
+        res_y = ry>>(FIX16_FRAC_BITS-TRANS_Z_FRAC_BITS); // 12.4
+
+        __asm volatile(
+            "move.w %1, (%0)+\t\n\
+             move.w %2, (%0)+\t\n\
+            "
+            : "+a" (out)
+            : "d" (res_x), "d" (res_y)
+        );
+    }
+}
+

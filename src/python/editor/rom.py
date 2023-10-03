@@ -1,3 +1,4 @@
+import io
 from tkinter import filedialog, messagebox
 import os
 import struct 
@@ -13,60 +14,7 @@ import state
 import texture_utils
 import utils
 
-def _read_longword_(f, signed):
-    return int.from_bytes(f.read(4), "big", signed)
-def read_s32(f):
-    return _read_longword_(f, True)
-def read_u32(f):
-    return _read_longword_(f, False)
-
-def _write_longword_(f, lw, signed):
-    off = f.tell()
-    f.write(lw.to_bytes(4, byteorder="big", signed=signed))
-    return off 
-
-def write_s32(f, lw):
-    return _write_longword_(f, lw, True)
-def write_u32(f, lw):
-    return _write_longword_(f, lw, False)
-
-
-def _read_word_(f, signed):
-    return int.from_bytes(f.read(2), "big", signed)
-
-def read_s16(f):
-    return _read_word_(f, True)
-def read_u16(f):
-    return _read_word_(f, False)
-
-def _write_word_(f, w, signed):
-    off = f.tell()
-    f.write(w.to_bytes(2, byteorder="big", signed=signed))
-    return off 
-
-def write_u16(f, w):
-    _write_word_(f, w, False)
-def write_s16(f, w):
-    assert w >= -32768 and w < 32768
-    _write_word_(f, w, True)
-
-
-def _read_byte_(f, signed):
-    return int.from_bytes(f.read(1), byteorder="big", signed=signed)
-def _write_byte_(f, b, signed):
-    off = f.tell()
-    f.write(b.to_bytes(1, byteorder="big", signed=signed))
-    return off
-
-def read_s8(f):
-    return _read_byte_(f, True)
-def read_u8(f):
-    return _read_byte_(f, False)
-def write_s8(f, b):
-    return _write_byte_(f, b, True)
-def write_u8(f, b):
-    return _write_byte_(f, b, False)
-
+from file_utils import write_u8, write_s8, write_u16, write_s16, write_u32
 
 def pointer_placeholder(f, val=0xDEADBEEF):
     return write_u32(f, val)
@@ -268,6 +216,9 @@ def export_map_to_rom(cur_path, cur_state: state.State, set_launch_flags=False, 
             pvs_sector_list_offsets_ptr_offset = write_u32(f, 0)
             wall_pvs_ptr_offset = write_u32(f, 0)
 
+            pvs_bunch_groups_ptr_offset = write_u32(f, 0)
+            pvs_bunch_entries_ptr_offset = write_u32(f, 0)
+
             sector_pvs_offsets_ptr_offset = write_u32(f, 0)
             sector_pvs_entries_ptr_offset = write_u32(f, 0)
 
@@ -458,9 +409,17 @@ def export_map_to_rom(cur_path, cur_state: state.State, set_launch_flags=False, 
             patch_pointer_to_current_offset(
                 f, collision_vertexes_ptr_offset
             )
+
             for sect in data.sectors:
+                collision_walls = sect.get_collision_hull(cur_state.map_data, utils.PLAYER_COLLISION_SIZE)
+                #for wall in collision_walls:
+                    #((cv1x,cv1y),(cv2x,cv2y)) = wall
+                    #write_s32(f, int((cv1x * 1024) * utils.ENGINE_X_SCALE)) # 10 fractional bits
+                    #write_s32(f, int((cv1y * 1024) * utils.ENGINE_Y_SCALE)) # 10 fractional bits
+                    #write_s32(f, int((cv2x * 1024) * utils.ENGINE_X_SCALE)) # 10 fractional bits
+                    #write_s32(f, int((cv2y * 1024) * utils.ENGINE_Y_SCALE)) # 10 fractional bits
                 for wall in sect.walls:
-                    ((cv1x,cv1y),(cv2x,cv2y)) = wall.get_collision_hull_verts(utils.PLAYER_COLLISION_SIZE)
+                    ((cv1x,cv1y),(cv2x,cv2y)) = wall.get_collision_line_verts(utils.PLAYER_COLLISION_SIZE)
                     write_s16(f, int(cv1x * utils.ENGINE_X_SCALE))
                     write_s16(f, int(cv1y * utils.ENGINE_Y_SCALE))
                     write_s16(f, int(cv2x * utils.ENGINE_X_SCALE))
@@ -477,17 +436,64 @@ def export_map_to_rom(cur_path, cur_state: state.State, set_launch_flags=False, 
             align(f)
 
 
-            sector_pvs_map = {}
+            
+
+            sector_pvs_map: typing.Dict[int, typing.List[int]] = {} # sector to list of potentially visible sectors
+            sector_pvs_bunches: typing.Dict[int, pvs.BunchList] = {}
             for sector in data.sectors:
                 sect_pvs, bunches =  pvs.recursive_pvs(sector, cur_state, data)
+                merged_bunches = pvs.merge_bunches(bunches, cur_state.map_data)
+                split_bunches = pvs.split_bunches_by_output_idx(merged_bunches)
                 sector_pvs_map[sector.index] = sect_pvs.keys()
-            sector_phs_map = {}
+                sector_pvs_bunches[sector.index] = split_bunches
+            sector_phs_map: typing.Dict[int, typing.Set[int]] = {}
             for sector in data.sectors:
                 cur_phs = set()
                 for nsect in sector_pvs_map[sector.index]:
                     cur_phs = cur_phs.union(set(sector_pvs_map[nsect]))
                 sector_phs_map[sector.index] = cur_phs
+            
+            align(f)
 
+            # write pvs bunch entries 
+            patch_pointer_to_current_offset(
+                f, pvs_bunch_entries_ptr_offset
+            )
+            # write bunch entries and update a table to write the bunch groups later
+            # 
+            sector_pvs_bunch_info: typing.Dict[typing.Tuple[int, int]] = {}
+
+            bunch_entries_added = 0
+            for sector in data.sectors: 
+                bunches = sector_pvs_bunches[sector.index]
+                sector_pvs_bunch_info[sector.index] = (bunch_entries_added, len(bunches))
+
+                for bunch in bunches:                
+                    write_u16(f, sector.index)
+                    # assert that bunch is contiguous in wall output indexes
+                    for i in range(1, len(bunch)):
+                        cwall = bunch[i]
+                        pwall = bunch[i-1]
+                        if cwall.output_idx != pwall.output_idx+1:
+                            # need to create a new bunch, sadly
+                            assert False, "Wall indexes in a bunch must be contiguous! {} vs {}".format(pwall.output_idx, cwall.output_idx)
+                                
+                    write_u16(f, bunch[0].output_idx)
+                    write_u8(f, len(bunch))
+
+                    #write_u16(f, bunch[0].
+                
+            align(f)
+
+            patch_pointer_to_current_offset(
+                f, pvs_bunch_groups_ptr_offset
+            )
+            for sector in data.sectors:
+                offset, num_bunches = sector_pvs_bunch_info[sector.index]
+                write_u16(f, offset)
+                write_u8(f, num_bunches)
+
+            align(f)
 
             def output_pvs(pvs, off):
                 # sectors

@@ -360,9 +360,8 @@ def draw_map_wall(draw_list, wall: line.Wall, sect_group_color, highlight=False,
     draw_list.add_line(v1.x-cam_x, v1.y-cam_y, v2.x-cam_x, v2.y-cam_y, imgui.get_color_u32_rgba(*color), 1.0)
     draw_list.add_line(n1x-cam_x, n1y-cam_y, n2x-cam_x, n2y-cam_y, imgui.get_color_u32_rgba(*color), 1.0)
 
-    #(cv1x,cv1y),(cv2x,cv2y) = wall.get_collision_hull_verts(20)
+    #(cv1x,cv1y),(cv2x,cv2y) = wall.get_collision_line_verts(20)
     #draw_list.add_line(cv1x-cam_x, cv1y-cam_y, cv2x-cam_x, cv2y-cam_y, imgui.get_color_u32_rgba(*color), 1.0)
-
     
     if highlight:
         draw_list.add_line(v1.x-cam_x, v1.y-cam_y, v2.x-cam_x, v2.y-cam_y, imgui.get_color_u32_rgba(*wall_highlight), 4.0)
@@ -379,17 +378,28 @@ def draw_sector(draw_list, sector, sect_group, highlight=False, cur_sector_pvs=N
     if tree_mode:
         concave_sector = not sector.is_convex()  
         
-    for wall in sector.walls:
+    collision_hull = sector.get_collision_hull(cur_state.map_data, 20)
+
+    cam_x = cur_state.camera_x
+    cam_y = cur_state.camera_y
+    
+    for idx,wall in enumerate(sector.walls):
         wall_selected = cur_state.mode == Mode.LINE and cur_state.cur_wall == wall
         wall_hovered = cur_state.hovered_item == wall
 
         wall_in_pvs = cur_state.mode == Mode.PVS and cur_sector_pvs is not None and (wall in (cur_sector_pvs[wall.sector_idx] if wall.sector_idx in cur_sector_pvs else set()))
-        
+
+        collision_wall = collision_hull[idx]
+
         draw_map_wall(draw_list, wall, sect_group.color, (highlight or wall_selected or wall_hovered or wall_in_pvs), tree_mode, concave_sector)
     
+        (cv1x,cv1y),(cv2x,cv2y) = collision_wall
+        draw_list.add_line(cv1x-cam_x, cv1y-cam_y, cv2x-cam_x, cv2y-cam_y, imgui.get_color_u32_rgba(*sect_group.color), 1.0)
+    
 
-    cam_x = cur_state.camera_x
-    cam_y = cur_state.camera_y
+
+
+
      
     #poly = sector.get_collision_polygon(20)
     #for wall in poly:

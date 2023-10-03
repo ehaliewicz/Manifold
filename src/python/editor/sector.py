@@ -1,24 +1,30 @@
+import typing
 import imgui
 import undo
 from utils import draw_list, ENGINE_X_SCALE, ENGINE_Y_SCALE
 import sector_group
 import shapely.geometry
+import line
 
 
 class Sector():
-    def __init__(self, index, walls=None, sect_group_index=0):
+    def __init__(self, index, walls: typing.Optional[typing.List[line.Wall]]=None, sect_group_index=0):
         self.sector_group_idx = sect_group_index
 
 
         self.is_convex_memo = False
         self.convex_calculated = None
         
-        if walls is not None:
-            self.walls = walls
-        else:
+        if walls is None:
             self.walls = []
+        else:
+            self.walls = walls
         
         self.index = index
+
+        self.calced_collision_hull = None
+        self.calced_collision_hull_key = None
+        self.recalc_collision_hull = False
 
     def calc_sorted_pvs(self):
         verts = self.get_vertexes()
@@ -92,6 +98,79 @@ class Sector():
         
             
         return True
+    
+    def get_collision_hull(self, map_data, world_unit_size):
+
+        key = [(line.v1.x, line.v1.y, line.v2.x, line.v2.y) for line in self.walls]
+        if key != self.calced_collision_hull_key:
+            self.calced_collision_hull = self.get_collision_hull_inner(map_data, world_unit_size)
+            self.calced_collision_hull_key = key
+            # mark neighbor sectors 
+
+            # if we had to re-calc, but the vertex key was still valid
+            for wall in self.walls:
+                if wall.adj_sector_idx != -1:
+                    # cause neighbor sector to recalc the collision hull, but not in a way that triggers recalc in it's neighbor sectors (which would cause an avalanche of re-processing)
+                    map_data.sectors[wall.adj_sector_idx].recalc_collision_hull = True
+
+        elif self.recalc_collision_hull:
+            # only recalc, our vertexes haven't moved, but one of our neighbor's did
+            self.calced_collision_hull = self.get_collision_hull_inner(map_data, world_unit_size)
+            self.recalc_collision_hull = False
+        
+        return self.calced_collision_hull
+    
+    def get_collision_hull_inner(self, map_data, world_unit_size):
+        hull = []
+        for idx,line in enumerate(self.walls):
+            collision_line = line.get_collision_line_verts(world_unit_size)
+
+            next_line = self.walls[0] if idx == len(self.walls)-1 else self.walls[idx+1]
+            prev_line = self.walls[-1] if idx == 0 else self.walls[idx-1]
+
+            (res_x1, res_y1), (res_x2, res_y2) = collision_line
+
+            if next_line.adj_sector_idx != -1:
+                # slightly more complicated case :)
+                # find wall in next sector which uses this v2 as it's v1 
+                adj_sector = map_data.sectors[next_line.adj_sector_idx]
+                attached_wall = None
+                for other_wall in adj_sector.walls:
+                    if other_wall.v1 == line.v2:
+                        # found it baby :)
+                        attached_wall = other_wall
+                        break 
+                if attached_wall is not None: # "Could not find attached wall in other sector!"
+                    other_collision_line = attached_wall.get_collision_line_verts(world_unit_size) 
+                    res_x2, res_y2 = line.get_intersecting_vert(world_unit_size, other_collision_line)
+            elif next_line != line:
+                next_collision_line = next_line.get_collision_line_verts(world_unit_size)
+                res_x2, res_y2 = line.get_intersecting_vert(world_unit_size, next_collision_line)
+
+
+            if prev_line.adj_sector_idx != -1:
+                # slightly more complicated case :)
+                # find wall in next sector which uses this v1 as it's v2
+                adj_sector = map_data.sectors[prev_line.adj_sector_idx]
+                attached_wall = None
+                for other_wall in adj_sector.walls:
+                    if other_wall.v2 == line.v1:
+                        # found it baby :)
+                        attached_wall = other_wall
+                        break 
+                if attached_wall is not None: # "Could not find attached wall in other sector!"
+                    res_x1, res_y1 = attached_wall.get_intersecting_vert(world_unit_size, collision_line)
+
+            elif prev_line != line:
+                # find collision point between this line and the next and previous lines 
+                res_x1, res_y1 = prev_line.get_intersecting_vert(world_unit_size, collision_line)
+                #pass
+
+            hull.append(((res_x1, res_y1), (res_x2, res_y2)))
+
+
+        return hull
+
 
 def add_new_sector(cur_state):
     undo.push_state(cur_state)
@@ -177,5 +256,3 @@ def draw_sector_mode(cur_state):
     draw_list(cur_state, "Sectors", "Sector list", 
               cur_state.map_data.sectors, 
               set_cur_sector, delete_sector)
-
-    

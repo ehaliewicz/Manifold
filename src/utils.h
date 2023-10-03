@@ -2,6 +2,7 @@
 #define UTILS_H
 #include <genesis.h>
 
+
 #define SCREEN_WIDTH BMP_PITCH
 #define SCREEN_HEIGHT 144 // BMP_HEIGHT   // H
 
@@ -42,6 +43,30 @@ u16 sub_16_16(u16 a, u16 b);
         : "+a" (ptr)                \
         : "d" (var)                 \
     );                              \
+} while(0);
+
+#define COPY_BYTE_POSTINC_SRC_QINC_4_DST(src, dst) do { \
+    __asm volatile(                                     \
+        "move.b (%0)+, (%1)\t\naddq.l #4, %1"           \
+        : "+a" (src), "+a" (dst)                        \
+        :                                               \
+    );                                                  \
+} while(0);
+
+#define WRITE_BYTE_QINC_4(var, ptr) do {    \
+    __asm volatile(                         \
+        "move.b %1, (%0)\t\naddq.l #4, %0" \
+        : "+a" (ptr)                        \
+        : "d" (var)                         \
+    );                                      \
+} while(0);
+
+#define WRITE_BYTE(var, ptr) do {\
+    __asm volatile(              \
+        "move.b %1, (%0)"        \
+        : "+a" (ptr)             \
+        : "d" (var)              \
+    );                           \
 } while(0);
 
 inline u16 divu_32_by_16(u32 num, u16 denom) {
@@ -120,6 +145,7 @@ inline u16 fastLength16(s16 dx, s16 dy) {
 }
 
 void die(char* msg);
+void assert(int expr, char* msg);
 
 #define clamp(a, mi,ma)      min(max(a,mi),ma)
 

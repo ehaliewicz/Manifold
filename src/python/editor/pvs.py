@@ -5,6 +5,7 @@ from typing import List, NewType, Optional, Set, Tuple
 import utils
 import imgui
 import line
+import sector
 
 
 #Portal = NewType('Portal', Tuple[Point, Point, int])
@@ -164,14 +165,23 @@ def can_merge_front(b1: line.Wall, b2: line.Wall):
 def can_merge_back(b1, b2):
     last_of_b2 = b2[-1]
     first_of_b1 = b1[0]
+    
     if last_of_b2.sector_idx != first_of_b1.sector_idx:
         return False 
     
     return last_of_b2.v2 == first_of_b1.v1
 
-def merge_bunches(bunches):
+def sort_bunch(bunch, map_data):
+    bunch_list = []
+    sector = map_data.sectors[bunch[0].sector_idx]
+
+    return sorted(bunch, key=lambda wall: sector.walls.index(wall))
+
+def merge_bunches(bunches, map_data):
 
     merged_at_least_one = True 
+    bunches = sorted(bunches, key=lambda b: b[0].sector_idx)
+
     while merged_at_least_one: 
         merged_at_least_one = False
         idx = 0
@@ -200,15 +210,38 @@ def merge_bunches(bunches):
 
             idx += 1
 
+    for idx in range(len(bunches)):
+        bunches[idx] = sort_bunch(bunches[idx], map_data)
+
     return bunches
 
+def split_bunches_by_output_idx(bunches):
+    res_bunches = []
+    for bunch in bunches:
+        cur_bunch = [bunch[0]]
+        for i in range(1, len(bunch)):
+            cwall = bunch[i]
+            pwall = bunch[i-1]
+            if cwall.output_idx != pwall.output_idx+1:
+                res_bunches.append(cur_bunch)
+                cur_bunch = []
+            cur_bunch.append(cwall)
+
+        if len(cur_bunch) > 0:
+            res_bunches.append(cur_bunch)
+    return res_bunches
 
 
-def recursive_pvs(cur_sector, cur_state, map_data) -> typing.Tuple[typing.Dict, typing.List]:
+Bunch = typing.List[line.Wall]
+BunchList = typing.List[Bunch]
+
+PVS = typing.Set[line.Wall]
+
+def recursive_pvs(cur_sector, cur_state, map_data) -> typing.Tuple[typing.Dict[int, PVS], BunchList]:
     
     pvs = {}
-    bunches = []
-    cur_bunch = []
+    bunches: BunchList = []
+    cur_bunch: Bunch = []
 
     def output_bunch():
         nonlocal cur_bunch
@@ -216,7 +249,7 @@ def recursive_pvs(cur_sector, cur_state, map_data) -> typing.Tuple[typing.Dict, 
             bunches.append(cur_bunch)
             cur_bunch = []
 
-    def add_wall_to_cur_bunch(w):
+    def add_wall_to_cur_bunch(w: line.Wall):
         nonlocal cur_bunch
         cur_bunch.append(w)
 
@@ -225,7 +258,8 @@ def recursive_pvs(cur_sector, cur_state, map_data) -> typing.Tuple[typing.Dict, 
     cur_sect_pvs = pvs[cur_sector.index]
 
     draw_list = utils.get_root_window_draw_list()
-    def recursive_pvs_inner(cur_sector, cur_frustum, start_frustum_portal, depth, last_traversed_portal):
+    def recursive_pvs_inner(cur_sector: sector.Sector, cur_frustum, 
+                            start_frustum_portal, depth, last_traversed_portal):
         if depth >= 100:
             return 
 
@@ -312,7 +346,8 @@ def recursive_pvs(cur_sector, cur_state, map_data) -> typing.Tuple[typing.Dict, 
         recursive_pvs_inner(next_sect, None, start_frustum_portal, depth=1, last_traversed_portal= wall)
 
 
-
+    if len(cur_bunch) > 0:
+        output_bunch()
 
     return pvs, bunches
 
@@ -334,7 +369,7 @@ def draw_pvs_mode(cur_state):
         cur_state.cur_sector_pvs = pvs 
 
         cur_state.cur_sector_pvs_bunches = bunches
-        cur_state.cur_sector_pvs_merged_bunches = merge_bunches(bunches)
+        cur_state.cur_sector_pvs_merged_bunches = merge_bunches(bunches, cur_state.map_data)
         imgui.text("Sector {}".format(cur_state.cur_sector.index))
         imgui.text("Num bunches: {}".format(len(cur_state.cur_sector_pvs_bunches)))
         imgui.text("Num merged bunches: {}".format(len(cur_state.cur_sector_pvs_merged_bunches)))

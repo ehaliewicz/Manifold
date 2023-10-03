@@ -1356,6 +1356,7 @@ void draw_lit_floor(s16 floor_top_y, s16 floor_bot_y, u8* col_ptr, light_params*
 }
 
 void draw_lit_ceil_light_only(s16 ceil_top_y, s16 ceil_bot_y, u8* col_ptr, light_params* params) {
+    //return;
     return draw_native_vertical_line_unrolled(ceil_top_y, ceil_bot_y, params->light_color, col_ptr);
 }
 
@@ -1408,9 +1409,14 @@ typedef void (*draw_lit_plane_fp)(s16 top_y, s16 bot_y, u8* col_ptr, light_param
 
 //u16 tex_col_buffer[RENDER_WIDTH];
 
-u16 tex_col_buffer[RENDER_WIDTH*2];
+// used to store 1_over_z_16 and u_11
+u16 tex_col_buffer[RENDER_WIDTH*2+3];
 
+
+// perspective divide every 4 columns (16 pixels)
+// 
 void calculate_tex_coords_for_wall(
+    
     s16 beginx, s16 endx, s16 skip_x, s16 dx,
     u16 z1_12_4,     u16 z2_12_4,
     u16 inv_z1,      u16 inv_z2,
@@ -1446,47 +1452,187 @@ void calculate_tex_coords_for_wall(
     u16 cnt = endx-beginx;
     u16* tex_col_ptr = tex_col_buffer;
  
+    cnt += 3;
+  
+    cnt>>=2;
+
+    u16 u_11_start = divu_32_by_16(u_over_z_23, one_over_z_16);
+    u_11_start <<= 4;// u_7_start << 4;
     
-    u8 rem_cnt = cnt & 0b1;
-    while(rem_cnt--) { //cnt & 1) {        
-        u16 u_7= divu_32_by_16(u_over_z_23, one_over_z_16); // 9.7 fixed point
+    s16 d_one_over_z_16_times_4 = d_one_over_z_16 << 2;
+    s32 d_u_over_z_23_times_4 = d_u_over_z_23 << 2;
 
+
+
+    // this loop is essentially as optimized as possible
+    
+    u16 mask = 0x7C0;
+    // one_over_z_16_span end, one_over_z_16, d_one_over_z_16_times_4
+    // u_over_z_23_span_end, u_over_z_23, d_u_over_z_23_times_4
+    // u_11_start, u_11_end
+    // u_11_tmp, u_11_per_col
+    // cnt 
+    
+    u16 one_over_z_16_span_end;
+    u32 u_over_z_23_span_end;
+    u16 u_11_end;
+    u16 u_11_per_col;
+    u16 u_11_tmp;
+
+    while(cnt--) {
+        one_over_z_16_span_end = one_over_z_16 + d_one_over_z_16_times_4;
+        u_over_z_23_span_end = u_over_z_23 + d_u_over_z_23_times_4;
         
-        u16 u_11 = u_7 <<4;
-        u16 u_masked_11 = 0b11111000000 & u_11;
+        u_11_end = divu_32_by_16(u_over_z_23_span_end, one_over_z_16_span_end);
+        u_11_end <<= 4; // 5.11 fixed point
+
+        u_11_per_col = u_11_end;
+        u_11_per_col -= u_11_start;
+        u_11_per_col >>= 2;
+
         __asm volatile(
-            "move.w %2, (%0)+\t\n\
-             move.w %1, (%0)+"
-            : "+a" (tex_col_ptr)
-            : "d" (u_masked_11), "d" (one_over_z_16)
+            "\t\n\
+            move.w %1, %2\t\n\
+            and.w %6, %2\t\n\
+            move.w %3, (%0)+\t\n\
+            move.w %2, (%0)+\t\n\
+            add.w %4, %3\t\n\
+            add.w %5, %1\t\n\
+            \t\n\
+            move.w %1, %2\t\n\
+            and.w %6, %2\t\n\
+            move.w %3, (%0)+\t\n\
+            move.w %2, (%0)+\t\n\
+            add.w %4, %3\t\n\
+            add.w %5, %1\t\n\
+            \t\n\
+            move.w %1, %2\t\n\
+            and.w %6, %2\t\n\
+            move.w %3, (%0)+\t\n\
+            move.w %2, (%0)+\t\n\
+            add.w %4, %3\t\n\
+            add.w %5, %1\t\n\
+            \t\n\
+            move.w %1, %2\t\n\
+            and.w %6, %2\t\n\
+            move.w %3, (%0)+\t\n\
+            move.w %2, (%0)+\t\n\
+            add.w %4, %3\t\n\
+            add.w %5, %1\t\n\
+            "
+        : "+a" (tex_col_ptr), "+r" (u_11_start), "+r" (u_11_tmp), "+r" (one_over_z_16)
+        : "r" (d_one_over_z_16), "r" (u_11_per_col), "d" (mask)
         );
-        //u16 u_7; u32 u_tmp = u_over_z_23;// u_over_z_16<<7;           
-        
-        //__asm volatile(                             
-        //    "divu.w %3, %1\t\n\
-        //    move.w %1, %0\t\n\
-        //    lsl.w #4, %0\t\n\
-        //    and.w #1984, %0\t\n\
-        //    move.w %3, (%2)+\t\n\
-        //    move.w %0, (%2)+"                       
-        //    : "=d" (u_7), "+d" (u_tmp), "+a" (tex_col_ptr) 
-        //    : "d" (one_over_z_16));                 
-        one_over_z_16 += d_one_over_z_16; 
-        u_over_z_23 += d_u_over_z_23;  
-        //u_over_z_16 += d_u_over_z_16;     
-    }
-    cnt>>=1;
 
-    //u16 u_7_start = divu_32_by_16(u_over_z_16<<7, one_over_z_16);
+        u_over_z_23 = u_over_z_23_span_end;
+        one_over_z_16 = one_over_z_16_span_end;
+        u_11_start = u_11_end;
+
+        /*
+        __asm volatile(
+            "and.w #0x7C0, %1\t\n\
+            move.w %2, (%0)+\t\n\
+             move.w %1, (%0)+"
+            : "+a" (tex_col_ptr), "+d" (u_11_tmp)
+            : "d" (one_over_z_16)
+        );
+
+        u_11 += u_11_per_col;//(u_7_per_col<<4);
+        u_11_tmp = u_11;
+        //u_7 += u_7_per_col;
+        one_over_z_16 += d_one_over_z_16;
+        //u_11 = u_7<<4;
+
+        __asm volatile(
+            "and.w #0x7C0, %1\t\n\
+            move.w %2, (%0)+\t\n\
+             move.w %1, (%0)+"
+            : "+a" (tex_col_ptr), "+d" (u_11_tmp)
+            : "d" (one_over_z_16)
+        );
+
+        u_11 += u_11_per_col;//(u_7_per_col<<4);
+        u_11_tmp = u_11;
+        //u_7 += u_7_per_col;
+        one_over_z_16 += d_one_over_z_16;
+        //u_11 = u_7<<4;
+
+        __asm volatile(
+            "and.w #0x7C0, %1\t\n\
+            move.w %2, (%0)+\t\n\
+             move.w %1, (%0)+"
+            : "+a" (tex_col_ptr), "+d" (u_11_tmp)
+            : "d" (one_over_z_16)
+        );
+
+        u_11 += u_11_per_col;//(u_7_per_col<<4);
+        u_11_tmp = u_11;
+        //u_7 += u_7_per_col;
+        one_over_z_16 += d_one_over_z_16;
+        //u_11 = u_7<<4;
+
+        __asm volatile(
+            // 0b11111000000 & u_11
+            "and.w #0x7C0, %1\t\n\
+            move.w %2, (%0)+\t\n\
+             move.w %1, (%0)+"
+            : "+a" (tex_col_ptr), "+d" (u_11_tmp)
+            : "d" (one_over_z_16)
+        );
+        u_over_z_23 = u_over_z_23_span_end;
+        one_over_z_16 = one_over_z_16_span_end;
+        u_11_start = u_11_end;
+        */
+
+    }
+    
+}
+
+
+void calculate_tex_coords_for_wall_two_column(
+    s16 beginx, s16 endx, s16 skip_x, s16 dx,
+    u16 z1_12_4,     u16 z2_12_4,
+    u16 inv_z1,      u16 inv_z2,
+    texmap_params* tmap_info
+) {
+
+    u16 repetitions = tmap_info->repetitions;
+
+
+    u32 left_u_16 = (tmap_info->left_u * repetitions);
+    u32 right_u_16 = (tmap_info->right_u * repetitions);
+
+
+    persp_params persp = calc_perspective(z1_12_4, z2_12_4, inv_z1, inv_z2, left_u_16, right_u_16, dx);
+    
+    
+    u32 one_over_z_26 = persp.one_over_z_26;
+    s32 d_one_over_z_26 = persp.d_one_over_z_dx_26;
+
+    u32 u_over_z_23 = persp.u_over_z_23;
+    s32 d_u_over_z_23 = persp.d_u_over_z_dx_23;
+
+    if(skip_x > 0) {
+        one_over_z_26 += (skip_x * d_one_over_z_26);
+        u_over_z_23 += skip_x * d_u_over_z_23;
+    }
+
+    u16 one_over_z_16 = one_over_z_26>>10;
+    s16 d_one_over_z_16 = d_one_over_z_26>>10;
+    //u16 u_over_z_16 = u_over_z_23>>7;
+    //s16 d_u_over_z_16 = d_u_over_z_23>>7;
+
+    u16 cnt = endx-beginx;
+    u16* tex_col_ptr = tex_col_buffer;
+ 
+    cnt++; // just always write pairs, even one past the end if necessary
+   
+    cnt>>=1;
     u16 u_7_start = divu_32_by_16(u_over_z_23, one_over_z_16);
 
-    //s16 d_one_over_z_16_times_2 = d_one_over_z_16 << 1;
-    //s16 d_u_over_z_16_times_2 = d_u_over_z_16 << 1;
     
     s16 d_one_over_z_16_times_2 = d_one_over_z_16 << 1;
-    //s16 d_u_over_z_16_times_2 = d_u_over_z_16 << 1;
     s32 d_u_over_z_23_times_2 = d_u_over_z_23 << 1;
-    //u16 tmp;
 
     while(cnt--) {
         u16 one_over_z_16_span_end = one_over_z_16 + d_one_over_z_16_times_2;
@@ -1495,6 +1641,7 @@ void calculate_tex_coords_for_wall(
         
         u16 u_7_end = divu_32_by_16(u_over_z_23_span_end, one_over_z_16_span_end); // 9.7 fixed point
         
+
         u16 u_per_col = u_7_end;
         u_per_col -= u_7_start;
         u_per_col >>= 1;

@@ -2,6 +2,7 @@
 
 #include "utils.h"
 
+
 #define SUB_16_16(a, b) do {    \
     __asm volatile(             \
         "sub.w %1, %0"          \
@@ -31,6 +32,13 @@ void die(char* msg) {
     while(1) {
         VDP_drawTextBG(BG_B, msg, 2, 12);
         VDP_waitVInt();
+    }
+}
+
+
+void assert(int expr, char* msg) {
+    if(!expr) {
+        die(msg);
     }
 }
 

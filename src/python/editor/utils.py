@@ -1,7 +1,9 @@
+import typing
 import imgui
 import math
 import os
 import random
+import re
 
 
 
@@ -140,11 +142,70 @@ def file_selector(label, cur_val, files, changed_cb):
     if file_changed:
         changed_cb(files[new_file_idx])
 
+class Texture(object):
+    def __init__(self, pfx: str, tex_files: list[str]):
+        assert len(tex_files) > 0 and len(tex_files) < 256
+        self.prefix = pfx 
+        self.tex_files = tex_files
+
+    def __str__(self) -> str:
+        return self.prefix 
+    
+    def gen_textures() -> list[list[int]]:
+        # return a list of bytes for textures 
+        pass
+    
+    def gen_anim_texture(self, first_tex_idx: int, frequency: int):
+        assert first_tex_idx > 0 and first_tex_idx < 256
+        assert frequency > 0 and frequency < 5
+        return [len(self.tex_files), frequency, first_tex_idx]
+
+
+def get_anim_texture_files(cur_state):
+    tex_files = [f for f in get_files_in_folder(cur_state.textures_path) if ".png" in f]
+    tex_files = sorted(tex_files)
+    texs = []
+    
+    cur_anim_name = None
+    cur_anim = []
+    for tex_file in tex_files: 
+        res = re.match('(.*)_[0-9]*.png', tex_file)
+        if res is None:
+            if cur_anim_name:
+                texs.append(Texture(cur_anim_name, cur_anim))
+                cur_anim_name = None
+            # push new texture, don't start an animation
+            texs.append(Texture(tex_file.split(".png")[0], [tex_file]))
+        else:
+            # it matches
+            # if it matches the current animation, append to it
+            if res.group(1) == cur_anim_name:
+                cur_anim.append(tex_file)
+            else:
+                # otherwise, push the current animation if it exists
+                if cur_anim_name:
+                    texs.append(Texture(cur_anim_name, cur_anim))
+                # and start a new animation
+                cur_anim = [tex_file]
+                cur_anim_name = res.group(1)
+
+    if cur_anim_name:
+        texs.append(Texture(cur_anim_name, cur_anim))
+        
+    return texs
+
+def get_files(path, ext, name, required):
+    files = [f for f in get_files_in_folder(path) if ext in f]
+    if required:
+        assert len(files) > 0, "No {} files provided!".format(name)
+    return files
+
 
 def get_texture_files(cur_state):
-    tex_files = [f for f in get_files_in_folder(cur_state.textures_path) if ".png" in f]
-    assert len(tex_files) > 0, "No texture files provided!"
-    return tex_files
+    files = [f for f in get_files_in_folder(cur_state.textures_path) if ".png" in f]
+    assert len(files) > 0, "No texture files provided!"
+    return files
+
 
 def get_music_files(cur_state):
     return [f for f in get_files_in_folder(cur_state.music_tracks_path) if ".vgm" in f]
