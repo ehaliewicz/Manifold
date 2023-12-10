@@ -1,0 +1,7 @@
+This release of the editor needs SDL2.dll in the same directory/folder as the exe.
+Plus you will need to provide a textures, sprites, and music directory/folder matching the one in conf.ini.
+You need to provide at least one texture and at least one sprite in these folders.
+
+For music, you will also need SGDK's xgmtool.  You can find that on the SGDK github repository.
+
+Another helpful tool, is providing a path to an emulator to launch built ROMs with.
